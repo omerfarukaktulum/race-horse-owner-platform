@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  TRAINER
+  ADMIN
+}
+
+enum HorseStatus {
+  RACING
+  STALLION
+  MARE
+  RETIRED
+}
+
+enum ExpenseCategory {
+  IDMAN_JOKEYI
+  SEYIS
+  ILAC
+  YEM_SAMAN_OT
+  EKSTRA_ILAC
+  YARIS_KAYIT
+  NAKLIYE
+  SEZONLUK_AHIR
+  OZEL
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(OWNER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  ownerProfile   OwnerProfile?
+  trainerProfile TrainerProfile?
+  expenses       Expense[]
+  
+  accounts Account[]
+  sessions Session[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model OwnerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  officialName String
+  officialRef  String?
+  
+  subscriptionStatus    String?
+  subscriptionExpiresAt DateTime?
+  stripeCustomerId      String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  stablemate Stablemate?
+
+  @@index([userId])
+  @@map("owner_profiles")
+}
+
+model TrainerProfile {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fullName String
+  phone    String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  horses Horse[]
+
+  @@index([userId])
+  @@index([fullName])
+  @@map("trainer_profiles")
+}
+
+model Stablemate {
+  id             String @id @default(cuid())
+  ownerId        String @unique
+  owner          OwnerProfile @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  name           String
+  foundationYear Int?
+  coOwners       String[]
+  location       String?
+  website        String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  horses Horse[]
+
+  @@index([ownerId])
+  @@map("stablemates")
+}
+
+model Racecourse {
+  id   String @id @default(cuid())
+  name String @unique
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  horses Horse[]
+
+  @@map("racecourses")
+}
+
+model Farm {
+  id   String  @id @default(cuid())
+  name String  @unique
+  city String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  horses Horse[]
+
+  @@map("farms")
+}
+
+model Horse {
+  id           String      @id @default(cuid())
+  stablemateId String
+  stablemate   Stablemate  @relation(fields: [stablemateId], references: [id], onDelete: Cascade)
+  
+  name         String
+  yob          Int?
+  status       HorseStatus @default(RACING)
+  
+  racecourseId String?
+  racecourse   Racecourse? @relation(fields: [racecourseId], references: [id])
+  
+  farmId       String?
+  farm         Farm?       @relation(fields: [farmId], references: [id])
+  
+  trainerId    String?
+  trainer      TrainerProfile? @relation(fields: [trainerId], references: [id])
+  
+  groomName    String?
+  stableLabel  String?
+  
+  externalRef  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  expenses Expense[]
+
+  @@index([stablemateId])
+  @@index([trainerId])
+  @@index([racecourseId])
+  @@index([farmId])
+  @@index([status])
+  @@map("horses")
+}
+
+model Expense {
+  id         String          @id @default(cuid())
+  horseId    String
+  horse      Horse           @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  addedById  String
+  addedBy    User            @relation(fields: [addedById], references: [id])
+  
+  date       DateTime
+  category   ExpenseCategory
+  customName String?
+  
+  amount     Decimal         @db.Decimal(12, 2)
+  currency   String          @default("TRY")
+  
+  note       String?
+  photoUrl   String?
+  
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([horseId])
+  @@index([addedById])
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
