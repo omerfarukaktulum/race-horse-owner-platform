@@ -82,20 +82,28 @@ export default function RegisterTrainerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <User className="h-12 w-12 text-green-600" />
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
+              <User className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">Antrenör Kaydı</CardTitle>
-          <CardDescription>
-            Antrenör olarak kayıt olun
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-600">
+              Antrenör Kaydı
+            </CardTitle>
+            <CardDescription className="text-gray-600 mt-2">
+              Antrenör olarak kayıt olun
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="fullName">{TR.auth.fullName}</Label>
+              <Label htmlFor="fullName" className="text-gray-700 font-medium">
+                {TR.auth.fullName}
+              </Label>
               <Input
                 id="fullName"
                 type="text"
@@ -104,10 +112,13 @@ export default function RegisterTrainerPage() {
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">{TR.auth.phone}</Label>
+              <Label htmlFor="phone" className="text-gray-700 font-medium">
+                {TR.auth.phone}
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -115,10 +126,13 @@ export default function RegisterTrainerPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 disabled={isLoading}
+                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">{TR.auth.email}</Label>
+              <Label htmlFor="email" className="text-gray-700 font-medium">
+                {TR.auth.email}
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -127,10 +141,13 @@ export default function RegisterTrainerPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{TR.auth.password}</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">
+                {TR.auth.password}
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -140,10 +157,14 @@ export default function RegisterTrainerPage() {
                 required
                 disabled={isLoading}
                 minLength={8}
+                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
               />
+              <p className="text-xs text-gray-500">En az 8 karakter olmalı</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Şifre (Tekrar)</Label>
+              <Label htmlFor="confirmPassword" className="text-gray-700 font-medium">
+                Şifre (Tekrar)
+              </Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -153,19 +174,23 @@ export default function RegisterTrainerPage() {
                 required
                 disabled={isLoading}
                 minLength={8}
+                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
               />
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? TR.common.loading : TR.auth.register}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Zaten hesabınız var mı? </span>
-            <Link href="/signin" className="text-blue-600 hover:underline font-medium">
+            <Link 
+              href="/signin" 
+              className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline transition-colors"
+            >
               {TR.auth.signIn}
             </Link>
           </div>

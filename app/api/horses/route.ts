@@ -106,6 +106,13 @@ export async function GET(request: Request) {
       console.log('[Horses API] Sample horses with externalRef:', horsesWithExternalRef.slice(0, 3).map(h => ({ name: h.name, externalRef: h.externalRef })))
     }
 
+    // Log pedigree data for debugging
+    if (horses.length > 0) {
+      horses.slice(0, 3).forEach((h, i) => {
+        console.log(`[Horses API] Horse ${i + 1} (${h.name}): sireName="${h.sireName || 'null'}", damName="${h.damName || 'null'}"`)
+      })
+    }
+
     return NextResponse.json({ horses })
   } catch (error) {
     console.error('Get horses error:', error)

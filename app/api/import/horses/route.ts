@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
+import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 
 export async function POST(request: Request) {
   try {
@@ -77,6 +78,9 @@ export async function POST(request: Request) {
             groomName: horse.groomName,
             stableLabel: horse.stableLabel,
             externalRef: horse.externalRef || null,
+            // Save pedigree data from TJK initial import
+            sireName: horse.sire ? horse.sire.trim() : null,
+            damName: horse.dam ? horse.dam.trim() : null,
           },
         })
       })
@@ -91,9 +95,12 @@ export async function POST(request: Request) {
       })
     })
 
+    // Return immediately - detailed data fetching will happen in background
+    // The frontend will poll for status or use a separate endpoint
     return NextResponse.json({
       success: true,
       horses: createdHorses,
+      message: 'Horses created. Fetching detailed data in background...',
     })
   } catch (error) {
     console.error('Import horses error:', error)

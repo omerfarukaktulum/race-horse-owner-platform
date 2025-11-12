@@ -52,20 +52,28 @@ export default function SignInPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Activity className="h-12 w-12 text-blue-600" />
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <Activity className="h-8 w-8 text-white" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">{TR.auth.signIn}</CardTitle>
-          <CardDescription>
-            Hesabınıza giriş yapın
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              {TR.auth.signIn}
+            </CardTitle>
+            <CardDescription className="text-gray-600 mt-2">
+              Hesabınıza giriş yapın
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">{TR.auth.email}</Label>
+              <Label htmlFor="email" className="text-gray-700 font-medium">
+                {TR.auth.email}
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -74,10 +82,13 @@ export default function SignInPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{TR.auth.password}</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">
+                {TR.auth.password}
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -86,19 +97,23 @@ export default function SignInPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                className="h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
               />
             </div>
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-11 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? TR.common.loading : TR.auth.signIn}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
+          <div className="mt-6 text-center text-sm">
             <span className="text-gray-600">Hesabınız yok mu? </span>
-            <Link href="/register" className="text-blue-600 hover:underline font-medium">
+            <Link 
+              href="/register" 
+              className="text-[#6366f1] hover:text-[#4f46e5] font-semibold hover:underline transition-colors"
+            >
               {TR.auth.register}
             </Link>
           </div>

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { Plus, Edit2, Activity } from 'lucide-react'
+import { Plus, Edit2, Activity } from 'lucide-react' // Activity still used in empty states
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
@@ -22,6 +22,9 @@ interface HorseData {
   farm?: { id: string; name: string }
   trainer?: { fullName: string }
   groomName?: string
+  handicapPoints?: number
+  sireName?: string
+  damName?: string
   expenses: Array<{
     date: Date
     amount: number
@@ -117,14 +120,41 @@ export default function HorsesPage() {
     const lastExpense = horse.expenses[0]
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
 
+    // Determine if horse is male or female
+    const isMale = horse.gender?.includes('Erkek') || horse.gender?.includes('ERKEK') || 
+                   horse.gender?.includes('Aygır') || horse.gender?.includes('AYGIR')
+    const isFemale = horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
+                     horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')
+
+    // Card gradient based on gender - Purple/Violet for females instead of pink
+    const cardGradient = isMale 
+      ? 'bg-gradient-to-br from-blue-50 via-sky-50 to-white border border-blue-100'
+      : isFemale
+      ? 'bg-gradient-to-br from-purple-50 via-violet-50 to-white border border-purple-100'
+      : 'bg-gradient-to-br from-slate-50 via-gray-50 to-white border border-gray-100'
+
+    // Button gradient based on gender
+    const buttonGradient = isMale
+      ? 'bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700'
+      : isFemale
+      ? 'bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700'
+      : 'bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-700 hover:to-slate-700'
+
+    // Age badge color
+    const ageBadgeColor = isMale
+      ? 'bg-blue-100 text-blue-700 border-blue-200'
+      : isFemale
+      ? 'bg-purple-100 text-purple-700 border-purple-200'
+      : 'bg-gray-100 text-gray-700 border-gray-200'
+
     // Get gender label
     const getGenderLabel = () => {
       if (!horse.gender) return null
-      if (horse.gender.includes('Erkek') || horse.gender.includes('ERKEK') || horse.gender.includes('Aygır') || horse.gender.includes('AYGIR')) {
+      if (isMale) {
         return { text: 'Erkek', color: 'bg-blue-100 text-blue-700 border-blue-200' }
       }
-      if (horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')) {
-        return { text: 'Dişi', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+      if (isFemale) {
+        return { text: 'Dişi', color: 'bg-purple-100 text-purple-700 border-purple-200' }
       }
       return null
     }
@@ -135,9 +165,9 @@ export default function HorsesPage() {
     const getStatusLabel = () => {
       switch (horse.status) {
         case 'STALLION':
-          return { text: 'Aygır', color: 'bg-purple-100 text-purple-700 border-purple-200' }
+          return { text: 'Aygır', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' }
         case 'MARE':
-          return { text: 'Kısrak', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+          return { text: 'Kısrak', color: 'bg-purple-100 text-purple-700 border-purple-200' }
         default:
           return null
       }
@@ -146,125 +176,99 @@ export default function HorsesPage() {
     const statusLabel = getStatusLabel()
 
     return (
-      <Card className="hover:shadow-lg transition-shadow">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle>
-                <Link
-                  href={`/app/horses/${horse.id}`}
-                  className="hover:text-blue-600"
-                >
-                  {horse.name}
-                </Link>
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2 flex-wrap mt-1">
-                {age !== null && (
-                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
-                    {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
+      <Link href={`/app/horses/${horse.id}`}>
+        <Card className={`p-4 sm:p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg cursor-pointer ${cardGradient}`}>
+          {/* Horse Name and Origin - First Line */}
+          <div className="flex-1 min-w-0">
+            <div className="mb-3">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">
+                {horse.name}
+                {(horse.sireName || horse.damName) && (
+                  <span className="text-sm font-normal text-gray-600 ml-2">
+                    - {horse.sireName && horse.damName 
+                      ? `${horse.sireName} - ${horse.damName}`
+                      : horse.sireName || horse.damName}
                   </span>
                 )}
-                {genderLabel && (
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${genderLabel.color}`}>
-                    {genderLabel.text}
-                  </span>
-                )}
-              </CardDescription>
+              </h3>
             </div>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => {
-                setSelectedHorseForExpense(horse.id)
-                setExpenseModalOpen(true)
-              }}
-            >
-              Gider Ekle
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Status Badge (only for STALLION and MARE) */}
-          {statusLabel && (
-            <div className="flex items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${statusLabel.color}`}>
-                {statusLabel.text}
-              </span>
+            
+            {/* All Labels Side by Side - Second Line */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              {age !== null && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                  {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
+                </span>
+              )}
+              {genderLabel && (
+                <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${genderLabel.color}`}>
+                  {genderLabel.text}
+                </span>
+              )}
+              {statusLabel && (
+                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusLabel.color}`}>
+                  {statusLabel.text}
+                </span>
+              )}
+              {horse.handicapPoints !== null && horse.handicapPoints !== undefined && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
+                  Hand: {horse.handicapPoints}
+                </span>
+              )}
+              {horse.status === 'RACING' && horse.racecourse && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200">
+                  🏇 {horse.racecourse.name}
+                </span>
+              )}
+              {horse.trainer && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
+                  👤 {horse.trainer.fullName}
+                </span>
+              )}
+              {horse.groomName && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-teal-50 text-teal-700 border-teal-200">
+                  🧑‍🌾 {horse.groomName}
+                </span>
+              )}
+              {(horse.status === 'STALLION' || horse.status === 'MARE') && horse.farm && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-green-50 text-green-700 border-green-200">
+                  🏡 {horse.farm.name}
+                </span>
+              )}
             </div>
-          )}
 
-          {/* Metadata with colored labels */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            {horse.status === 'RACING' && (
-              <>
-                {horse.racecourse && (
-                  <div className="flex items-center justify-between space-x-2">
-                    <div className="flex items-start space-x-2 flex-1">
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 whitespace-nowrap">
-                        Hipodrom
-                      </span>
-                      <p className="font-medium text-gray-900">{horse.racecourse.name}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setSelectedHorseForLocation(horse)
-                        setLocationModalOpen(true)
-                      }}
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-                {horse.trainer && (
-                  <div className="flex items-start space-x-2">
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 whitespace-nowrap">
-                      Antrenör
-                    </span>
-                    <p className="font-medium text-gray-900">{horse.trainer.fullName}</p>
-                  </div>
-                )}
-                {horse.groomName && (
-                  <div className="flex items-start space-x-2">
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-cyan-100 text-cyan-700 border border-cyan-200 whitespace-nowrap">
-                      Seyis
-                    </span>
-                    <p className="font-medium text-gray-900">{horse.groomName}</p>
-                  </div>
-                )}
-              </>
-            )}
-            {(horse.status === 'STALLION' || horse.status === 'MARE') && horse.farm && (
-              <div className="flex items-start space-x-2">
-                <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
-                  Çiftlik
-                </span>
-                <p className="font-medium text-gray-900">{horse.farm.name}</p>
+            {/* Last Expense */}
+            {lastExpense && (
+              <div className="pt-3 border-t border-white/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-600 font-medium">Son Gider</span>
+                  <span className="text-xs text-gray-500">
+                    {getRelativeTime(new Date(lastExpense.date))}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  <span className="text-sm font-bold text-gray-900">
+                    {formatCurrency(Number(lastExpense.amount), lastExpense.currency)}
+                  </span>
+                </div>
               </div>
             )}
           </div>
-          {lastExpense && (
-            <div className="border-t pt-3">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                  Son Gider
-                </span>
-                <span className="text-xs text-gray-500">
-                  {getRelativeTime(new Date(lastExpense.date))}
-                </span>
-              </div>
-              <div className="mt-2">
-                <span className="text-sm font-medium text-gray-900">
-                  {formatCurrency(Number(lastExpense.amount), lastExpense.currency)}
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+          {/* Action Button */}
+          <Button 
+            className={`${buttonGradient} shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base mt-4`}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setSelectedHorseForExpense(horse.id)
+              setExpenseModalOpen(true)
+            }}
+          >
+            Gider Ekle
+          </Button>
+        </Card>
+      </Link>
     )
   }
 
@@ -272,8 +276,11 @@ export default function HorsesPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{TR.common.loading}</p>
+          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+          <p className="text-sm text-gray-600 mt-2">Atlar yükleniyor...</p>
         </div>
       </div>
     )
@@ -282,9 +289,11 @@ export default function HorsesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{TR.horses.title}</h1>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+          {TR.horses.title}
+        </h1>
         <Link href="/app/horses/new">
-          <Button>
+          <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300">
             <Plus className="h-4 w-4 mr-2" />
             {TR.horses.addHorse}
           </Button>
@@ -292,31 +301,45 @@ export default function HorsesPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="ACTIVE">
+        <TabsList className="grid w-full grid-cols-4 bg-white/90 backdrop-blur-sm border border-gray-200 p-1">
+          <TabsTrigger 
+            value="ACTIVE"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white font-medium transition-all"
+          >
             {TR.horses.active} ({filterHorses('ACTIVE').length})
           </TabsTrigger>
-          <TabsTrigger value="FOALS">
+          <TabsTrigger 
+            value="FOALS"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white font-medium transition-all"
+          >
             {TR.horses.foals} ({filterHorses('FOALS').length})
           </TabsTrigger>
-          <TabsTrigger value="MARE">
+          <TabsTrigger 
+            value="MARE"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white font-medium transition-all"
+          >
             {TR.horses.mares} ({filterHorses('MARE').length})
           </TabsTrigger>
-          <TabsTrigger value="DEAD">
+          <TabsTrigger 
+            value="DEAD"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white font-medium transition-all"
+          >
             {TR.horses.dead} ({filterHorses('DEAD').length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="ACTIVE" className="space-y-4 mt-6">
           {filterHorses('ACTIVE').length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-gray-500">
-                <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Aktif atınız bulunmuyor</p>
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 font-medium">Aktif atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {filterHorses('ACTIVE').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
@@ -326,14 +349,16 @@ export default function HorsesPage() {
 
         <TabsContent value="FOALS" className="space-y-4 mt-6">
           {filterHorses('FOALS').length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-gray-500">
-                <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Tay atınız bulunmuyor</p>
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 font-medium">Tay atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {filterHorses('FOALS').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
@@ -343,14 +368,16 @@ export default function HorsesPage() {
 
         <TabsContent value="MARE" className="space-y-4 mt-6">
           {filterHorses('MARE').length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-gray-500">
-                <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Kısrak atınız bulunmuyor</p>
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 font-medium">Kısrak atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {filterHorses('MARE').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
@@ -360,14 +387,16 @@ export default function HorsesPage() {
 
         <TabsContent value="DEAD" className="space-y-4 mt-6">
           {filterHorses('DEAD').length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center text-gray-500">
-                <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Ölü atınız bulunmuyor</p>
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="h-8 w-8 text-gray-400" />
+                </div>
+                <p className="text-gray-600 font-medium">Ölü atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {filterHorses('DEAD').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}

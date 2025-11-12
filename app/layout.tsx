@@ -23,7 +23,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#2563eb',
+  themeColor: '#6366f1',
 }
 
 export default function RootLayout({
@@ -33,7 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr">
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen flex flex-col`}>
         {children}
         <Toaster position="top-right" richColors />
       </body>

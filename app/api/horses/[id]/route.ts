@@ -57,6 +57,10 @@ export async function GET(
           },
           orderBy: { startDate: 'desc' },
         },
+        raceHistory: {
+          orderBy: { raceDate: 'desc' },
+          take: 50, // Latest 50 races
+        },
       },
     })
 

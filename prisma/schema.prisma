@@ -162,18 +162,88 @@ model Horse {
   
   externalRef  String?
   
+  // Detailed horse data from TJK
+  handicapPoints Int?        // Handikap Puanı
+  totalEarnings  Decimal?    @db.Decimal(12, 2) // Toplam Kazanç
+  prizeMoney     Decimal?    @db.Decimal(12, 2) // İkramiye
+  ownerPremium   Decimal?    @db.Decimal(12, 2) // At Sahibi Primi
+  breederPremium Decimal?    @db.Decimal(12, 2) // Yetiştiricilik Primi
+  totalRaces     Int?        // Toplam Koşu Sayısı
+  firstPlaces    Int?        // 1'incilik
+  secondPlaces   Int?        // 2'ncilik
+  thirdPlaces    Int?        // 3'üncülük
+  fourthPlaces   Int?        // 4'ncülük
+  fifthPlaces    Int?        // 5'ncilik
+  
+  // Pedigree
+  sireName       String?     // Baba adı
+  damName        String?     // Anne adı
+  sireSire       String?     // Baba'nın babası
+  sireDam        String?     // Baba'nın annesi
+  damSire        String?     // Anne'nin babası
+  damDam         String?     // Anne'nin annesi
+  
+  // Statistics by surface
+  turfRaces      Int?
+  turfFirsts     Int?
+  turfEarnings   Decimal?    @db.Decimal(12, 2)
+  dirtRaces      Int?
+  dirtFirsts     Int?
+  dirtEarnings   Decimal?    @db.Decimal(12, 2)
+  syntheticRaces Int?
+  syntheticFirsts Int?
+  syntheticEarnings Decimal? @db.Decimal(12, 2)
+  
+  // Data fetch metadata
+  dataFetchedAt  DateTime?   // When detailed data was last fetched
+  dataFetchError String?     // Error message if fetch failed
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   expenses Expense[]
   locationHistory HorseLocationHistory[]
+  raceHistory HorseRaceHistory[]
 
   @@index([stablemateId])
   @@index([trainerId])
   @@index([racecourseId])
   @@index([farmId])
   @@index([status])
+  @@index([externalRef])
   @@map("horses")
+}
+
+model HorseRaceHistory {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  raceDate    DateTime
+  city        String?  // Şehir (İstanbul, Ankara, etc.)
+  distance    Int?     // Mesafe (meters)
+  surface     String?  // Pist (Çim, Kum, Sentetik)
+  surfaceType String?  // Ç:Normal, etc.
+  position    Int?     // Derece (1, 2, 3, etc.)
+  weight      Decimal? @db.Decimal(5, 2) // Sıklet
+  jockeyName  String?
+  jockeyId    String?
+  raceNumber  Int?     // Koşu No
+  raceName    String?  // Koşu Adı
+  raceType    String?  // Kcins (Maiden, Şartlı, etc.)
+  trainerName String?
+  trainerId   String?
+  handicapPoints Int?  // HP
+  prizeMoney  Decimal? @db.Decimal(12, 2) // İkramiye
+  videoUrl    String?  // Video link
+  photoUrl    String?  // Foto link
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([raceDate])
+  @@map("horse_race_history")
 }
 
 model HorseLocationHistory {

@@ -5,17 +5,16 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X, User, ChevronDown } from 'lucide-react'
+import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
-import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/app/components/ui/dropdown-menu'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
 
 function AppNavbar() {
   const { user, signOut, isOwner } = useAuth()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
 
@@ -63,8 +62,8 @@ function AppNavbar() {
   ]
 
   return (
-    <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-4">
+    <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {ownerOfficialRef ? (
@@ -81,69 +80,77 @@ function AppNavbar() {
               />
             ) : null}
             <Activity 
-              className={`h-6 w-6 text-blue-600 flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
+              className={`h-6 w-6 text-[#6366f1] flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
             />
-            <span className="font-bold text-lg">
+            <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
               {stablemateName ? `${stablemateName} EKÜRİSİ` : 'TJK Stablemate'}
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-1">
+          <nav className="hidden md:flex md:flex-1 md:items-center md:justify-center md:space-x-8">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Button>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2 ${
+                  pathname?.startsWith(item.href)
+                    ? 'text-indigo-600 font-medium border-b-2 border-indigo-600 pb-1'
+                    : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-gray-300 pb-1'
+                } transition-all`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
               </Link>
             ))}
           </nav>
 
           {/* User Menu */}
-          <div className="hidden md:flex items-center space-x-2">
-            <DropdownMenu
-              trigger={
+          <div className="hidden md:flex items-center space-x-4">
+            {isOwner && (
+              <div className="relative">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex items-center space-x-2"
+                  className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                  onClick={() => setAccountMenuOpen(!accountMenuOpen)}
+                  onBlur={() => setTimeout(() => setAccountMenuOpen(false), 200)}
                 >
                   <User className="h-4 w-4" />
                   <span>Hesap</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${accountMenuOpen ? 'rotate-180' : ''}`} />
                 </Button>
-              }
-              align="right"
+                {accountMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                    <Link href="/app/stablemate">
+                      <button
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        {TR.nav.stablemate}
+                      </button>
+                    </Link>
+                    <Link href="/app/billing">
+                      <button
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        {TR.nav.billing}
+                      </button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+            <Button
+              onClick={signOut}
+              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white rounded-lg px-6 py-2 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              {isOwner && (
-                <>
-                  <DropdownMenuItem>
-                    <Link href="/app/stablemate" className="flex items-center space-x-2 w-full">
-                      <Settings className="h-4 w-4" />
-                      <span>{TR.nav.stablemate}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/app/billing" className="flex items-center space-x-2 w-full">
-                      <DollarSign className="h-4 w-4" />
-                      <span>{TR.nav.billing}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem onClick={signOut}>
-                <div className="flex items-center space-x-2 text-red-600">
-                  <LogOut className="h-4 w-4" />
-                  <span>{TR.auth.signOut}</span>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenu>
+              <LogOut className="h-4 w-4 mr-2" />
+              {TR.auth.signOut}
+            </Button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -174,7 +181,13 @@ function AppNavbar() {
                 </Link>
               ))}
               {isOwner && (
-                <>
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Hesap
+                    </p>
+                  </div>
                   <Link href="/app/stablemate">
                     <Button
                       variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
@@ -195,19 +208,21 @@ function AppNavbar() {
                       {TR.nav.billing}
                     </Button>
                   </Link>
-                </>
+                </div>
               )}
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-red-600"
-                onClick={() => {
-                  setMobileMenuOpen(false)
-                  signOut()
-                }}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                {TR.auth.signOut}
-              </Button>
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                  <Button
+                  variant="ghost"
+                  className="w-full justify-start text-red-600"
+                  onClick={() => {
+                    setMobileMenuOpen(false)
+                    signOut()
+                  }}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {TR.auth.signOut}
+                </Button>
+              </div>
             </nav>
           </div>
         )}
@@ -220,7 +235,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       <AppNavbar />
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>
     </div>

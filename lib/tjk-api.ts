@@ -108,6 +108,18 @@ export async function searchTJKHorsesPlaywright(
 
     page = await context.newPage()
 
+    // Listen to console messages from the browser and forward to terminal
+    page.on('console', (msg) => {
+      const text = msg.text()
+      // Forward ALL browser console logs to terminal with clear prefix
+      console.log('[Browser Console]', msg.type().toUpperCase(), ':', text)
+    })
+    
+    // Also listen to page errors
+    page.on('pageerror', (error) => {
+      console.error('[Browser Page Error]', error.message)
+    })
+
     // Navigate DIRECTLY to DATA URL (not Page, but Data endpoint!)
     // NOTE: Include QueryParameter_OLDUFLG=on to include dead horses (Öldü)
     console.log('[TJK Playwright] Navigating directly to data URL...')
@@ -200,31 +212,80 @@ export async function searchTJKHorsesPlaywright(
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
 
           // Column 4: Orijin(Baba-Anne) - contains "SIRE - DAM" in a single cell
-          // The cell may contain links, so we need to extract text from all links
+          // The cell may contain links, so we need to extract full names from titles or text
           const originCell = cells[4]
-          let originText = ''
+          let sire = ''
+          let dam = ''
+          
+          console.log('[Browser] Processing origin cell for row', index)
           
           if (originCell) {
+            console.log('[Browser] Origin cell found, innerHTML length:', originCell.innerHTML?.length || 0)
+            console.log('[Browser] Origin cell textContent:', originCell.textContent?.trim() || 'empty')
+            
             // Get all links in the origin cell
             const links = originCell.querySelectorAll('a')
+            console.log('[Browser] Found', links.length, 'links in origin cell')
+            
             if (links.length >= 2) {
               // First link is sire, second link is dam
-              originText = `${links[0]?.textContent?.trim() || ''} - ${links[1]?.textContent?.trim() || ''}`
+              const sireLink = links[0]
+              const damLink = links[1]
+              
+              // Log all available attributes
+              console.log('[Browser] Sire link - href:', sireLink?.getAttribute('href') || 'none')
+              console.log('[Browser] Sire link - title:', sireLink?.getAttribute('title') || 'none')
+              console.log('[Browser] Sire link - textContent:', sireLink?.textContent?.trim() || 'none')
+              console.log('[Browser] Sire link - innerHTML:', sireLink?.innerHTML?.trim() || 'none')
+              
+              console.log('[Browser] Dam link - href:', damLink?.getAttribute('href') || 'none')
+              console.log('[Browser] Dam link - title:', damLink?.getAttribute('title') || 'none')
+              console.log('[Browser] Dam link - textContent:', damLink?.textContent?.trim() || 'none')
+              console.log('[Browser] Dam link - innerHTML:', damLink?.innerHTML?.trim() || 'none')
+              
+              // Try to get full name from title attribute first, fallback to textContent
+              // If link text is very short (abbreviated), try parsing from cell textContent instead
+              const sireFromLink = sireLink?.getAttribute('title')?.trim() || sireLink?.textContent?.trim() || ''
+              const damFromLink = damLink?.getAttribute('title')?.trim() || damLink?.textContent?.trim() || ''
+              
+              // If link text is very short (likely abbreviated like "DA", "PE"), 
+              // parse from the full cell textContent which has the complete names
+              if (sireFromLink.length <= 3 || damFromLink.length <= 3) {
+                console.log('[Browser] Link text appears abbreviated, parsing from cell textContent')
+                const originText = originCell.textContent?.trim() || ''
+                const originParts = originText.split(' - ').map(part => part.trim())
+                if (originParts.length >= 2) {
+                  sire = originParts[0] || sireFromLink
+                  dam = originParts[1] || damFromLink
+                  console.log('[Browser] Using textContent - Sire:', sire, '| Dam:', dam)
+                } else {
+                  sire = sireFromLink
+                  dam = damFromLink
+                }
+              } else {
+                sire = sireFromLink
+                dam = damFromLink
+              }
+              
+              console.log('[Browser] Final extracted - Sire:', sire, '| Dam:', dam)
             } else {
-              // Fallback to textContent if no links
-              originText = originCell.textContent?.trim() || ''
+              // Fallback to parsing textContent if no links
+              console.log('[Browser] No links found, using textContent fallback')
+              const originText = originCell.textContent?.trim() || ''
+              console.log('[Browser] Origin textContent:', originText)
+              const originParts = originText.split(' - ').map(part => part.trim())
+              sire = originParts[0] || ''
+              dam = originParts[1] || ''
+              console.log('[Browser] Parsed - Sire:', sire, '| Dam:', dam)
             }
+          } else {
+            console.log('[Browser] WARNING: Origin cell (cells[4]) is null or undefined')
           }
           
           // Column 5: Üzerine Koşan Sahip (Owner) - NOT part of origin!
           // Column 6: Gerçek Sahibi (Real owner)
           // Column 7: Yetiştirici (Breeder)
           // Column 8: Antrenörü (Trainer)
-
-          // Parse origin: split by " - " to get sire and dam
-          const originParts = originText.split(' - ').map(part => part.trim())
-          const sire = originParts[0] || ''
-          const dam = originParts[1] || ''
 
           if (name && name !== 'At İsmi') { // Skip header row
             // Check if horse is dead (marked with Öldü in name)
@@ -241,7 +302,7 @@ export async function searchTJKHorsesPlaywright(
               status = 'MARE'
             }
             
-            console.log('[Browser] Adding horse:', cleanName, '| Status:', status, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam, '| Horse ID:', horseId)
+            console.log('[Browser] Adding horse:', cleanName, '| Status:', status, '| Sire:', sire, '| Dam:', dam, '| Horse ID:', horseId)
             results.push({
               name: cleanName,
               yob,
