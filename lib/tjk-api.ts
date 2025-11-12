@@ -142,6 +142,12 @@ export async function searchTJKHorsesPlaywright(
         const cells = row.querySelectorAll('td')
         console.log('[Browser] Row', index, 'has', cells.length, 'cells')
         
+        // Log all cell contents for debugging
+        if (index === 0) {
+          const cellContents = Array.from(cells).map((cell, i) => `Col${i}: ${cell.textContent?.trim()}`).join(' | ')
+          console.log('[Browser] First row cells:', cellContents)
+        }
+        
         if (cells.length >= 3) {
           // Column 0: Horse name (with link)
           const nameCell = cells[0]
@@ -166,9 +172,12 @@ export async function searchTJKHorsesPlaywright(
           
           // Column 5: Dam (Anne)
           const dam = cells[5]?.textContent?.trim() || ''
+          
+          // Column 6: Owner (Sahip) - We DON'T want this in the origin
+          // Column 7: Trainer (Antrenör)
 
           if (name && name !== 'At İsmi') { // Skip header row
-            console.log('[Browser] Adding horse:', name)
+            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam)
             results.push({
               name: name.replace(/\(.*?\)/g, '').trim(), // Remove any parentheses (Öldü), (T), etc.
               yob,

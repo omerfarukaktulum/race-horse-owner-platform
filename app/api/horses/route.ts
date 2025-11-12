@@ -29,12 +29,23 @@ export async function GET(request: Request) {
     // Build query based on role
     let where: any = {}
 
-    if (decoded.role === 'OWNER' && decoded.ownerId) {
-      // Owner sees their own horses
-      const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: { id: decoded.ownerId },
-        include: { stablemate: true },
-      })
+    if (decoded.role === 'OWNER') {
+      // Get owner profile - check by userId if ownerId not in token (for users who just completed onboarding)
+      let ownerProfile
+      
+      if (decoded.ownerId) {
+        ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { id: decoded.ownerId },
+          include: { stablemate: true },
+        })
+      } else {
+        // Token doesn't have ownerId yet, check by userId
+        console.log('[Horses API] No ownerId in token, checking by userId')
+        ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+          include: { stablemate: true },
+        })
+      }
 
       console.log('[Horses API] Owner profile:', {
         hasOwnerProfile: !!ownerProfile,
@@ -42,14 +53,23 @@ export async function GET(request: Request) {
         stablemateId: ownerProfile?.stablemate?.id,
       })
 
-      if (!ownerProfile?.stablemate) {
+      if (!ownerProfile) {
+        console.log('[Horses API] No owner profile found - onboarding not completed')
+        return NextResponse.json({ horses: [], message: 'Onboarding not completed' })
+      }
+
+      if (!ownerProfile.stablemate) {
         console.log('[Horses API] No stablemate found for owner')
-        return NextResponse.json({ horses: [] })
+        return NextResponse.json({ horses: [], message: 'No stablemate found' })
       }
 
       where.stablemateId = ownerProfile.stablemate.id
       console.log('[Horses API] Querying horses with where:', where)
-    } else if (decoded.role === 'TRAINER' && decoded.trainerId) {
+    } else if (decoded.role === 'TRAINER') {
+      if (!decoded.trainerId) {
+        console.log('[Horses API] Trainer has no trainerId')
+        return NextResponse.json({ horses: [], message: 'Trainer profile not found' })
+      }
       // Trainer sees assigned horses
       where.trainerId = decoded.trainerId
     } else if (decoded.role !== 'ADMIN') {

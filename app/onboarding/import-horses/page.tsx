@@ -233,12 +233,12 @@ export default function ImportHorsesPage() {
                     />
                     <div className="flex-1">
                       <p className="font-medium">{horse.name}</p>
-                      <div className="text-sm text-gray-500 space-y-1">
+                      <div className="text-sm text-gray-500">
                         {horse.yob && (
                           <p>Doğum Yılı: {horse.yob}</p>
                         )}
                         {(horse.sire || horse.dam) && (
-                          <p>Orijin: {horse.sire || '-'} - {horse.dam || '-'}</p>
+                          <p>Baba: {horse.sire || '-'} / Anne: {horse.dam || '-'}</p>
                         )}
                       </div>
                     </div>
