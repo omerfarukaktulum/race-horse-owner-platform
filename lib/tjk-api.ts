@@ -156,14 +156,34 @@ export async function searchTJKHorsesPlaywright(
           const name = (nameLink?.textContent || nameCell?.textContent || '').trim()
           
           // Extract horse ID from the link href
-          // Link format: ../Page/../../Query/ConnectedPage/AtKosuBilgileri?1=1&QueryParameter_AtId=86521
+          // Link format examples:
+          // - ../Page/../../Query/ConnectedPage/AtKosuBilgileri?1=1&QueryParameter_AtId=86521
+          // - /TR/YarisSever/Query/ConnectedPage/AtKosuBilgileri?QueryParameter_AtId=86521
+          // - AtKosuBilgileri?QueryParameter_AtId=86521
           let horseId: string | undefined
           if (nameLink) {
             const href = nameLink.getAttribute('href') || ''
-            const atIdMatch = href.match(/QueryParameter_AtId=(\d+)/)
+            console.log('[Browser] Horse link href:', href)
+            
+            // Try multiple patterns to extract AtId
+            let atIdMatch = href.match(/QueryParameter_AtId=(\d+)/)
+            if (!atIdMatch) {
+              // Try without QueryParameter_ prefix
+              atIdMatch = href.match(/AtId=(\d+)/)
+            }
+            if (!atIdMatch) {
+              // Try looking for just a number after ? or &
+              atIdMatch = href.match(/[?&](\d{4,})/)
+            }
+            
             if (atIdMatch) {
               horseId = atIdMatch[1]
+              console.log('[Browser] Extracted horse ID:', horseId)
+            } else {
+              console.warn('[Browser] Could not extract horse ID from href:', href)
             }
+          } else {
+            console.warn('[Browser] No link found in name cell for horse:', name)
           }
           
           // Column 1: Breed (Irk)

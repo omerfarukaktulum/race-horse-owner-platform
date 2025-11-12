@@ -160,15 +160,8 @@ export default function HorsesPage() {
               </CardTitle>
               <CardDescription className="flex items-center gap-2 flex-wrap mt-1">
                 {age !== null && (
-                  <span className="flex items-center gap-1">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
-                      {age} yaşında
-                    </span>
-                    {horse.yob && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 border border-violet-200">
-                        Doğum: {horse.yob}
-                      </span>
-                    )}
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                    {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
                   </span>
                 )}
                 {genderLabel && (
