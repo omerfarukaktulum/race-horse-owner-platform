@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { Activity, Plus, DollarSign } from 'lucide-react'
+import { Plus, Edit2, Activity } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
@@ -125,19 +125,15 @@ export default function HorsesPage() {
 
     const genderLabel = getGenderLabel()
 
-    // Get status label
+    // Get status label (only for STALLION and MARE, exclude RACING and DEAD)
     const getStatusLabel = () => {
       switch (horse.status) {
-        case 'RACING':
-          return { text: 'Aktif', color: 'bg-green-100 text-green-700 border-green-200' }
         case 'STALLION':
           return { text: 'Aygır', color: 'bg-purple-100 text-purple-700 border-purple-200' }
         case 'MARE':
           return { text: 'Kısrak', color: 'bg-pink-100 text-pink-700 border-pink-200' }
-        case 'DEAD':
-          return { text: 'Öldü', color: 'bg-gray-100 text-gray-700 border-gray-200' }
         default:
-          return { text: horse.status, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+          return null
       }
     }
 
@@ -148,8 +144,7 @@ export default function HorsesPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-blue-600" />
+              <CardTitle>
                 <Link
                   href={`/app/horses/${horse.id}`}
                   className="hover:text-blue-600"
@@ -160,11 +155,11 @@ export default function HorsesPage() {
               <CardDescription className="flex items-center gap-2 flex-wrap mt-1">
                 {age !== null && (
                   <span className="flex items-center gap-1">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
                       {age} yaşında
                     </span>
                     {horse.yob && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700 border border-violet-200">
                         Doğum: {horse.yob}
                       </span>
                     )}
@@ -179,30 +174,45 @@ export default function HorsesPage() {
             </div>
             <Link href={`/app/expenses/new?horseId=${horse.id}`}>
               <Button size="sm" variant="outline">
-                <DollarSign className="h-4 w-4 mr-1" />
                 Gider Ekle
               </Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Status Badge */}
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${statusLabel.color}`}>
-              {statusLabel.text}
-            </span>
-          </div>
+          {/* Status Badge (only for STALLION and MARE) */}
+          {statusLabel && (
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${statusLabel.color}`}>
+                {statusLabel.text}
+              </span>
+            </div>
+          )}
 
           {/* Metadata with colored labels */}
           <div className="grid grid-cols-2 gap-3 text-sm">
             {horse.status === 'RACING' && (
               <>
                 {horse.racecourse && (
-                  <div className="flex items-start space-x-2">
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 whitespace-nowrap">
-                      Hipodrom
-                    </span>
-                    <p className="font-medium text-gray-900">{horse.racecourse.name}</p>
+                  <div className="flex items-center justify-between space-x-2">
+                    <div className="flex items-start space-x-2 flex-1">
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 whitespace-nowrap">
+                        Hipodrom
+                      </span>
+                      <p className="font-medium text-gray-900">{horse.racecourse.name}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        // TODO: Implement racecourse change modal/dialog
+                        console.log('Change racecourse for horse:', horse.id)
+                      }}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 )}
                 {horse.trainer && (
