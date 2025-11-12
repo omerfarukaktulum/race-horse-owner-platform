@@ -60,22 +60,29 @@ export default function HorsesPage() {
 
   const filterHorses = (tab: string) => {
     const currentYear = new Date().getFullYear()
+    let filtered: HorseData[] = []
     
     if (tab === 'ACTIVE') {
-      return horses.filter((horse) => horse.status === 'RACING')
+      filtered = horses.filter((horse) => horse.status === 'RACING')
     } else if (tab === 'FOALS') {
       // Foals: 0, 1, 2, 3 years old
-      return horses.filter((horse) => {
+      filtered = horses.filter((horse) => {
         if (!horse.yob) return false
         const age = currentYear - horse.yob
         return age >= 0 && age <= 3
       })
     } else if (tab === 'MARE') {
-      return horses.filter((horse) => horse.status === 'MARE')
+      filtered = horses.filter((horse) => horse.status === 'MARE')
     } else if (tab === 'DEAD') {
-      return horses.filter((horse) => horse.status === 'DEAD')
+      filtered = horses.filter((horse) => horse.status === 'DEAD')
     }
-    return []
+    
+    // Sort by age ascending (youngest first)
+    return filtered.sort((a, b) => {
+      const ageA = a.yob ? currentYear - a.yob : 999
+      const ageB = b.yob ? currentYear - b.yob : 999
+      return ageA - ageB
+    })
   }
 
   const HorseCard = ({ horse }: { horse: HorseData }) => {

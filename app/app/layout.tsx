@@ -5,8 +5,9 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X } from 'lucide-react'
+import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X, User, ChevronDown } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from '@/app/components/ui/dropdown-menu'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -61,13 +62,6 @@ function AppNavbar() {
     { href: '/app/stats', label: TR.nav.statistics, icon: TrendingUp },
   ]
 
-  if (isOwner) {
-    navItems.push(
-      { href: '/app/stablemate', label: TR.nav.stablemate, icon: Settings },
-      { href: '/app/billing', label: TR.nav.billing, icon: DollarSign }
-    )
-  }
-
   return (
     <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -112,16 +106,44 @@ function AppNavbar() {
 
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-2">
-            <span className="text-sm text-gray-600">{user?.email}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="flex items-center space-x-2"
+            <DropdownMenu
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Hesap</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              }
+              align="right"
             >
-              <LogOut className="h-4 w-4" />
-              <span>{TR.auth.signOut}</span>
-            </Button>
+              {isOwner && (
+                <>
+                  <DropdownMenuItem>
+                    <Link href="/app/stablemate" className="flex items-center space-x-2 w-full">
+                      <Settings className="h-4 w-4" />
+                      <span>{TR.nav.stablemate}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link href="/app/billing" className="flex items-center space-x-2 w-full">
+                      <DollarSign className="h-4 w-4" />
+                      <span>{TR.nav.billing}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem onClick={signOut}>
+                <div className="flex items-center space-x-2 text-red-600">
+                  <LogOut className="h-4 w-4" />
+                  <span>{TR.auth.signOut}</span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenu>
           </div>
 
           {/* Mobile Menu Button */}
@@ -151,6 +173,30 @@ function AppNavbar() {
                   </Button>
                 </Link>
               ))}
+              {isOwner && (
+                <>
+                  <Link href="/app/stablemate">
+                    <Button
+                      variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      {TR.nav.stablemate}
+                    </Button>
+                  </Link>
+                  <Link href="/app/billing">
+                    <Button
+                      variant={pathname?.startsWith('/app/billing') ? 'secondary' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      {TR.nav.billing}
+                    </Button>
+                  </Link>
+                </>
+              )}
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600"

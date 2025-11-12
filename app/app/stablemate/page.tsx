@@ -7,7 +7,8 @@ import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, Activity, TrendingUp, Clock } from 'lucide-react'
+import { formatDate } from '@/lib/utils/format'
 
 interface StablemateData {
   id: string
@@ -16,6 +17,14 @@ interface StablemateData {
   coOwners: string[]
   location?: string
   website?: string
+  createdAt: string
+  updatedAt: string
+  horses?: Array<{
+    id: string
+    name: string
+    status: string
+    yob?: number
+  }>
 }
 
 export default function StablematePage() {
@@ -48,7 +57,14 @@ export default function StablematePage() {
         throw new Error(data.error || 'Eküri yüklenemedi')
       }
 
-      setStablemate(data.stablemate)
+      // Also fetch horses for statistics
+      const horsesResponse = await fetch('/api/horses')
+      const horsesData = await horsesResponse.ok ? await horsesResponse.json() : { horses: [] }
+
+      setStablemate({
+        ...data.stablemate,
+        horses: horsesData.horses || [],
+      })
       // Set form values
       setName(data.stablemate.name)
       setFoundationYear(data.stablemate.foundationYear?.toString() || '')
@@ -247,6 +263,46 @@ export default function StablematePage() {
             </form>
           ) : (
             <div className="space-y-6">
+              {/* Statistics Cards */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="text-sm text-gray-500">Toplam At</p>
+                        <p className="text-2xl font-bold">{stablemate?.horses?.length || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="text-sm text-gray-500">Aktif At</p>
+                        <p className="text-2xl font-bold">
+                          {stablemate?.horses?.filter(h => h.status === 'RACING').length || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <p className="text-sm text-gray-500">Ortak Sahip</p>
+                        <p className="text-2xl font-bold">{stablemate?.coOwners?.length || 0}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Basic Information */}
               <div className="grid md:grid-cols-2 gap-6">
                 {stablemate?.foundationYear && (
                   <div className="flex items-start space-x-3">
@@ -284,8 +340,19 @@ export default function StablematePage() {
                     </div>
                   </div>
                 )}
+
+                {stablemate?.createdAt && (
+                  <div className="flex items-start space-x-3">
+                    <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Oluşturulma Tarihi</p>
+                      <p className="font-medium">{formatDate(new Date(stablemate.createdAt))}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* Co-Owners */}
               {stablemate?.coOwners && stablemate.coOwners.length > 0 && (
                 <div className="border-t pt-6">
                   <div className="flex items-start space-x-3">
