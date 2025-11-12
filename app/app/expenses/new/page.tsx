@@ -258,12 +258,11 @@ export default function NewExpensePage() {
                     {cat.label}
                   </option>
                 ))}
-                <option value="CUSTOM">Özel (Kendi kategorinizi girin)</option>
               </select>
             </div>
 
-            {/* Custom Category */}
-            {category === 'CUSTOM' && (
+            {/* Custom Category Name */}
+            {category === 'OZEL' && (
               <div className="space-y-2">
                 <Label htmlFor="customCategory">Özel Kategori Adı *</Label>
                 <Input
