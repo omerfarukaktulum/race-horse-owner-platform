@@ -391,6 +391,7 @@ export default function HorsesPage() {
           setSelectedHorseForExpense(null)
         }}
         preselectedHorseId={selectedHorseForExpense || undefined}
+        preselectedHorseName={selectedHorseForExpense ? horses.find(h => h.id === selectedHorseForExpense)?.name : undefined}
         onSuccess={() => {
           fetchHorses()
         }}

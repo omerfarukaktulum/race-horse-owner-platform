@@ -21,13 +21,15 @@ interface AddExpenseModalProps {
   open: boolean
   onClose: () => void
   preselectedHorseId?: string
+  preselectedHorseName?: string
   onSuccess?: () => void
 }
 
-export function AddExpenseModal({ open, onClose, preselectedHorseId, onSuccess }: AddExpenseModalProps) {
+export function AddExpenseModal({ open, onClose, preselectedHorseId, preselectedHorseName, onSuccess }: AddExpenseModalProps) {
   const [horses, setHorses] = useState<Horse[]>([])
   const [isLoadingHorses, setIsLoadingHorses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const isSingleHorseMode = !!preselectedHorseId && !!preselectedHorseName
 
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -40,7 +42,18 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, onSuccess }
 
   useEffect(() => {
     if (open) {
-      fetchHorses()
+      if (isSingleHorseMode) {
+        // For single horse mode, just set the horse directly
+        setHorses([{
+          id: preselectedHorseId!,
+          name: preselectedHorseName!,
+          status: '',
+          selected: true,
+        }])
+        setIsLoadingHorses(false)
+      } else {
+        fetchHorses()
+      }
       // Reset form
       setDate(new Date().toISOString().split('T')[0])
       setCategory('')
@@ -50,7 +63,7 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, onSuccess }
       setPhoto(null)
       setPhotoPreview(null)
     }
-  }, [open, preselectedHorseId])
+  }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode])
 
   const fetchHorses = async () => {
     try {
@@ -172,52 +185,65 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, onSuccess }
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Horse Selection */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-medium">{TR.expenses.selectHorses}</Label>
-              {horses.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                >
-                  {horses.every((h) => h.selected)
-                    ? 'Seçimi Temizle'
-                    : TR.common.selectAll}
-                </Button>
-              )}
-            </div>
+            <Label className="text-base font-medium">
+              {isSingleHorseMode ? 'At' : TR.expenses.selectHorses}
+            </Label>
 
-            {isLoadingHorses ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>{TR.common.loading}</p>
-              </div>
-            ) : horses.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 border rounded-lg">
-                <p>Henüz atınız bulunmuyor.</p>
-                <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>
+            {isSingleHorseMode ? (
+              // Single horse mode - show as read-only
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="font-medium text-gray-900">{preselectedHorseName}</p>
+                <p className="text-sm text-gray-500 mt-1">Bu at için gider ekleniyor</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-                {horses.map((horse, index) => (
-                  <div
-                    key={horse.id}
-                    className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded"
-                  >
-                    <Checkbox
-                      checked={horse.selected}
-                      onCheckedChange={() => toggleHorse(index)}
-                    />
-                    <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => toggleHorse(index)}
+              <>
+                {horses.length > 1 && (
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAll}
                     >
-                      <p className="font-medium">{horse.name}</p>
-                      <p className="text-sm text-gray-500">{horse.status}</p>
-                    </div>
+                      {horses.every((h) => h.selected)
+                        ? 'Seçimi Temizle'
+                        : TR.common.selectAll}
+                    </Button>
                   </div>
-                ))}
-              </div>
+                )}
+
+                {isLoadingHorses ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>{TR.common.loading}</p>
+                  </div>
+                ) : horses.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 border rounded-lg">
+                    <p>Henüz atınız bulunmuyor.</p>
+                    <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+                    {horses.map((horse, index) => (
+                      <div
+                        key={horse.id}
+                        className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded"
+                      >
+                        <Checkbox
+                          checked={horse.selected}
+                          onCheckedChange={() => toggleHorse(index)}
+                        />
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => toggleHorse(index)}
+                        >
+                          <p className="font-medium">{horse.name}</p>
+                          <p className="text-sm text-gray-500">{horse.status}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
