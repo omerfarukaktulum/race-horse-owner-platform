@@ -54,9 +54,12 @@ export const TR = {
   horses: {
     title: 'Atlar',
     racing: 'Yarışta',
+    active: 'Aktif',
     stallions: 'Aygırlar',
+    foals: 'Taylar',
     mares: 'Kısraklar',
     retired: 'Emekli',
+    dead: 'Öldü',
     addHorse: 'At Ekle',
     horseName: 'At Adı',
     status: 'Durum',

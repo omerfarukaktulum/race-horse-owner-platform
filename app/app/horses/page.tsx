@@ -29,7 +29,7 @@ interface HorseData {
 export default function HorsesPage() {
   const [horses, setHorses] = useState<HorseData[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('RACING')
+  const [activeTab, setActiveTab] = useState('ACTIVE')
 
   useEffect(() => {
     fetchHorses()
@@ -58,8 +58,24 @@ export default function HorsesPage() {
     }
   }
 
-  const filterHorses = (status: string) => {
-    return horses.filter((horse) => horse.status === status)
+  const filterHorses = (tab: string) => {
+    const currentYear = new Date().getFullYear()
+    
+    if (tab === 'ACTIVE') {
+      return horses.filter((horse) => horse.status === 'RACING')
+    } else if (tab === 'FOALS') {
+      // Foals: 0, 1, 2, 3 years old
+      return horses.filter((horse) => {
+        if (!horse.yob) return false
+        const age = currentYear - horse.yob
+        return age >= 0 && age <= 3
+      })
+    } else if (tab === 'MARE') {
+      return horses.filter((horse) => horse.status === 'MARE')
+    } else if (tab === 'DEAD') {
+      return horses.filter((horse) => horse.status === 'DEAD')
+    }
+    return []
   }
 
   const HorseCard = ({ horse }: { horse: HorseData }) => {
@@ -166,46 +182,49 @@ export default function HorsesPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="RACING">
-            {TR.horses.racing} ({filterHorses('RACING').length})
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="ACTIVE">
+            {TR.horses.active} ({filterHorses('ACTIVE').length})
           </TabsTrigger>
-          <TabsTrigger value="STALLION">
-            {TR.horses.stallions} ({filterHorses('STALLION').length})
+          <TabsTrigger value="FOALS">
+            {TR.horses.foals} ({filterHorses('FOALS').length})
           </TabsTrigger>
           <TabsTrigger value="MARE">
             {TR.horses.mares} ({filterHorses('MARE').length})
           </TabsTrigger>
+          <TabsTrigger value="DEAD">
+            {TR.horses.dead} ({filterHorses('DEAD').length})
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="RACING" className="space-y-4 mt-6">
-          {filterHorses('RACING').length === 0 ? (
+        <TabsContent value="ACTIVE" className="space-y-4 mt-6">
+          {filterHorses('ACTIVE').length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-500">
                 <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Yarışta atınız bulunmuyor</p>
+                <p>Aktif atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filterHorses('RACING').map((horse) => (
+              {filterHorses('ACTIVE').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="STALLION" className="space-y-4 mt-6">
-          {filterHorses('STALLION').length === 0 ? (
+        <TabsContent value="FOALS" className="space-y-4 mt-6">
+          {filterHorses('FOALS').length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center text-gray-500">
                 <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Aygır atınız bulunmuyor</p>
+                <p>Tay atınız bulunmuyor</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filterHorses('STALLION').map((horse) => (
+              {filterHorses('FOALS').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
             </div>
@@ -223,6 +242,23 @@ export default function HorsesPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterHorses('MARE').map((horse) => (
+                <HorseCard key={horse.id} horse={horse} />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="DEAD" className="space-y-4 mt-6">
+          {filterHorses('DEAD').length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center text-gray-500">
+                <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>Ölü atınız bulunmuyor</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filterHorses('DEAD').map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
             </div>

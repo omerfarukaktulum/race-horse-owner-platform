@@ -109,9 +109,9 @@ export async function searchTJKHorsesPlaywright(
     page = await context.newPage()
 
     // Navigate DIRECTLY to DATA URL (not Page, but Data endpoint!)
-    // NOTE: Removed QueryParameter_OLDUFLG=on to exclude dead horses (Öldü)
+    // NOTE: Include QueryParameter_OLDUFLG=on to include dead horses (Öldü)
     console.log('[TJK Playwright] Navigating directly to data URL...')
-    const resultsUrl = `https://www.tjk.org/TR/YarisSever/Query/Data/Atlar?QueryParameter_AtIsmi=&QueryParameter_IrkId=-1&QueryParameter_CinsiyetId=-1&QueryParameter_Yas=&QueryParameter_BabaId=&QueryParameter_AnneId=&QueryParameter_UzerineKosanSahipId=${ownerId}&QueryParameter_YetistiricAdi=&QueryParameter_AntronorId=&QueryParameter_UlkeId=-1&Era=today&Sort=&X-Requested-With=XMLHttpRequest`
+    const resultsUrl = `https://www.tjk.org/TR/YarisSever/Query/Data/Atlar?QueryParameter_AtIsmi=&QueryParameter_IrkId=-1&QueryParameter_CinsiyetId=-1&QueryParameter_Yas=&QueryParameter_BabaId=&QueryParameter_AnneId=&QueryParameter_UzerineKosanSahipId=${ownerId}&QueryParameter_YetistiricAdi=&QueryParameter_AntronorId=&QueryParameter_UlkeId=-1&QueryParameter_OLDUFLG=on&Era=today&Sort=&OldQueryParameter_OLDUFLG=on&X-Requested-With=XMLHttpRequest`
     
     await page.goto(resultsUrl, {
       waitUntil: 'networkidle',
@@ -196,13 +196,27 @@ export async function searchTJKHorsesPlaywright(
           const dam = originParts[1] || ''
 
           if (name && name !== 'At İsmi') { // Skip header row
-            console.log('[Browser] Adding horse:', name, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam)
+            // Check if horse is dead (marked with Öldü in name)
+            const isDead = name.includes('Öldü') || name.includes('ÖLDÜ')
+            const cleanName = name.replace(/\(.*?\)/g, '').trim() // Remove any parentheses (Öldü), (T), etc.
+            
+            // Determine status
+            let status = 'RACING'
+            if (isDead) {
+              status = 'DEAD'
+            } else if (gender?.includes('Aygır') || gender?.includes('AYGIR')) {
+              status = 'STALLION'
+            } else if (gender?.includes('Kısrak') || gender?.includes('KISRAK')) {
+              status = 'MARE'
+            }
+            
+            console.log('[Browser] Adding horse:', cleanName, '| Status:', status, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam)
             results.push({
-              name: name.replace(/\(.*?\)/g, '').trim(), // Remove any parentheses (Öldü), (T), etc.
+              name: cleanName,
               yob,
               gender,
               breed,
-              status: 'RACING',
+              status,
               sire: sire || undefined,
               dam: dam || undefined,
             })
@@ -216,22 +230,13 @@ export async function searchTJKHorsesPlaywright(
 
     console.log('[TJK Playwright] Successfully extracted', horses.length, 'horses')
 
-    // Map to our format
+    // Map to our format - status is already determined in the extraction phase
     const mappedHorses: TJKHorseResult[] = horses.map((horse: any) => {
-      let status = 'RACING'
-      if (horse.status) {
-        if (horse.status.includes('Aygır') || horse.status.includes('AYGIR')) {
-          status = 'STALLION'
-        } else if (horse.status.includes('Kısrak') || horse.status.includes('KISRAK')) {
-          status = 'MARE'
-        }
-      }
-
       return {
         name: horse.name,
         yob: horse.yob,
         gender: horse.gender,
-        status,
+        status: horse.status || 'RACING', // Use status from extraction (DEAD, STALLION, MARE, or RACING)
         externalRef: undefined, // Table doesn't show IDs
         sire: horse.sire,
         dam: horse.dam,
