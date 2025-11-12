@@ -124,6 +124,11 @@ export const TR = {
     exportCSV: 'CSV Olarak İndir',
   },
   
+  // Alias for convenience
+  get stats() {
+    return this.statistics
+  },
+  
   stablemate: {
     title: 'Eküri',
     name: 'Eküri Adı',

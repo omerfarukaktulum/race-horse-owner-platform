@@ -59,12 +59,40 @@ export async function POST(request: Request) {
 
     // Check access rights
     if (decoded.role === 'OWNER') {
-      const hasAccess = horses.every((h) => h.stablemate.ownerId === decoded.ownerId)
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      
+      if (!ownerId) {
+        return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
+      }
+      
+      const hasAccess = horses.every((h) => h.stablemate.ownerId === ownerId)
       if (!hasAccess) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
-      const hasAccess = horses.every((h) => h.trainerId === decoded.trainerId)
+      // Get trainerId - check by userId if not in token
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      if (!trainerId) {
+        return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
+      }
+      
+      const hasAccess = horses.every((h) => h.trainerId === trainerId)
       if (!hasAccess) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
@@ -162,14 +190,38 @@ export async function GET(request: Request) {
 
     // Filter by role
     if (decoded.role === 'OWNER') {
-      where.horse = {
-        stablemate: {
-          ownerId: decoded.ownerId,
-        },
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      
+      if (ownerId) {
+        where.horse = {
+          stablemate: {
+            ownerId: ownerId,
+          },
+        }
       }
     } else if (decoded.role === 'TRAINER') {
-      where.horse = {
-        trainerId: decoded.trainerId,
+      // Get trainerId - check by userId if not in token
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      if (trainerId) {
+        where.horse = {
+          trainerId: trainerId,
+        }
       }
     }
 
