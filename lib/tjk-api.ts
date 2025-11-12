@@ -155,6 +155,17 @@ export async function searchTJKHorsesPlaywright(
           const nameLink = nameCell?.querySelector('a')
           const name = (nameLink?.textContent || nameCell?.textContent || '').trim()
           
+          // Extract horse ID from the link href
+          // Link format: ../Page/../../Query/ConnectedPage/AtKosuBilgileri?1=1&QueryParameter_AtId=86521
+          let horseId: string | undefined
+          if (nameLink) {
+            const href = nameLink.getAttribute('href') || ''
+            const atIdMatch = href.match(/QueryParameter_AtId=(\d+)/)
+            if (atIdMatch) {
+              horseId = atIdMatch[1]
+            }
+          }
+          
           // Column 1: Breed (Irk)
           const breed = cells[1]?.textContent?.trim() || ''
           
@@ -210,13 +221,14 @@ export async function searchTJKHorsesPlaywright(
               status = 'MARE'
             }
             
-            console.log('[Browser] Adding horse:', cleanName, '| Status:', status, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam)
+            console.log('[Browser] Adding horse:', cleanName, '| Status:', status, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam, '| Horse ID:', horseId)
             results.push({
               name: cleanName,
               yob,
               gender,
               breed,
               status,
+              externalRef: horseId,
               sire: sire || undefined,
               dam: dam || undefined,
             })

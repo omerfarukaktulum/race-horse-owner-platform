@@ -15,6 +15,7 @@ interface HorseData {
   name: string
   yob?: number
   status: string
+  gender?: string
   racecourse?: { name: string }
   farm?: { name: string }
   trainer?: { fullName: string }
@@ -72,16 +73,36 @@ export default function HorsesPage() {
         return age >= 0 && age <= 3
       })
     } else if (tab === 'MARE') {
-      filtered = horses.filter((horse) => horse.status === 'MARE')
+      filtered = horses.filter((horse) => {
+        // Include horses with MARE status
+        if (horse.status === 'MARE') return true
+        
+        // Also include girl horses (Dişi) over 7 years old
+        if (horse.yob && horse.gender) {
+          const age = currentYear - horse.yob
+          const isGirl = horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || 
+                        horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')
+          if (age > 7 && isGirl) return true
+        }
+        
+        return false
+      })
     } else if (tab === 'DEAD') {
       filtered = horses.filter((horse) => horse.status === 'DEAD')
     }
     
-    // Sort by age ascending (youngest first)
+    // Sort by age ascending (youngest first), then alphabetically by name
     return filtered.sort((a, b) => {
       const ageA = a.yob ? currentYear - a.yob : 999
       const ageB = b.yob ? currentYear - b.yob : 999
-      return ageA - ageB
+      
+      // First sort by age
+      if (ageA !== ageB) {
+        return ageA - ageB
+      }
+      
+      // If ages are the same, sort alphabetically by name
+      return a.name.localeCompare(b.name, 'tr')
     })
   }
 

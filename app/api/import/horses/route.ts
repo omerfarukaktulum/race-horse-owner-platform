@@ -60,6 +60,7 @@ export async function POST(request: Request) {
             name: horse.name,
             yob: horse.yob,
             status: horse.status || 'RACING',
+            gender: horse.gender,
             racecourseId: horse.racecourseId,
             farmId: horse.farmId,
             trainerId: horse.trainerId,

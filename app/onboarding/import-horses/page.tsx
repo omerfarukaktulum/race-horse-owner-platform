@@ -146,6 +146,7 @@ export default function ImportHorsesPage() {
             name: h.name,
             yob: h.yob,
             status: h.status || 'RACING',
+            gender: h.gender,
             externalRef: h.externalRef,
           })),
         }),

@@ -144,6 +144,7 @@ model Horse {
   name         String
   yob          Int?
   status       HorseStatus @default(RACING)
+  gender       String?    // Cinsiyet: Erkek, Dişi, etc.
   
   racecourseId String?
   racecourse   Racecourse? @relation(fields: [racecourseId], references: [id])
