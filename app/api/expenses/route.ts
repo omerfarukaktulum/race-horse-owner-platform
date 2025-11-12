@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const date = formData.get('date') as string
     const category = formData.get('category') as string
     const amount = formData.get('amount') as string
-    const notes = formData.get('notes') as string
+    const note = formData.get('notes') as string  // Form sends 'notes' but DB expects 'note'
     const horseIdsJson = formData.get('horseIds') as string
     const photo = formData.get('photo') as File | null
 
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
             date: new Date(date),
             category,
             amount: parseFloat(amount),
-            notes: notes || null,
+            note: note || null,  // DB field is 'note' not 'notes'
             photoUrl,
             addedById: decoded.id,
           },
