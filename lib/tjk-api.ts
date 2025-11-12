@@ -264,16 +264,19 @@ export async function searchTJKHorsesPlaywright(
 
     // Map to our format - status is already determined in the extraction phase
     const mappedHorses: TJKHorseResult[] = horses.map((horse: any) => {
+      console.log('[TJK Playwright] Mapping horse:', horse.name, '| externalRef:', horse.externalRef)
       return {
         name: horse.name,
         yob: horse.yob,
         gender: horse.gender,
         status: horse.status || 'RACING', // Use status from extraction (DEAD, STALLION, MARE, or RACING)
-        externalRef: undefined, // Table doesn't show IDs
+        externalRef: horse.externalRef || undefined, // Preserve extracted horse ID
         sire: horse.sire,
         dam: horse.dam,
       }
     })
+    
+    console.log('[TJK Playwright] Mapped horses with externalRef:', mappedHorses.filter(h => h.externalRef).length, 'out of', mappedHorses.length)
 
     await browser.close()
     return mappedHorses

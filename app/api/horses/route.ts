@@ -100,6 +100,11 @@ export async function GET(request: Request) {
     })
 
     console.log('[Horses API] Found', horses.length, 'horses')
+    const horsesWithExternalRef = horses.filter(h => h.externalRef)
+    console.log('[Horses API] Horses with externalRef:', horsesWithExternalRef.length, 'out of', horses.length)
+    if (horsesWithExternalRef.length > 0) {
+      console.log('[Horses API] Sample horses with externalRef:', horsesWithExternalRef.slice(0, 3).map(h => ({ name: h.name, externalRef: h.externalRef })))
+    }
 
     return NextResponse.json({ horses })
   } catch (error) {
