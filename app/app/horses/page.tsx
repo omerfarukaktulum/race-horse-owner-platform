@@ -110,6 +110,38 @@ export default function HorsesPage() {
     const lastExpense = horse.expenses[0]
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
 
+    // Get gender label
+    const getGenderLabel = () => {
+      if (!horse.gender) return null
+      if (horse.gender.includes('Erkek') || horse.gender.includes('ERKEK') || horse.gender.includes('Aygır') || horse.gender.includes('AYGIR')) {
+        return { text: 'Erkek', color: 'bg-blue-100 text-blue-700 border-blue-200' }
+      }
+      if (horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')) {
+        return { text: 'Dişi', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+      }
+      return null
+    }
+
+    const genderLabel = getGenderLabel()
+
+    // Get status label
+    const getStatusLabel = () => {
+      switch (horse.status) {
+        case 'RACING':
+          return { text: 'Yarışta', color: 'bg-green-100 text-green-700 border-green-200' }
+        case 'STALLION':
+          return { text: 'Aygır', color: 'bg-purple-100 text-purple-700 border-purple-200' }
+        case 'MARE':
+          return { text: 'Kısrak', color: 'bg-pink-100 text-pink-700 border-pink-200' }
+        case 'DEAD':
+          return { text: 'Öldü', color: 'bg-gray-100 text-gray-700 border-gray-200' }
+        default:
+          return { text: horse.status, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+      }
+    }
+
+    const statusLabel = getStatusLabel()
+
     return (
       <Card className="hover:shadow-lg transition-shadow">
         <CardHeader>
@@ -124,9 +156,17 @@ export default function HorsesPage() {
                   {horse.name}
                 </Link>
               </CardTitle>
-              <CardDescription>
-                {age && `${age} yaşında`}
-                {horse.yob && ` (${horse.yob})`}
+              <CardDescription className="flex items-center gap-2 flex-wrap mt-1">
+                {age !== null && (
+                  <span>
+                    {age} yaşında{horse.yob && ` (${horse.yob})`}
+                  </span>
+                )}
+                {genderLabel && (
+                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${genderLabel.color}`}>
+                    {genderLabel.text}
+                  </span>
+                )}
               </CardDescription>
             </div>
             <Link href={`/app/expenses/new?horseId=${horse.id}`}>
@@ -138,45 +178,65 @@ export default function HorsesPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
+          {/* Status Badge */}
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${statusLabel.color}`}>
+              {statusLabel.text}
+            </span>
+          </div>
+
+          {/* Metadata with colored labels */}
           <div className="grid grid-cols-2 gap-3 text-sm">
             {horse.status === 'RACING' && (
               <>
                 {horse.racecourse && (
-                  <div>
-                    <p className="text-gray-500">Hipodrom</p>
-                    <p className="font-medium">{horse.racecourse.name}</p>
+                  <div className="flex items-start space-x-2">
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200 whitespace-nowrap">
+                      Hipodrom
+                    </span>
+                    <p className="font-medium text-gray-900">{horse.racecourse.name}</p>
                   </div>
                 )}
                 {horse.trainer && (
-                  <div>
-                    <p className="text-gray-500">Antrenör</p>
-                    <p className="font-medium">{horse.trainer.fullName}</p>
+                  <div className="flex items-start space-x-2">
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 whitespace-nowrap">
+                      Antrenör
+                    </span>
+                    <p className="font-medium text-gray-900">{horse.trainer.fullName}</p>
                   </div>
                 )}
                 {horse.groomName && (
-                  <div>
-                    <p className="text-gray-500">Seyis</p>
-                    <p className="font-medium">{horse.groomName}</p>
+                  <div className="flex items-start space-x-2">
+                    <span className="px-2 py-1 rounded text-xs font-medium bg-cyan-100 text-cyan-700 border border-cyan-200 whitespace-nowrap">
+                      Seyis
+                    </span>
+                    <p className="font-medium text-gray-900">{horse.groomName}</p>
                   </div>
                 )}
               </>
             )}
             {(horse.status === 'STALLION' || horse.status === 'MARE') && horse.farm && (
-              <div>
-                <p className="text-gray-500">Çiftlik</p>
-                <p className="font-medium">{horse.farm.name}</p>
+              <div className="flex items-start space-x-2">
+                <span className="px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                  Çiftlik
+                </span>
+                <p className="font-medium text-gray-900">{horse.farm.name}</p>
               </div>
             )}
           </div>
           {lastExpense && (
             <div className="border-t pt-3">
-              <p className="text-sm text-gray-500">Son Gider</p>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-sm font-medium">
-                  {formatCurrency(Number(lastExpense.amount), lastExpense.currency)}
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                  Son Gider
                 </span>
                 <span className="text-xs text-gray-500">
                   {getRelativeTime(new Date(lastExpense.date))}
+                </span>
+              </div>
+              <div className="mt-2">
+                <span className="text-sm font-medium text-gray-900">
+                  {formatCurrency(Number(lastExpense.amount), lastExpense.currency)}
                 </span>
               </div>
             </div>
