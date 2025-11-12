@@ -140,7 +140,7 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
 
     try {
       const formData = new FormData()
-      formData.append('horses', JSON.stringify(selectedHorses.map((h) => h.id)))
+      formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
       formData.append('date', date)
       formData.append('category', category)
       if (category === 'OZEL' && customCategory) {
