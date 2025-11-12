@@ -66,9 +66,10 @@ export default function HorsesPage() {
     if (tab === 'ACTIVE') {
       filtered = horses.filter((horse) => horse.status === 'RACING')
     } else if (tab === 'FOALS') {
-      // Foals: 0, 1, 2, 3 years old
+      // Foals: 0, 1, 2, 3 years old (exclude dead horses)
       filtered = horses.filter((horse) => {
         if (!horse.yob) return false
+        if (horse.status === 'DEAD') return false // Don't show dead foals in Taylar tab
         const age = currentYear - horse.yob
         return age >= 0 && age <= 3
       })
