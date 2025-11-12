@@ -8,13 +8,37 @@ import { usePathname } from 'next/navigation'
 import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 function AppNavbar() {
   const { user, signOut, isOwner } = useAuth()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [stablemateName, setStablemateName] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchStablemate = async () => {
+      if (!isOwner) return
+      
+      try {
+        const response = await fetch('/api/onboarding/stablemate', {
+          credentials: 'include',
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.stablemate?.name) {
+            setStablemateName(data.stablemate.name)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching stablemate:', error)
+      }
+    }
+
+    fetchStablemate()
+  }, [isOwner])
 
   const navItems = [
     { href: '/app/home', label: TR.nav.home, icon: Activity },
@@ -36,7 +60,9 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             <Activity className="h-6 w-6 text-blue-600" />
-            <span className="font-bold text-lg">TJK Stablemate</span>
+            <span className="font-bold text-lg">
+              {stablemateName ? `${stablemateName} EKURISI` : 'TJK Stablemate'}
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

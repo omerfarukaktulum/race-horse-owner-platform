@@ -12,16 +12,6 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Hoş Geldiniz, {user?.email}
-        </h1>
-        <p className="text-gray-600 mt-2">
-          {isOwner && 'Atlarınızı ve giderlerinizi yönetin'}
-          {isTrainer && 'Sorumlu olduğunuz atları görüntüleyin'}
-        </p>
-      </div>
-
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Link href="/app/horses">
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
