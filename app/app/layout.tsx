@@ -61,7 +61,7 @@ function AppNavbar() {
           <Link href="/app/home" className="flex items-center space-x-2">
             <Activity className="h-6 w-6 text-blue-600" />
             <span className="font-bold text-lg">
-              {stablemateName ? `${stablemateName} EKURISI` : 'TJK Stablemate'}
+              {stablemateName ? `${stablemateName} EKÜRİSİ` : 'TJK Stablemate'}
             </span>
           </Link>
 
