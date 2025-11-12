@@ -168,50 +168,21 @@ export async function searchTJKHorsesPlaywright(
           const currentYear = new Date().getFullYear()
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
 
-          // Column 4: Sire (Baba)
-          const sireRaw = cells[4]?.textContent?.trim() || ''
+          // Column 4: Orijin(Baba-Anne) - contains "SIRE - DAM" in a single cell
+          const originText = cells[4]?.textContent?.trim() || ''
           
-          // Column 5: Dam (Anne) - might contain owner name after " - "
-          const damRaw = cells[5]?.textContent?.trim() || ''
-          
-          // Column 6: Owner (Sahip) - We DON'T want this in the origin
-          // Column 7: Trainer (Antrenör)
+          // Column 5: Üzerine Koşan Sahip (Owner) - NOT part of origin!
+          // Column 6: Gerçek Sahibi (Real owner)
+          // Column 7: Yetiştirici (Breeder)
+          // Column 8: Antrenörü (Trainer)
 
-          // Debug: log raw values
-          if (index === 0) {
-            console.log('[Browser] DEBUG - sireRaw:', sireRaw)
-            console.log('[Browser] DEBUG - damRaw:', damRaw)
-          }
-
-          // Parse sire and dam, removing owner name if present
-          // The format from TJK might be "SIRE - DAM - OWNER" all in one field,
-          // or separate fields. We need to handle both cases.
-          let sire = ''
-          let dam = ''
-          
-          // Check if sireRaw contains multiple parts (format: "SIRE - DAM - OWNER")
-          const sireParts = sireRaw.split(' - ')
-          if (sireRaw && sireRaw.includes(' - ')) {
-            // If sire contains dashes, it might be the full origin string
-            // Take only the first part
-            sire = sireParts[0].trim()
-            
-            // If dam is empty, this means the full origin was in the sire field
-            if (!damRaw && sireRaw.split(' - ').length >= 2) {
-              dam = sireRaw.split(' - ')[1].trim()
-            }
-          } else {
-            sire = sireRaw
-          }
-          
-          // Parse dam field
-          if (damRaw) {
-            const damParts = damRaw.split(' - ')
-            dam = damParts[0].trim()
-          }
+          // Parse origin: split by " - " to get sire and dam
+          const originParts = originText.split(' - ')
+          const sire = originParts[0]?.trim() || ''
+          const dam = originParts[1]?.trim() || ''
 
           if (name && name !== 'At İsmi') { // Skip header row
-            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam, '| (raw sire:', sireRaw, ', raw dam:', damRaw, ')')
+            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam)
             results.push({
               name: name.replace(/\(.*?\)/g, '').trim(), // Remove any parentheses (Öldü), (T), etc.
               yob,
