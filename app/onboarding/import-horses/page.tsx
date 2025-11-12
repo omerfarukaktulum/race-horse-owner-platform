@@ -154,10 +154,10 @@ export default function ImportHorsesPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'İçe aktarma başarısız')
+        throw new Error(data.error || 'Atlar eklenemedi')
       }
 
-      toast.success(`${selectedHorses.length} at başarıyla içe aktarıldı`)
+      toast.success(`${selectedHorses.length} at başarıyla eklendi`)
       router.push('/app/home')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
@@ -262,7 +262,7 @@ export default function ImportHorsesPage() {
             >
               {isImporting
                 ? TR.common.loading
-                : `İçe Aktar (${horses.filter((h) => h.selected).length})`}
+                : `Atları Ekle (${horses.filter((h) => h.selected).length})`}
             </Button>
           </div>
         </CardContent>

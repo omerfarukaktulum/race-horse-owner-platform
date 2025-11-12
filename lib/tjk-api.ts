@@ -169,7 +169,21 @@ export async function searchTJKHorsesPlaywright(
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
 
           // Column 4: Orijin(Baba-Anne) - contains "SIRE - DAM" in a single cell
-          const originText = cells[4]?.textContent?.trim() || ''
+          // The cell may contain links, so we need to extract text from all links
+          const originCell = cells[4]
+          let originText = ''
+          
+          if (originCell) {
+            // Get all links in the origin cell
+            const links = originCell.querySelectorAll('a')
+            if (links.length >= 2) {
+              // First link is sire, second link is dam
+              originText = `${links[0]?.textContent?.trim() || ''} - ${links[1]?.textContent?.trim() || ''}`
+            } else {
+              // Fallback to textContent if no links
+              originText = originCell.textContent?.trim() || ''
+            }
+          }
           
           // Column 5: Üzerine Koşan Sahip (Owner) - NOT part of origin!
           // Column 6: Gerçek Sahibi (Real owner)
@@ -177,12 +191,12 @@ export async function searchTJKHorsesPlaywright(
           // Column 8: Antrenörü (Trainer)
 
           // Parse origin: split by " - " to get sire and dam
-          const originParts = originText.split(' - ')
-          const sire = originParts[0]?.trim() || ''
-          const dam = originParts[1]?.trim() || ''
+          const originParts = originText.split(' - ').map(part => part.trim())
+          const sire = originParts[0] || ''
+          const dam = originParts[1] || ''
 
           if (name && name !== 'At İsmi') { // Skip header row
-            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam)
+            console.log('[Browser] Adding horse:', name, '| Origin text:', originText, '| Sire:', sire, '| Dam:', dam)
             results.push({
               name: name.replace(/\(.*?\)/g, '').trim(), // Remove any parentheses (Öldü), (T), etc.
               yob,
