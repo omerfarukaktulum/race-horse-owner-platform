@@ -129,7 +129,7 @@ export default function HorsesPage() {
     const getStatusLabel = () => {
       switch (horse.status) {
         case 'RACING':
-          return { text: 'Yarışta', color: 'bg-green-100 text-green-700 border-green-200' }
+          return { text: 'Aktif', color: 'bg-green-100 text-green-700 border-green-200' }
         case 'STALLION':
           return { text: 'Aygır', color: 'bg-purple-100 text-purple-700 border-purple-200' }
         case 'MARE':
@@ -159,8 +159,15 @@ export default function HorsesPage() {
               </CardTitle>
               <CardDescription className="flex items-center gap-2 flex-wrap mt-1">
                 {age !== null && (
-                  <span>
-                    {age} yaşında{horse.yob && ` (${horse.yob})`}
+                  <span className="flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                      {age} yaşında
+                    </span>
+                    {horse.yob && (
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        Doğum: {horse.yob}
+                      </span>
+                    )}
                   </span>
                 )}
                 {genderLabel && (

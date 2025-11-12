@@ -56,7 +56,7 @@ export default function HomePage() {
               <Sparkles className="h-10 w-10 text-blue-600 mb-2" />
               <CardTitle>At Yönetimi</CardTitle>
               <CardDescription>
-                Yarışta, aygır ve kısraklarınızı tek platformda yönetin
+                Aktif, aygır ve kısraklarınızı tek platformda yönetin
               </CardDescription>
             </CardHeader>
           </Card>

@@ -53,7 +53,7 @@ export const TR = {
   
   horses: {
     title: 'Atlar',
-    racing: 'Yarışta',
+    racing: 'Aktif',
     active: 'Aktif',
     stallions: 'Aygırlar',
     foals: 'Taylar',
