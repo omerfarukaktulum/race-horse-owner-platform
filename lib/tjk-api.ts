@@ -109,8 +109,9 @@ export async function searchTJKHorsesPlaywright(
     page = await context.newPage()
 
     // Navigate DIRECTLY to DATA URL (not Page, but Data endpoint!)
+    // NOTE: Removed QueryParameter_OLDUFLG=on to exclude dead horses (Öldü)
     console.log('[TJK Playwright] Navigating directly to data URL...')
-    const resultsUrl = `https://www.tjk.org/TR/YarisSever/Query/Data/Atlar?QueryParameter_AtIsmi=&QueryParameter_IrkId=-1&QueryParameter_CinsiyetId=-1&QueryParameter_Yas=&QueryParameter_BabaId=&QueryParameter_AnneId=&QueryParameter_UzerineKosanSahipId=${ownerId}&QueryParameter_YetistiricAdi=&QueryParameter_AntronorId=&QueryParameter_UlkeId=-1&QueryParameter_OLDUFLG=on&Era=today&Sort=&OldQueryParameter_OLDUFLG=on&X-Requested-With=XMLHttpRequest`
+    const resultsUrl = `https://www.tjk.org/TR/YarisSever/Query/Data/Atlar?QueryParameter_AtIsmi=&QueryParameter_IrkId=-1&QueryParameter_CinsiyetId=-1&QueryParameter_Yas=&QueryParameter_BabaId=&QueryParameter_AnneId=&QueryParameter_UzerineKosanSahipId=${ownerId}&QueryParameter_YetistiricAdi=&QueryParameter_AntronorId=&QueryParameter_UlkeId=-1&Era=today&Sort=&X-Requested-With=XMLHttpRequest`
     
     await page.goto(resultsUrl, {
       waitUntil: 'networkidle',
@@ -168,16 +169,49 @@ export async function searchTJKHorsesPlaywright(
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
 
           // Column 4: Sire (Baba)
-          const sire = cells[4]?.textContent?.trim() || ''
+          const sireRaw = cells[4]?.textContent?.trim() || ''
           
-          // Column 5: Dam (Anne)
-          const dam = cells[5]?.textContent?.trim() || ''
+          // Column 5: Dam (Anne) - might contain owner name after " - "
+          const damRaw = cells[5]?.textContent?.trim() || ''
           
           // Column 6: Owner (Sahip) - We DON'T want this in the origin
           // Column 7: Trainer (Antrenör)
 
+          // Debug: log raw values
+          if (index === 0) {
+            console.log('[Browser] DEBUG - sireRaw:', sireRaw)
+            console.log('[Browser] DEBUG - damRaw:', damRaw)
+          }
+
+          // Parse sire and dam, removing owner name if present
+          // The format from TJK might be "SIRE - DAM - OWNER" all in one field,
+          // or separate fields. We need to handle both cases.
+          let sire = ''
+          let dam = ''
+          
+          // Check if sireRaw contains multiple parts (format: "SIRE - DAM - OWNER")
+          const sireParts = sireRaw.split(' - ')
+          if (sireRaw && sireRaw.includes(' - ')) {
+            // If sire contains dashes, it might be the full origin string
+            // Take only the first part
+            sire = sireParts[0].trim()
+            
+            // If dam is empty, this means the full origin was in the sire field
+            if (!damRaw && sireRaw.split(' - ').length >= 2) {
+              dam = sireRaw.split(' - ')[1].trim()
+            }
+          } else {
+            sire = sireRaw
+          }
+          
+          // Parse dam field
+          if (damRaw) {
+            const damParts = damRaw.split(' - ')
+            dam = damParts[0].trim()
+          }
+
           if (name && name !== 'At İsmi') { // Skip header row
-            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam)
+            console.log('[Browser] Adding horse:', name, '| Sire:', sire, '| Dam:', dam, '| (raw sire:', sireRaw, ', raw dam:', damRaw, ')')
             results.push({
               name: name.replace(/\(.*?\)/g, '').trim(), // Remove any parentheses (Öldü), (T), etc.
               yob,

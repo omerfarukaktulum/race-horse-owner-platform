@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
@@ -6,18 +6,24 @@ import { Toaster } from 'sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'TJK Stablemate - Yarış Atı Yönetim Platformu',
   description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
   keywords: 'tjk, yarış atı, at yönetimi, eküri, hipodrom, antrenör',
   authors: [{ name: 'TJK Stablemate' }],
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  themeColor: '#2563eb',
   openGraph: {
     title: 'TJK Stablemate',
     description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
     type: 'website',
     locale: 'tr_TR',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#2563eb',
 }
 
 export default function RootLayout({
