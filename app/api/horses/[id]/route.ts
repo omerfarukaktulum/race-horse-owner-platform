@@ -58,10 +58,35 @@ export async function GET(
     }
 
     // Check access
-    const hasAccess =
-      decoded.role === 'ADMIN' ||
-      (decoded.role === 'OWNER' && horse.stablemate.ownerId === decoded.ownerId) ||
-      (decoded.role === 'TRAINER' && horse.trainerId === decoded.trainerId)
+    let hasAccess = false
+
+    if (decoded.role === 'ADMIN') {
+      hasAccess = true
+    } else if (decoded.role === 'OWNER') {
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      
+      hasAccess = ownerId ? horse.stablemate.ownerId === ownerId : false
+    } else if (decoded.role === 'TRAINER') {
+      // Get trainerId - check by userId if not in token
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      hasAccess = trainerId ? horse.trainerId === trainerId : false
+    }
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -112,11 +137,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Horse not found' }, { status: 404 })
     }
 
-    if (
-      decoded.role === 'OWNER' &&
-      existingHorse.stablemate.ownerId !== decoded.ownerId
-    ) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (decoded.role === 'OWNER') {
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      
+      if (!ownerId || existingHorse.stablemate.ownerId !== ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     const body = await request.json()
@@ -189,11 +223,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Horse not found' }, { status: 404 })
     }
 
-    if (
-      decoded.role === 'OWNER' &&
-      horse.stablemate.ownerId !== decoded.ownerId
-    ) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (decoded.role === 'OWNER') {
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      
+      if (!ownerId || horse.stablemate.ownerId !== ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
     }
 
     // Soft delete by marking as RETIRED
