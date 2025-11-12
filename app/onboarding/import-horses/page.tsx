@@ -237,8 +237,8 @@ export default function ImportHorsesPage() {
                         {horse.yob && (
                           <p>Doğum Yılı: {horse.yob}</p>
                         )}
-                        {(horse.sire || horse.dam) && (
-                          <p>Baba: {horse.sire || '-'} / Anne: {horse.dam || '-'}</p>
+                        {(horse.sire && horse.dam) && (
+                          <p>Orijin: {horse.sire} - {horse.dam}</p>
                         )}
                       </div>
                     </div>

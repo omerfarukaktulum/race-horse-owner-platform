@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -20,6 +20,9 @@ interface Horse {
 
 export default function NewExpensePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const preselectedHorseId = searchParams.get('horseId')
+  
   const [horses, setHorses] = useState<Horse[]>([])
   const [isLoadingHorses, setIsLoadingHorses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -49,7 +52,7 @@ export default function NewExpensePage() {
       setHorses(
         (data.horses || []).map((horse: any) => ({
           ...horse,
-          selected: false,
+          selected: horse.id === preselectedHorseId, // Pre-select if matches query param
         }))
       )
     } catch (error) {
@@ -205,14 +208,16 @@ export default function NewExpensePage() {
                   {horses.map((horse, index) => (
                     <div
                       key={horse.id}
-                      className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded cursor-pointer"
-                      onClick={() => toggleHorse(index)}
+                      className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded"
                     >
                       <Checkbox
                         checked={horse.selected}
                         onCheckedChange={() => toggleHorse(index)}
                       />
-                      <div className="flex-1">
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => toggleHorse(index)}
+                      >
                         <p className="font-medium">{horse.name}</p>
                         <p className="text-sm text-gray-500">{horse.status}</p>
                       </div>
