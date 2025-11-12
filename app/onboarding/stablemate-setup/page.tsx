@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
@@ -17,6 +17,31 @@ export default function StablemateSetupPage() {
   const [location, setLocation] = useState('')
   const [website, setWebsite] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
+
+  // Fetch user's official name and pre-fill the stablemate name
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include',
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.user?.ownerProfile?.officialName) {
+            setName(data.user.ownerProfile.officialName)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      } finally {
+        setIsLoadingUser(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,6 +77,17 @@ export default function StablemateSetupPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoadingUser) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">{TR.common.loading}</p>
+        </div>
+      </div>
+    )
   }
 
   return (

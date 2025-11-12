@@ -10,6 +10,7 @@ export async function GET(request: Request) {
     const token = cookieStore.get('auth-token')
 
     if (!token) {
+      console.log('[Horses API] No auth token found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,6 +20,8 @@ export async function GET(request: Request) {
       ownerId?: string
       trainerId?: string
     }
+
+    console.log('[Horses API] Decoded token:', { role: decoded.role, ownerId: decoded.ownerId })
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
@@ -33,11 +36,19 @@ export async function GET(request: Request) {
         include: { stablemate: true },
       })
 
+      console.log('[Horses API] Owner profile:', {
+        hasOwnerProfile: !!ownerProfile,
+        hasStablemate: !!ownerProfile?.stablemate,
+        stablemateId: ownerProfile?.stablemate?.id,
+      })
+
       if (!ownerProfile?.stablemate) {
+        console.log('[Horses API] No stablemate found for owner')
         return NextResponse.json({ horses: [] })
       }
 
       where.stablemateId = ownerProfile.stablemate.id
+      console.log('[Horses API] Querying horses with where:', where)
     } else if (decoded.role === 'TRAINER' && decoded.trainerId) {
       // Trainer sees assigned horses
       where.trainerId = decoded.trainerId
@@ -67,6 +78,8 @@ export async function GET(request: Request) {
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    console.log('[Horses API] Found', horses.length, 'horses')
 
     return NextResponse.json({ horses })
   } catch (error) {

@@ -15,6 +15,8 @@ interface Horse {
   gender?: string
   status?: string
   externalRef?: string
+  sire?: string
+  dam?: string
   selected: boolean
 }
 
@@ -205,7 +207,7 @@ export default function ImportHorsesPage() {
             <>
               <div className="flex items-center justify-between">
                 <Label className="text-base font-medium">
-                  {TR.onboarding.selectHorsesToImport}
+                  {TR.onboarding.selectHorsesToImport} ({horses.length} at bulundu)
                 </Label>
                 <Button
                   variant="outline"
@@ -231,10 +233,14 @@ export default function ImportHorsesPage() {
                     />
                     <div className="flex-1">
                       <p className="font-medium">{horse.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {horse.yob && `Doğum Yılı: ${horse.yob}`}
-                        {horse.status && ` • Durum: ${horse.status}`}
-                      </p>
+                      <div className="text-sm text-gray-500 space-y-1">
+                        {horse.yob && (
+                          <p>Doğum Yılı: {horse.yob}</p>
+                        )}
+                        {(horse.sire || horse.dam) && (
+                          <p>Orijin: {horse.sire || '-'} - {horse.dam || '-'}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

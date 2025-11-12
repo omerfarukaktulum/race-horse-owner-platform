@@ -47,7 +47,8 @@ export async function GET() {
       } : null,
       trainerProfile: user.trainerProfile ? {
         id: user.trainerProfile.id,
-        licenseNumber: user.trainerProfile.licenseNumber,
+        fullName: user.trainerProfile.fullName,
+        phone: user.trainerProfile.phone,
       } : null,
     }
 

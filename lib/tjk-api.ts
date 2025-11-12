@@ -18,6 +18,8 @@ interface TJKHorseResult {
   gender?: string
   status?: string
   externalRef?: string
+  sire?: string  // Baba (Sire)
+  dam?: string   // Anne (Dam)
 }
 
 /**
@@ -159,6 +161,12 @@ export async function searchTJKHorsesPlaywright(
           const currentYear = new Date().getFullYear()
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
 
+          // Column 4: Sire (Baba)
+          const sire = cells[4]?.textContent?.trim() || ''
+          
+          // Column 5: Dam (Anne)
+          const dam = cells[5]?.textContent?.trim() || ''
+
           if (name && name !== 'At İsmi') { // Skip header row
             console.log('[Browser] Adding horse:', name)
             results.push({
@@ -167,6 +175,8 @@ export async function searchTJKHorsesPlaywright(
               gender,
               breed,
               status: 'RACING',
+              sire: sire || undefined,
+              dam: dam || undefined,
             })
           }
         }
@@ -195,6 +205,8 @@ export async function searchTJKHorsesPlaywright(
         gender: horse.gender,
         status,
         externalRef: undefined, // Table doesn't show IDs
+        sire: horse.sire,
+        dam: horse.dam,
       }
     })
 
@@ -255,6 +267,8 @@ export function getMockHorses(ownerName: string): TJKHorseResult[] {
       gender: 'Kısrak',
       status: 'RACING',
       externalRef: 'horse-001',
+      sire: 'ŞAMPİYON',
+      dam: 'GÜNEŞ',
     },
     {
       name: 'ŞİMŞEK',
@@ -262,6 +276,8 @@ export function getMockHorses(ownerName: string): TJKHorseResult[] {
       gender: 'Aygır',
       status: 'RACING',
       externalRef: 'horse-002',
+      sire: 'RÜZGAR',
+      dam: 'YILDIZ',
     },
     {
       name: 'RÜZGAR',
@@ -269,6 +285,8 @@ export function getMockHorses(ownerName: string): TJKHorseResult[] {
       gender: 'Aygır',
       status: 'RACING',
       externalRef: 'horse-003',
+      sire: 'KAPLAN',
+      dam: 'ASLAN',
     },
   ]
 }

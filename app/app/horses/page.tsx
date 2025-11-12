@@ -37,13 +37,18 @@ export default function HorsesPage() {
 
   const fetchHorses = async () => {
     try {
+      console.log('[Horses Page] Fetching horses...')
       const response = await fetch('/api/horses')
       const data = await response.json()
+
+      console.log('[Horses Page] Response status:', response.status)
+      console.log('[Horses Page] Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Atlar yüklenemedi')
       }
 
+      console.log('[Horses Page] Setting', data.horses?.length || 0, 'horses')
       setHorses(data.horses || [])
     } catch (error) {
       console.error('Fetch horses error:', error)
