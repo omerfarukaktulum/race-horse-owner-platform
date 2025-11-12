@@ -6,6 +6,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.vercel-storage.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'medya-cdn.tjk.org',
+      },
     ],
   },
   experimental: {

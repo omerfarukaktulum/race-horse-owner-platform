@@ -16,28 +16,42 @@ function AppNavbar() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [stablemateName, setStablemateName] = useState<string | null>(null)
+  const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchStablemate = async () => {
+    const fetchUserData = async () => {
       if (!isOwner) return
       
       try {
-        const response = await fetch('/api/onboarding/stablemate', {
+        // Fetch user data to get officialRef
+        const userResponse = await fetch('/api/auth/me', {
           credentials: 'include',
         })
         
-        if (response.ok) {
-          const data = await response.json()
-          if (data.stablemate?.name) {
-            setStablemateName(data.stablemate.name)
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          if (userData.user?.ownerProfile?.officialRef) {
+            setOwnerOfficialRef(userData.user.ownerProfile.officialRef)
+          }
+        }
+
+        // Fetch stablemate name
+        const stablemateResponse = await fetch('/api/onboarding/stablemate', {
+          credentials: 'include',
+        })
+        
+        if (stablemateResponse.ok) {
+          const stablemateData = await stablemateResponse.json()
+          if (stablemateData.stablemate?.name) {
+            setStablemateName(stablemateData.stablemate.name)
           }
         }
       } catch (error) {
-        console.error('Error fetching stablemate:', error)
+        console.error('Error fetching user/stablemate data:', error)
       }
     }
 
-    fetchStablemate()
+    fetchUserData()
   }, [isOwner])
 
   const navItems = [
@@ -59,7 +73,22 @@ function AppNavbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
-            <Activity className="h-6 w-6 text-blue-600" />
+            {ownerOfficialRef ? (
+              <img
+                src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
+                alt="Eküri Forması"
+                className="h-8 w-8 object-contain flex-shrink-0"
+                onError={(e) => {
+                  // Hide image on error, show icon instead
+                  e.currentTarget.style.display = 'none'
+                  const icon = e.currentTarget.nextElementSibling as HTMLElement
+                  if (icon) icon.style.display = 'block'
+                }}
+              />
+            ) : null}
+            <Activity 
+              className={`h-6 w-6 text-blue-600 flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
+            />
             <span className="font-bold text-lg">
               {stablemateName ? `${stablemateName} EKÜRİSİ` : 'TJK Stablemate'}
             </span>
