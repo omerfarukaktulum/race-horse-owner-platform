@@ -50,6 +50,13 @@ export async function GET(
           orderBy: { date: 'desc' },
           take: 10,
         },
+        locationHistory: {
+          include: {
+            racecourse: true,
+            farm: true,
+          },
+          orderBy: { startDate: 'desc' },
+        },
       },
     })
 

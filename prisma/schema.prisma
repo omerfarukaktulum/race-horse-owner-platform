@@ -119,6 +119,7 @@ model Racecourse {
   updatedAt DateTime @updatedAt
   
   horses Horse[]
+  locationHistory HorseLocationHistory[]
 
   @@map("racecourses")
 }
@@ -132,6 +133,7 @@ model Farm {
   updatedAt DateTime @updatedAt
   
   horses Horse[]
+  locationHistory HorseLocationHistory[]
 
   @@map("farms")
 }
@@ -164,6 +166,7 @@ model Horse {
   updatedAt DateTime @updatedAt
   
   expenses Expense[]
+  locationHistory HorseLocationHistory[]
 
   @@index([stablemateId])
   @@index([trainerId])
@@ -171,6 +174,29 @@ model Horse {
   @@index([farmId])
   @@index([status])
   @@map("horses")
+}
+
+model HorseLocationHistory {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  racecourseId String?
+  racecourse   Racecourse? @relation(fields: [racecourseId], references: [id])
+  
+  farmId       String?
+  farm         Farm?       @relation(fields: [farmId], references: [id])
+  
+  startDate   DateTime @default(now())
+  endDate     DateTime? // null means current location
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([racecourseId])
+  @@index([farmId])
+  @@map("horse_location_history")
 }
 
 model Expense {

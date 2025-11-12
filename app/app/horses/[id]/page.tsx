@@ -10,6 +10,14 @@ import { toast } from 'sonner'
 import { formatDate, formatCurrency } from '@/lib/utils/format'
 import Link from 'next/link'
 
+interface LocationHistory {
+  id: string
+  startDate: string
+  endDate: string | null
+  racecourse: { id: string; name: string } | null
+  farm: { id: string; name: string } | null
+}
+
 interface HorseDetail {
   id: string
   name: string
@@ -33,6 +41,7 @@ interface HorseDetail {
       role: string
     }
   }>
+  locationHistory?: LocationHistory[]
 }
 
 export default function HorseDetailPage() {
@@ -256,6 +265,84 @@ export default function HorseDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Location History */}
+      {horse.locationHistory && horse.locationHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Konum Geçmişi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {horse.locationHistory.map((location, index) => {
+                const startDate = new Date(location.startDate)
+                const endDate = location.endDate ? new Date(location.endDate) : new Date()
+                const durationDays = Math.floor(
+                  (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+                )
+                const durationMonths = Math.floor(durationDays / 30)
+                const durationYears = Math.floor(durationDays / 365)
+
+                let durationText = ''
+                if (durationYears > 0) {
+                  durationText = `${durationYears} yıl`
+                  if (durationMonths % 12 > 0) {
+                    durationText += ` ${durationMonths % 12} ay`
+                  }
+                } else if (durationMonths > 0) {
+                  durationText = `${durationMonths} ay`
+                  if (durationDays % 30 > 0) {
+                    durationText += ` ${durationDays % 30} gün`
+                  }
+                } else {
+                  durationText = `${durationDays} gün`
+                }
+
+                const locationName = location.racecourse
+                  ? location.racecourse.name
+                  : location.farm
+                  ? location.farm.name
+                  : 'Bilinmiyor'
+
+                return (
+                  <div
+                    key={location.id}
+                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium">{locationName}</p>
+                        {location.racecourse && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200">
+                            Hipodrom
+                          </span>
+                        )}
+                        {location.farm && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                            Çiftlik
+                          </span>
+                        )}
+                        {!location.endDate && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                            Mevcut
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {formatDate(startDate)} -{' '}
+                        {location.endDate ? formatDate(endDate) : 'Devam ediyor'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Süre: {durationText}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

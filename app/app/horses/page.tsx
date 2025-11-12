@@ -9,6 +9,8 @@ import { Plus, Edit2, Activity } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
+import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
+import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 
 interface HorseData {
   id: string
@@ -16,8 +18,8 @@ interface HorseData {
   yob?: number
   status: string
   gender?: string
-  racecourse?: { name: string }
-  farm?: { name: string }
+  racecourse?: { id: string; name: string }
+  farm?: { id: string; name: string }
   trainer?: { fullName: string }
   groomName?: string
   expenses: Array<{
@@ -31,6 +33,10 @@ export default function HorsesPage() {
   const [horses, setHorses] = useState<HorseData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('ACTIVE')
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false)
+  const [selectedHorseForExpense, setSelectedHorseForExpense] = useState<string | null>(null)
+  const [locationModalOpen, setLocationModalOpen] = useState(false)
+  const [selectedHorseForLocation, setSelectedHorseForLocation] = useState<HorseData | null>(null)
 
   useEffect(() => {
     fetchHorses()
@@ -172,11 +178,16 @@ export default function HorsesPage() {
                 )}
               </CardDescription>
             </div>
-            <Link href={`/app/expenses/new?horseId=${horse.id}`}>
-              <Button size="sm" variant="outline">
-                Gider Ekle
-              </Button>
-            </Link>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                setSelectedHorseForExpense(horse.id)
+                setExpenseModalOpen(true)
+              }}
+            >
+              Gider Ekle
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -207,8 +218,8 @@ export default function HorsesPage() {
                       className="h-7 w-7 p-0"
                       onClick={(e) => {
                         e.preventDefault()
-                        // TODO: Implement racecourse change modal/dialog
-                        console.log('Change racecourse for horse:', horse.id)
+                        setSelectedHorseForLocation(horse)
+                        setLocationModalOpen(true)
                       }}
                     >
                       <Edit2 className="h-3 w-3" />
@@ -371,6 +382,36 @@ export default function HorsesPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Modals */}
+      <AddExpenseModal
+        open={expenseModalOpen}
+        onClose={() => {
+          setExpenseModalOpen(false)
+          setSelectedHorseForExpense(null)
+        }}
+        preselectedHorseId={selectedHorseForExpense || undefined}
+        onSuccess={() => {
+          fetchHorses()
+        }}
+      />
+
+      {selectedHorseForLocation && (
+        <ChangeLocationModal
+          open={locationModalOpen}
+          onClose={() => {
+            setLocationModalOpen(false)
+            setSelectedHorseForLocation(null)
+          }}
+          horseId={selectedHorseForLocation.id}
+          horseName={selectedHorseForLocation.name}
+          currentRacecourseId={selectedHorseForLocation.racecourse?.id}
+          currentFarmId={selectedHorseForLocation.farm?.id}
+          onSuccess={() => {
+            fetchHorses()
+          }}
+        />
+      )}
     </div>
   )
 }
