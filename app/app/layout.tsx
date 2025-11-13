@@ -5,7 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, DollarSign, TrendingUp, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
+import { Home, LayoutGrid, DollarSign, BarChart3, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
@@ -55,10 +55,10 @@ function AppNavbar() {
   }, [isOwner])
 
   const navItems = [
-    { href: '/app/home', label: TR.nav.home, icon: Activity },
-    { href: '/app/horses', label: TR.nav.horses, icon: Activity },
+    { href: '/app/home', label: TR.nav.home, icon: Home },
+    { href: '/app/horses', label: TR.nav.horses, icon: LayoutGrid },
     { href: '/app/expenses', label: TR.nav.expenses, icon: DollarSign },
-    { href: '/app/stats', label: TR.nav.statistics, icon: TrendingUp },
+    { href: '/app/stats', label: TR.nav.statistics, icon: BarChart3 },
   ]
 
   return (
@@ -79,7 +79,7 @@ function AppNavbar() {
                 }}
               />
             ) : null}
-            <Activity 
+            <LayoutGrid 
               className={`h-6 w-6 text-[#6366f1] flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
             />
             <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
