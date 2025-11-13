@@ -19,12 +19,14 @@ interface HorseData {
   status: string
   gender?: string
   racecourse?: { id: string; name: string }
-  farm?: { id: string; name: string }
+  farm?: { id: string; name: string; city?: string }
   trainer?: { fullName: string }
   groomName?: string
   handicapPoints?: number
   sireName?: string
   damName?: string
+  currentLocationType?: 'racecourse' | 'farm'
+  currentCity?: string
   expenses: Array<{
     date: Date
     amount: number
@@ -255,18 +257,32 @@ export default function HorsesPage() {
             )}
           </div>
 
-          {/* Action Button */}
-          <Button 
-            className={`${buttonGradient} shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base mt-4`}
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              setSelectedHorseForExpense(horse.id)
-              setExpenseModalOpen(true)
-            }}
-          >
-            Gider Ekle
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex gap-2 mt-4">
+            <Button 
+              className={`${buttonGradient} shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg flex-1 transition-all duration-300 text-sm sm:text-base`}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setSelectedHorseForExpense(horse.id)
+                setExpenseModalOpen(true)
+              }}
+            >
+              Gider Ekle
+            </Button>
+            <Button 
+              variant="outline"
+              className="shadow-lg hover:shadow-xl font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg flex-1 transition-all duration-300 text-sm sm:text-base border-gray-300 hover:bg-gray-50"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setSelectedHorseForLocation(horse)
+                setLocationModalOpen(true)
+              }}
+            >
+              Konum Değiştir
+            </Button>
+          </div>
         </Card>
       </Link>
     )
@@ -428,6 +444,8 @@ export default function HorsesPage() {
           }}
           horseId={selectedHorseForLocation.id}
           horseName={selectedHorseForLocation.name}
+          currentLocationType={selectedHorseForLocation.currentLocationType}
+          currentCity={selectedHorseForLocation.currentCity}
           currentRacecourseId={selectedHorseForLocation.racecourse?.id}
           currentFarmId={selectedHorseForLocation.farm?.id}
           onSuccess={() => {

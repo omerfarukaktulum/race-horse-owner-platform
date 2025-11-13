@@ -83,7 +83,7 @@ function AppNavbar() {
               className={`h-6 w-6 text-[#6366f1] flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
             />
             <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-              {stablemateName ? `${stablemateName} EKÜRİSİ` : 'TJK Stablemate'}
+              {stablemateName ? `${stablemateName} EKÜRİSİ` : 'EKÜRİM'}
             </span>
           </Link>
 
@@ -233,7 +233,7 @@ function AppNavbar() {
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
       <AppNavbar />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}

@@ -95,6 +95,13 @@ export async function GET(request: Request) {
           orderBy: { date: 'desc' },
           take: 1,
         },
+        locationHistory: {
+          where: {
+            endDate: null, // Current location
+          },
+          take: 1,
+          orderBy: { startDate: 'desc' },
+        },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -113,7 +120,17 @@ export async function GET(request: Request) {
       })
     }
 
-    return NextResponse.json({ horses })
+    // Map horses to include current location info
+    const horsesWithLocation = horses.map((horse) => {
+      const currentLocation = horse.locationHistory[0]
+      return {
+        ...horse,
+        currentLocationType: currentLocation?.locationType,
+        currentCity: currentLocation?.city,
+      }
+    })
+
+    return NextResponse.json({ horses: horsesWithLocation })
   } catch (error) {
     console.error('Get horses error:', error)
     return NextResponse.json(

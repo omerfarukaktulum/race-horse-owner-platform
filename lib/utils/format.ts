@@ -72,3 +72,4 @@ export function getRelativeTime(date: Date | string): string {
   return `${Math.floor(diffInSeconds / 31536000)} yıl önce`
 }
 
+

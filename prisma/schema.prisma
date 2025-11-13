@@ -251,6 +251,9 @@ model HorseLocationHistory {
   horseId     String
   horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
   
+  locationType String  // 'racecourse' or 'farm'
+  city         String  // City name (e.g., 'İstanbul Veliefendi', 'Adana Yeşiloba', etc.)
+  
   racecourseId String?
   racecourse   Racecourse? @relation(fields: [racecourseId], references: [id])
   
@@ -266,6 +269,7 @@ model HorseLocationHistory {
   @@index([horseId])
   @@index([racecourseId])
   @@index([farmId])
+  @@index([locationType])
   @@map("horse_location_history")
 }
 

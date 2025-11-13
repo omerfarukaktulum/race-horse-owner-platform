@@ -90,3 +90,4 @@ export type ExpenseInput = z.infer<typeof expenseSchema>
 export type RacecourseInput = z.infer<typeof racecourseSchema>
 export type FarmInput = z.infer<typeof farmSchema>
 
+

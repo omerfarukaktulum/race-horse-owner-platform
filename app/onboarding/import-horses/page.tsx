@@ -271,7 +271,7 @@ export default function ImportHorsesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
@@ -294,40 +294,40 @@ export default function ImportHorsesPage() {
       : 0
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center">
         <Card className="max-w-md mx-4 bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-8">
           <div className="text-center">
             <div className="relative w-28 h-28 mx-auto mb-6">
               <svg className="w-28 h-28 transform -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
+              <circle
+                cx="50"
+                cy="50"
                   r="42"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="none"
-                  className="text-gray-200"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
+                stroke="currentColor"
+                strokeWidth="8"
+                fill="none"
+                className="text-gray-200"
+              />
+              <circle
+                cx="50"
+                cy="50"
                   r="42"
                   stroke="url(#gradient)"
-                  strokeWidth="8"
-                  fill="none"
+                strokeWidth="8"
+                fill="none"
                   strokeDasharray={`${2 * Math.PI * 42}`}
                   strokeDashoffset={`${2 * Math.PI * 42 * (1 - progress / 100)}`}
                   className="transition-all duration-300"
-                  strokeLinecap="round"
-                />
+                strokeLinecap="round"
+              />
                 <defs>
                   <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#4f46e5" />
                   </linearGradient>
                 </defs>
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
                   {progress}%
                 </span>
@@ -337,14 +337,14 @@ export default function ImportHorsesPage() {
               Eküri oluşturuluyor...
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              Atlarınızın detaylı verileri TJK sisteminden alınıyor
-            </p>
-            {fetchProgress.currentHorse && (
+            Atlarınızın detaylı verileri TJK sisteminden alınıyor
+          </p>
+          {fetchProgress.currentHorse && (
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-4">
                 <p className="text-xs text-gray-600 mb-1">İşleniyor:</p>
                 <p className="font-semibold text-indigo-900">{fetchProgress.currentHorse}</p>
               </div>
-            )}
+          )}
             <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-2">
               <span className="font-semibold">{fetchProgress.current}</span>
               <span>/</span>
@@ -352,16 +352,16 @@ export default function ImportHorsesPage() {
               <span>at işlendi</span>
             </div>
             <p className="text-xs text-gray-500 mt-4">
-              Bu işlem birkaç dakika sürebilir...
-            </p>
-          </div>
+            Bu işlem birkaç dakika sürebilir...
+          </p>
+        </div>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
         <CardHeader className="space-y-4">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
@@ -372,8 +372,8 @@ export default function ImportHorsesPage() {
               {TR.onboarding.importHorses}
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              {TR.onboarding.importHorsesDesc}
-            </CardDescription>
+            {TR.onboarding.importHorsesDesc}
+          </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

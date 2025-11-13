@@ -8,95 +8,82 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils/format'
 
-interface Racecourse {
-  id: string
-  name: string
-}
-
-interface Farm {
-  id: string
-  name: string
-}
-
 interface ChangeLocationModalProps {
   open: boolean
   onClose: () => void
   horseId: string
   horseName: string
+  currentLocationType?: 'racecourse' | 'farm'
+  currentCity?: string
   currentRacecourseId?: string
   currentFarmId?: string
   onSuccess?: () => void
 }
+
+// Racecourse cities (specific cities for racecourses)
+const RACECOURSE_CITIES = [
+  'İstanbul Veliefendi',
+  'Adana Yeşiloba',
+  'Ankara 75. Yıl',
+  'Bursa Osmangazi',
+  'Diyarbakır',
+  'Elazığ',
+  'İzmir Şirinyer',
+  'Kocaeli Kartepe',
+  'Şanlıurfa',
+  'Antalya',
+]
+
+// Common Turkish cities (for farms)
+const TURKISH_CITIES = [
+  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya',
+  'Artvin', 'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu',
+  'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır',
+  'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun',
+  'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'İçel', 'İstanbul', 'İzmir',
+  'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya',
+  'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla', 'Muş',
+  'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop',
+  'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak',
+  'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale',
+  'Batman', 'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis',
+  'Osmaniye', 'Düzce',
+]
 
 export function ChangeLocationModal({
   open,
   onClose,
   horseId,
   horseName,
+  currentLocationType,
+  currentCity,
   currentRacecourseId,
   currentFarmId,
   onSuccess,
 }: ChangeLocationModalProps) {
-  const [racecourses, setRacecourses] = useState<Racecourse[]>([])
-  const [farms, setFarms] = useState<Farm[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  const [locationType, setLocationType] = useState<'racecourse' | 'farm'>('racecourse')
-  const [racecourseId, setRacecourseId] = useState(currentRacecourseId || '')
-  const [farmId, setFarmId] = useState(currentFarmId || '')
+  const [locationType, setLocationType] = useState<'racecourse' | 'farm'>(
+    currentLocationType || (currentRacecourseId ? 'racecourse' : 'farm')
+  )
+  const [city, setCity] = useState(currentCity || '')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
 
   useEffect(() => {
     if (open) {
-      fetchReferenceData()
-      setRacecourseId(currentRacecourseId || '')
-      setFarmId(currentFarmId || '')
+      setLocationType(currentLocationType || (currentRacecourseId ? 'racecourse' : 'farm'))
+      setCity(currentCity || '')
       setStartDate(new Date().toISOString().split('T')[0])
-      // Determine location type based on current values
-      if (currentRacecourseId) {
-        setLocationType('racecourse')
-      } else if (currentFarmId) {
-        setLocationType('farm')
-      }
     }
-  }, [open, currentRacecourseId, currentFarmId])
+  }, [open, currentLocationType, currentCity, currentRacecourseId])
 
-  const fetchReferenceData = async () => {
-    setIsLoading(true)
-    try {
-      const [racecoursesRes, farmsRes] = await Promise.all([
-        fetch('/api/racecourses'),
-        fetch('/api/farms'),
-      ])
-
-      if (racecoursesRes.ok) {
-        const data = await racecoursesRes.json()
-        setRacecourses(data.racecourses || [])
-      }
-
-      if (farmsRes.ok) {
-        const data = await farmsRes.json()
-        setFarms(data.farms || [])
-      }
-    } catch (error) {
-      console.error('Error fetching reference data:', error)
-      toast.error('Referans verileri yüklenirken bir hata oluştu')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const availableCities = locationType === 'racecourse' ? RACECOURSE_CITIES : TURKISH_CITIES
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (locationType === 'racecourse' && !racecourseId) {
-      toast.error('Lütfen bir hipodrom seçin')
-      return
-    }
-
-    if (locationType === 'farm' && !farmId) {
-      toast.error('Lütfen bir çiftlik seçin')
+    if (!city) {
+      toast.error('Lütfen bir şehir seçin')
       return
     }
 
@@ -111,8 +98,7 @@ export function ChangeLocationModal({
         credentials: 'include',
         body: JSON.stringify({
           locationType,
-          racecourseId: locationType === 'racecourse' ? racecourseId : null,
-          farmId: locationType === 'farm' ? farmId : null,
+          city,
           startDate,
         }),
       })
@@ -152,7 +138,7 @@ export function ChangeLocationModal({
                   checked={locationType === 'racecourse'}
                   onChange={(e) => {
                     setLocationType('racecourse')
-                    setFarmId('')
+                    setCity('')
                   }}
                   className="w-4 h-4"
                 />
@@ -165,7 +151,7 @@ export function ChangeLocationModal({
                   checked={locationType === 'farm'}
                   onChange={(e) => {
                     setLocationType('farm')
-                    setRacecourseId('')
+                    setCity('')
                   }}
                   className="w-4 h-4"
                 />
@@ -174,57 +160,35 @@ export function ChangeLocationModal({
             </div>
           </div>
 
-          {/* Racecourse Selection */}
-          {locationType === 'racecourse' && (
-            <div className="space-y-2">
-              <Label htmlFor="racecourse">Hipodrom *</Label>
-              {isLoading ? (
-                <p className="text-sm text-gray-500">Yükleniyor...</p>
-              ) : (
-                <select
-                  id="racecourse"
-                  value={racecourseId}
-                  onChange={(e) => setRacecourseId(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Hipodrom seçin</option>
-                  {racecourses.map((rc) => (
-                    <option key={rc.id} value={rc.id}>
-                      {rc.name}
-                    </option>
-                  ))}
-                </select>
-              )}
+          {/* Current Location Display */}
+          {(currentLocationType && currentCity) && (
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <Label className="text-xs text-gray-600 mb-1">Mevcut Konum</Label>
+              <p className="text-sm font-medium text-gray-900">
+                {currentLocationType === 'racecourse' ? 'Hipodrom' : 'Çiftlik'}: {currentCity}
+              </p>
             </div>
           )}
 
-          {/* Farm Selection */}
-          {locationType === 'farm' && (
-            <div className="space-y-2">
-              <Label htmlFor="farm">Çiftlik *</Label>
-              {isLoading ? (
-                <p className="text-sm text-gray-500">Yükleniyor...</p>
-              ) : (
-                <select
-                  id="farm"
-                  value={farmId}
-                  onChange={(e) => setFarmId(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">Çiftlik seçin</option>
-                  {farms.map((farm) => (
-                    <option key={farm.id} value={farm.id}>
-                      {farm.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )}
+          {/* City Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="city">Şehir *</Label>
+            <select
+              id="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              disabled={isSubmitting}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Şehir seçin</option>
+              {availableCities.map((cityName) => (
+                <option key={cityName} value={cityName}>
+                  {cityName}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Start Date */}
           <div className="space-y-2">

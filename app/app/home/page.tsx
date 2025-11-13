@@ -12,6 +12,16 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="text-center mb-8">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+          EKÜRİM'e Hoş Geldiniz
+        </h1>
+        <p className="text-gray-600 text-sm sm:text-base mt-2">
+          Atlarınızı ve eküri işlemlerinizi kolayca yönetin
+        </p>
+      </div>
+
       {/* Main Action Cards - Matching driving-license practice page style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <Link href="/app/horses">

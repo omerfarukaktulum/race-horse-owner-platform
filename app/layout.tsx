@@ -7,12 +7,12 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
-  title: 'TJK Stablemate - Yarış Atı Yönetim Platformu',
+  title: 'EKÜRİM - Yarış Atı Yönetim Platformu',
   description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
   keywords: 'tjk, yarış atı, at yönetimi, eküri, hipodrom, antrenör',
-  authors: [{ name: 'TJK Stablemate' }],
+  authors: [{ name: 'EKÜRİM' }],
   openGraph: {
-    title: 'TJK Stablemate',
+    title: 'EKÜRİM',
     description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
     type: 'website',
     locale: 'tr_TR',

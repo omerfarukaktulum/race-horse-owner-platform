@@ -23,7 +23,21 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { locationType, racecourseId, farmId, startDate } = body
+    const { locationType, city, startDate } = body
+
+    if (!locationType || !city) {
+      return NextResponse.json(
+        { error: 'Location type and city are required' },
+        { status: 400 }
+      )
+    }
+
+    if (locationType !== 'racecourse' && locationType !== 'farm') {
+      return NextResponse.json(
+        { error: 'Location type must be either "racecourse" or "farm"' },
+        { status: 400 }
+      )
+    }
 
     // Get horse with relations
     const horse = await prisma.horse.findUnique({
@@ -87,12 +101,46 @@ export async function POST(
       })
     }
 
+    // Try to find matching racecourse or farm by name/city for linking
+    let racecourseId: string | null = null
+    let farmId: string | null = null
+
+    if (locationType === 'racecourse') {
+      // Try to find racecourse by name matching the city
+      const racecourse = await prisma.racecourse.findFirst({
+        where: {
+          name: {
+            contains: city,
+            mode: 'insensitive',
+          },
+        },
+      })
+      if (racecourse) {
+        racecourseId = racecourse.id
+      }
+    } else if (locationType === 'farm') {
+      // Try to find farm by city
+      const farm = await prisma.farm.findFirst({
+        where: {
+          city: {
+            equals: city,
+            mode: 'insensitive',
+          },
+        },
+      })
+      if (farm) {
+        farmId = farm.id
+      }
+    }
+
     // Create new location history entry
     const newLocation = await prisma.horseLocationHistory.create({
       data: {
         horseId: params.id,
-        racecourseId: locationType === 'racecourse' ? racecourseId : null,
-        farmId: locationType === 'farm' ? farmId : null,
+        locationType,
+        city,
+        racecourseId,
+        farmId,
         startDate: new Date(startDate),
         endDate: null, // Current location
       },
@@ -102,7 +150,7 @@ export async function POST(
       },
     })
 
-    // Update horse's current location
+    // Update horse's current location (for backward compatibility)
     await prisma.horse.update({
       where: { id: params.id },
       data: {

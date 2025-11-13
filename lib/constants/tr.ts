@@ -29,7 +29,7 @@ export const TR = {
     password: 'Şifre',
     forgotPassword: 'Şifremi Unuttum',
     rememberMe: 'Beni Hatırla',
-    owner: 'Sahip',
+    owner: 'At Sahibi',
     trainer: 'Antrenör',
     selectRole: 'Rolünüzü Seçin',
     fullName: 'Ad Soyad',
