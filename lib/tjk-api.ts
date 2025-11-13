@@ -288,15 +288,20 @@ export async function searchTJKHorsesPlaywright(
           // Column 8: Antrenörü (Trainer)
 
           if (name && name !== 'At İsmi') { // Skip header row
-            // Check if horse is dead (marked with Öldü in name)
+            // Check if horse is dead (marked with Öldü in name) - filter them out
             const isDead = name.includes('Öldü') || name.includes('ÖLDÜ')
-            const cleanName = name.replace(/\(.*?\)/g, '').trim() // Remove any parentheses (Öldü), (T), etc.
+            
+            // Skip dead horses completely - don't add them to results
+            if (isDead) {
+              console.log('[Browser] Skipping dead horse:', name)
+              return // Skip this horse
+            }
+            
+            const cleanName = name.replace(/\(.*?\)/g, '').trim() // Remove any parentheses (T), etc.
             
             // Determine status
             let status = 'RACING'
-            if (isDead) {
-              status = 'DEAD'
-            } else if (gender?.includes('Aygır') || gender?.includes('AYGIR')) {
+            if (gender?.includes('Aygır') || gender?.includes('AYGIR')) {
               status = 'STALLION'
             } else if (gender?.includes('Kısrak') || gender?.includes('KISRAK')) {
               status = 'MARE'

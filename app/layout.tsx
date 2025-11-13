@@ -35,7 +35,16 @@ export default function RootLayout({
     <html lang="tr">
       <body className={`${inter.className} min-h-screen flex flex-col`}>
         {children}
-        <Toaster position="top-right" richColors />
+        <Toaster 
+          position="top-right" 
+          richColors
+          toastOptions={{
+            className: 'ekurim-toast',
+          }}
+          closeButton
+          expand={true}
+          duration={4000}
+        />
       </body>
     </html>
   )

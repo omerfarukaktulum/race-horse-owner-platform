@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Search, Check } from 'lucide-react'
+import { Search, Check, UserSearch } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -85,7 +85,7 @@ export default function OwnerLookupPage() {
         throw new Error(data.error || 'Profil oluşturulamadı')
       }
 
-      toast.success('Sahip profili oluşturuldu')
+      toast.success('At Sahibi profili oluşturuldu')
       router.push('/onboarding/stablemate-setup')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
@@ -97,58 +97,77 @@ export default function OwnerLookupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">{TR.onboarding.ownerLookup}</CardTitle>
-          <CardDescription>
-            {TR.onboarding.ownerLookupDesc}
-          </CardDescription>
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <UserSearch className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              {TR.onboarding.ownerLookup}
+            </CardTitle>
+            <CardDescription className="text-gray-600 mt-2">
+              {TR.onboarding.ownerLookupDesc}
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="search">{TR.onboarding.searchOwner}</Label>
+            <Label htmlFor="search" className="text-gray-700 font-medium">
+              {TR.onboarding.searchOwner}
+            </Label>
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <Input
                 id="search"
                 type="text"
                 placeholder="Sahip adınızı yazın (en az 2 karakter)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                disabled={isSearching}
               />
             </div>
             {isSearching && (
-              <p className="text-sm text-gray-500">Aranıyor...</p>
+              <p className="text-sm text-gray-500 flex items-center gap-2">
+                <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#6366f1]"></span>
+                Aranıyor...
+              </p>
             )}
           </div>
 
           {results.length > 0 && (
-            <div className="space-y-2">
-              <Label>{TR.onboarding.selectOwner}</Label>
+            <div className="space-y-3">
+              <Label className="text-gray-700 font-medium">{TR.onboarding.selectOwner}</Label>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {results.map((result, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedOwner(result)}
-                    className={`w-full p-4 text-left border rounded-lg hover:bg-blue-50 transition-colors ${
+                    className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg ${
                       selectedOwner?.officialName === result.officialName
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200'
+                        ? 'border-[#6366f1] shadow-xl from-indigo-50/80 via-indigo-50/60 to-white'
+                        : 'border-indigo-100/50 hover:border-indigo-200 hover:shadow-xl'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-medium">{result.officialName}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="font-semibold text-gray-900">{result.officialName}</p>
+                        <p className="text-xs text-gray-600 mt-1">
                           TJK ID: {result.externalRef}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          Bir sonraki adımda atlarınızı içe aktarabileceksiniz.
+                        <p className="text-xs text-gray-500 mt-1">
+                          Bir sonraki adımda eküri kurulumunu yapacaksınız.
                         </p>
                       </div>
                       {selectedOwner?.officialName === result.officialName && (
-                        <Check className="h-5 w-5 text-blue-600 flex-shrink-0 ml-2" />
+                        <div className="flex-shrink-0 ml-3">
+                          <div className="w-6 h-6 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center">
+                            <Check className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
                       )}
                     </div>
                   </button>
@@ -157,10 +176,11 @@ export default function OwnerLookupPage() {
             </div>
           )}
 
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end pt-4">
             <Button
               onClick={handleSubmit}
               disabled={!selectedOwner || isSubmitting}
+              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6"
             >
               {isSubmitting ? TR.common.loading : TR.common.next}
             </Button>

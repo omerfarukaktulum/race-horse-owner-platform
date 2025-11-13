@@ -31,8 +31,8 @@ export default function HomePage() {
             </div>
 
             <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base">
-              Atlara Git
-            </Button>
+                Atlara Git
+              </Button>
           </Card>
         </Link>
 
@@ -54,7 +54,7 @@ export default function HomePage() {
 
             <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base">
               Giderlere Git
-            </Button>
+              </Button>
           </Card>
         </Link>
 
@@ -75,17 +75,17 @@ export default function HomePage() {
             </div>
 
             <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base">
-              İstatistiklere Git
-            </Button>
+                İstatistiklere Git
+              </Button>
           </Card>
         </Link>
 
-        {isOwner && (
-          <Link href="/app/stablemate">
+      {isOwner && (
+            <Link href="/app/stablemate">
             <Card className="p-4 sm:p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-white shadow-lg border border-blue-100 cursor-pointer">
               <div className="flex-1 min-w-0 mb-4">
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2">
-                  Eküri Ayarları
+                Eküri Ayarları
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-2">
                   Eküri bilgilerini düzenle
@@ -101,8 +101,8 @@ export default function HomePage() {
                 Ayarlar
               </Button>
             </Card>
-          </Link>
-        )}
+            </Link>
+      )}
       </div>
     </div>
   )

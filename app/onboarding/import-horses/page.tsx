@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { Label } from '@/app/components/ui/label'
-import { Activity } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -84,20 +84,18 @@ export default function ImportHorsesPage() {
         throw new Error(data.error || 'Atlar yüklenemedi')
       }
 
+      // Map to our format (dead horses are already filtered out in the API)
       const horses = (data.horses || []).map((horse: any) => ({
         ...horse,
         selected: false,
       }))
 
-      console.log('Step 11: Mapped horses:', horses.length, 'horses')
+      console.log('Step 11: Mapped horses:', horses.length, 'horses (dead horses filtered out)')
       console.log('Horses data:', JSON.stringify(horses, null, 2))
       
       setHorses(horses)
 
-      if (horses.length > 0) {
-        console.log('Step 12: SUCCESS - Showing', horses.length, 'horses')
-        toast.success(`${horses.length} at bulundu`)
-      } else {
+      if (horses.length === 0) {
         console.log('Step 12: No horses found')
         toast.info('TJK\'da kayıtlı atınız bulunamadı')
       }
@@ -265,9 +263,6 @@ export default function ImportHorsesPage() {
     }
   }
 
-  const skip = () => {
-    router.push('/app/home')
-  }
 
   if (isLoading) {
     return (
@@ -334,14 +329,14 @@ export default function ImportHorsesPage() {
               </div>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Eküri oluşturuluyor...
+              Seçtiğiniz atlar ekürinize ekleniyor.
             </h2>
             <p className="text-sm text-gray-600 mb-6">
             Atlarınızın detaylı verileri TJK sisteminden alınıyor
           </p>
           {fetchProgress.currentHorse && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-4">
-                <p className="text-xs text-gray-600 mb-1">İşleniyor:</p>
+              <div className="bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white border-2 border-indigo-100/50 rounded-lg p-3 mb-4 shadow-lg">
+                <p className="text-xs text-gray-600 mb-1">Ekleniyor:</p>
                 <p className="font-semibold text-indigo-900">{fetchProgress.currentHorse}</p>
               </div>
           )}
@@ -349,7 +344,7 @@ export default function ImportHorsesPage() {
               <span className="font-semibold">{fetchProgress.current}</span>
               <span>/</span>
               <span>{fetchProgress.total}</span>
-              <span>at işlendi</span>
+              <span>at eklendi</span>
             </div>
             <p className="text-xs text-gray-500 mt-4">
             Bu işlem birkaç dakika sürebilir...
@@ -362,10 +357,10 @@ export default function ImportHorsesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
         <CardHeader className="space-y-4">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
-            <Activity className="h-8 w-8 text-white" />
+            <Download className="h-8 w-8 text-white" />
           </div>
           <div className="text-center">
             <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
@@ -380,7 +375,7 @@ export default function ImportHorsesPage() {
           {horses.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Activity className="h-10 w-10 text-gray-400" />
+                <Download className="h-10 w-10 text-gray-400" />
               </div>
               <p className="text-gray-700 font-medium mb-2">TJK'da kayıtlı atınız bulunamadı.</p>
               <p className="text-sm text-gray-500">Manuel olarak at ekleyebilirsiniz.</p>
@@ -388,12 +383,9 @@ export default function ImportHorsesPage() {
           ) : (
             <>
               <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold text-gray-900">
-                  {TR.onboarding.selectHorsesToImport}
-                  <span className="ml-2 px-2.5 py-1 rounded-full text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white">
-                    {horses.length} at bulundu
-                  </span>
-                </Label>
+                <span className="px-2.5 py-1 rounded-full text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white">
+                  {horses.length} at bulundu
+                </span>
                 <Button
                   variant="outline"
                   size="sm"
@@ -406,11 +398,11 @@ export default function ImportHorsesPage() {
                 </Button>
               </div>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                 {horses.map((horse, index) => (
                   <div
                     key={index}
-                    className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:shadow-md cursor-pointer transition-all duration-200 ${
+                    className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
                       horse.selected 
                         ? 'border-[#6366f1] bg-indigo-50/50' 
                         : 'border-gray-200 hover:border-gray-300 bg-white'
@@ -420,19 +412,20 @@ export default function ImportHorsesPage() {
                     <Checkbox
                       checked={horse.selected}
                       onCheckedChange={() => toggleHorse(index)}
-                      className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1]"
+                      className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
                     />
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{horse.name}</p>
-                      <div className="flex gap-3 text-sm text-gray-600 mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                      <div className="flex gap-2 text-xs text-gray-600 mt-0.5">
                         {horse.yob && (
-                          <span className="flex items-center gap-1">
+                          <span className="whitespace-nowrap">
                             <span className="font-medium">Doğum:</span> {horse.yob}
                           </span>
                         )}
                         {(horse.sire && horse.dam) && (
-                          <span className="flex items-center gap-1">
-                            <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
+                          <span className="truncate min-w-0">
+                            <span className="font-medium">Orijin:</span>{' '}
+                            <span className="truncate">{horse.sire} - {horse.dam}</span>
                           </span>
                         )}
                       </div>
@@ -443,15 +436,7 @@ export default function ImportHorsesPage() {
             </>
           )}
 
-          <div className="flex justify-between pt-4 border-t border-gray-200">
-            <Button
-              variant="outline"
-              onClick={skip}
-              disabled={isImporting}
-              className="border-gray-300 hover:bg-gray-50"
-            >
-              Daha Sonra
-            </Button>
+          <div className="flex justify-end pt-4 border-t border-gray-200">
             <Button
               onClick={handleImport}
               disabled={isImporting || horses.filter((h) => h.selected).length === 0}

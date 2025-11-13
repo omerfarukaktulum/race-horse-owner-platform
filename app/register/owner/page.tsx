@@ -89,7 +89,7 @@ export default function RegisterOwnerPage() {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-              Sahip Kaydı
+              At Sahibi Kaydı
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
               At sahibi olarak kayıt olun

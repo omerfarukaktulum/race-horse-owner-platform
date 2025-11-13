@@ -144,13 +144,13 @@ export const TR = {
   
   onboarding: {
     welcome: 'Hoş Geldiniz',
-    ownerLookup: 'Sahip Adınızı Bulun',
+    ownerLookup: 'At Sahibi Adınızı Bulun',
     ownerLookupDesc: 'Lütfen TJK\'daki resmi sahip adınızı yazın',
     searchOwner: 'Sahip Ara',
     selectOwner: 'Sahip Seç',
     setupStablemate: 'Ekürimi Kur',
     setupStablemateDesc: 'Eküri bilgilerinizi girin',
-    importHorses: 'Atlarınızı Ekleyin',
+    importHorses: 'Atlarınızı Ekürinize Ekleyin',
     importHorsesDesc: 'TJK\'dan atlarınızı eküriye ekleyin',
     selectHorsesToImport: 'Eklemek istediğiniz atları seçin',
     horseDetails: 'At Detayları',

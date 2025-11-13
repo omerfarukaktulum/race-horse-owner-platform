@@ -28,8 +28,8 @@ export default function RegisterPage() {
               {TR.auth.register}
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              {TR.auth.selectRole}
-            </CardDescription>
+            {TR.auth.selectRole}
+          </CardDescription>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

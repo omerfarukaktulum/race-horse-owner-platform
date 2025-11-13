@@ -64,8 +64,8 @@ export default function SignInPage() {
               {TR.auth.signIn}
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Hesabınıza giriş yapın
-            </CardDescription>
+            Hesabınıza giriş yapın
+          </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
