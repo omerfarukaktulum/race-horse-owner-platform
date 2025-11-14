@@ -44,6 +44,7 @@ model User {
   ownerProfile   OwnerProfile?
   trainerProfile TrainerProfile?
   expenses       Expense[]
+  notes          HorseNote[]
   
   accounts Account[]
   sessions Session[]
@@ -63,6 +64,12 @@ model OwnerProfile {
   subscriptionStatus    String?
   subscriptionExpiresAt DateTime?
   stripeCustomerId      String?
+  
+  // Dashboard cache
+  racesCache Json?           // Cached race results data
+  racesCacheAt DateTime?     // When races cache was last updated
+  registrationsCache Json?   // Cached registrations/declarations data
+  registrationsCacheAt DateTime? // When registrations cache was last updated
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -198,12 +205,17 @@ model Horse {
   dataFetchedAt  DateTime?   // When detailed data was last fetched
   dataFetchError String?     // Error message if fetch failed
   
+  // Dashboard cache for registrations/declarations
+  registrationsCache Json?    // Cached registrations and declarations data
+  registrationsCacheAt DateTime? // When registrations cache was last updated
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   expenses Expense[]
   locationHistory HorseLocationHistory[]
   raceHistory HorseRaceHistory[]
+  notes HorseNote[]
 
   @@index([stablemateId])
   @@index([trainerId])
@@ -299,6 +311,27 @@ model Expense {
   @@index([date])
   @@index([category])
   @@map("expenses")
+}
+
+model HorseNote {
+  id         String   @id @default(cuid())
+  horseId    String
+  horse      Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  addedById  String
+  addedBy    User     @relation(fields: [addedById], references: [id])
+  
+  date       DateTime
+  note       String
+  photoUrl   String?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([addedById])
+  @@index([date])
+  @@map("horse_notes")
 }
 
 // NextAuth models

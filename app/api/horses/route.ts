@@ -94,6 +94,12 @@ export async function GET(request: Request) {
         expenses: {
           orderBy: { date: 'desc' },
           take: 1,
+          select: {
+            date: true,
+            amount: true,
+            currency: true,
+            createdAt: true,
+          },
         },
         locationHistory: {
           where: {

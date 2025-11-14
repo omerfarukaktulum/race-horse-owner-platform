@@ -4,14 +4,28 @@ import { useAuth } from '@/lib/context/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import Link from 'next/link'
-import { LayoutGrid, DollarSign, Settings, BarChart3 } from 'lucide-react'
+import { LayoutGrid, TurkishLira, Settings, BarChart3 } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { RegistrationsCard } from '@/app/components/dashboard/registrations-card'
+import { GallopsCard } from '@/app/components/dashboard/gallops-card'
+import { RecentRacesCard } from '@/app/components/dashboard/recent-races-card'
+import { RecentExpensesCard } from '@/app/components/dashboard/recent-expenses-card'
 
 export default function HomePage() {
   const { user, isOwner, isTrainer } = useAuth()
 
   return (
     <div className="space-y-8">
+      {/* Dashboard Activity Cards - Recent Updates */}
+      {isOwner && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+          <RecentRacesCard />
+          <RegistrationsCard />
+          <GallopsCard />
+          <RecentExpensesCard />
+        </div>
+      )}
+
       {/* Main Action Cards - Matching driving-license practice page style */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Link href="/app/horses">
@@ -49,7 +63,7 @@ export default function HomePage() {
 
             {/* Centered Icon */}
             <div className="flex justify-center my-4 sm:my-6">
-              <DollarSign className="h-12 w-12 text-[#6366f1]" />
+              <TurkishLira className="h-12 w-12 text-[#6366f1]" />
             </div>
 
             <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] shadow-lg hover:shadow-xl text-white font-medium py-2 sm:py-3 px-4 sm:px-6 rounded-lg w-full transition-all duration-300 text-sm sm:text-base">

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { TrendingUp, Users, DollarSign, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers } from 'lucide-react'
+import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers } from 'lucide-react'
 import { Sparkles } from 'lucide-react'
 
 export default function HomePage() {
@@ -56,7 +56,7 @@ export default function HomePage() {
             <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-indigo-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
               <div className="text-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <DollarSign className="h-6 w-6 text-white" />
+                  <TurkishLira className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-emerald-600 mb-1">Kategorize</div>
                 <div className="text-sm font-bold text-emerald-600">Gider Takibi</div>
@@ -126,7 +126,7 @@ export default function HomePage() {
           <Card className="bg-white/80 backdrop-blur-sm border border-emerald-100/50 hover:shadow-lg transition-all duration-300">
             <CardHeader>
               <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mb-3">
-                <DollarSign className="h-6 w-6 text-white" />
+                  <TurkishLira className="h-6 w-6 text-white" />
               </div>
               <CardTitle className="text-emerald-600">Gider Takibi</CardTitle>
               <CardDescription>

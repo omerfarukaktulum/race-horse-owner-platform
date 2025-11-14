@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Button } from '@/app/components/ui/button'
-import { Activity, DollarSign, TrendingUp, Download } from 'lucide-react'
+import { Activity, TurkishLira, TrendingUp, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { formatCurrency } from '@/lib/utils/format'
@@ -328,7 +328,7 @@ export default function StatsPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Yıllık Toplam</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <TurkishLira className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">

@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Plus, Trash2, Calendar, DollarSign, Filter, X } from 'lucide-react'
+import { Plus, Trash2, Calendar, TurkishLira, Filter, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
@@ -18,7 +18,7 @@ interface Expense {
   category: string
   amount: number
   notes: string | null
-  photoUrl: string | null
+  photoUrl: string | string[] | null
   horse: {
     id: string
     name: string
@@ -232,7 +232,7 @@ export default function ExpensesPage() {
         <Card>
           <CardContent className="py-12">
             <div className="text-center text-gray-500">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <TurkishLira className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg">Henüz gider kaydı bulunmuyor</p>
               <p className="text-sm mt-2">İlk giderinizi eklemek için yukarıdaki butonu kullanın</p>
             </div>
@@ -258,11 +258,21 @@ export default function ExpensesPage() {
                         <div className="flex-1">
                           <div className="flex items-start gap-4">
                             {expense.photoUrl && (
-                              <img
-                                src={expense.photoUrl}
-                                alt="Gider fotoğrafı"
-                                className="w-20 h-20 object-cover rounded border"
-                              />
+                              <div className="flex gap-2 flex-wrap">
+                                {(() => {
+                                  const photoUrls = typeof expense.photoUrl === 'string' 
+                                    ? (expense.photoUrl.startsWith('[') ? JSON.parse(expense.photoUrl) : [expense.photoUrl])
+                                    : expense.photoUrl
+                                  return photoUrls.map((url: string, idx: number) => (
+                                    <img
+                                      key={idx}
+                                      src={url}
+                                      alt={`Gider fotoğrafı ${idx + 1}`}
+                                      className="w-20 h-20 object-cover rounded border"
+                                    />
+                                  ))
+                                })()}
+                              </div>
                             )}
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">

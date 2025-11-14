@@ -7,6 +7,7 @@ import { Label } from '@/app/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils/format'
+import { MapPin } from 'lucide-react'
 
 interface ChangeLocationModalProps {
   open: boolean
@@ -64,16 +65,18 @@ export function ChangeLocationModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const [locationType, setLocationType] = useState<'racecourse' | 'farm'>(
-    currentLocationType || (currentRacecourseId ? 'racecourse' : 'farm')
+    currentLocationType || (currentRacecourseId ? 'racecourse' : 'racecourse')
   )
   const [city, setCity] = useState(currentCity || '')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     if (open) {
-      setLocationType(currentLocationType || (currentRacecourseId ? 'racecourse' : 'farm'))
+      setLocationType(currentLocationType || (currentRacecourseId ? 'racecourse' : 'racecourse'))
       setCity(currentCity || '')
       setStartDate(new Date().toISOString().split('T')[0])
+      setNotes('')
     }
   }, [open, currentLocationType, currentCity, currentRacecourseId])
 
@@ -84,6 +87,11 @@ export function ChangeLocationModal({
 
     if (!city) {
       toast.error('Lütfen bir şehir seçin')
+      return
+    }
+
+    if (!notes || notes.trim() === '') {
+      toast.error('Lütfen not ekleyin')
       return
     }
 
@@ -100,6 +108,7 @@ export function ChangeLocationModal({
           locationType,
           city,
           startDate,
+          notes: notes.trim(),
         }),
       })
 
@@ -122,101 +131,136 @@ export function ChangeLocationModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Konum Değiştir - {horseName}</DialogTitle>
+      <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
+        <DialogHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <MapPin className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <div className="w-[240px] mx-auto">
+            <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              {horseName}
+            </DialogTitle>
+          </div>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Location Type */}
-          <div className="space-y-2">
-            <Label>Konum Tipi *</Label>
-            <div className="flex gap-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="racecourse"
-                  checked={locationType === 'racecourse'}
-                  onChange={(e) => {
-                    setLocationType('racecourse')
-                    setCity('')
-                  }}
-                  className="w-4 h-4"
-                />
-                <span>Hipodrom</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="farm"
-                  checked={locationType === 'farm'}
-                  onChange={(e) => {
-                    setLocationType('farm')
-                    setCity('')
-                  }}
-                  className="w-4 h-4"
-                />
-                <span>Çiftlik</span>
-              </label>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="w-[240px] mx-auto space-y-5">
+            {/* Location Type */}
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Konum Tipi *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="racecourse"
+                    checked={locationType === 'racecourse'}
+                    onChange={(e) => {
+                      setLocationType('racecourse')
+                      setCity('')
+                    }}
+                    className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1]"
+                  />
+                  <span className="text-gray-700 text-sm">Hipodrom</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value="farm"
+                    checked={locationType === 'farm'}
+                    onChange={(e) => {
+                      setLocationType('farm')
+                      setCity('')
+                    }}
+                    className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1]"
+                  />
+                  <span className="text-gray-700 text-sm">Çiftlik</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          {/* Current Location Display */}
-          {(currentLocationType && currentCity) && (
-            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <Label className="text-xs text-gray-600 mb-1">Mevcut Konum</Label>
-              <p className="text-sm font-medium text-gray-900">
-                {currentLocationType === 'racecourse' ? 'Hipodrom' : 'Çiftlik'}: {currentCity}
-              </p>
+            {/* Current Location Display */}
+            {(currentLocationType && currentCity) && (
+              <div className="p-3 border-2 border-indigo-100/50 rounded-lg bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg">
+                <Label className="text-xs text-gray-600 mb-1 block">Mevcut Konum</Label>
+                <p className="text-sm font-medium text-gray-900">
+                  {currentLocationType === 'racecourse' ? 'Hipodrom' : 'Çiftlik'}: {currentCity}
+                </p>
+              </div>
+            )}
+
+            {/* City Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="city" className="text-gray-700 font-medium">Şehir *</Label>
+              <select
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+                disabled={isSubmitting}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">{locationType === 'racecourse' ? 'Hipodrom Seçin' : 'Şehir Seçin'}</option>
+                {availableCities.map((cityName) => (
+                  <option key={cityName} value={cityName}>
+                    {cityName}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {/* City Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="city">Şehir *</Label>
-            <select
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              required
-              disabled={isSubmitting}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">Şehir seçin</option>
-              {availableCities.map((cityName) => (
-                <option key={cityName} value={cityName}>
-                  {cityName}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Start Date */}
+            <div className="space-y-2">
+              <Label htmlFor="startDate" className="text-gray-700 font-medium">Başlangıç Tarihi *</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                required
+                disabled={isSubmitting}
+                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                style={{ width: '100%', maxWidth: '240px' }}
+              />
+            </div>
 
-          {/* Start Date */}
-          <div className="space-y-2">
-            <Label htmlFor="startDate">Başlangıç Tarihi *</Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-gray-700 font-medium">Not *</Label>
+              <textarea
+                id="notes"
+                placeholder="Not ekleyin"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                required
+                disabled={isSubmitting}
+                rows={3}
+                className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              />
+            </div>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              İptal
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
-            </Button>
+            {/* Actions */}
+            <div className="pt-2">
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1]"
+                >
+                  İptal
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isSubmitting ? 'Kaydediliyor...' : 'Kaydet'}
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </DialogContent>

@@ -115,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(data.user)
-      toast.success('Giriş başarılı')
       router.push('/app/home')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Giriş başarısız'
@@ -135,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       setUser(null)
       router.push('/')
-      toast.success('Çıkış yapıldı')
     } catch (error) {
       console.error('Logout error:', error)
       toast.error('Çıkış yapılamadı')

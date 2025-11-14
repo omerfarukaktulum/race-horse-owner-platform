@@ -9,6 +9,7 @@ import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
+import { TurkishLira } from 'lucide-react'
 
 interface Horse {
   id: string
@@ -37,8 +38,8 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
   const [customCategory, setCustomCategory] = useState('')
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
-  const [photo, setPhoto] = useState<File | null>(null)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<File[]>([])
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
 
   useEffect(() => {
     if (open) {
@@ -60,8 +61,8 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
       setCustomCategory('')
       setAmount('')
       setNotes('')
-      setPhoto(null)
-      setPhotoPreview(null)
+      setPhotos([])
+      setPhotoPreviews([])
     }
   }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode])
 
@@ -102,18 +103,39 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    const validFiles: File[] = []
+    const newPreviews: string[] = []
+
+    files.forEach((file) => {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Fotoğraf boyutu 5MB\'dan küçük olmalıdır')
+        toast.error(`${file.name} boyutu 5MB'dan küçük olmalıdır`)
         return
       }
-      setPhoto(file)
+      validFiles.push(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string)
+        newPreviews.push(reader.result as string)
+        if (newPreviews.length === validFiles.length) {
+          setPhotos([...photos, ...validFiles])
+          setPhotoPreviews([...photoPreviews, ...newPreviews])
+        }
       }
       reader.readAsDataURL(file)
+    })
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index)
+    const newPreviews = photoPreviews.filter((_, i) => i !== index)
+    setPhotos(newPhotos)
+    setPhotoPreviews(newPreviews)
+    // Reset the file input
+    const fileInput = document.getElementById('photo') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
     }
   }
 
@@ -149,9 +171,9 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
       formData.append('amount', amount)
       formData.append('currency', 'TRY')
       formData.append('notes', notes)
-      if (photo) {
-        formData.append('photo', photo)
-      }
+      photos.forEach((photo) => {
+        formData.append('photos', photo)
+      })
 
       const response = await fetch('/api/expenses', {
         method: 'POST',
@@ -178,25 +200,29 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">{TR.expenses.addExpense}</DialogTitle>
+      <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
+        <DialogHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <TurkishLira className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          {isSingleHorseMode && preselectedHorseName && (
+            <div className="w-[240px] mx-auto">
+              <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                {preselectedHorseName}
+              </DialogTitle>
+            </div>
+          )}
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Horse Selection */}
-          <div className="space-y-3">
-            <Label className="text-base font-medium">
-              {isSingleHorseMode ? 'At' : TR.expenses.selectHorses}
-            </Label>
-
-            {isSingleHorseMode ? (
-              // Single horse mode - show as read-only
-              <div className="p-4 border rounded-lg bg-gray-50">
-                <p className="font-medium text-gray-900">{preselectedHorseName}</p>
-                <p className="text-sm text-gray-500 mt-1">Bu at için gider ekleniyor</p>
-              </div>
-            ) : (
-              <>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="w-[240px] mx-auto space-y-5">
+            {/* Horse Selection */}
+            {!isSingleHorseMode && (
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">
+                  {TR.expenses.selectHorses}
+                </Label>
                 {horses.length > 1 && (
                   <div className="flex justify-end">
                     <Button
@@ -204,6 +230,7 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
                       variant="outline"
                       size="sm"
                       onClick={selectAll}
+                      className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1] text-xs"
                     >
                       {horses.every((h) => h.selected)
                         ? 'Seçimi Temizle'
@@ -222,145 +249,180 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
                     <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+                  <div className="space-y-2 max-h-60 overflow-y-auto border-2 border-indigo-100/50 rounded-lg p-3 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white">
                     {horses.map((horse, index) => (
                       <div
                         key={horse.id}
-                        className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded"
+                        className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 cursor-pointer ${
+                          horse.selected
+                            ? 'bg-indigo-100/50 border-2 border-[#6366f1]'
+                            : 'hover:bg-indigo-50/30 border-2 border-transparent'
+                        }`}
+                        onClick={() => toggleHorse(index)}
                       >
                         <Checkbox
                           checked={horse.selected}
                           onCheckedChange={() => toggleHorse(index)}
+                          className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1]"
                         />
-                        <div 
-                          className="flex-1 cursor-pointer"
-                          onClick={() => toggleHorse(index)}
-                        >
-                          <p className="font-medium">{horse.name}</p>
-                          <p className="text-sm text-gray-500">{horse.status}</p>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900 text-sm">{horse.name}</p>
+                          <p className="text-xs text-gray-500">{horse.status}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
-          </div>
 
-          {/* Date */}
-          <div className="space-y-2">
-            <Label htmlFor="date">{TR.expenses.date} *</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Category */}
-          <div className="space-y-2">
-            <Label htmlFor="category">{TR.expenses.category} *</Label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-              disabled={isSubmitting}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">Kategori seçin</option>
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Custom Category Name */}
-          {category === 'OZEL' && (
+            {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="customCategory">Özel Kategori Adı *</Label>
-              <Input
-                id="customCategory"
-                type="text"
-                placeholder="Kategori adı girin"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
+              <Label htmlFor="category" className="text-gray-700 font-medium">{TR.expenses.category} *</Label>
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                 required
                 disabled={isSubmitting}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Kategori seçin</option>
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-2">
+              <Label htmlFor="date" className="text-gray-700 font-medium">{TR.expenses.date} *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                required
+                disabled={isSubmitting}
+                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                style={{ width: '100%', maxWidth: '240px' }}
               />
             </div>
-          )}
 
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">{TR.expenses.amount} (₺) *</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">{TR.expenses.notes}</Label>
-            <textarea
-              id="notes"
-              placeholder="İsteğe bağlı notlar"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isSubmitting}
-              rows={4}
-              className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-
-          {/* Photo Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="photo">{TR.expenses.photo}</Label>
-            <Input
-              id="photo"
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              disabled={isSubmitting}
-            />
-            {photoPreview && (
-              <div className="mt-2">
-                <img
-                  src={photoPreview}
-                  alt="Preview"
-                  className="max-w-xs rounded-lg border"
+            {/* Custom Category Name */}
+            {category === 'OZEL' && (
+              <div className="space-y-2">
+                <Label htmlFor="customCategory" className="text-gray-700 font-medium">Özel Kategori Adı *</Label>
+                <Input
+                  id="customCategory"
+                  type="text"
+                  placeholder="Kategori adı girin"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
                 />
               </div>
             )}
-          </div>
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              {TR.common.cancel}
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? TR.common.loading : TR.expenses.addExpense}
-            </Button>
+            {/* Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="text-gray-700 font-medium">{TR.expenses.amount} (₺) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                disabled={isSubmitting}
+                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-gray-700 font-medium">Not *</Label>
+              <textarea
+                id="notes"
+                placeholder="Not Ekleyin"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isSubmitting}
+                rows={3}
+                className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              />
+            </div>
+
+            {/* Photo Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="photo" className="text-gray-700 font-medium">{TR.expenses.photo}</Label>
+              <div className="relative">
+                <label htmlFor="photo" className="cursor-pointer">
+                  <div className="flex items-center justify-center h-11 w-full border-2 border-dashed border-gray-300 rounded-md hover:border-[#6366f1] transition-colors bg-gray-50 hover:bg-gray-100">
+                    <span className="text-sm text-gray-600 font-medium">Dosya Seç</span>
+                  </div>
+                  <Input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoChange}
+                    disabled={isSubmitting}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {photoPreviews.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {photoPreviews.map((preview, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-300">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(index)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors"
+                        aria-label="Remove photo"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2">
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1]"
+                >
+                  {TR.common.cancel}
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  {isSubmitting ? TR.common.loading : TR.expenses.addExpense}
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </DialogContent>

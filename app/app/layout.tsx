@@ -5,7 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, DollarSign, BarChart3, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
+import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
@@ -57,7 +57,7 @@ function AppNavbar() {
   const navItems = [
     { href: '/app/home', label: TR.nav.home, icon: Home },
     { href: '/app/horses', label: TR.nav.horses, icon: LayoutGrid },
-    { href: '/app/expenses', label: TR.nav.expenses, icon: DollarSign },
+    { href: '/app/expenses', label: TR.nav.expenses, icon: TurkishLira },
     { href: '/app/stats', label: TR.nav.statistics, icon: BarChart3 },
   ]
 
@@ -136,7 +136,7 @@ function AppNavbar() {
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
                         onClick={() => setAccountMenuOpen(false)}
                       >
-                        <DollarSign className="h-4 w-4" />
+                        <TurkishLira className="h-4 w-4" />
                         {TR.nav.billing}
                       </button>
                     </Link>
@@ -204,7 +204,7 @@ function AppNavbar() {
                       className="w-full justify-start"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <DollarSign className="h-4 w-4 mr-2" />
+                      <TurkishLira className="h-4 w-4 mr-2" />
                       {TR.nav.billing}
                     </Button>
                   </Link>

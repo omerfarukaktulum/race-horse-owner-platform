@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { ArrowLeft, Edit, Trash2, DollarSign } from 'lucide-react'
+import { ArrowLeft, TurkishLira, LayoutGrid, MapPin, FileText } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency } from '@/lib/utils/format'
 import Link from 'next/link'
+import { AddNoteModal } from '@/app/components/modals/add-note-modal'
+import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 
 interface LocationHistory {
   id: string
@@ -94,6 +96,16 @@ interface HorseDetail {
       role: string
     }
   }>
+  notes?: Array<{
+    id: string
+    date: string
+    note: string
+    photoUrl?: string | string[]
+    addedBy: {
+      email: string
+      role: string
+    }
+  }>
   locationHistory?: LocationHistory[]
   raceHistory?: RaceHistory[]
 }
@@ -105,6 +117,8 @@ export default function HorseDetailPage() {
 
   const [horse, setHorse] = useState<HorseDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
 
   useEffect(() => {
     if (horseId) {
@@ -121,7 +135,21 @@ export default function HorseDetailPage() {
         throw new Error(data.error || 'At yüklenemedi')
       }
 
-      setHorse(data.horse)
+      const horseData = data.horse
+
+      // Fetch notes separately
+      try {
+        const notesResponse = await fetch(`/api/horses/${horseId}/notes`)
+        const notesData = await notesResponse.json()
+        if (notesResponse.ok && notesData.notes) {
+          horseData.notes = notesData.notes
+        }
+      } catch (notesError) {
+        console.error('Fetch notes error:', notesError)
+        // Don't fail the whole page if notes fail
+      }
+
+      setHorse(horseData)
     } catch (error) {
       console.error('Fetch horse error:', error)
       toast.error('At yüklenirken bir hata oluştu')
@@ -135,10 +163,10 @@ export default function HorseDetailPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+          <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
           </div>
-          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+          <p className="text-gray-900 font-semibold">{TR.common.loading}</p>
           <p className="text-sm text-gray-600 mt-2">At bilgileri yükleniyor...</p>
         </div>
       </div>
@@ -151,48 +179,111 @@ export default function HorseDetailPage() {
 
   const age = horse.yob ? new Date().getFullYear() - horse.yob : null
 
+  // Determine if horse is male or female for styling
+  const isMale = horse.gender?.includes('Erkek') || horse.gender?.includes('ERKEK') || 
+                 horse.gender?.includes('Aygır') || horse.gender?.includes('AYGIR')
+  const isFemale = horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
+                   horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          {TR.common.back}
-        </Button>
-      </div>
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        {TR.common.back}
+      </Button>
 
       {/* Header Card */}
-      <Card className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-xl border-none">
+      <Card className="bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
         <CardContent className="pt-6 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{horse.name}</h1>
-              <div className="flex flex-wrap items-center gap-3 text-blue-100">
-                {age && (
-                  <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">
-                    {age} yaşında
-                  </span>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+            <div className="flex items-start gap-4 flex-1">
+              {/* Icon Badge */}
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                <LayoutGrid className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  {horse.name}
+                </h1>
+                {/* Origin Information */}
+                {(horse.sireName || horse.damName) && (
+                  <p className="text-sm text-gray-600 mb-3">
+                    {horse.sireName && horse.damName 
+                      ? `${horse.sireName} - ${horse.damName}`
+                      : horse.sireName || horse.damName}
+                  </p>
                 )}
-                {horse.yob && (
-                  <span className="text-sm font-medium">
-                    Doğum: {horse.yob}
+                <div className="flex flex-wrap items-center gap-2">
+                  {age && (
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
+                      isMale 
+                        ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                        : isFemale
+                        ? 'bg-purple-100 text-purple-700 border-purple-200'
+                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    }`}>
+                      {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
+                    </span>
+                  )}
+                  {horse.gender && (
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                      isMale 
+                        ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                        : isFemale
+                        ? 'bg-purple-100 text-purple-700 border-purple-200'
+                        : 'bg-gray-100 text-gray-700 border-gray-200'
+                    }`}>
+                      {isMale ? 'Erkek' : isFemale ? 'Dişi' : horse.gender}
+                    </span>
+                  )}
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
+                    horse.status === 'RACING' 
+                      ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : horse.status === 'STALLION'
+                      ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                      : horse.status === 'MARE'
+                      ? 'bg-purple-100 text-purple-700 border-purple-200'
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}>
+                    {horse.status === 'RACING' && TR.horses.racing}
+                    {horse.status === 'STALLION' && TR.horses.stallion}
+                    {horse.status === 'MARE' && TR.horses.mare}
+                    {horse.status === 'RETIRED' && TR.horses.retired}
                   </span>
-                )}
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-sm font-medium">
-                  {horse.status === 'RACING' && TR.horses.racing}
-                  {horse.status === 'STALLION' && TR.horses.stallion}
-                  {horse.status === 'MARE' && TR.horses.mare}
-                  {horse.status === 'RETIRED' && TR.horses.retired}
-                </span>
+                  {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 
+                   horse.status !== 'MARE' && 
+                   !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
+                     horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')) && (
+                    <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
+                      Hand: {horse.handicapPoints}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setIsNoteModalOpen(true)}
+                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Not Ekle
+              </Button>
+              <Button 
+                onClick={() => setIsLocationModalOpen(true)}
+                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <MapPin className="h-4 w-4 mr-2" />
+                Konum Değiştir
+              </Button>
               <Link href={`/app/expenses/new?horseId=${horse.id}`}>
-                <Button className="bg-white text-[#6366f1] hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all">
-                  <DollarSign className="h-4 w-4 mr-2" />
+                <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                  <TurkishLira className="h-4 w-4 mr-2" />
                   Gider Ekle
                 </Button>
               </Link>
@@ -204,13 +295,15 @@ export default function HorseDetailPage() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 hover:shadow-xl transition-shadow">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">At Bilgileri</CardTitle>
+            <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              At Bilgileri
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-gray-600 font-medium">{TR.horses.status}</p>
-                <p className="font-semibold text-gray-900 mt-1">
+                <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.status}</p>
+                <p className="font-semibold text-gray-900">
                   {horse.status === 'RACING' && TR.horses.racing}
                   {horse.status === 'STALLION' && TR.horses.stallion}
                   {horse.status === 'MARE' && TR.horses.mare}
@@ -219,8 +312,8 @@ export default function HorseDetailPage() {
               </div>
               {horse.yob && (
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">{TR.horses.age}</p>
-                  <p className="font-semibold text-gray-900 mt-1">{age} yaşında</p>
+                  <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.age}</p>
+                  <p className="font-semibold text-gray-900">{age} yaşında</p>
                 </div>
               )}
             </div>
@@ -230,32 +323,34 @@ export default function HorseDetailPage() {
         {horse.status === 'RACING' && (
           <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 hover:shadow-xl transition-shadow">
             <CardHeader>
-              <CardTitle className="text-xl font-bold text-gray-900">Yarış Bilgileri</CardTitle>
+              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                Yarış Bilgileri
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 {horse.racecourse && (
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">{TR.horses.racecourse}</p>
-                    <p className="font-semibold text-gray-900 mt-1">{horse.racecourse.name}</p>
+                    <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.racecourse}</p>
+                    <p className="font-semibold text-gray-900">{horse.racecourse.name}</p>
                   </div>
                 )}
                 {horse.trainer && (
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">{TR.horses.trainer}</p>
-                    <p className="font-semibold text-gray-900 mt-1">{horse.trainer.fullName}</p>
+                    <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.trainer}</p>
+                    <p className="font-semibold text-gray-900">{horse.trainer.fullName}</p>
                   </div>
                 )}
                 {horse.groomName && (
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">{TR.horses.groom}</p>
-                    <p className="font-semibold text-gray-900 mt-1">{horse.groomName}</p>
+                    <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.groom}</p>
+                    <p className="font-semibold text-gray-900">{horse.groomName}</p>
                   </div>
                 )}
                 {horse.stableLabel && (
                   <div>
-                    <p className="text-sm text-gray-600 font-medium">{TR.horses.stable}</p>
-                    <p className="font-semibold text-gray-900 mt-1">{horse.stableLabel}</p>
+                    <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.stable}</p>
+                    <p className="font-semibold text-gray-900">{horse.stableLabel}</p>
                   </div>
                 )}
               </div>
@@ -266,12 +361,14 @@ export default function HorseDetailPage() {
         {(horse.status === 'STALLION' || horse.status === 'MARE') && horse.farm && (
           <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50 hover:shadow-xl transition-shadow">
             <CardHeader>
-              <CardTitle className="text-xl font-bold text-gray-900">Çiftlik Bilgileri</CardTitle>
+              <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                Çiftlik Bilgileri
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div>
-                <p className="text-sm text-gray-600 font-medium">{TR.horses.farm}</p>
-                <p className="font-semibold text-gray-900 mt-1">{horse.farm.name}</p>
+                <p className="text-sm text-gray-600 font-medium mb-1">{TR.horses.farm}</p>
+                <p className="font-semibold text-gray-900">{horse.farm.name}</p>
               </div>
             </CardContent>
           </Card>
@@ -281,10 +378,12 @@ export default function HorseDetailPage() {
       <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-900">{TR.expenses.title}</CardTitle>
+            <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              {TR.expenses.title}
+            </CardTitle>
             <Link href={`/app/expenses/new?horseId=${horse.id}`}>
-              <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all">
-                <DollarSign className="h-4 w-4 mr-2" />
+              <Button size="sm" className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-md hover:shadow-lg transition-all duration-300">
+                <TurkishLira className="h-4 w-4 mr-2" />
                 {TR.expenses.addExpense}
               </Button>
             </Link>
@@ -293,8 +392,8 @@ export default function HorseDetailPage() {
         <CardContent>
           {horse.expenses.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="h-8 w-8 text-gray-400" />
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <TurkishLira className="h-8 w-8 text-white" />
               </div>
               <p className="text-gray-600 font-medium">
                 {TR.expenses.noExpenses}
@@ -305,7 +404,7 @@ export default function HorseDetailPage() {
               {horse.expenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="flex items-center justify-between p-4 border-2 border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md transition-all"
+                  className="flex items-center justify-between p-4 border-2 border-indigo-100/50 rounded-lg hover:border-indigo-200 hover:shadow-md transition-all bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white"
                 >
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
@@ -333,11 +432,75 @@ export default function HorseDetailPage() {
               ))}
               {horse.expenses.length >= 10 && (
                 <Link href={`/app/expenses/list?horseId=${horse.id}`}>
-                  <Button variant="outline" className="w-full border-[#6366f1] text-[#6366f1] hover:bg-indigo-50">
+                  <Button variant="outline" className="w-full border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1]">
                     Tüm Giderleri Görüntüle
                   </Button>
                 </Link>
               )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Notes Section */}
+      <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              Notlar
+            </CardTitle>
+            <Button 
+              size="sm"
+              onClick={() => setIsNoteModalOpen(true)}
+              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Not Ekle
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!horse.notes || horse.notes.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <p className="text-gray-600 font-medium">
+                Henüz not eklenmemiş
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {horse.notes.map((note) => (
+                <div
+                  key={note.id}
+                  className="flex flex-col gap-3 p-4 border-2 border-indigo-100/50 rounded-lg hover:border-indigo-200 hover:shadow-md transition-all bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white"
+                >
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{note.note}</p>
+                    {note.photoUrl && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(() => {
+                          const photoUrls = typeof note.photoUrl === 'string' 
+                            ? (note.photoUrl.startsWith('[') ? JSON.parse(note.photoUrl) : [note.photoUrl])
+                            : note.photoUrl
+                          return photoUrls.map((url: string, idx: number) => (
+                            <img
+                              key={idx}
+                              src={url}
+                              alt={`Note photo ${idx + 1}`}
+                              className="max-w-full h-auto rounded-lg border-2 border-gray-200 max-h-64 object-contain"
+                            />
+                          ))
+                        })()}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2 font-medium">
+                      {formatDate(new Date(note.date))} • {note.addedBy.email}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
@@ -354,7 +517,10 @@ export default function HorseDetailPage() {
           <CardContent className="space-y-6">
             {/* Key Metrics Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {horse.handicapPoints !== undefined && horse.handicapPoints > 0 && (
+              {horse.handicapPoints !== undefined && horse.handicapPoints > 0 && 
+               horse.status !== 'MARE' && 
+               !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
+                 horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')) && (
                 <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                   <p className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-1">Handikap Puanı</p>
                   <p className="text-2xl font-bold text-blue-900">{horse.handicapPoints}</p>
@@ -520,21 +686,21 @@ export default function HorseDetailPage() {
             <div className="space-y-6">
               {/* Sire Line */}
               {horse.sireName && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-500">
-                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">Baba (Sire)</p>
-                  <p className="text-lg font-bold text-blue-900 mb-3">{horse.sireName}</p>
+                <div className="p-4 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white rounded-lg border-2 border-indigo-100/50">
+                  <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Baba (Sire)</p>
+                  <p className="text-lg font-bold text-indigo-900 mb-3">{horse.sireName}</p>
                   {(horse.sireSire || horse.sireDam) && (
-                    <div className="ml-4 space-y-2 border-l-2 border-blue-300 pl-4">
+                    <div className="ml-4 space-y-2 border-l-2 border-indigo-300 pl-4">
                       {horse.sireSire && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium mb-1">Baba'nın Babası</p>
-                          <p className="text-sm font-semibold text-blue-800">{horse.sireSire}</p>
+                          <p className="text-xs text-indigo-600 font-medium mb-1">Baba'nın Babası</p>
+                          <p className="text-sm font-semibold text-indigo-800">{horse.sireSire}</p>
                         </div>
                       )}
                       {horse.sireDam && (
                         <div>
-                          <p className="text-xs text-blue-600 font-medium mb-1">Baba'nın Annesi</p>
-                          <p className="text-sm font-semibold text-blue-800">{horse.sireDam}</p>
+                          <p className="text-xs text-indigo-600 font-medium mb-1">Baba'nın Annesi</p>
+                          <p className="text-sm font-semibold text-indigo-800">{horse.sireDam}</p>
                         </div>
                       )}
                     </div>
@@ -544,21 +710,21 @@ export default function HorseDetailPage() {
               
               {/* Dam Line */}
               {horse.damName && (
-                <div className="p-4 bg-gradient-to-r from-pink-50 to-pink-100 rounded-lg border-l-4 border-pink-500">
-                  <p className="text-xs font-semibold text-pink-700 uppercase tracking-wide mb-2">Anne (Dam)</p>
-                  <p className="text-lg font-bold text-pink-900 mb-3">{horse.damName}</p>
+                <div className="p-4 bg-gradient-to-br from-purple-50/60 via-purple-50/40 to-white rounded-lg border-2 border-purple-100/50">
+                  <p className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-2">Anne (Dam)</p>
+                  <p className="text-lg font-bold text-purple-900 mb-3">{horse.damName}</p>
                   {(horse.damSire || horse.damDam) && (
-                    <div className="ml-4 space-y-2 border-l-2 border-pink-300 pl-4">
+                    <div className="ml-4 space-y-2 border-l-2 border-purple-300 pl-4">
                       {horse.damSire && (
                         <div>
-                          <p className="text-xs text-pink-600 font-medium mb-1">Anne'nin Babası</p>
-                          <p className="text-sm font-semibold text-pink-800">{horse.damSire}</p>
+                          <p className="text-xs text-purple-600 font-medium mb-1">Anne'nin Babası</p>
+                          <p className="text-sm font-semibold text-purple-800">{horse.damSire}</p>
                         </div>
                       )}
                       {horse.damDam && (
                         <div>
-                          <p className="text-xs text-pink-600 font-medium mb-1">Anne'nin Annesi</p>
-                          <p className="text-sm font-semibold text-pink-800">{horse.damDam}</p>
+                          <p className="text-xs text-purple-600 font-medium mb-1">Anne'nin Annesi</p>
+                          <p className="text-sm font-semibold text-purple-800">{horse.damDam}</p>
                         </div>
                       )}
                     </div>
@@ -727,7 +893,7 @@ export default function HorseDetailPage() {
                           href={race.videoUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                          className="text-[#6366f1] hover:text-[#4f46e5] hover:underline font-medium"
                         >
                           Video ({formatDate(new Date(race.raceDate))})
                         </a>
@@ -737,7 +903,7 @@ export default function HorseDetailPage() {
                           href={race.photoUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline ml-2"
+                          className="text-[#6366f1] hover:text-[#4f46e5] hover:underline ml-2 font-medium"
                         >
                           Foto ({formatDate(new Date(race.raceDate))})
                         </a>
@@ -755,7 +921,9 @@ export default function HorseDetailPage() {
       {horse.locationHistory && horse.locationHistory.length > 0 && (
         <Card className="bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200/50">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-gray-900">Konum Geçmişi</CardTitle>
+            <CardTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+              Konum Geçmişi
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -792,32 +960,32 @@ export default function HorseDetailPage() {
                 return (
                   <div
                     key={location.id}
-                    className="flex items-start justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    className="flex items-start justify-between p-4 border-2 border-indigo-100/50 rounded-lg hover:border-indigo-200 hover:shadow-md transition-all bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white"
                   >
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <p className="font-medium">{locationName}</p>
+                      <div className="flex items-center space-x-2 flex-wrap gap-2">
+                        <p className="font-semibold text-gray-900">{locationName}</p>
                         {location.racecourse && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200">
+                          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-100 text-indigo-700 border border-indigo-200">
                             Hipodrom
                           </span>
                         )}
                         {location.farm && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
                             Çiftlik
                           </span>
                         )}
                         {!location.endDate && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200">
                             Mevcut
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-gray-600 mt-2">
                         {formatDate(startDate)} -{' '}
                         {location.endDate ? formatDate(endDate) : 'Devam ediyor'}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-500 mt-1 font-medium">
                         Süre: {durationText}
                       </p>
                     </div>
@@ -827,6 +995,34 @@ export default function HorseDetailPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Modals */}
+      {horse && (
+        <>
+          <AddNoteModal
+            open={isNoteModalOpen}
+            onClose={() => setIsNoteModalOpen(false)}
+            horseId={horse.id}
+            horseName={horse.name}
+            onSuccess={() => {
+              fetchHorse()
+            }}
+          />
+          <ChangeLocationModal
+            open={isLocationModalOpen}
+            onClose={() => setIsLocationModalOpen(false)}
+            horseId={horse.id}
+            horseName={horse.name}
+            currentLocationType={horse.racecourse ? 'racecourse' : horse.farm ? 'farm' : undefined}
+            currentCity={horse.racecourse?.name || horse.farm?.name}
+            currentRacecourseId={horse.racecourse?.id}
+            currentFarmId={horse.farm?.id}
+            onSuccess={() => {
+              fetchHorse()
+            }}
+          />
+        </>
       )}
     </div>
   )

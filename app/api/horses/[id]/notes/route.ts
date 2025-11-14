@@ -3,7 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     // Get user from token
     const cookieStore = cookies()
@@ -20,39 +23,28 @@ export async function POST(request: Request) {
       trainerId?: string
     }
 
+    const horseId = params.id
     const formData = await request.formData()
     const date = formData.get('date') as string
-    const category = formData.get('category') as string
-    const amount = formData.get('amount') as string
-    const note = formData.get('notes') as string  // Form sends 'notes' but DB expects 'note'
-    const horseIdsJson = formData.get('horseIds') as string
+    const note = formData.get('note') as string
     const photos = formData.getAll('photos') as File[]
 
-    if (!date || !category || !amount || !horseIdsJson) {
+    if (!date || !note) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    const horseIds = JSON.parse(horseIdsJson) as string[]
-
-    if (!Array.isArray(horseIds) || horseIds.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one horse is required' },
-        { status: 400 }
-      )
-    }
-
-    // Verify horse ownership/assignment
-    const horses = await prisma.horse.findMany({
-      where: { id: { in: horseIds } },
+    // Verify horse exists and user has access
+    const horse = await prisma.horse.findUnique({
+      where: { id: horseId },
       include: { stablemate: true },
     })
 
-    if (horses.length !== horseIds.length) {
+    if (!horse) {
       return NextResponse.json(
-        { error: 'Some horses not found' },
+        { error: 'Horse not found' },
         { status: 404 }
       )
     }
@@ -73,8 +65,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
       }
       
-      const hasAccess = horses.every((h) => h.stablemate.ownerId === ownerId)
-      if (!hasAccess) {
+      if (horse.stablemate.ownerId !== ownerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
@@ -92,8 +83,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
       }
       
-      const hasAccess = horses.every((h) => h.trainerId === trainerId)
-      if (!hasAccess) {
+      if (horse.trainerId !== trainerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role !== 'ADMIN') {
@@ -112,44 +102,39 @@ export async function POST(request: Request) {
     }
     const photoUrl = photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
 
-    // Create expense for each horse
-    const expenses = await Promise.all(
-      horseIds.map((horseId) =>
-        prisma.expense.create({
-          data: {
-            horseId,
-            date: new Date(date),
-            category,
-            amount: parseFloat(amount),
-            note: note || null,  // DB field is 'note' not 'notes'
-            photoUrl,
-            addedById: decoded.id,
+    // Create note
+    const horseNote = await prisma.horseNote.create({
+      data: {
+        horseId,
+        date: new Date(date),
+        note: note.trim(),
+        photoUrl,
+        addedById: decoded.id,
+      },
+      include: {
+        addedBy: {
+          select: {
+            email: true,
+            role: true,
           },
-          include: {
-            horse: true,
-            addedBy: {
-              select: {
-                email: true,
-                ownerProfile: { select: { officialName: true } },
-                trainerProfile: { select: { fullName: true } },
-              },
-            },
-          },
-        })
-      )
-    )
+        },
+      },
+    })
 
-    return NextResponse.json({ success: true, expenses })
+    return NextResponse.json({ success: true, note: horseNote })
   } catch (error) {
-    console.error('Create expense error:', error)
+    console.error('Create note error:', error)
     return NextResponse.json(
-      { error: 'Failed to create expense' },
+      { error: 'Failed to create note' },
       { status: 500 }
     )
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     // Get user from token
     const cookieStore = cookies()
@@ -166,34 +151,23 @@ export async function GET(request: Request) {
       trainerId?: string
     }
 
-    const { searchParams } = new URL(request.url)
-    const horseId = searchParams.get('horseId')
-    const category = searchParams.get('category')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
+    const horseId = params.id
 
-    // Build filter
-    const where: any = {}
+    // Verify horse exists and user has access
+    const horse = await prisma.horse.findUnique({
+      where: { id: horseId },
+      include: { stablemate: true },
+    })
 
-    if (horseId) {
-      where.horseId = horseId
+    if (!horse) {
+      return NextResponse.json(
+        { error: 'Horse not found' },
+        { status: 404 }
+      )
     }
 
-    if (category) {
-      where.category = category
-    }
-
-    if (startDate) {
-      where.date = { ...where.date, gte: new Date(startDate) }
-    }
-
-    if (endDate) {
-      where.date = { ...where.date, lte: new Date(endDate) }
-    }
-
-    // Filter by role
+    // Check access rights
     if (decoded.role === 'OWNER') {
-      // Get ownerId - check by userId if not in token
       let ownerId = decoded.ownerId
       
       if (!ownerId) {
@@ -203,15 +177,10 @@ export async function GET(request: Request) {
         ownerId = ownerProfile?.id
       }
       
-      if (ownerId) {
-        where.horse = {
-          stablemate: {
-            ownerId: ownerId,
-          },
-        }
+      if (!ownerId || horse.stablemate.ownerId !== ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
-      // Get trainerId - check by userId if not in token
       let trainerId = decoded.trainerId
       
       if (!trainerId) {
@@ -221,36 +190,32 @@ export async function GET(request: Request) {
         trainerId = trainerProfile?.id
       }
       
-      if (trainerId) {
-        where.horse = {
-          trainerId: trainerId,
-        }
+      if (!trainerId || horse.trainerId !== trainerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
+    } else if (decoded.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Fetch expenses
-    const expenses = await prisma.expense.findMany({
-      where,
+    // Get notes
+    const notes = await prisma.horseNote.findMany({
+      where: { horseId },
+      orderBy: { date: 'desc' },
       include: {
-        horse: true,
         addedBy: {
           select: {
             email: true,
-            ownerProfile: { select: { officialName: true } },
-            trainerProfile: { select: { fullName: true } },
+            role: true,
           },
         },
       },
-      orderBy: {
-        date: 'desc',
-      },
     })
 
-    return NextResponse.json({ expenses })
+    return NextResponse.json({ success: true, notes })
   } catch (error) {
-    console.error('Fetch expenses error:', error)
+    console.error('Get notes error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch expenses' },
+      { error: 'Failed to get notes' },
       { status: 500 }
     )
   }

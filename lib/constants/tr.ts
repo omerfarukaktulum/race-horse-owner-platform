@@ -132,6 +132,22 @@ export const TR = {
     return this.statistics
   },
   
+  dashboard: {
+    registrations: 'Kayıtlar & Deklareler',
+    gallops: 'İdmanlar',
+    recentRaces: 'Son Yarışlar',
+    recentExpenses: 'Son Giderler',
+    kayit: 'Kayıt',
+    deklare: 'Deklare',
+    lastXDays: 'Son {days} Gün',
+    noData: 'Veri bulunamadı',
+    loading: 'Yükleniyor...',
+    position: 'Derece',
+    jockey: 'Jokey',
+    time: 'Süre',
+    viewAll: 'Tümünü Gör',
+  },
+  
   stablemate: {
     title: 'Eküri',
     name: 'Eküri Adı',

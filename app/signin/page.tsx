@@ -37,8 +37,6 @@ export default function SignInPage() {
         throw new Error(data.error || 'Giriş başarısız')
       }
 
-      toast.success('Giriş başarılı')
-      
       // Use window.location for hard redirect to ensure cookie is included
       setTimeout(() => {
         window.location.href = '/app/home'

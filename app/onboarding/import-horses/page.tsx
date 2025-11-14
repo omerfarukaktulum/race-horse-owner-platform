@@ -242,18 +242,18 @@ export default function ImportHorsesPage() {
 
           // Wait a moment before redirecting
           await new Promise(resolve => setTimeout(resolve, 1000))
-          router.push('/app/home')
+          router.push('/app/horses')
         } catch (fetchError) {
           const message = fetchError instanceof Error ? fetchError.message : 'Detaylı veri alınırken bir hata oluştu'
           toast.error(message)
           // Still redirect even if detail fetch fails
-          setTimeout(() => router.push('/app/home'), 2000)
+          setTimeout(() => router.push('/app/horses'), 2000)
         } finally {
           setIsFetchingDetails(false)
         }
       } else {
         // No horses with externalRef, redirect immediately
-        router.push('/app/home')
+        router.push('/app/horses')
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
@@ -329,7 +329,7 @@ export default function ImportHorsesPage() {
               </div>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Seçtiğiniz atlar ekürinize ekleniyor.
+              Atlarınız ekürinize ekleniyor.
             </h2>
             <p className="text-sm text-gray-600 mb-6">
             Atlarınızın detaylı verileri TJK sisteminden alınıyor

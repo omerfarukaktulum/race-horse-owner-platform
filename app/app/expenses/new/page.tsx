@@ -310,13 +310,24 @@ export default function NewExpensePage() {
             {/* Photo Upload */}
             <div className="space-y-2">
               <Label htmlFor="photo">{TR.expenses.photo}</Label>
-              <Input
-                id="photo"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                disabled={isSubmitting}
-              />
+              <div className="relative">
+                <label htmlFor="photo" className="cursor-pointer">
+                  <div className="flex items-center justify-center h-11 w-full border-2 border-dashed border-gray-300 rounded-md hover:border-[#6366f1] transition-colors bg-gray-50 hover:bg-gray-100">
+                    <span className="text-sm text-gray-600 font-medium">Dosya Seç</span>
+                  </div>
+                  <Input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    disabled={isSubmitting}
+                    className="hidden"
+                  />
+                </label>
+                {photo && (
+                  <p className="mt-2 text-xs text-gray-600">{photo.name}</p>
+                )}
+              </div>
               {photoPreview && (
                 <div className="mt-2">
                   <img
