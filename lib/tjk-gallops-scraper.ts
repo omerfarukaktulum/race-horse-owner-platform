@@ -8,10 +8,13 @@ import { chromium, Browser, Page } from 'playwright'
 
 export interface GallopData {
   date: string          // Date of gallop (DD.MM.YYYY format)
-  distance: number      // Distance in meters
-  time?: string         // Time taken (e.g., "1.12.34")
-  jockeyName?: string   // Jockey/rider name
-  notes?: string        // Additional notes
+  distances: {          // All distances with times for this training session
+    [distance: number]: string  // e.g., { 1400: "1.02.20", 400: "0.38.50" }
+  }
+  status?: string       // Durum (Status)
+  racecourse?: string   // İ. Hip. (Training Racecourse)
+  surface?: string      // Pist (Surface)
+  jockeyName?: string   // İ. Jokeyi (Training Jockey)
   horseId: string       // Horse ID for reference
   horseName: string     // Horse name for display
 }
@@ -20,10 +23,14 @@ let browser: Browser | null = null
 
 /**
  * Fetch gallop data for a specific horse from TJK
+ * @param horseId - TJK horse ID
+ * @param horseName - Horse name for display
+ * @param days - Number of days to look back (default 7)
  */
 export async function fetchTJKHorseGallops(
   horseId: string,
-  horseName: string
+  horseName: string,
+  days: number = 7
 ): Promise<GallopData[]> {
   let page: Page | null = null
 
@@ -55,7 +62,8 @@ export async function fetchTJKHorseGallops(
     await page.waitForTimeout(2000)
 
     // Extract gallop data from the page
-    const gallops = await page.evaluate(() => {
+    const gallops = await page.evaluate((daysParam: number) => {
+      const days = daysParam
       const results: any[] = []
       
       // Find the gallops table - it has distance columns (1400m, 1200m, 1000m, etc.)
@@ -84,6 +92,7 @@ export async function fetchTJKHorseGallops(
       // Distance column indices (1400m, 1200m, 1000m, 800m, 600m, 400m, 200m)
       const distanceColumns: { distance: number; index: number }[] = []
       let dateColIndex = -1
+      let statusColIndex = -1
       let racecourseColIndex = -1
       let surfaceColIndex = -1
       let jockeyColIndex = -1
@@ -101,6 +110,10 @@ export async function fetchTJKHorseGallops(
         else if (textLower.includes('i. tarihi') || textLower.includes('tarih')) {
           dateColIndex = index
         }
+        // Match status column (Durum)
+        else if (textLower.includes('durum') || text === 'Durum') {
+          statusColIndex = index
+        }
         // Match racecourse column
         else if (textLower.includes('i. hip') || textLower.includes('hipodrom')) {
           racecourseColIndex = index
@@ -116,7 +129,12 @@ export async function fetchTJKHorseGallops(
       })
       
       console.log('[Browser] Found distance columns:', distanceColumns.map(d => `${d.distance}m`).join(', '))
-      console.log('[Browser] Date col:', dateColIndex, 'Racecourse col:', racecourseColIndex, 'Surface col:', surfaceColIndex, 'Jockey col:', jockeyColIndex)
+      console.log('[Browser] Date col:', dateColIndex, 'Status col:', statusColIndex, 'Racecourse col:', racecourseColIndex, 'Surface col:', surfaceColIndex, 'Jockey col:', jockeyColIndex)
+      
+      // Calculate cutoff date (last X days)
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - days)
+      cutoffDate.setHours(0, 0, 0, 0)
       
       const rows = gallopTable.querySelectorAll('tbody tr, tr')
       rows.forEach((row) => {
@@ -137,6 +155,26 @@ export async function fetchTJKHorseGallops(
         // Skip if no valid date
         if (!dateText || !dateText.match(/\d{2}\.\d{2}\.\d{4}/)) return
         
+        // Parse date and check if within range
+        const dateParts = dateText.split('.')
+        if (dateParts.length !== 3) return
+        
+        const gallopDate = new Date(
+          parseInt(dateParts[2]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[0])
+        )
+        gallopDate.setHours(0, 0, 0, 0)
+        
+        // Skip if older than cutoff date
+        if (gallopDate < cutoffDate) return
+        
+        // Parse status (Durum)
+        let status = ''
+        if (statusColIndex >= 0 && cells[statusColIndex]) {
+          status = cells[statusColIndex]?.textContent?.trim() || ''
+        }
+        
         // Parse racecourse (optional)
         let racecourse = ''
         if (racecourseColIndex >= 0 && cells[racecourseColIndex]) {
@@ -155,39 +193,49 @@ export async function fetchTJKHorseGallops(
           jockeyName = cells[jockeyColIndex]?.textContent?.trim() || ''
         }
         
-        // Check each distance column for a time value
+        // Collect all distances with times for this training session
+        const distances: { [distance: number]: string } = {}
         distanceColumns.forEach(({ distance, index }) => {
           if (index >= 0 && index < cells.length) {
             const timeText = cells[index]?.textContent?.trim() || ''
             
             // If there's a time value (format like "0.38.50" or "1.02.20")
             if (timeText && timeText.match(/\d+\.\d+\.\d+/)) {
-              results.push({
-                date: dateText,
-                distance,
-                time: timeText,
-                jockeyName: jockeyName || undefined,
-                notes: racecourse ? `${racecourse}${surface ? ` - ${surface}` : ''}` : undefined,
-              })
+              distances[distance] = timeText
             }
           }
         })
+        
+        // Only add if there's at least one distance with time
+        if (Object.keys(distances).length > 0) {
+          results.push({
+            date: dateText,
+            distances,
+            status: status || undefined,
+            racecourse: racecourse || undefined,
+            surface: surface || undefined,
+            jockeyName: jockeyName || undefined,
+          })
+        }
       })
 
       console.log('[Browser] Extracted', results.length, 'gallops')
       return results
-    })
+    }, days)
 
     await context.close()
     
     console.log('[TJK Gallops] Successfully fetched', gallops.length, 'gallops for horse:', horseName)
     
-    // Add horse info to each gallop
-    return gallops.map((gallop: any) => ({
+    // Add horse info to each gallop and filter by days
+    const gallopsWithHorseInfo = gallops.map((gallop: any) => ({
       ...gallop,
       horseId,
       horseName,
     }))
+    
+    // Filter by days (already done during scraping, but double-check)
+    return filterGallopsByDays(gallopsWithHorseInfo, days)
 
   } catch (error: any) {
     console.error('[TJK Gallops] Error fetching gallops for horse:', horseName, error.message)
@@ -201,6 +249,7 @@ export async function fetchTJKHorseGallops(
 export function filterGallopsByDays(gallops: GallopData[], days: number): GallopData[] {
   const cutoffDate = new Date()
   cutoffDate.setDate(cutoffDate.getDate() - days)
+  cutoffDate.setHours(0, 0, 0, 0)
   
   return gallops.filter((gallop) => {
     // Parse date from DD.MM.YYYY format
@@ -212,6 +261,7 @@ export function filterGallopsByDays(gallops: GallopData[], days: number): Gallop
       parseInt(dateParts[1]) - 1,
       parseInt(dateParts[0])
     )
+    gallopDate.setHours(0, 0, 0, 0)
     
     return gallopDate >= cutoffDate
   })

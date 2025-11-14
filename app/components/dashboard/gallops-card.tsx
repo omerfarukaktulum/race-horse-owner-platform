@@ -7,10 +7,11 @@ import { TR } from '@/lib/constants/tr'
 
 interface GallopData {
   date: string
-  distance: number
-  time?: string
+  distances: { [distance: number]: string }  // All distances with times
+  status?: string
+  racecourse?: string
+  surface?: string
   jockeyName?: string
-  notes?: string
   horseId: string
   horseName: string
 }
@@ -53,6 +54,26 @@ export function GallopsCard() {
   }
 
   const dayOptions = [7, 14, 30]
+
+  // Get surface color based on TJK official colors
+  const getSurfaceColor = (surface?: string): { bg: string; text: string } => {
+    if (!surface) return { bg: '#f3f4f6', text: '#374151' }
+    
+    const surfaceLower = surface.toLowerCase()
+    if (surfaceLower.includes('kum') || surfaceLower.startsWith('k:')) {
+      return { bg: '#996633', text: '#ffffff' }
+    } else if (surfaceLower.includes('çim') || surfaceLower.startsWith('ç:')) {
+      return { bg: '#009900', text: '#ffffff' }
+    } else if (surfaceLower.includes('sentetik') || surfaceLower.startsWith('s:')) {
+      return { bg: '#d39b1e', text: '#ffffff' }
+    }
+    return { bg: '#f3f4f6', text: '#374151' }
+  }
+
+  // Get jockey color - fixed red color
+  const getJockeyColor = (): { bg: string; text: string } => {
+    return { bg: '#FF4F4F', text: '#ffffff' }
+  }
 
   return (
     <Card className="h-full flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-white shadow-lg border border-blue-100">
@@ -106,43 +127,74 @@ export function GallopsCard() {
           </div>
         ) : (
           <div className="overflow-y-auto space-y-3 pr-2" style={{ maxHeight: '300px' }}>
-            {gallops.map((gallop, index) => (
-              <div
-                key={`${gallop.horseId}-${gallop.date}-${index}`}
-                className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {gallop.horseName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {gallop.date}
-                    </p>
-                  </div>
-                  {gallop.time && (
-                    <div className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded">
-                      {gallop.time}
+            {gallops.map((gallop, index) => {
+              const distanceEntries = Object.entries(gallop.distances || {})
+                .map(([dist, time]) => ({ distance: parseInt(dist), time }))
+                .sort((a, b) => b.distance - a.distance) // Sort by distance descending
+              
+              return (
+                <div
+                  key={`${gallop.horseId}-${gallop.date}-${index}`}
+                  className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 text-sm">
+                        {gallop.horseName}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {gallop.date}
+                      </p>
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <span className="font-medium">📏</span> {gallop.distance}m
-                  </span>
-                  {gallop.jockeyName && (
-                    <span className="flex items-center gap-1">
-                      <span className="font-medium">👤</span> {gallop.jockeyName}
-                    </span>
-                  )}
-                </div>
-                {gallop.notes && (
-                  <div className="mt-2 text-xs text-gray-500 italic">
-                    {gallop.notes}
+                    {gallop.status && (
+                      <div className="text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        {gallop.status}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="flex flex-wrap gap-1.5 text-xs mb-2">
+                    {distanceEntries.map(({ distance, time }) => (
+                      <span
+                        key={distance}
+                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
+                        style={{ backgroundColor: '#e0e7ff', color: '#4338ca' }}
+                      >
+                        {distance}m: {time}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 text-xs">
+                    {gallop.racecourse && (
+                      <span className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0 bg-gray-100 text-gray-700">
+                        {gallop.racecourse}
+                      </span>
+                    )}
+                    {gallop.surface && (() => {
+                      const surfaceColor = getSurfaceColor(gallop.surface)
+                      return (
+                        <span
+                          className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
+                          style={{ backgroundColor: surfaceColor.bg, color: surfaceColor.text }}
+                        >
+                          {gallop.surface}
+                        </span>
+                      )
+                    })()}
+                    {gallop.jockeyName && (() => {
+                      const jockeyColor = getJockeyColor()
+                      return (
+                        <span
+                          className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
+                          style={{ backgroundColor: jockeyColor.bg, color: jockeyColor.text }}
+                        >
+                          {gallop.jockeyName}
+                        </span>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </CardContent>

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { fetchTJKHorseGallops, filterGallopsByDays, GallopData } from '@/lib/tjk-gallops-scraper'
+import { fetchTJKHorseGallops, GallopData } from '@/lib/tjk-gallops-scraper'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // Allow up to 60 seconds for scraping multiple horses
@@ -86,13 +86,11 @@ export async function GET(request: Request) {
       if (!horse.externalRef) continue
 
       try {
-        console.log('[Gallops API] Fetching gallops for horse:', horse.name)
-        const gallops = await fetchTJKHorseGallops(horse.externalRef, horse.name)
+        console.log('[Gallops API] Fetching gallops for horse:', horse.name, 'last', days, 'days')
+        // Fetch only last X days (filtering happens in scraper)
+        const gallops = await fetchTJKHorseGallops(horse.externalRef, horse.name, days)
         
-        // Filter by days
-        const filteredGallops = filterGallopsByDays(gallops, days)
-        
-        allGallops.push(...filteredGallops)
+        allGallops.push(...gallops)
       } catch (error) {
         console.error('[Gallops API] Error fetching gallops for horse:', horse.name, error)
         // Continue with other horses even if one fails
