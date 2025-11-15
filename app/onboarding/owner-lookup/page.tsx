@@ -97,7 +97,7 @@ export default function OwnerLookupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-start justify-center p-4 pt-8">
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
         <CardHeader className="text-center space-y-4 flex-shrink-0">
           <div className="flex justify-center">
@@ -115,7 +115,8 @@ export default function OwnerLookupPage() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col p-6">
-          <div className="space-y-2 flex-shrink-0">
+          {/* Fixed input section */}
+          <div className="space-y-2 flex-shrink-0 mb-4">
             <Label htmlFor="search" className="text-gray-700 font-medium">
               {TR.onboarding.searchOwner}
             </Label>
@@ -139,10 +140,11 @@ export default function OwnerLookupPage() {
             )}
           </div>
 
+          {/* Dynamic results section - grows with content, scrollable if too many */}
           {results.length > 0 && (
-            <div className="space-y-3 mt-6">
+            <div className="flex flex-col space-y-3 mb-4 flex-shrink-0">
               <Label className="text-gray-700 font-medium">{TR.onboarding.selectOwner}</Label>
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+              <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2">
                 {results.map((result, index) => (
                   <button
                     key={index}
@@ -191,7 +193,8 @@ export default function OwnerLookupPage() {
             </div>
           )}
 
-          <div className="flex justify-end pt-4 border-t border-gray-200 mt-6">
+          {/* Fixed button section */}
+          <div className="flex justify-end pt-4 border-t border-gray-200 flex-shrink-0">
             <Button
               onClick={handleSubmit}
               disabled={!selectedOwner || isSubmitting}
