@@ -131,10 +131,13 @@ export async function fetchTJKHorseGallops(
       console.log('[Browser] Found distance columns:', distanceColumns.map(d => `${d.distance}m`).join(', '))
       console.log('[Browser] Date col:', dateColIndex, 'Status col:', statusColIndex, 'Racecourse col:', racecourseColIndex, 'Surface col:', surfaceColIndex, 'Jockey col:', jockeyColIndex)
       
-      // Calculate cutoff date (last X days)
-      const cutoffDate = new Date()
-      cutoffDate.setDate(cutoffDate.getDate() - days)
-      cutoffDate.setHours(0, 0, 0, 0)
+      // Calculate cutoff date (last X days) - if days is very large, don't filter
+      let cutoffDate: Date | null = null
+      if (days < 3650) { // Only filter if less than 10 years (effectively filter)
+        cutoffDate = new Date()
+        cutoffDate.setDate(cutoffDate.getDate() - days)
+        cutoffDate.setHours(0, 0, 0, 0)
+      }
       
       const rows = gallopTable.querySelectorAll('tbody tr, tr')
       rows.forEach((row) => {
@@ -166,8 +169,8 @@ export async function fetchTJKHorseGallops(
         )
         gallopDate.setHours(0, 0, 0, 0)
         
-        // Skip if older than cutoff date
-        if (gallopDate < cutoffDate) return
+        // Skip if older than cutoff date (if filtering is enabled)
+        if (cutoffDate && gallopDate < cutoffDate) return
         
         // Parse status (Durum)
         let status = ''

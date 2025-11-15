@@ -14,6 +14,7 @@ interface RaceData {
   position?: number     // Finish position
   raceType?: string     // Race type (Kcins)
   prizeMoney?: string   // Prize money (İkramiye)
+  jockeyName?: string   // Jockey name
 }
 
 export function RecentRacesCard() {
@@ -56,14 +57,6 @@ export function RecentRacesCard() {
     return dateStr
   }
 
-  const getPositionBadgeColor = (position?: number) => {
-    if (!position) return 'bg-gray-100 text-gray-700'
-    if (position === 1) return 'bg-yellow-100 text-yellow-700'
-    if (position === 2) return 'bg-gray-200 text-gray-700'
-    if (position === 3) return 'bg-amber-100 text-amber-700'
-    return 'bg-gray-100 text-gray-700'
-  }
-
   // Get surface color based on TJK official colors
   const getSurfaceColor = (surface?: string): { bg: string; text: string } => {
     if (!surface) return { bg: '#f3f4f6', text: '#374151' }
@@ -85,6 +78,42 @@ export function RecentRacesCard() {
     
     // Fixed grayish color for all cities
     return { bg: '#6b7280', text: '#ffffff' }
+  }
+
+  // Format jockey name to camel case
+  const formatJockeyName = (name?: string): string => {
+    if (!name) return ''
+    
+    // Check if name contains dots (initials format like F.S.M.SANSAR)
+    if (name.includes('.')) {
+      const parts = name.split('.')
+      return parts.map((part, index) => {
+        if (part.trim() === '') return '.' // Preserve dots
+        
+        // If it's a single letter (initial), keep uppercase
+        if (part.length === 1) {
+          return part.toUpperCase()
+        }
+        
+        // If it's the last part, capitalize first letter and lowercase rest
+        if (index === parts.length - 1) {
+          return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        }
+        
+        // For other parts, keep uppercase if single letter, otherwise capitalize first
+        return part.length === 1 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+      }).join('.')
+    }
+    
+    // No dots - split by space and capitalize each word (HACI DEMİR -> Hacı Demir)
+    return name.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')
+  }
+
+  // Get jockey color - fixed red color
+  const getJockeyColor = (): { bg: string; text: string } => {
+    return { bg: '#FF4F4F', text: '#ffffff' }
   }
 
   return (
@@ -117,50 +146,47 @@ export function RecentRacesCard() {
                 key={`${race.horseName}-${race.date}-${index}`}
                 className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
               >
-                <div className="flex items-start justify-between mb-2">
+                {/* Design with text and emojis */}
+                <div className="flex items-start justify-between mb-1">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">
+                    <p className="font-semibold text-gray-900 text-sm mb-1">
                       {race.horseName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatRaceDate(race.date)}
                     </p>
                   </div>
                   {race.position !== undefined && race.position > 0 && (
-                    <div className={`text-xs font-bold px-2 py-1 rounded ${getPositionBadgeColor(race.position)}`}>
+                    <div className="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
                       {race.position}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 text-xs mb-2 flex-nowrap overflow-x-auto">
-                  {race.city && (() => {
-                    const cityColor = getCityColor(race.city)
-                    return (
-                      <span
-                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
-                        style={{ backgroundColor: cityColor.bg, color: cityColor.text }}
-                      >
-                        {race.city}
-                      </span>
-                    )
-                  })()}
-                  {race.raceType && (
-                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-md font-medium whitespace-nowrap flex-shrink-0">
-                      {race.raceType}
-                    </span>
-                  )}
-                  {race.distance && race.surface && (() => {
-                    const surfaceColor = getSurfaceColor(race.surface)
-                    return (
-                      <span
-                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
-                        style={{ backgroundColor: surfaceColor.bg, color: surfaceColor.text }}
-                      >
-                        {race.distance}
-                      </span>
-                    )
+                <p className="text-xs text-gray-600 mb-2">
+                  📅 {formatRaceDate(race.date)}
+                  {race.city && ` • 📍 ${race.city}`}
+                </p>
+                <div className="text-xs text-gray-600 mb-2">
+                  {race.raceType && `🏁 ${race.raceType}`}
+                  {race.raceType && race.distance && ` • `}
+                  {race.distance && `${race.distance}`}
+                  {race.distance && race.surface && ` • `}
+                  {race.surface && (() => {
+                    // Extract only the surface type (Kum, Çim, Sentetik) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", etc.
+                    const surface = race.surface
+                    if (surface.startsWith('K:') || surface.toLowerCase().includes('kum')) {
+                      return 'Kum'
+                    } else if (surface.startsWith('Ç:') || surface.toLowerCase().includes('çim')) {
+                      return 'Çim'
+                    } else if (surface.toLowerCase().includes('sentetik')) {
+                      return 'Sentetik'
+                    }
+                    // If it's just the type without prefix, return as is
+                    return surface.split(':')[0].split(' ')[0]
                   })()}
                 </div>
+                {race.jockeyName && (
+                  <div className="text-xs text-gray-600 mb-2">
+                    👤 {formatJockeyName(race.jockeyName)}
+                  </div>
+                )}
                 {race.prizeMoney && parseFloat(race.prizeMoney) > 0 && (
                   <div className="text-xs text-green-600 font-medium">
                     💰 {parseFloat(race.prizeMoney).toLocaleString('tr-TR')} TL

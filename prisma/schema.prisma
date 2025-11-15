@@ -70,6 +70,8 @@ model OwnerProfile {
   racesCacheAt DateTime?     // When races cache was last updated
   registrationsCache Json?   // Cached registrations/declarations data
   registrationsCacheAt DateTime? // When registrations cache was last updated
+  gallopsCache Json?         // Cached gallops data
+  gallopsCacheAt DateTime?   // When gallops cache was last updated
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

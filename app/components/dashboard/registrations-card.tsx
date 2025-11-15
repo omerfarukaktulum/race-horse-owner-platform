@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Badge } from '@/app/components/ui/badge'
 import { Calendar } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { formatDate } from '@/lib/utils/format'
@@ -74,6 +73,37 @@ export function RegistrationsCard() {
     return { bg: '#f3f4f6', text: '#374151' }
   }
 
+  // Format jockey name to camel case
+  const formatJockeyName = (name?: string): string => {
+    if (!name) return ''
+    
+    // Check if name contains dots (initials format like F.S.M.SANSAR)
+    if (name.includes('.')) {
+      const parts = name.split('.')
+      return parts.map((part, index) => {
+        if (part.trim() === '') return '.' // Preserve dots
+        
+        // If it's a single letter (initial), keep uppercase
+        if (part.length === 1) {
+          return part.toUpperCase()
+        }
+        
+        // If it's the last part, capitalize first letter and lowercase rest
+        if (index === parts.length - 1) {
+          return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+        }
+        
+        // For other parts, keep uppercase if single letter, otherwise capitalize first
+        return part.length === 1 ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+      }).join('.')
+    }
+    
+    // No dots - split by space and capitalize each word (HACI DEMİR -> Hacı Demir)
+    return name.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')
+  }
+
   // Get city color - fixed grayish color for all cities
   const getCityColor = (city?: string): { bg: string; text: string } => {
     if (!city) return { bg: '#f3f4f6', text: '#374151' }
@@ -127,16 +157,15 @@ export function RegistrationsCard() {
                       {formatRaceDate(registration.raceDate)}
                     </p>
                   </div>
-                  <Badge
-                    variant={registration.type === 'KAYIT' ? 'default' : 'secondary'}
-                    className={
+                  <div
+                    className={`text-xs font-bold px-2 py-0.5 rounded leading-tight flex items-center ${
                       registration.type === 'KAYIT'
                         ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                         : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }
+                    }`}
                   >
                     {registration.type === 'KAYIT' ? TR.dashboard.kayit : TR.dashboard.deklare}
-                  </Badge>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs mb-2 flex-nowrap overflow-x-auto">
                   {registration.city && (() => {
@@ -169,13 +198,14 @@ export function RegistrationsCard() {
                 </div>
                 {registration.jockeyName && (() => {
                   const jockeyColor = getJockeyColor()
+                  const formattedJockeyName = formatJockeyName(registration.jockeyName)
                   return (
                     <div className="text-xs">
                       <span
                         className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap inline-block"
                         style={{ backgroundColor: jockeyColor.bg, color: jockeyColor.text }}
                       >
-                        {registration.jockeyName}
+                        {formattedJockeyName}
                       </span>
                     </div>
                   )
