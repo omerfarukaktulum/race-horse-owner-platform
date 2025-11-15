@@ -2,14 +2,12 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { fetchTJKOwnerRaces, filterRegistrationsAndDeclarations } from '@/lib/tjk-owner-races-scraper'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60 // Allow up to 60 seconds for scraping
 
 /**
- * Get registrations and declarations for all horses owned by the user
- * Fetches directly from TJK using owner's external reference with QueryParameter_Kosmaz=on
+ * Get registrations and declarations for all horses in the user's stablemate
+ * Queries the database - no TJK fetching needed
  */
 export async function GET(request: Request) {
   try {
@@ -31,7 +29,7 @@ export async function GET(request: Request) {
 
     console.log('[Registrations API] User role:', decoded.role)
 
-    // Get user's owner profile with external reference
+    // Get user's owner profile
     if (decoded.role !== 'OWNER') {
       console.log('[Registrations API] User is not owner, returning empty')
       return NextResponse.json({ registrations: [] })
@@ -50,78 +48,93 @@ export async function GET(request: Request) {
       return NextResponse.json({ registrations: [] })
     }
 
-    // Get owner's external reference (TJK owner ID) and cache
+    // Get stablemate with horses
     const ownerProfile = await prisma.ownerProfile.findUnique({
       where: { id: ownerId },
-      select: { 
-        officialRef: true,
-        registrationsCache: true,
-        registrationsCacheAt: true,
+      select: {
+        stablemate: {
+          select: {
+            id: true,
+            horses: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     })
 
-    if (!ownerProfile?.officialRef) {
-      console.log('[Registrations API] No external reference found for owner')
+    if (!ownerProfile?.stablemate) {
+      console.log('[Registrations API] No stablemate found for owner')
       return NextResponse.json({ registrations: [] })
     }
 
-    // Check cache age (24 hours)
-    const now = new Date()
-    const cacheAge = ownerProfile.registrationsCacheAt 
-      ? (now.getTime() - ownerProfile.registrationsCacheAt.getTime()) / 1000 / 60 / 60 
-      : Infinity
-
-    let registrationsAndDeclarations: any[] = []
-
-    if (cacheAge < 24 && ownerProfile.registrationsCache) {
-      // Use cached data
-      console.log('[Registrations API] Using cached data (age:', cacheAge.toFixed(2), 'hours)')
-      const cachedRaces = ownerProfile.registrationsCache as any[]
-      registrationsAndDeclarations = filterRegistrationsAndDeclarations(cachedRaces)
-    } else {
-      // Fetch fresh data from TJK
-      console.log('[Registrations API] Cache expired or missing, fetching from TJK for owner:', ownerProfile.officialRef)
-      
-      // Fetch all races with QueryParameter_Kosmaz=on to get registrations/declarations
-      const allRaces = await fetchTJKOwnerRaces(ownerProfile.officialRef, true)
-      
-      // Update cache
-      await prisma.ownerProfile.update({
-        where: { id: ownerId },
-        data: {
-          registrationsCache: allRaces as any,
-          registrationsCacheAt: now,
-        },
-      })
-      
-      // Filter to only future registrations/declarations (exclude cancellations)
-      registrationsAndDeclarations = filterRegistrationsAndDeclarations(allRaces)
-      
-      console.log('[Registrations API] Fetched and cached', allRaces.length, 'races')
+    const horseIds = ownerProfile.stablemate.horses.map((h: any) => h.id)
+    
+    if (horseIds.length === 0) {
+      console.log('[Registrations API] No horses in stablemate')
+      return NextResponse.json({ registrations: [] })
     }
 
-    // Sort by date (earliest first)
-    registrationsAndDeclarations.sort((a, b) => {
-      const dateA = new Date(a.date.split('.').reverse().join('-'))
-      const dateB = new Date(b.date.split('.').reverse().join('-'))
-      return dateA.getTime() - dateB.getTime()
+    console.log('[Registrations API] Fetching registrations for', horseIds.length, 'horses in stablemate')
+
+    // Get all registrations/declarations for horses in stablemate, sorted by date (earliest first)
+    const registrations = await prisma.horseRegistration.findMany({
+      where: {
+        horseId: {
+          in: horseIds,
+        },
+        // Only future races (raceDate >= today)
+        raceDate: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+        },
+      },
+      include: {
+        horse: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        raceDate: 'asc',
+      },
     })
 
-    // Map to registrations format
-    const registrations = registrationsAndDeclarations.map((race, index) => ({
-      id: `reg-${index}`,
-      horseName: race.horseName,
-      raceDate: race.date,
-      city: race.city,
-      distance: race.distance,
-      surface: race.surface,
-      raceType: race.raceType,
-      type: race.registrationStatus === 'Deklare' ? 'DEKLARE' as const : 'KAYIT' as const,
-      jockeyName: race.jockeyName,
-    }))
+    console.log('[Registrations API] Found', registrations.length, 'registrations/declarations')
 
-    console.log('[Registrations API] Returning', registrations.length, 'registrations')
-    return NextResponse.json({ registrations })
+    // Convert to the format expected by the frontend
+    const formattedRegistrations = registrations.map((reg: any, index: number) => {
+      // Format date from Date object to DD.MM.YYYY
+      const date = new Date(reg.raceDate)
+      const formattedDate = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`
+      
+      // Format surface - use surfaceType if available, otherwise use surface
+      let surface: string | undefined
+      if (reg.surfaceType) {
+        surface = reg.surfaceType
+      } else if (reg.surface) {
+        surface = reg.surface
+      }
+      
+      return {
+        id: `reg-${index}`,
+        horseName: reg.horse.name,
+        raceDate: formattedDate,
+        city: reg.city || undefined,
+        distance: reg.distance || undefined,
+        surface: surface || undefined,
+        raceType: reg.raceType || undefined,
+        type: reg.type === 'Deklare' ? 'DEKLARE' as const : 'KAYIT' as const,
+        jockeyName: reg.jockeyName || undefined,
+      }
+    })
+
+    console.log('[Registrations API] Returning', formattedRegistrations.length, 'registrations')
+
+    return NextResponse.json({ registrations: formattedRegistrations })
   } catch (error) {
     console.error('[Registrations API] Error:', error)
     return NextResponse.json(
@@ -130,4 +143,3 @@ export async function GET(request: Request) {
     )
   }
 }
-

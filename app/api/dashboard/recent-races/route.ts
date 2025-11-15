@@ -2,14 +2,12 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
-import { fetchTJKOwnerRaces, filterPastRaces, filterRecentRaces } from '@/lib/tjk-owner-races-scraper'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60 // Allow up to 60 seconds for scraping
 
 /**
- * Get recent races for all horses owned by the user
- * Fetches directly from TJK using owner's external reference
+ * Get recent races for all horses in the user's stablemate
+ * Simply queries the database - no TJK fetching needed
  * Query params: limit (default 10)
  */
 export async function GET(request: Request) {
@@ -36,7 +34,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    // Get user's owner profile with external reference
+    // Get user's owner profile
     if (decoded.role !== 'OWNER') {
       console.log('[Recent Races API] User is not owner, returning empty')
       return NextResponse.json({ races: [] })
@@ -55,62 +53,103 @@ export async function GET(request: Request) {
       return NextResponse.json({ races: [] })
     }
 
-    // Get owner's external reference (TJK owner ID) and cache
+    // Get stablemate with horses
     const ownerProfile = await prisma.ownerProfile.findUnique({
       where: { id: ownerId },
-      select: { 
-        officialRef: true,
-        racesCache: true,
-        racesCacheAt: true,
+      select: {
+        stablemate: {
+          select: {
+            id: true,
+            horses: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     })
 
-    if (!ownerProfile?.officialRef) {
-      console.log('[Recent Races API] No external reference found for owner')
+    if (!ownerProfile?.stablemate) {
+      console.log('[Recent Races API] No stablemate found for owner')
       return NextResponse.json({ races: [] })
     }
 
-    // Check cache age (24 hours)
-    const now = new Date()
-    const cacheAge = ownerProfile.racesCacheAt 
-      ? (now.getTime() - ownerProfile.racesCacheAt.getTime()) / 1000 / 60 / 60 
-      : Infinity
-
-    let recentRaces: any[] = []
-
-    if (cacheAge < 24 && ownerProfile.racesCache) {
-      // Use cached data
-      console.log('[Recent Races API] Using cached data (age:', cacheAge.toFixed(2), 'hours)')
-      const cachedRaces = ownerProfile.racesCache as any[]
-      const pastRaces = filterPastRaces(cachedRaces)
-      recentRaces = filterRecentRaces(pastRaces, limit)
-    } else {
-      // Fetch fresh data from TJK
-      console.log('[Recent Races API] Cache expired or missing, fetching from TJK for owner:', ownerProfile.officialRef)
-      
-      const allRaces = await fetchTJKOwnerRaces(ownerProfile.officialRef, false)
-      
-      // Update cache
-      await prisma.ownerProfile.update({
-        where: { id: ownerId },
-        data: {
-          racesCache: allRaces as any,
-          racesCacheAt: now,
-        },
-      })
-      
-      // Filter to only past races
-      const pastRaces = filterPastRaces(allRaces)
-      
-      // Get most recent races
-      recentRaces = filterRecentRaces(pastRaces, limit)
-      
-      console.log('[Recent Races API] Fetched and cached', allRaces.length, 'races')
+    const horseIds = ownerProfile.stablemate.horses.map((h: any) => h.id)
+    
+    if (horseIds.length === 0) {
+      console.log('[Recent Races API] No horses in stablemate')
+      return NextResponse.json({ races: [] })
     }
 
-    console.log('[Recent Races API] Returning', recentRaces.length, 'recent races')
+    console.log('[Recent Races API] Fetching races for', horseIds.length, 'horses in stablemate')
 
-    return NextResponse.json({ races: recentRaces })
+    // Get all race history for horses in stablemate, sorted by date (most recent first)
+    const raceHistory = await prisma.horseRaceHistory.findMany({
+      where: {
+        horseId: {
+          in: horseIds,
+        },
+        // Only past races (raceDate < today)
+        raceDate: {
+          lt: new Date(),
+        },
+      },
+      include: {
+        horse: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        raceDate: 'desc',
+      },
+      take: limit,
+    })
+
+    console.log('[Recent Races API] Found', raceHistory.length, 'recent races')
+
+    // Convert to the format expected by the frontend
+    const races = raceHistory.map((race) => {
+      // Format date from Date object to DD.MM.YYYY
+      const date = new Date(race.raceDate)
+      const formattedDate = `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`
+      
+      // Format surface - use surfaceType if available (e.g., "Ç:Normal 3.3"), otherwise use surface (e.g., "Çim")
+      let surface: string | undefined
+      if (race.surfaceType) {
+        surface = race.surfaceType
+      } else if (race.surface) {
+        surface = race.surface
+      }
+      
+      // Format prize money (remove decimals if .00)
+      let prizeMoney: string | undefined
+      if (race.prizeMoney) {
+        const amount = Number(race.prizeMoney)
+        if (amount > 0) {
+          prizeMoney = Math.floor(amount).toString()
+        }
+      }
+      
+      return {
+        date: formattedDate,
+        horseName: race.horse.name,
+        city: race.city || '',
+        distance: race.distance || undefined,
+        surface: surface || undefined,
+        position: race.position || undefined,
+        raceType: race.raceType || undefined,
+        prizeMoney: prizeMoney || undefined,
+        jockeyName: race.jockeyName || undefined,
+      }
+    })
+
+    console.log('[Recent Races API] Returning', races.length, 'recent races')
+
+    return NextResponse.json({ races })
   } catch (error) {
     console.error('[Recent Races API] Error:', error)
     return NextResponse.json(
@@ -119,4 +158,3 @@ export async function GET(request: Request) {
     )
   }
 }
-

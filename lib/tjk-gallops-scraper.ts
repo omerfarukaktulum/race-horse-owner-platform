@@ -12,7 +12,7 @@ export interface GallopData {
     [distance: number]: string  // e.g., { 1400: "1.02.20", 400: "0.38.50" }
   }
   status?: string       // Durum (Status)
-  racecourse?: string   // İ. Hip. (Training Racecourse)
+  racecourse?: string   // İ. Hip. (Training Racecourse) - contains city name like "Adana"
   surface?: string      // Pist (Surface)
   jockeyName?: string   // İ. Jokeyi (Training Jockey)
   horseId: string       // Horse ID for reference
@@ -22,15 +22,14 @@ export interface GallopData {
 let browser: Browser | null = null
 
 /**
- * Fetch gallop data for a specific horse from TJK
+ * Fetch ALL gallop data for a specific horse from TJK
  * @param horseId - TJK horse ID
- * @param horseName - Horse name for display
- * @param days - Number of days to look back (default 7)
+ * @param horseName - Horse name for display (optional, for logging)
+ * @returns All gallops for the horse (no date filtering)
  */
 export async function fetchTJKHorseGallops(
   horseId: string,
-  horseName: string,
-  days: number = 7
+  horseName?: string
 ): Promise<GallopData[]> {
   let page: Page | null = null
 
@@ -51,7 +50,7 @@ export async function fetchTJKHorseGallops(
 
     const gallopUrl = `https://www.tjk.org/TR/YarisSever/Query/Page/IdmanIstatistikleri?QueryParameter_AtId=${horseId}`
     
-    console.log('[TJK Gallops] Fetching gallops for horse:', horseName, 'ID:', horseId)
+    console.log('[TJK Gallops] Fetching ALL gallops for horse:', horseName || horseId, 'ID:', horseId)
     
     await page.goto(gallopUrl, {
       waitUntil: 'networkidle',
@@ -61,9 +60,14 @@ export async function fetchTJKHorseGallops(
     // Wait for page to load
     await page.waitForTimeout(2000)
 
+    // Scroll to bottom to ensure all rows are loaded
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight)
+    })
+    await page.waitForTimeout(1000)
+
     // Extract gallop data from the page
-    const gallops = await page.evaluate((daysParam: number) => {
-      const days = daysParam
+    const gallops = await page.evaluate(() => {
       const results: any[] = []
       
       // Find the gallops table - it has distance columns (1400m, 1200m, 1000m, etc.)
@@ -114,8 +118,9 @@ export async function fetchTJKHorseGallops(
         else if (textLower.includes('durum') || text === 'Durum') {
           statusColIndex = index
         }
-        // Match racecourse column
-        else if (textLower.includes('i. hip') || textLower.includes('hipodrom')) {
+        // Match racecourse column (İ. Hip. - contains city name)
+        // Handle both Turkish İ and regular I, and variations
+        else if (textLower.includes('i. hip') || textLower.includes('hip') || textLower.includes('hipodrom') || text.includes('İ. Hip.')) {
           racecourseColIndex = index
         }
         // Match surface column
@@ -131,23 +136,23 @@ export async function fetchTJKHorseGallops(
       console.log('[Browser] Found distance columns:', distanceColumns.map(d => `${d.distance}m`).join(', '))
       console.log('[Browser] Date col:', dateColIndex, 'Status col:', statusColIndex, 'Racecourse col:', racecourseColIndex, 'Surface col:', surfaceColIndex, 'Jockey col:', jockeyColIndex)
       
-      // Calculate cutoff date (last X days) - if days is very large, don't filter
-      let cutoffDate: Date | null = null
-      if (days < 3650) { // Only filter if less than 10 years (effectively filter)
-        cutoffDate = new Date()
-        cutoffDate.setDate(cutoffDate.getDate() - days)
-        cutoffDate.setHours(0, 0, 0, 0)
-      }
-      
       const rows = gallopTable.querySelectorAll('tbody tr, tr')
-      rows.forEach((row) => {
+      console.log(`[Browser] Total gallop rows found: ${rows.length}`)
+      
+      rows.forEach((row, rowIndex) => {
         const cells = row.querySelectorAll('td')
         
         // Skip if not enough cells or if it's a header row
-        if (cells.length < 5) return
+        if (cells.length < 5) {
+          console.log(`[Browser] Row ${rowIndex}: skipping (too few cells: ${cells.length})`)
+          return
+        }
         
         const firstCellText = cells[0]?.textContent?.trim() || ''
-        if (firstCellText === 'At Adı' || firstCellText === '' || firstCellText.includes('At Adı')) return
+        if (firstCellText === 'At Adı' || firstCellText === '' || firstCellText.includes('At Adı') || firstCellText.includes('Toplam')) {
+          console.log(`[Browser] Row ${rowIndex}: skipping header/footer row`)
+          return
+        }
         
         // Parse date (format: DD.MM.YYYY)
         let dateText = ''
@@ -156,11 +161,17 @@ export async function fetchTJKHorseGallops(
         }
         
         // Skip if no valid date
-        if (!dateText || !dateText.match(/\d{2}\.\d{2}\.\d{4}/)) return
+        if (!dateText || !dateText.match(/\d{2}\.\d{2}\.\d{4}/)) {
+          console.log(`[Browser] Row ${rowIndex}: skipping (no valid date: "${dateText}")`)
+          return
+        }
         
-        // Parse date and check if within range
+        // Parse date
         const dateParts = dateText.split('.')
-        if (dateParts.length !== 3) return
+        if (dateParts.length !== 3) {
+          console.log(`[Browser] Row ${rowIndex}: skipping (invalid date format: "${dateText}")`)
+          return
+        }
         
         const gallopDate = new Date(
           parseInt(dateParts[2]),
@@ -168,9 +179,6 @@ export async function fetchTJKHorseGallops(
           parseInt(dateParts[0])
         )
         gallopDate.setHours(0, 0, 0, 0)
-        
-        // Skip if older than cutoff date (if filtering is enabled)
-        if (cutoffDate && gallopDate < cutoffDate) return
         
         // Parse status (Durum)
         let status = ''
@@ -211,63 +219,45 @@ export async function fetchTJKHorseGallops(
         
         // Only add if there's at least one distance with time
         if (Object.keys(distances).length > 0) {
-          results.push({
+          const result: any = {
             date: dateText,
             distances,
             status: status || undefined,
             racecourse: racecourse || undefined,
             surface: surface || undefined,
             jockeyName: jockeyName || undefined,
-          })
+          }
+          
+          // Debug log to see what we're extracting
+          if (racecourseColIndex >= 0) {
+            console.log('[Browser] Extracted racecourse for date', dateText, ':', racecourse, 'from column index', racecourseColIndex)
+          } else {
+            console.log('[Browser] Racecourse column not found for date', dateText)
+          }
+          
+          results.push(result)
         }
       })
 
       console.log('[Browser] Extracted', results.length, 'gallops')
       return results
-    }, days)
+    })
 
     await context.close()
     
-    console.log('[TJK Gallops] Successfully fetched', gallops.length, 'gallops for horse:', horseName)
+    console.log('[TJK Gallops] Successfully fetched', gallops.length, 'gallops for horse:', horseName || horseId)
     
-    // Add horse info to each gallop and filter by days
-    const gallopsWithHorseInfo = gallops.map((gallop: any) => ({
+    // Add horse info to each gallop
+    return gallops.map((gallop: any) => ({
       ...gallop,
       horseId,
-      horseName,
+      horseName: horseName || '',
     }))
-    
-    // Filter by days (already done during scraping, but double-check)
-    return filterGallopsByDays(gallopsWithHorseInfo, days)
 
   } catch (error: any) {
     console.error('[TJK Gallops] Error fetching gallops for horse:', horseName, error.message)
     throw error
   }
-}
-
-/**
- * Filter gallops by date range (last X days)
- */
-export function filterGallopsByDays(gallops: GallopData[], days: number): GallopData[] {
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - days)
-  cutoffDate.setHours(0, 0, 0, 0)
-  
-  return gallops.filter((gallop) => {
-    // Parse date from DD.MM.YYYY format
-    const dateParts = gallop.date.split('.')
-    if (dateParts.length !== 3) return false
-    
-    const gallopDate = new Date(
-      parseInt(dateParts[2]),
-      parseInt(dateParts[1]) - 1,
-      parseInt(dateParts[0])
-    )
-    gallopDate.setHours(0, 0, 0, 0)
-    
-    return gallopDate >= cutoffDate
-  })
 }
 
 /**

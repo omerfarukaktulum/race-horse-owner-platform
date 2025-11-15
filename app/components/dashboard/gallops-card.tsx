@@ -9,7 +9,7 @@ interface GallopData {
   date: string
   distances: { [distance: number]: string }  // All distances with times
   status?: string
-  racecourse?: string
+  racecourse?: string  // İ. Hip. - contains city name like "Adana"
   surface?: string
   jockeyName?: string
   horseId: string
@@ -132,36 +132,41 @@ export function GallopsCard() {
                   key={`${gallop.horseId}-${gallop.date}-${index}`}
                   className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex items-start justify-between mb-2">
+                  {/* Design with text and emojis */}
+                  <div className="flex items-start justify-between mb-1">
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-900 text-sm">
+                      <p className="font-semibold text-gray-900 text-sm mb-1">
                         {gallop.horseName}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0 text-xs bg-gray-100 text-gray-700">
-                          {gallop.date}
-                        </span>
-                        {gallop.jockeyName && (() => {
-                          // Use surface color for jockey label
-                          const jockeyColor = getSurfaceColor(gallop.surface)
-                          const formattedJockeyName = formatJockeyName(gallop.jockeyName)
-                          return (
-                            <span
-                              className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0 text-xs"
-                              style={{ backgroundColor: jockeyColor.bg, color: jockeyColor.text }}
-                            >
-                              {formattedJockeyName}
-                            </span>
-                          )
-                        })()}
-                      </div>
                     </div>
                     {gallop.status && (
-                      <div className="text-xs font-medium bg-green-100 text-green-700 hover:bg-green-200 px-2 py-0.5 rounded leading-tight flex items-center">
+                      <div className="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
                         {gallop.status}
                       </div>
                     )}
                   </div>
+                  <p className="text-xs text-gray-600 mb-2">
+                    📅 {gallop.date}
+                    {gallop.racecourse && ` • 📍 ${gallop.racecourse}`}
+                  </p>
+                  {(gallop.jockeyName || gallop.surface) && (
+                    <p className="text-xs text-gray-600 mb-2">
+                      {gallop.jockeyName && `👤 ${formatJockeyName(gallop.jockeyName)}`}
+                      {gallop.jockeyName && gallop.surface && ` • `}
+                      {gallop.surface && (() => {
+                        // Extract only the surface type (Kum, Çim, Sentetik) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", etc.
+                        const surface = gallop.surface
+                        if (surface.startsWith('K:') || surface.toLowerCase().includes('kum')) {
+                          return 'Kum'
+                        } else if (surface.startsWith('Ç:') || surface.toLowerCase().includes('çim')) {
+                          return 'Çim'
+                        } else if (surface.toLowerCase().includes('sentetik')) {
+                          return 'Sentetik'
+                        }
+                        return surface.split(':')[0].split(' ')[0]
+                      })()}
+                    </p>
+                  )}
                   {distanceEntries.length > 0 && (
                     <div className="mb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" style={{ WebkitOverflowScrolling: 'touch' }}>
                       <table className="text-xs border-collapse min-w-full">
@@ -190,13 +195,6 @@ export function GallopsCard() {
                           </tr>
                         </tbody>
                       </table>
-                    </div>
-                  )}
-                  {gallop.racecourse && (
-                    <div className="flex flex-wrap gap-1.5 text-xs">
-                      <span className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0 bg-gray-100 text-gray-700">
-                        {gallop.racecourse}
-                      </span>
                     </div>
                   )}
                 </div>

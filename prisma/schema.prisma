@@ -65,14 +65,6 @@ model OwnerProfile {
   subscriptionExpiresAt DateTime?
   stripeCustomerId      String?
   
-  // Dashboard cache
-  racesCache Json?           // Cached race results data
-  racesCacheAt DateTime?     // When races cache was last updated
-  registrationsCache Json?   // Cached registrations/declarations data
-  registrationsCacheAt DateTime? // When registrations cache was last updated
-  gallopsCache Json?         // Cached gallops data
-  gallopsCacheAt DateTime?   // When gallops cache was last updated
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
@@ -207,16 +199,14 @@ model Horse {
   dataFetchedAt  DateTime?   // When detailed data was last fetched
   dataFetchError String?     // Error message if fetch failed
   
-  // Dashboard cache for registrations/declarations
-  registrationsCache Json?    // Cached registrations and declarations data
-  registrationsCacheAt DateTime? // When registrations cache was last updated
-  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   expenses Expense[]
   locationHistory HorseLocationHistory[]
   raceHistory HorseRaceHistory[]
+  registrations HorseRegistration[]
+  gallops HorseGallop[]
   notes HorseNote[]
 
   @@index([stablemateId])
@@ -238,7 +228,8 @@ model HorseRaceHistory {
   distance    Int?     // Mesafe (meters)
   surface     String?  // Pist (Çim, Kum, Sentetik)
   surfaceType String?  // Ç:Normal, etc.
-  position    Int?     // Derece (1, 2, 3, etc.)
+  position    Int?     // S (position: 1, 2, 3, etc.)
+  derece      String?  // Derece (time elapsed, e.g., "2.34.13")
   weight      Decimal? @db.Decimal(5, 2) // Sıklet
   jockeyName  String?
   jockeyId    String?
@@ -258,6 +249,51 @@ model HorseRaceHistory {
   @@index([horseId])
   @@index([raceDate])
   @@map("horse_race_history")
+}
+
+model HorseRegistration {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  raceDate    DateTime
+  city        String?  // Şehir (İstanbul, Ankara, etc.)
+  distance    Int?     // Mesafe (meters)
+  surface     String?  // Pist (Çim, Kum, Sentetik)
+  surfaceType String?  // Ç:Normal, etc.
+  raceType    String?  // Kcins (Maiden, Şartlı, etc.)
+  type        String   // "Kayıt" or "Deklare"
+  jockeyName  String?  // Jockey name (for declarations)
+  jockeyId    String?  // Jockey ID
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([raceDate])
+  @@map("horse_registrations")
+}
+
+model HorseGallop {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  gallopDate  DateTime
+  status      String?  // Durum
+  racecourse  String?  // İ. Hip. (Training Racecourse - city name)
+  surface     String?  // Pist (Surface)
+  jockeyName  String?  // İ. Jokeyi (Training Jockey)
+  
+  // Store distances as JSON: { "1400": "1.02.20", "400": "0.38.50" }
+  distances   Json     // { [distance: number]: string }
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([gallopDate])
+  @@map("horse_gallops")
 }
 
 model HorseLocationHistory {

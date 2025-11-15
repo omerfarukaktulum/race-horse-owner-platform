@@ -47,6 +47,19 @@ export async function fetchTJKOwnerRaces(
 
     page = await context.newPage()
 
+    // Forward browser console logs to terminal
+    page.on('console', (msg) => {
+      const text = msg.text()
+      const type = msg.type()
+      if (type === 'error') {
+        console.error('[Browser]', text)
+      } else if (type === 'warning') {
+        console.warn('[Browser]', text)
+      } else {
+        console.log('[Browser]', text)
+      }
+    })
+
     // Build URL with optional QueryParameter_Kosmaz=on for registrations/declarations
     let racesUrl = `https://www.tjk.org/TR/YarisSever/Query/ConnectedPage/AtKosuBilgileri?QueryParameter_SahipId=${ownerId}&QueryParameter_SehirId=-1&QueryParameter_YIL=-1&QueryParameter_PistKodu=-1&QueryParameter_MesafeStart=-1&QueryParameter_MesafeEnd=-1`
     
@@ -90,6 +103,14 @@ export async function fetchTJKOwnerRaces(
       const headerRow = raceTable.querySelector('thead tr, tr:first-child')
       const headerCells = headerRow ? Array.from(headerRow.querySelectorAll('th, td')) : []
       
+      // Log all header cells for debugging
+      console.log('[Browser] ===== HEADER DETECTION =====')
+      console.log('[Browser] Total header cells:', headerCells.length)
+      headerCells.forEach((cell, index) => {
+        const exactText = cell.textContent?.trim() || ''
+        console.log(`[Browser]   Header[${index}]: "${exactText}"`)
+      })
+      
       let dateColIndex = -1
       let horseNameColIndex = -1
       let cityColIndex = -1
@@ -100,23 +121,65 @@ export async function fetchTJKOwnerRaces(
       let prizeMoneyColIndex = -1
       let jockeyColIndex = -1
       
+      // Track Derece column index separately to ensure we don't use it for position
+      let dereceColIndex = -1
+      
       headerCells.forEach((cell, index) => {
         const text = cell.textContent?.trim().toLowerCase() || ''
         const exactText = cell.textContent?.trim() || ''
         
-        if (text.includes('tarih') || text.includes('date')) dateColIndex = index
-        else if (text.includes('at i') || text.includes('at İsmi') || text.includes('horse')) horseNameColIndex = index
-        else if (text.includes('şehir') || text.includes('city')) cityColIndex = index
-        else if (text.includes('msf') || text.includes('mesafe') || text.includes('distance')) distanceColIndex = index
-        else if (text.includes('pist') || text.includes('surface')) surfaceColIndex = index
+        if (text.includes('tarih') || text.includes('date')) {
+          dateColIndex = index
+          console.log('[Browser] ✓ Date column at index', index)
+        }
+        else if (text.includes('at i') || text.includes('at İsmi') || text.includes('horse')) {
+          horseNameColIndex = index
+          console.log('[Browser] ✓ Horse name column at index', index)
+        }
+        else if (text.includes('şehir') || text.includes('city')) {
+          cityColIndex = index
+          console.log('[Browser] ✓ City column at index', index)
+        }
+        else if (text.includes('msf') || text.includes('mesafe') || text.includes('distance')) {
+          distanceColIndex = index
+          console.log('[Browser] ✓ Distance column at index', index)
+        }
+        else if (text.includes('pist') || text.includes('surface')) {
+          surfaceColIndex = index
+          console.log('[Browser] ✓ Surface column at index', index)
+        }
         // IMPORTANT: Match ONLY "S" exactly for position, NOT "Derece"
         // "S" = finish position (7, 3, etc.)
         // "Derece" = race time (1.33.94, etc.)
-        else if (exactText === 'S') positionColIndex = index
-        else if (text.includes('kcins') || text.includes('k.cins') || text.includes('koşu tipi')) raceTypeColIndex = index
-        else if (text.includes('ikramiye') || text.includes('prize')) prizeMoneyColIndex = index
-        else if (text.includes('jokey') || text.includes('jockey')) jockeyColIndex = index
+        // Check for exact match "S" and also check that it's NOT "Derece"
+        else if (exactText === 'S' && !text.includes('derece')) {
+          positionColIndex = index
+          console.log('[Browser] ✓ Found S column (position) at index', index)
+        }
+        // Also check for "Derece" to ensure we don't confuse it with "S"
+        else if (text.includes('derece') || exactText === 'Derece') {
+          dereceColIndex = index
+          console.log('[Browser] ✓ Found Derece column (time) at index', index, '- skipping for position')
+        }
+        else if (text.includes('kcins') || text.includes('k.cins') || text.includes('koşu tipi')) {
+          raceTypeColIndex = index
+          console.log('[Browser] ✓ Race type column at index', index)
+        }
+        else if (text.includes('ikramiye') || text.includes('prize')) {
+          prizeMoneyColIndex = index
+          console.log('[Browser] ✓ Prize money column at index', index)
+        }
+        else if (text.includes('jokey') || text.includes('jockey')) {
+          jockeyColIndex = index
+          console.log('[Browser] ✓ Jockey column at index', index)
+        }
       })
+      
+      // Safety check: if positionColIndex equals dereceColIndex, we have a problem
+      if (positionColIndex === dereceColIndex && positionColIndex !== -1) {
+        console.error('[Browser] ERROR: Position column index matches Derece column index!', positionColIndex)
+        positionColIndex = -1 // Reset to force fallback
+      }
       
       console.log('[Browser] Column indices - Date:', dateColIndex, 'Horse:', horseNameColIndex, 'City:', cityColIndex, 'Distance:', distanceColIndex, 'Surface:', surfaceColIndex, 'Position:', positionColIndex, 'RaceType:', raceTypeColIndex, 'PrizeMoney:', prizeMoneyColIndex)
       
@@ -126,10 +189,25 @@ export async function fetchTJKOwnerRaces(
       if (cityColIndex === -1) cityColIndex = 2
       if (distanceColIndex === -1) distanceColIndex = 3
       if (surfaceColIndex === -1) surfaceColIndex = 4
-      if (positionColIndex === -1) positionColIndex = 5
+      
+      // For position: if not found, try to infer from Derece column (S should be before Derece)
+      if (positionColIndex === -1) {
+        if (dereceColIndex !== -1 && dereceColIndex > 0) {
+          // S column should be right before Derece
+          positionColIndex = dereceColIndex - 1
+          console.log('[Browser] Using fallback: S column should be at index', positionColIndex, '(before Derece at', dereceColIndex, ')')
+        } else {
+          // Default fallback (but this might be wrong)
+          positionColIndex = 5
+          console.warn('[Browser] WARNING: Using default position column index 5 (may be incorrect)')
+        }
+      }
+      
       if (raceTypeColIndex === -1) raceTypeColIndex = 14 // Usually around column 14
       if (prizeMoneyColIndex === -1) prizeMoneyColIndex = 15 // Usually around column 15
       if (jockeyColIndex === -1) jockeyColIndex = 8 // Usually around column 8
+      
+      console.log('[Browser] Final column indices - Position:', positionColIndex, 'Derece:', dereceColIndex)
       
       const rows = raceTable.querySelectorAll('tbody tr, tr')
       let rowIndex = 0
@@ -142,11 +220,16 @@ export async function fetchTJKOwnerRaces(
         const firstCellText = cells[0]?.textContent?.trim() || ''
         if (firstCellText === 'Tarih' || firstCellText === '') return
         
-        // Debug first few rows
-        if (rowIndex < 3) {
-          console.log('[Browser] Row', rowIndex, 'cell contents:')
-          for (let i = 0; i < Math.min(15, cells.length); i++) {
-            console.log(`  Cell[${i}]:`, cells[i]?.textContent?.trim())
+        // Debug first few rows - show ALL cells with their indices
+        if (rowIndex < 5) {
+          console.log('[Browser] ===== Row', rowIndex, '=====')
+          console.log('[Browser] Total cells:', cells.length)
+          for (let i = 0; i < Math.min(20, cells.length); i++) {
+            const cellText = cells[i]?.textContent?.trim() || ''
+            const isPositionCol = i === positionColIndex
+            const isDereceCol = i === dereceColIndex
+            const marker = isPositionCol ? ' <-- POSITION COL' : (isDereceCol ? ' <-- DERECE COL' : '')
+            console.log(`[Browser]   Cell[${i}]: "${cellText}"${marker}`)
           }
         }
         rowIndex++
@@ -190,27 +273,118 @@ export async function fetchTJKOwnerRaces(
         // Debug position extraction for first few rows
         if (rowIndex <= 3) {
           console.log('[Browser] Position extraction for', horseName, '- using column', positionColIndex, '- text:', positionText)
+          // Also check adjacent columns to see if we're reading the wrong one
+          if (cells[positionColIndex - 1]) {
+            const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+            console.log('[Browser] Previous column (', positionColIndex - 1, ') text:', prevCellText)
+          }
+          if (cells[positionColIndex + 1]) {
+            const nextCellText = cells[positionColIndex + 1]?.textContent?.trim() || ''
+            console.log('[Browser] Next column (', positionColIndex + 1, ') text:', nextCellText)
+          }
         }
         
-        if (positionText && positionText !== '') {
-          // The "S" column should contain only simple integers (no decimals)
-          // If we see decimals, we're reading the wrong column (probably "Derece"/time)
-          if (positionText.includes('.') || positionText.includes(':')) {
+        // CRITICAL: Check if we're accidentally reading from Derece column
+        // If positionColIndex equals dereceColIndex, we MUST use the previous column
+        if (positionColIndex === dereceColIndex && dereceColIndex !== -1) {
+          console.error('[Browser] CRITICAL ERROR: Position column index equals Derece column index!', positionColIndex)
+          if (cells[positionColIndex - 1]) {
+            const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+            const prevParsed = parseInt(prevCellText)
+            if (!isNaN(prevParsed) && prevParsed > 0 && prevParsed <= 20) {
+              console.log('[Browser] Using previous column (', positionColIndex - 1, ') as position due to column mismatch:', prevParsed)
+              position = prevParsed
+            }
+          }
+        } else if (positionText && positionText !== '') {
+          // The "S" column should contain only simple integers (no decimals, no colons)
+          // If we see decimals or colons, we're reading the wrong column (probably "Derece"/time)
+          // Also check if it looks like a time format (e.g., "2.34.13" has multiple dots)
+          const hasDecimal = positionText.includes('.')
+          const hasColon = positionText.includes(':')
+          const dotCount = positionText.split('.').length - 1
+          const isTimeFormat = hasDecimal || hasColon || dotCount > 1 // Multiple dots = time format like "2.34.13"
+          
+          if (isTimeFormat) {
             // This is a time from "Derece" column, not a position!
             console.error('[Browser] ERROR: Reading time instead of position! Column', positionColIndex, 'contains:', positionText)
             console.error('[Browser] This means we are reading "Derece" column instead of "S" column')
+            // Try the previous column as fallback (S should be before Derece)
+            if (cells[positionColIndex - 1]) {
+              const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+              if (prevCellText && !prevCellText.includes('.') && !prevCellText.includes(':')) {
+                const parsed = parseInt(prevCellText)
+                if (!isNaN(parsed) && parsed > 0 && parsed <= 20) {
+                  console.log('[Browser] Using previous column (', positionColIndex - 1, ') as position:', parsed, 'instead of time:', positionText)
+                  position = parsed
+                } else {
+                  console.error('[Browser] Previous column also invalid:', prevCellText)
+                }
+              } else {
+                console.error('[Browser] Previous column also looks like time:', prevCellText)
+              }
+            } else {
+              console.error('[Browser] No previous column available')
+            }
           } else {
             // Try to parse the position - it should be a simple number (1-20 typically)
             const parsed = parseInt(positionText)
+            // Additional validation: if parsed value is very small (1-3) and the original text had dots,
+            // it might be a time that was partially parsed (e.g., "2.34.13" -> 2)
             if (!isNaN(parsed) && parsed > 0 && parsed <= 20) {
-              position = parsed
-              if (rowIndex <= 3) {
-                console.log('[Browser] ✓ Found position:', position, 'for', horseName, 'on', dateText)
+              // Double-check: if the original text has any dots, it's likely a time
+              if (hasDecimal && parsed <= 3) {
+                console.warn('[Browser] WARNING: Position', parsed, 'looks suspicious (has decimal, might be time). Original text:', positionText)
+                // Try previous column
+                if (cells[positionColIndex - 1]) {
+                  const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+                  if (prevCellText && !prevCellText.includes('.') && !prevCellText.includes(':')) {
+                    const prevParsed = parseInt(prevCellText)
+                    if (!isNaN(prevParsed) && prevParsed > 0 && prevParsed <= 20) {
+                      console.log('[Browser] Using previous column instead of suspicious value:', prevParsed, 'vs', parsed)
+                      position = prevParsed
+                    } else {
+                      position = parsed
+                    }
+                  } else {
+                    position = parsed
+                  }
+                } else {
+                  position = parsed
+                }
+              } else {
+                position = parsed
+                if (rowIndex <= 3) {
+                  console.log('[Browser] ✓ Found position:', position, 'for', horseName, 'on', dateText)
+                }
               }
             } else {
               // If it's not a valid number, it might be empty for future races
               if (rowIndex <= 3) {
                 console.log('[Browser] Position text not a valid number:', positionText, 'for', horseName)
+                // Try previous column as fallback
+                if (cells[positionColIndex - 1]) {
+                  const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+                  if (prevCellText && !prevCellText.includes('.') && !prevCellText.includes(':')) {
+                    const prevParsed = parseInt(prevCellText)
+                    if (!isNaN(prevParsed) && prevParsed > 0 && prevParsed <= 20) {
+                      console.log('[Browser] Using previous column as position fallback:', prevParsed)
+                      position = prevParsed
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Empty position - might be a future race, but try previous column just in case
+          if (cells[positionColIndex - 1]) {
+            const prevCellText = cells[positionColIndex - 1]?.textContent?.trim() || ''
+            if (prevCellText && !prevCellText.includes('.') && !prevCellText.includes(':')) {
+              const parsed = parseInt(prevCellText)
+              if (!isNaN(parsed) && parsed > 0 && parsed <= 20) {
+                console.log('[Browser] Using previous column as position (empty cell):', parsed)
+                position = parsed
               }
             }
           }
@@ -261,7 +435,7 @@ export async function fetchTJKOwnerRaces(
           }
         }
         
-        results.push({
+        const raceData = {
           date: dateText,
           horseName,
           city,
@@ -272,7 +446,14 @@ export async function fetchTJKOwnerRaces(
           prizeMoney,
           jockeyName,
           registrationStatus,
-        })
+        }
+        
+        // Log extracted data for first few races
+        if (results.length < 3) {
+          console.log('[Browser] Extracted race data:', JSON.stringify(raceData, null, 2))
+        }
+        
+        results.push(raceData)
       })
 
       console.log('[Browser] Extracted', results.length, 'races')

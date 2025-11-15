@@ -149,6 +149,7 @@ export async function POST(request: Request) {
                 surface: race.surface,
                 surfaceType: race.surfaceType,
                 position: race.position,
+                derece: race.derece || null,
                 weight: race.weight ? race.weight.toString() : null,
                 jockeyName: race.jockeyName,
                 jockeyId: race.jockeyId,
@@ -161,6 +162,42 @@ export async function POST(request: Request) {
                 prizeMoney: race.prizeMoney ? race.prizeMoney.toString() : null,
                 videoUrl: race.videoUrl,
                 photoUrl: race.photoUrl,
+              }
+            }),
+          })
+        }
+
+        // Delete existing registrations and create new
+        if (detailData.registrations && detailData.registrations.length > 0) {
+          await prisma.horseRegistration.deleteMany({
+            where: { horseId: horse.id },
+          })
+
+          await prisma.horseRegistration.createMany({
+            data: detailData.registrations.map((reg) => {
+              // Parse date from DD.MM.YYYY format
+              let raceDate = new Date()
+              if (reg.raceDate && reg.raceDate.match(/\d{2}\.\d{2}\.\d{4}/)) {
+                const dateParts = reg.raceDate.split('.')
+                if (dateParts.length === 3) {
+                  raceDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`)
+                  if (isNaN(raceDate.getTime())) {
+                    raceDate = new Date()
+                  }
+                }
+              }
+
+              return {
+                horseId: horse.id,
+                raceDate,
+                city: reg.city,
+                distance: reg.distance,
+                surface: reg.surface,
+                surfaceType: reg.surfaceType,
+                raceType: reg.raceType,
+                type: reg.type,
+                jockeyName: reg.jockeyName,
+                jockeyId: reg.jockeyId,
               }
             }),
           })

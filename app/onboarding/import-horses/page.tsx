@@ -160,7 +160,7 @@ export default function ImportHorsesPage() {
         throw new Error(data.error || 'Atlar eklenemedi')
       }
 
-      toast.success(`${selectedHorses.length} at başarıyla eklendi`)
+      toast.success(`${selectedHorses.length} at başarıyla seçildi`)
 
       // Step 2: Fetch detailed data for horses with externalRef
       const horsesWithRef = data.horses.filter((h: any) => h.externalRef)

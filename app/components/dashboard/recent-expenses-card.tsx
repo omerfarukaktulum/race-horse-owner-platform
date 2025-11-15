@@ -101,29 +101,25 @@ export function RecentExpensesCard() {
                 key={expense.id}
                 className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">
-                      {expense.horseName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatExpenseDate(expense.date)}
-                    </p>
-                  </div>
-                  <div className="text-sm font-bold text-red-600">
-                    {parseFloat(expense.amount).toLocaleString('tr-TR')} {expense.currency}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md font-medium">
-                    {expense.customName || getCategoryName(expense.category)}
-                  </span>
-                </div>
-                {expense.note && (
-                  <div className="mt-2 text-xs text-gray-600 italic line-clamp-2">
-                    {expense.note}
-                  </div>
-                )}
+                {/* 1st line: Horse name */}
+                <p className="font-semibold text-gray-900 text-sm mb-1">
+                  {expense.horseName}
+                </p>
+                
+                {/* 2nd line: Date */}
+                <p className="text-xs text-gray-600 mb-1">
+                  📅 {formatExpenseDate(expense.date)}
+                </p>
+                
+                {/* 3rd line: Category */}
+                <p className="text-xs text-gray-600 mb-1">
+                  {expense.customName || getCategoryName(expense.category)}
+                </p>
+                
+                {/* 4th line: amount */}
+                <p className="text-xs text-red-600 font-medium">
+                  💰 {parseFloat(expense.amount).toLocaleString('tr-TR')} TL
+                </p>
               </div>
             ))}
           </div>
