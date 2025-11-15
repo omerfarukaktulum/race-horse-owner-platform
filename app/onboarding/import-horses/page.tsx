@@ -27,7 +27,9 @@ export default function ImportHorsesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
   const [isFetchingDetails, setIsFetchingDetails] = useState(false)
-  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0, currentHorse: '' })
+  const [fetchProgress, setFetchProgress] = useState({ current: 0, total: 0, currentHorse: '', stage: 1 })
+  const [progressMessage, setProgressMessage] = useState('Atlarınız ekürinize ekleniyor.')
+  const [ownerRef, setOwnerRef] = useState<string | null>(null)
 
   useEffect(() => {
     console.log('=== IMPORT HORSES PAGE MOUNTED ===')
@@ -54,11 +56,12 @@ export default function ImportHorsesPage() {
       }
 
       const ownerName = userData.user.ownerProfile.officialName
-      const ownerRef = userData.user.ownerProfile.officialRef
+      const ownerRefValue = userData.user.ownerProfile.officialRef
+      setOwnerRef(ownerRefValue)
 
-      console.log('Step 5: Owner info extracted:', { ownerName, ownerRef })
+      console.log('Step 5: Owner info extracted:', { ownerName, ownerRef: ownerRefValue })
 
-      if (!ownerRef) {
+      if (!ownerRefValue) {
         console.error('Step 6: FAILED - No TJK ID found')
         toast.error('TJK ID bulunamadı. Lütfen sahip bilgilerinizi kontrol edin.')
         setHorses([])
@@ -68,7 +71,7 @@ export default function ImportHorsesPage() {
       // Use our API route as proxy to avoid CORS issues
       const params = new URLSearchParams({
         ownerName,
-        ownerRef,
+        ownerRef: ownerRefValue,
       })
       const tjkUrl = `/api/tjk/horses?${params.toString()}`
       
@@ -168,7 +171,8 @@ export default function ImportHorsesPage() {
       if (horsesWithRef.length > 0) {
         setIsImporting(false)
         setIsFetchingDetails(true)
-        setFetchProgress({ current: 0, total: horsesWithRef.length, currentHorse: '' })
+        setProgressMessage('Atlarınızın detaylı verileri TJK sisteminden alınıyor')
+        setFetchProgress({ current: 0, total: horsesWithRef.length, currentHorse: '', stage: 2 })
 
         try {
           // Use SSE endpoint for real-time progress updates
@@ -219,6 +223,7 @@ export default function ImportHorsesPage() {
                       current: data.current || 0,
                       total: data.total || horsesWithRef.length,
                       currentHorse: data.currentHorse || '',
+                      stage: 2,
                     })
                   }
                 } catch (e) {
@@ -242,18 +247,18 @@ export default function ImportHorsesPage() {
 
           // Wait a moment before redirecting
           await new Promise(resolve => setTimeout(resolve, 1000))
-          router.push('/app/horses')
+          router.replace('/app/horses')
         } catch (fetchError) {
           const message = fetchError instanceof Error ? fetchError.message : 'Detaylı veri alınırken bir hata oluştu'
           toast.error(message)
           // Still redirect even if detail fetch fails
-          setTimeout(() => router.push('/app/horses'), 2000)
+          setTimeout(() => router.replace('/app/horses'), 2000)
         } finally {
           setIsFetchingDetails(false)
         }
       } else {
         // No horses with externalRef, redirect immediately
-        router.push('/app/horses')
+        router.replace('/app/horses')
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
@@ -283,10 +288,17 @@ export default function ImportHorsesPage() {
     )
   }
 
-  if (isFetchingDetails) {
-    const progress = fetchProgress.total > 0 
-      ? Math.round((fetchProgress.current / fetchProgress.total) * 100)
-      : 0
+  if (isImporting || isFetchingDetails) {
+    // Calculate progress: 50% for stage 1 (importing), 50-100% for stage 2 (fetching details)
+    let progress = 0
+    if (isImporting) {
+      progress = 50 // Show 50% during import
+    } else if (isFetchingDetails) {
+      const detailProgress = fetchProgress.total > 0 
+        ? Math.round((fetchProgress.current / fetchProgress.total) * 100)
+        : 0
+      progress = 50 + Math.round(detailProgress * 0.5) // 50% + (0-50% based on detail progress)
+    }
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center">
@@ -329,11 +341,13 @@ export default function ImportHorsesPage() {
               </div>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Atlarınız ekürinize ekleniyor.
+              {progressMessage}
             </h2>
-            <p className="text-sm text-gray-600 mb-6">
-            Atlarınızın detaylı verileri TJK sisteminden alınıyor
-          </p>
+            {isFetchingDetails && (
+              <p className="text-sm text-gray-600 mb-6">
+                Atlarınızın detaylı verileri TJK sisteminden alınıyor
+              </p>
+            )}
           {fetchProgress.currentHorse && (
               <div className="bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white border-2 border-indigo-100/50 rounded-lg p-3 mb-4 shadow-lg">
                 <p className="text-xs text-gray-600 mb-1">Ekleniyor:</p>
@@ -414,18 +428,30 @@ export default function ImportHorsesPage() {
                       onCheckedChange={() => toggleHorse(index)}
                       className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
                     />
+                    {ownerRef && (
+                      <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                        <img
+                          src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                          alt="Eküri Forması"
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            // Hide image if it fails to load
+                            e.currentTarget.style.display = 'none'
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
-                      <div className="flex gap-2 text-xs text-gray-600 mt-0.5">
+                      <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
                         {horse.yob && (
-                          <span className="whitespace-nowrap">
-                            <span className="font-medium">Doğum:</span> {horse.yob}
+                          <span>
+                            <span className="font-medium">Doğum Tarihi:</span> {horse.yob}
                           </span>
                         )}
                         {(horse.sire && horse.dam) && (
                           <span className="truncate min-w-0">
-                            <span className="font-medium">Orijin:</span>{' '}
-                            <span className="truncate">{horse.sire} - {horse.dam}</span>
+                            <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
                           </span>
                         )}
                       </div>

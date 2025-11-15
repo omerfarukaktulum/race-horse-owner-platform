@@ -51,6 +51,22 @@ export function GallopsCard() {
     }
   }
 
+  // Format status abbreviations to full Turkish words
+  const formatStatus = (status?: string): string => {
+    if (!status) return ''
+    
+    // Replace abbreviations with full Turkish words
+    if (status.trim() === 'R') {
+      return 'Rahat'
+    } else if (status.trim() === 'ÇR') {
+      return 'Çok Rahat'
+    } else if (status.trim() === 'Ç') {
+      return 'Çalışarak'
+    }
+    
+    return status
+  }
+
   // Format jockey name to camel case
   const formatJockeyName = (name?: string): string => {
     if (!name) return ''
@@ -140,8 +156,8 @@ export function GallopsCard() {
                       </p>
                     </div>
                     {gallop.status && (
-                      <div className="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
-                        {gallop.status}
+                      <div className="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
+                        {formatStatus(gallop.status)}
                       </div>
                     )}
                   </div>

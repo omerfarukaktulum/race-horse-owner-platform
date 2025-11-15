@@ -154,8 +154,8 @@ export function RecentRacesCard() {
                     </p>
                   </div>
                   {race.position !== undefined && race.position > 0 && (
-                    <div className="text-xs font-bold px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
-                      {race.position}
+                    <div className="text-xs font-medium px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 hover:bg-yellow-200 leading-tight flex items-center">
+                    S: {race.position}
                     </div>
                   )}
                 </div>

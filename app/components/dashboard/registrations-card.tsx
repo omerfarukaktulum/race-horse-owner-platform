@@ -156,11 +156,7 @@ export function RegistrationsCard() {
                     </p>
                   </div>
                   <div
-                    className={`text-xs font-bold px-2 py-0.5 rounded leading-tight flex items-center ${
-                      registration.type === 'KAYIT'
-                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
+                    className="text-xs font-medium px-2 py-0.5 rounded leading-tight flex items-center bg-blue-100 text-blue-700 hover:bg-blue-200"
                   >
                     {registration.type === 'KAYIT' ? TR.dashboard.kayit : TR.dashboard.deklare}
                   </div>

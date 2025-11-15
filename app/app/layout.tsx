@@ -88,19 +88,21 @@ function AppNavbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex md:flex-1 md:items-center md:justify-center md:space-x-8">
+          <nav className="hidden md:flex md:flex-1 md:items-center md:justify-center md:space-x-2">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2 ${
-                  pathname?.startsWith(item.href)
-                    ? 'text-indigo-600 font-medium border-b-2 border-indigo-600 pb-1'
-                    : 'text-gray-600 hover:text-gray-900 hover:border-b-2 hover:border-gray-300 pb-1'
-                } transition-all`}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center gap-2 ${
+                    pathname?.startsWith(item.href)
+                      ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  } transition-all`}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Button>
               </Link>
             ))}
           </nav>

@@ -86,7 +86,7 @@ export default function OwnerLookupPage() {
       }
 
       toast.success('At Sahibi profili oluşturuldu')
-      router.push('/onboarding/stablemate-setup')
+      router.replace('/onboarding/stablemate-setup')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
@@ -97,8 +97,8 @@ export default function OwnerLookupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
-        <CardHeader className="text-center space-y-4">
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
+        <CardHeader className="text-center space-y-4 flex-shrink-0">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
               <UserSearch className="h-8 w-8 text-white" />
@@ -113,8 +113,8 @@ export default function OwnerLookupPage() {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
+        <CardContent className="flex flex-col p-6">
+          <div className="space-y-2 flex-shrink-0">
             <Label htmlFor="search" className="text-gray-700 font-medium">
               {TR.onboarding.searchOwner}
             </Label>
@@ -139,9 +139,9 @@ export default function OwnerLookupPage() {
           </div>
 
           {results.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 mt-6">
               <Label className="text-gray-700 font-medium">{TR.onboarding.selectOwner}</Label>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                 {results.map((result, index) => (
                   <button
                     key={index}
@@ -153,14 +153,28 @@ export default function OwnerLookupPage() {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{result.officialName}</p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          TJK ID: {result.externalRef}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Bir sonraki adımda eküri kurulumunu yapacaksınız.
-                        </p>
+                      <div className="flex items-center gap-3 flex-1">
+                        {result.externalRef && (
+                          <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                            <img
+                              src={`https://medya-cdn.tjk.org/formaftp/${result.externalRef}.jpg`}
+                              alt="Eküri Forması"
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{result.officialName}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            TJK ID: {result.externalRef}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Bir sonraki adımda eküri kurulumunu yapacaksınız.
+                          </p>
+                        </div>
                       </div>
                       {selectedOwner?.officialName === result.officialName && (
                         <div className="flex-shrink-0 ml-3">
@@ -176,7 +190,7 @@ export default function OwnerLookupPage() {
             </div>
           )}
 
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-4 border-t border-gray-200 mt-6">
             <Button
               onClick={handleSubmit}
               disabled={!selectedOwner || isSubmitting}

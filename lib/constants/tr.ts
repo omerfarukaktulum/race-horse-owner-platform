@@ -164,7 +164,7 @@ export const TR = {
     ownerLookupDesc: 'Lütfen TJK\'daki resmi sahip adınızı yazın',
     searchOwner: 'Sahip Ara',
     selectOwner: 'Sahip Seç',
-    setupStablemate: 'Ekürimi Kur',
+    setupStablemate: 'Ekürinizi Oluşturun',
     setupStablemateDesc: 'Eküri bilgilerinizi girin',
     importHorses: 'Atlarınızı Ekürinize Ekleyin',
     importHorsesDesc: 'TJK\'dan atlarınızı eküriye ekleyin',

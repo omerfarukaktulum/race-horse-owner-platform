@@ -69,7 +69,7 @@ export default function StablemateSetupPage() {
       }
 
       toast.success('Eküri oluşturuldu')
-      router.push('/onboarding/import-horses')
+      router.replace('/onboarding/import-horses')
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
@@ -172,16 +172,7 @@ export default function StablemateSetupPage() {
               />
             </div>
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isSubmitting}
-                className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1]"
-              >
-                {TR.common.back}
-              </Button>
+            <div className="flex justify-end pt-4">
               <Button
                 type="submit"
                 disabled={isSubmitting}
