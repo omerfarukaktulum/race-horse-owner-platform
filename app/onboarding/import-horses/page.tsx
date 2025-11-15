@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Checkbox } from '@/app/components/ui/checkbox'
+import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { Download } from 'lucide-react'
+import { Download, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -24,6 +25,8 @@ interface Horse {
 export default function ImportHorsesPage() {
   const router = useRouter()
   const [horses, setHorses] = useState<Horse[]>([])
+  const [allHorses, setAllHorses] = useState<Horse[]>([]) // Store all horses for filtering
+  const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
   const [isFetchingDetails, setIsFetchingDetails] = useState(false)
@@ -96,6 +99,7 @@ export default function ImportHorsesPage() {
       console.log('Step 11: Mapped horses:', horses.length, 'horses (dead horses filtered out)')
       console.log('Horses data:', JSON.stringify(horses, null, 2))
       
+      setAllHorses(horses)
       setHorses(horses)
 
       if (horses.length === 0) {
@@ -115,21 +119,53 @@ export default function ImportHorsesPage() {
     }
   }
 
-  const toggleHorse = (index: number) => {
-    setHorses(
-      horses.map((horse, i) =>
-        i === index ? { ...horse, selected: !horse.selected } : horse
+  // Filter horses based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setHorses(allHorses)
+    } else {
+      const query = searchQuery.toLowerCase().trim()
+      const filtered = allHorses.filter((horse) =>
+        horse.name.toLowerCase().includes(query)
       )
-    )
+      setHorses(filtered)
+    }
+  }, [searchQuery, allHorses])
+
+  const toggleHorse = (index: number) => {
+    const horse = horses[index]
+    // Find the horse in allHorses and update it
+    const allHorsesIndex = allHorses.findIndex((h) => h.externalRef === horse.externalRef && h.name === horse.name)
+    if (allHorsesIndex !== -1) {
+      const updatedAllHorses = [...allHorses]
+      updatedAllHorses[allHorsesIndex] = { ...updatedAllHorses[allHorsesIndex], selected: !updatedAllHorses[allHorsesIndex].selected }
+      setAllHorses(updatedAllHorses)
+      
+      // Update filtered horses
+      const updatedHorses = [...horses]
+      updatedHorses[index] = { ...updatedHorses[index], selected: !updatedHorses[index].selected }
+      setHorses(updatedHorses)
+    }
   }
 
   const selectAll = () => {
     const allSelected = horses.every((h) => h.selected)
-    setHorses(horses.map((h) => ({ ...h, selected: !allSelected })))
+    const updatedSelection = !allSelected
+    
+    // Update all horses (both filtered and all)
+    const updatedAllHorses = allHorses.map((h) => {
+      // Only update if this horse is in the current filtered list
+      const isInFiltered = horses.some((fh) => fh.externalRef === h.externalRef && fh.name === h.name)
+      return isInFiltered ? { ...h, selected: updatedSelection } : h
+    })
+    setAllHorses(updatedAllHorses)
+    
+    const updatedHorses = horses.map((h) => ({ ...h, selected: updatedSelection }))
+    setHorses(updatedHorses)
   }
 
   const handleImport = async () => {
-    const selectedHorses = horses.filter((h) => h.selected)
+    const selectedHorses = allHorses.filter((h) => h.selected)
 
     if (selectedHorses.length === 0) {
       toast.error('Lütfen en az bir at seçin')
@@ -396,20 +432,32 @@ export default function ImportHorsesPage() {
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <span className="px-2.5 py-1 rounded-full text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white">
-                  {horses.length} at bulundu
+                  {searchQuery ? `${horses.length} at bulundu (${allHorses.length} toplam)` : `${horses.length} at bulundu`}
                 </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={selectAll}
-                  className="border-[#6366f1] text-[#6366f1] hover:bg-indigo-50"
-                >
-                  {horses.every((h) => h.selected)
-                    ? 'Seçimi Temizle'
-                    : TR.common.selectAll}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-36">
+                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="At ara..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-9 text-sm border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                    />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={selectAll}
+                    className="border-[#6366f1] text-[#6366f1] hover:bg-indigo-50 whitespace-nowrap h-9"
+                  >
+                    {horses.every((h) => h.selected)
+                      ? 'Seçimi Temizle'
+                      : TR.common.selectAll}
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
@@ -465,12 +513,12 @@ export default function ImportHorsesPage() {
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <Button
               onClick={handleImport}
-              disabled={isImporting || horses.filter((h) => h.selected).length === 0}
+              disabled={isImporting || allHorses.filter((h) => h.selected).length === 0}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               {isImporting
                 ? TR.common.loading
-                : `Atları Ekle (${horses.filter((h) => h.selected).length})`}
+                : `Atları Ekle (${allHorses.filter((h) => h.selected).length})`}
             </Button>
           </div>
         </CardContent>
