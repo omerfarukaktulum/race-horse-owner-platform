@@ -100,7 +100,7 @@ export function RecentExpensesCard() {
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden flex flex-col">
+      <CardContent className="flex-1 overflow-hidden flex flex-col p-6 pt-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-gray-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -114,7 +114,7 @@ export function RecentExpensesCard() {
             {TR.dashboard.noData}
           </div>
         ) : (
-          <div className="overflow-y-auto space-y-3 pr-2" style={{ maxHeight: '300px' }}>
+          <div className="overflow-y-auto space-y-3 -mx-6 px-6" style={{ maxHeight: '300px' }}>
             {expenses.map((expense) => (
               <div
                 key={expense.id}

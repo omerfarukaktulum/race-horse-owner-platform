@@ -123,7 +123,7 @@ export function GallopsCard() {
           </CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden flex flex-col">
+      <CardContent className="flex-1 overflow-hidden flex flex-col p-6 pt-0">
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-gray-500">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -137,7 +137,7 @@ export function GallopsCard() {
             {TR.dashboard.noData}
           </div>
         ) : (
-          <div className="overflow-y-auto space-y-3 pr-2" style={{ maxHeight: '300px' }}>
+          <div className="overflow-y-auto space-y-3 -mx-6 px-6" style={{ maxHeight: '300px' }}>
             {gallops.map((gallop, index) => {
               const distanceEntries = Object.entries(gallop.distances || {})
                 .map(([dist, time]) => ({ distance: parseInt(dist), time }))
@@ -156,7 +156,7 @@ export function GallopsCard() {
                       </p>
                     </div>
                     {gallop.status && (
-                      <div className="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-700 hover:bg-green-200 leading-tight flex items-center">
+                      <div className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 leading-tight flex items-center">
                         {formatStatus(gallop.status)}
                       </div>
                     )}
