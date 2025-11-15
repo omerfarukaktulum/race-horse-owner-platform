@@ -148,13 +148,11 @@ export function RegistrationsCard() {
                 key={registration.id}
                 className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
               >
-                <div className="flex items-start justify-between mb-2">
+                {/* Design with text and emojis */}
+                <div className="flex items-start justify-between mb-1">
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 text-sm">
+                    <p className="font-semibold text-gray-900 text-sm mb-1">
                       {registration.horseName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {formatRaceDate(registration.raceDate)}
                     </p>
                   </div>
                   <div
@@ -167,49 +165,34 @@ export function RegistrationsCard() {
                     {registration.type === 'KAYIT' ? TR.dashboard.kayit : TR.dashboard.deklare}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs mb-2 flex-nowrap overflow-x-auto">
-                  {registration.city && (() => {
-                    const cityColor = getCityColor(registration.city)
-                    return (
-                      <span
-                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
-                        style={{ backgroundColor: cityColor.bg, color: cityColor.text }}
-                      >
-                        {registration.city}
-                      </span>
-                    )
-                  })()}
-                  {registration.raceType && (
-                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded-md font-medium whitespace-nowrap flex-shrink-0">
-                      {registration.raceType}
-                    </span>
-                  )}
-                  {registration.distance && registration.surface && (() => {
-                    const surfaceColor = getSurfaceColor(registration.surface)
-                    return (
-                      <span
-                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap flex-shrink-0"
-                        style={{ backgroundColor: surfaceColor.bg, color: surfaceColor.text }}
-                      >
-                        {registration.distance}
-                      </span>
-                    )
+                <p className="text-xs text-gray-600 mb-2">
+                  📅 {formatRaceDate(registration.raceDate)}
+                  {registration.city && ` • 📍 ${registration.city}`}
+                </p>
+                <div className="text-xs text-gray-600 mb-2">
+                  {registration.raceType && `🏁 ${registration.raceType}`}
+                  {registration.raceType && registration.distance && ` • `}
+                  {registration.distance && `${registration.distance}`}
+                  {registration.distance && registration.surface && ` • `}
+                  {registration.surface && (() => {
+                    // Extract only the surface type (Kum, Çim, Sentetik) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", etc.
+                    const surface = registration.surface
+                    if (surface.startsWith('K:') || surface.toLowerCase().includes('kum')) {
+                      return 'Kum'
+                    } else if (surface.startsWith('Ç:') || surface.toLowerCase().includes('çim')) {
+                      return 'Çim'
+                    } else if (surface.toLowerCase().includes('sentetik')) {
+                      return 'Sentetik'
+                    }
+                    // If it's just the type without prefix, return as is
+                    return surface.split(':')[0].split(' ')[0]
                   })()}
                 </div>
-                {registration.jockeyName && (() => {
-                  const jockeyColor = getJockeyColor()
-                  const formattedJockeyName = formatJockeyName(registration.jockeyName)
-                  return (
-                    <div className="text-xs">
-                      <span
-                        className="px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap inline-block"
-                        style={{ backgroundColor: jockeyColor.bg, color: jockeyColor.text }}
-                      >
-                        {formattedJockeyName}
-                      </span>
-                    </div>
-                  )
-                })()}
+                {registration.jockeyName && (
+                  <div className="text-xs text-gray-600 mb-2">
+                    👤 {formatJockeyName(registration.jockeyName)}
+                  </div>
+                )}
               </div>
             ))}
           </div>
