@@ -172,6 +172,7 @@ export default function ImportHorsesPage() {
       return
     }
 
+    // Set loading state immediately to prevent flash
     setIsImporting(true)
 
     try {
@@ -289,18 +290,20 @@ export default function ImportHorsesPage() {
           toast.error(message)
           // Still redirect even if detail fetch fails
           setTimeout(() => router.replace('/app/horses'), 2000)
+          // Don't reset state - navigation will unmount component
         } finally {
-          setIsFetchingDetails(false)
+          // Only reset if we're not navigating (shouldn't happen, but safety check)
+          // Navigation will unmount the component anyway
         }
       } else {
         // No horses with externalRef, redirect immediately
         router.replace('/app/horses')
+        // Don't reset state - navigation will unmount component
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
-    } finally {
-      setIsImporting(false)
+      setIsImporting(false) // Only reset on error
     }
   }
 

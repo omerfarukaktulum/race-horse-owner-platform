@@ -86,12 +86,13 @@ export default function OwnerLookupPage() {
       }
 
       toast.success('At Sahibi profili oluşturuldu')
+      // Don't reset isSubmitting - let navigation happen with loading state
       router.replace('/onboarding/stablemate-setup')
+      // Navigation will unmount the component, so no need to reset state
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
-    } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false) // Only reset on error
     }
   }
 
