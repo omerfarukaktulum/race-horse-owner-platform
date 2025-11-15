@@ -112,13 +112,28 @@ export async function POST(request: Request) {
     }
     const photoUrl = photoUrls.length > 0 ? JSON.stringify(photoUrls) : null
 
+    // Parse the date and combine with current time
+    // The date comes as YYYY-MM-DD, we want to preserve the date but use current time
+    const selectedDate = new Date(date)
+    const now = new Date()
+    
+    // Combine selected date with current time
+    const expenseDate = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      now.getHours(),
+      now.getMinutes(),
+      now.getSeconds()
+    )
+
     // Create expense for each horse
     const expenses = await Promise.all(
       horseIds.map((horseId) =>
         prisma.expense.create({
           data: {
             horseId,
-            date: new Date(date),
+            date: expenseDate,
             category,
             amount: parseFloat(amount),
             note: note || null,  // DB field is 'note' not 'notes'

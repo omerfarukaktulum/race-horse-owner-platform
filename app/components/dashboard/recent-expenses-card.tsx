@@ -54,14 +54,33 @@ export function RecentExpensesCard() {
     }
   }
 
-  const formatExpenseDate = (dateStr: string) => {
+  const formatExpenseDate = (dateStr: string, createdAtStr?: string) => {
     try {
       const date = new Date(dateStr)
-      return date.toLocaleDateString('tr-TR', {
+      const dateFormatted = date.toLocaleDateString('tr-TR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       })
+      
+      // Try to get time from the date field first
+      let timeStr = ''
+      const dateObj = new Date(dateStr)
+      const hours = dateObj.getHours()
+      const minutes = dateObj.getMinutes()
+      
+      // Check if time is meaningful (not midnight or if createdAt has different time)
+      if (hours !== 0 || minutes !== 0) {
+        timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+      } else if (createdAtStr) {
+        // Fallback to createdAt time if date doesn't have time
+        const createdAt = new Date(createdAtStr)
+        const createdHours = createdAt.getHours()
+        const createdMinutes = createdAt.getMinutes()
+        timeStr = `${String(createdHours).padStart(2, '0')}:${String(createdMinutes).padStart(2, '0')}`
+      }
+      
+      return timeStr ? `${dateFormatted} • ${timeStr}` : dateFormatted
     } catch {
       return dateStr
     }
@@ -108,12 +127,12 @@ export function RecentExpensesCard() {
                 
                 {/* 2nd line: Date */}
                 <p className="text-xs text-gray-600 mb-1">
-                  📅 {formatExpenseDate(expense.date)}
+                  📅 {formatExpenseDate(expense.date, expense.createdAt)}
                 </p>
                 
                 {/* 3rd line: Category */}
                 <p className="text-xs text-gray-600 mb-1">
-                  {expense.customName || getCategoryName(expense.category)}
+                  🏷️ {expense.customName || getCategoryName(expense.category)}
                 </p>
                 
                 {/* 4th line: amount */}
