@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { Download, Search } from 'lucide-react'
+import { Download, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -27,6 +27,7 @@ export default function ImportHorsesPage() {
   const [horses, setHorses] = useState<Horse[]>([])
   const [allHorses, setAllHorses] = useState<Horse[]>([]) // Store all horses for filtering
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isImporting, setIsImporting] = useState(false)
   const [isFetchingDetails, setIsFetchingDetails] = useState(false)
@@ -202,104 +203,29 @@ export default function ImportHorsesPage() {
 
       toast.success(`${selectedHorses.length} at başarıyla seçildi`)
 
-      // Step 2: Fetch detailed data for horses with externalRef
+      // Step 2: Start background fetch for detailed data (non-blocking)
       const horsesWithRef = data.horses.filter((h: any) => h.externalRef)
       
       if (horsesWithRef.length > 0) {
-        setIsImporting(false)
-        setIsFetchingDetails(true)
-        setProgressMessage('Atlarınızın detaylı verileri TJK sisteminden alınıyor')
-        setFetchProgress({ current: 0, total: horsesWithRef.length, currentHorse: '', stage: 2 })
-
-        try {
-          // Use SSE endpoint for real-time progress updates
-          const response = await fetch('/api/import/horses/fetch-details-stream', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              horseIds: horsesWithRef.map((h: any) => h.id),
-            }),
-          })
-
-          if (!response.ok) {
-            throw new Error('Detaylı veri alınamadı')
-          }
-
-          const reader = response.body?.getReader()
-          const decoder = new TextDecoder()
-
-          if (!reader) {
-            throw new Error('Response stream not available')
-          }
-
-          let buffer = ''
-          let finalResults: any = null
-
-          while (true) {
-            const { done, value } = await reader.read()
-            
-            if (done) break
-
-            buffer += decoder.decode(value, { stream: true })
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ''
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6))
-                  
-                  if (data.done) {
-                    finalResults = data
-                  } else {
-                    // Update progress
-                    setFetchProgress({
-                      current: data.current || 0,
-                      total: data.total || horsesWithRef.length,
-                      currentHorse: data.currentHorse || '',
-                      stage: 2,
-                    })
-                  }
-                } catch (e) {
-                  console.error('Error parsing SSE data:', e)
-                }
-              }
-            }
-          }
-
-          if (finalResults) {
-            const successCount = finalResults.results?.length || 0
-            const errorCount = finalResults.errors?.length || 0
-
-            if (successCount > 0) {
-              toast.success(`${successCount} at için detaylı veri başarıyla alındı`)
-            }
-            if (errorCount > 0) {
-              toast.warning(`${errorCount} at için veri alınamadı`)
-            }
-          }
-
-          // Wait a moment before redirecting
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          router.replace('/app/horses')
-        } catch (fetchError) {
-          const message = fetchError instanceof Error ? fetchError.message : 'Detaylı veri alınırken bir hata oluştu'
-          toast.error(message)
-          // Still redirect even if detail fetch fails
-          setTimeout(() => router.replace('/app/horses'), 2000)
-          // Don't reset state - navigation will unmount component
-        } finally {
-          // Only reset if we're not navigating (shouldn't happen, but safety check)
-          // Navigation will unmount the component anyway
-        }
-      } else {
-        // No horses with externalRef, redirect immediately
-        router.replace('/app/horses')
-        // Don't reset state - navigation will unmount component
+        // Start background fetch without waiting
+        fetch('/api/import/horses/fetch-details-background', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            horseIds: horsesWithRef.map((h: any) => h.id),
+          }),
+        }).catch((error) => {
+          console.error('Failed to start background fetch:', error)
+          // Don't show error to user, it will happen in background
+        })
       }
+
+      // Step 3: Redirect to location setup page
+      router.replace(`/onboarding/set-locations?count=${selectedHorses.length}`)
+      // Don't reset state - navigation will unmount component
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
@@ -409,9 +335,9 @@ export default function ImportHorsesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
-        <CardHeader className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-start justify-center p-4 pt-8">
+      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
+        <CardHeader className="space-y-4 flex-shrink-0">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
             <Download className="h-8 w-8 text-white" />
           </div>
@@ -423,23 +349,25 @@ export default function ImportHorsesPage() {
             {TR.onboarding.importHorsesDesc}
           </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {horses.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Download className="h-10 w-10 text-gray-400" />
-              </div>
-              <p className="text-gray-700 font-medium mb-2">TJK'da kayıtlı atınız bulunamadı.</p>
-              <p className="text-sm text-gray-500">Manuel olarak at ekleyebilirsiniz.</p>
-            </div>
-          ) : (
+          {allHorses.length > 0 && (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <span className="px-2.5 py-1 rounded-full text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white">
-                  {searchQuery ? `${horses.length} at bulundu (${allHorses.length} toplam)` : `${horses.length} at bulundu`}
+              {/* Controls - count badge, search and select all */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="px-2.5 py-1.5 h-9 rounded-lg text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white whitespace-nowrap min-w-[100px] text-center flex items-center justify-center">
+                  {searchQuery.trim() ? `${horses.length} / ${allHorses.length} at bulundu` : `${horses.length} at bulundu`}
                 </span>
                 <div className="flex items-center gap-2">
+                {!isSearchOpen ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50"
+                  >
+                    <Search className="h-4 w-4 text-gray-600" />
+                  </Button>
+                ) : (
                   <div className="relative w-36">
                     <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                     <Input
@@ -447,73 +375,111 @@ export default function ImportHorsesPage() {
                       placeholder="At ara..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 h-9 text-sm border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                      className="pl-8 pr-8 h-9 text-sm border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                      autoFocus
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false)
+                        setSearchQuery('')
+                      }}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectAll}
-                    className="border-[#6366f1] text-[#6366f1] hover:bg-indigo-50 whitespace-nowrap h-9"
-                  >
-                    {horses.every((h) => h.selected)
-                      ? 'Seçimi Temizle'
-                      : TR.common.selectAll}
-                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectAll}
+                  className="border-[#6366f1] text-[#6366f1] hover:bg-indigo-50 whitespace-nowrap h-9"
+                >
+                  {horses.every((h) => h.selected)
+                    ? 'Seçimi Temizle'
+                    : TR.common.selectAll}
+                </Button>
                 </div>
               </div>
+            </>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+          {allHorses.length === 0 ? (
+            <div className="text-center py-12 flex-shrink-0">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Download className="h-10 w-10 text-gray-400" />
+              </div>
+              <p className="text-gray-700 font-medium mb-2">TJK'da kayıtlı atınız bulunamadı.</p>
+              <p className="text-sm text-gray-500">Manuel olarak at ekleyebilirsiniz.</p>
+            </div>
+          ) : horses.length === 0 ? (
+            <div className="text-center py-12 flex-shrink-0">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="h-10 w-10 text-gray-400" />
+              </div>
+              <p className="text-gray-700 font-medium mb-2">Arama sonucu bulunamadı.</p>
+              <p className="text-sm text-gray-500">Farklı bir arama terimi deneyin.</p>
+            </div>
+          ) : (
+            <>
 
-              <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                {horses.map((horse, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
-                      horse.selected 
-                        ? 'border-[#6366f1] bg-indigo-50/50' 
-                        : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }`}
-                    onClick={() => toggleHorse(index)}
-                  >
-                    <Checkbox
-                      checked={horse.selected}
-                      onCheckedChange={() => toggleHorse(index)}
-                      className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
-                    />
-                    {ownerRef && (
-                      <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
-                        <img
-                          src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
-                          alt="Eküri Forması"
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            // Hide image if it fails to load
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
-                      <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
-                        {horse.yob && (
-                          <span>
-                            <span className="font-medium">Doğum Tarihi:</span> {horse.yob}
-                          </span>
-                        )}
-                        {(horse.sire && horse.dam) && (
-                          <span className="truncate min-w-0">
-                            <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
-                          </span>
-                        )}
+              {/* Scrollable horse list */}
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                <div className="overflow-y-auto space-y-2">
+                  {horses.map((horse, index) => (
+                    <div
+                      key={horse.externalRef || horse.name || index}
+                      className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
+                        horse.selected 
+                          ? 'border-[#6366f1] bg-indigo-50/50' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                      onClick={() => toggleHorse(index)}
+                    >
+                      <Checkbox
+                        checked={horse.selected}
+                        onCheckedChange={() => toggleHorse(index)}
+                        className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
+                      />
+                      {ownerRef && (
+                        <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                          <img
+                            src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                            alt="Eküri Forması"
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              // Hide image if it fails to load
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                        <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
+                          {horse.yob && (
+                            <span>
+                              <span className="font-medium">Doğum Tarihi:</span> {horse.yob}
+                            </span>
+                          )}
+                          {(horse.sire && horse.dam) && (
+                            <span className="truncate min-w-0">
+                              <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </>
           )}
 
-          <div className="flex justify-end pt-4 border-t border-gray-200">
+          {/* Fixed button section */}
+          <div className="flex justify-end pt-4 border-t border-gray-200 mt-auto flex-shrink-0">
             <Button
               onClick={handleImport}
               disabled={isImporting || allHorses.filter((h) => h.selected).length === 0}

@@ -194,7 +194,7 @@ export default function OwnerLookupPage() {
           )}
 
           {/* Fixed button section */}
-          <div className="flex justify-end pt-4 border-t border-gray-200 flex-shrink-0">
+          <div className="flex justify-end pt-4 flex-shrink-0">
             <Button
               onClick={handleSubmit}
               disabled={!selectedOwner || isSubmitting}

@@ -278,12 +278,23 @@ export async function searchTJKHorsesPlaywright(
       }
       
       horseNameLinks.forEach((nameLink) => {
-        let container = nameLink.parentElement
-        while (container && container.tagName !== 'DIV' && container !== document.body) {
-          container = container.parentElement
+        // Find the closest row/container for this specific horse
+        let row = nameLink.closest('tr') || nameLink.closest('div[class*="row"]') || nameLink.parentElement
+        while (row && row.tagName !== 'TR' && row.tagName !== 'DIV' && row !== document.body) {
+          row = row.parentElement
         }
         
-        if (!container) return
+        if (!row) return
+        
+        // Try to find a more specific container - look for a div that contains this nameLink
+        let container = nameLink.parentElement
+        while (container && container.tagName !== 'DIV' && container !== document.body && container !== row) {
+          container = container.parentElement
+        }
+        // If we didn't find a DIV, use the row
+        if (!container || container === document.body) {
+          container = row
+        }
         
         const containerText = container.textContent || ''
         const name = nameLink.textContent?.trim() || ''
@@ -317,23 +328,45 @@ export async function searchTJKHorsesPlaywright(
         
         let sire = ''
         let dam = ''
-        const originLinks = container.querySelectorAll('a[href*="Orijin"]')
+        // Look for origin links within the same row/container as the nameLink
+        // First try to find them in the same row
+        const rowOriginLinks = row ? row.querySelectorAll('a[href*="Orijin"]') : []
+        // If not found in row, try the container
+        const originLinks = rowOriginLinks.length >= 2 ? rowOriginLinks : container.querySelectorAll('a[href*="Orijin"]')
+        
+        // But we need to make sure we're only getting links from the same horse row
+        // Find the closest origin links to the nameLink
         if (originLinks.length >= 2) {
-          const sireLink = originLinks[0]
-          const damLink = originLinks[1]
-          const sireHref = sireLink.getAttribute('href') || ''
-          const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
-          if (sireMatch) {
-            sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
-          } else {
-            sire = sireLink.textContent?.trim() || ''
-          }
-          const damHref = damLink.getAttribute('href') || ''
-          const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
-          if (damMatch) {
-            dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
-          } else {
-            dam = damLink.textContent?.trim() || ''
+          // Find origin links that are in the same row/container as nameLink
+          const allOriginLinks = Array.from(container.querySelectorAll('a[href*="Orijin"]'))
+          const nameLinkRect = nameLink.getBoundingClientRect()
+          
+          // Find the two origin links closest to this nameLink
+          const sortedLinks = allOriginLinks
+            .map(link => ({
+              link,
+              distance: Math.abs(link.getBoundingClientRect().top - nameLinkRect.top)
+            }))
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 2)
+          
+          if (sortedLinks.length >= 2) {
+            const sireLink = sortedLinks[0].link
+            const damLink = sortedLinks[1].link
+            const sireHref = sireLink.getAttribute('href') || ''
+            const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
+            if (sireMatch) {
+              sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
+            } else {
+              sire = sireLink.textContent?.trim() || ''
+            }
+            const damHref = damLink.getAttribute('href') || ''
+            const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
+            if (damMatch) {
+              dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
+            } else {
+              dam = damLink.textContent?.trim() || ''
+            }
           }
         }
         
@@ -674,28 +707,42 @@ export async function searchTJKHorsesPlaywright(
         }
         
         // Extract origin (Sire - Dam) from links in the container
+        // Find origin links closest to this nameLink to avoid getting links from other horses
         let sire = ''
         let dam = ''
-        const originLinks = container.querySelectorAll('a[href*="Orijin"]')
-        if (originLinks.length >= 2) {
-          const sireLink = originLinks[0]
-          const damLink = originLinks[1]
+        const allOriginLinks = Array.from(container.querySelectorAll('a[href*="Orijin"]'))
+        if (allOriginLinks.length >= 2) {
+          const nameLinkRect = nameLink.getBoundingClientRect()
           
-          // Try to get full name from href parameter
-          const sireHref = sireLink.getAttribute('href') || ''
-          const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
-          if (sireMatch) {
-            sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
-          } else {
-            sire = sireLink.textContent?.trim() || ''
-          }
+          // Find the two origin links closest to this nameLink
+          const sortedLinks = allOriginLinks
+            .map(link => ({
+              link,
+              distance: Math.abs(link.getBoundingClientRect().top - nameLinkRect.top)
+            }))
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 2)
           
-          const damHref = damLink.getAttribute('href') || ''
-          const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
-          if (damMatch) {
-            dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
-          } else {
-            dam = damLink.textContent?.trim() || ''
+          if (sortedLinks.length >= 2) {
+            const sireLink = sortedLinks[0].link
+            const damLink = sortedLinks[1].link
+            
+            // Try to get full name from href parameter
+            const sireHref = sireLink.getAttribute('href') || ''
+            const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
+            if (sireMatch) {
+              sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
+            } else {
+              sire = sireLink.textContent?.trim() || ''
+            }
+            
+            const damHref = damLink.getAttribute('href') || ''
+            const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
+            if (damMatch) {
+              dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
+            } else {
+              dam = damLink.textContent?.trim() || ''
+            }
           }
         }
         
