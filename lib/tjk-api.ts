@@ -130,6 +130,7 @@ export async function searchTJKHorsesPlaywright(
     const pageSize = 50 // TJK returns 50 results per page
     const maxPages = 20 // Safety limit to prevent infinite loops (20 * 50 = 1000 horses max)
     let totalCount: number | null = null
+    let hasMorePages = true
     
     // Step 1: Fetch the initial Data/Atlar page (first 50 horses)
     console.log(`[TJK Playwright] ===== Fetching initial page (Data/Atlar) =====`)
@@ -388,12 +389,23 @@ export async function searchTJKHorsesPlaywright(
     if (initialPaginationInfo) {
       totalCount = initialPaginationInfo.total
       console.log(`[TJK Playwright] ✅ Initial page pagination: ${initialPaginationInfo.shown} of ${initialPaginationInfo.total} shown`)
+      
+      // If all results are shown on the initial page, skip DataRows fetching
+      if (initialPaginationInfo.shown >= initialPaginationInfo.total) {
+        console.log(`[TJK Playwright] ✅ All results fetched on initial page (${initialPaginationInfo.shown} of ${initialPaginationInfo.total}), skipping DataRows pages`)
+        hasMorePages = false
+      }
     }
     
     // Step 2: Continue with DataRows pages (PageNumber=1, 2, 3, etc.)
     // Note: PageNumber=1 in DataRows corresponds to the SECOND page of results (after the initial 50)
     let pageNumber = 1
-    let hasMorePages = true
+    
+    // Check if we already have all results from initial page
+    if (totalCount && initialHorses.length >= totalCount) {
+      console.log(`[TJK Playwright] ✅ All ${totalCount} horses already fetched from initial page, skipping DataRows`)
+      hasMorePages = false
+    }
     
     while (hasMorePages && pageNumber <= maxPages) {
       console.log(`[TJK Playwright] ===== Fetching DataRows page ${pageNumber} =====`)
