@@ -73,6 +73,17 @@ export async function fetchTJKPedigree(
     // Wait for page to load
     await page.waitForTimeout(2000)
     
+    // Try to wait for the pedigree table to appear (it might load via AJAX)
+    try {
+      await page.waitForSelector('#tblPedigri', { timeout: 5000 })
+      console.log('[TJK Pedigree] ✓ Found #tblPedigri table')
+    } catch (e) {
+      console.log('[TJK Pedigree] ⚠ #tblPedigri not found after waiting, will try alternative methods')
+    }
+    
+    // Additional wait for any dynamic content
+    await page.waitForTimeout(1000)
+    
     console.log('[TJK Pedigree] Page loaded, starting extraction...')
     
     // Extract pedigree data from the page
@@ -80,9 +91,32 @@ export async function fetchTJKPedigree(
       console.log('[Browser] [Pedigree] Starting pedigree extraction in browser context...')
       const result: any = {}
       
+      // Debug: Log all tables on the page
+      const allTables = document.querySelectorAll('table')
+      console.log(`[Browser] [Pedigree] Found ${allTables.length} tables on page`)
+      allTables.forEach((table, idx) => {
+        const id = table.id || 'no-id'
+        const classes = table.className || 'no-class'
+        const rows = table.querySelectorAll('tr').length
+        console.log(`[Browser] [Pedigree] Table ${idx}: id="${id}", class="${classes}", rows=${rows}`)
+      })
+      
+      // Debug: Check for any element with "pedigri" in id or class
+      const pedigreeElements = document.querySelectorAll('[id*="pedigri"], [id*="Pedigri"], [class*="pedigri"], [class*="Pedigri"]')
+      console.log(`[Browser] [Pedigree] Found ${pedigreeElements.length} elements with "pedigri" in id/class`)
+      pedigreeElements.forEach((el, idx) => {
+        if (idx < 5) {
+          console.log(`[Browser] [Pedigree] Element ${idx}: tag=${el.tagName}, id="${el.id}", class="${el.className}"`)
+        }
+      })
+      
       // First, check if #tblPedigri exists
       const pedigreeTable = document.querySelector('#tblPedigri')
       console.log('[Browser] [Pedigree] #tblPedigri found:', !!pedigreeTable)
+      
+      if (pedigreeTable) {
+        console.log('[Browser] [Pedigree] #tblPedigri HTML preview:', pedigreeTable.outerHTML.substring(0, 500))
+      }
       
       if (pedigreeTable) {
         const rows = pedigreeTable.querySelectorAll('tbody tr, tr')
@@ -198,10 +232,26 @@ export async function fetchTJKPedigree(
         
         for (const table of allTables) {
           const rows = table.querySelectorAll('tbody tr, tr')
+          console.log(`[Browser] [Pedigree] Checking table with ${rows.length} rows`)
+          
           if (rows.length >= 2) {
+            // Log first few rows for debugging
+            rows.forEach((row, idx) => {
+              if (idx < 5) {
+                const cells = row.querySelectorAll('td, th')
+                const cellTexts = Array.from(cells).map(c => {
+                  const link = c.querySelector('a')
+                  return link ? link.textContent?.trim() : c.textContent?.trim()
+                }).filter(Boolean).slice(0, 5)
+                console.log(`[Browser] [Pedigree] Table row ${idx}:`, cellTexts)
+              }
+            })
+            
             // Try to extract from first two rows
             const firstRowCells = rows[0].querySelectorAll('td')
             const secondRowCells = rows[1].querySelectorAll('td')
+            
+            console.log(`[Browser] [Pedigree] First row has ${firstRowCells.length} cells, second row has ${secondRowCells.length} cells`)
             
             if (firstRowCells.length >= 2) {
               const sireLink = firstRowCells[1].querySelector('a')
@@ -216,6 +266,23 @@ export async function fetchTJKPedigree(
               if (damLink) {
                 result.damName = damLink.textContent?.trim() || undefined
                 console.log('[Browser] [Pedigree] Found Dam in fallback table:', result.damName)
+              }
+            }
+            
+            // Also try to find all links with horse names (links that go to AtKosuBilgileri or similar)
+            const allHorseLinks = table.querySelectorAll('a[href*="AtId"], a[href*="Atkodu"], a[href*="AtKosuBilgileri"]')
+            console.log(`[Browser] [Pedigree] Found ${allHorseLinks.length} horse links in this table`)
+            
+            if (allHorseLinks.length >= 2 && !result.sireName && !result.damName) {
+              // Try to extract from links
+              const linkTexts = Array.from(allHorseLinks).map(link => link.textContent?.trim()).filter(Boolean)
+              console.log(`[Browser] [Pedigree] Horse link texts:`, linkTexts.slice(0, 10))
+              
+              // Usually first link is the horse itself, second is sire, third is dam
+              if (linkTexts.length >= 3) {
+                result.sireName = linkTexts[1]
+                result.damName = linkTexts[2]
+                console.log('[Browser] [Pedigree] Extracted from links - Sire:', result.sireName, 'Dam:', result.damName)
               }
             }
             
