@@ -72,4 +72,14 @@ export function getRelativeTime(date: Date | string): string {
   return `${Math.floor(diffInSeconds / 31536000)} yıl önce`
 }
 
+/**
+ * Format date in DD/MM/YYYY format
+ */
+export function formatDateShort(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const year = dateObj.getFullYear()
+  return `${day}/${month}/${year}`
+}
 

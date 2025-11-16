@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 import { fetchTJKHorseGallops } from '@/lib/tjk-gallops-scraper'
+import { fetchTJKPedigree } from '@/lib/tjk-pedigree-scraper'
 
 /**
  * Stream progress updates while fetching detailed data for multiple horses
@@ -298,6 +299,42 @@ export async function POST(request: Request) {
               } catch (gallopError: any) {
                 console.error(`[Fetch Details] Error fetching gallops for ${horse.name}:`, gallopError.message)
                 // Don't fail the whole process if gallops fail
+              }
+
+              // Fetch and store pedigree (4 generations) for this horse
+              try {
+                const pedigreeData = await fetchTJKPedigree(horse.externalRef!, horse.name)
+                
+                if (pedigreeData) {
+                  // Update horse with extended pedigree data
+                  await prisma.horse.update({
+                    where: { id: horse.id },
+                    data: {
+                      // Generation 2 already set above, but ensure from pedigree fetch too
+                      sireName: pedigreeData.sireName || undefined,
+                      damName: pedigreeData.damName || undefined,
+                      // Generation 3
+                      sireSire: pedigreeData.sireSire || undefined,
+                      sireDam: pedigreeData.sireDam || undefined,
+                      damSire: pedigreeData.damSire || undefined,
+                      damDam: pedigreeData.damDam || undefined,
+                      // Generation 4 (extended)
+                      sireSireSire: pedigreeData.sireSireSire || undefined,
+                      sireSireDam: pedigreeData.sireSireDam || undefined,
+                      sireDamSire: pedigreeData.sireDamSire || undefined,
+                      sireDamDam: pedigreeData.sireDamDam || undefined,
+                      damSireSire: pedigreeData.damSireSire || undefined,
+                      damSireDam: pedigreeData.damSireDam || undefined,
+                      damDamSire: pedigreeData.damDamSire || undefined,
+                      damDamDam: pedigreeData.damDamDam || undefined,
+                    },
+                  })
+                  
+                  console.log(`[Fetch Details] Stored pedigree data for ${horse.name}`)
+                }
+              } catch (pedigreeError: any) {
+                console.error(`[Fetch Details] Error fetching pedigree for ${horse.name}:`, pedigreeError.message)
+                // Don't fail the whole process if pedigree fails
               }
 
               results.push({

@@ -814,11 +814,11 @@ export default function HorsesPage() {
                 <Search className="h-4 w-4 text-gray-600" />
               </Button>
             ) : (
-              <div className="relative w-44">
+              <div className="relative w-36">
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="At, origin ara..."
+                  placeholder="At, origin ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex h-9 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"

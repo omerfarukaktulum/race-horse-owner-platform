@@ -184,6 +184,16 @@ model Horse {
   damSire        String?     // Anne'nin babası
   damDam         String?     // Anne'nin annesi
   
+  // Extended Pedigree (4th generation - great-grandparents)
+  sireSireSire   String?     // Baba'nın baba'sının babası
+  sireSireDam    String?     // Baba'nın baba'sının annesi
+  sireDamSire    String?     // Baba'nın anne'sinin babası
+  sireDamDam     String?     // Baba'nın anne'sinin annesi
+  damSireSire    String?     // Anne'nin baba'sının babası
+  damSireDam     String?     // Anne'nin baba'sının annesi
+  damDamSire     String?     // Anne'nin anne'sinin babası
+  damDamDam      String?     // Anne'nin anne'sinin annesi
+  
   // Statistics by surface
   turfRaces      Int?
   turfFirsts     Int?
