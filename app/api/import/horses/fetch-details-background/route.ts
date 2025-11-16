@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 import { fetchTJKHorseGallops } from '@/lib/tjk-gallops-scraper'
+import { fetchTJKPedigree } from '@/lib/tjk-pedigree-scraper'
 
 // This endpoint starts the detail fetch in the background without blocking
 export async function POST(request: Request) {
@@ -245,6 +246,63 @@ export async function POST(request: Request) {
               }
             } catch (gallopError: any) {
               console.error(`[Background Fetch] Error fetching gallops for ${horse.name}:`, gallopError.message)
+            }
+
+            // Fetch and store pedigree (4 generations) for this horse
+            try {
+              console.log(`[Background Fetch] Starting pedigree fetch for ${horse.name} (ID: ${horse.externalRef})`)
+              const pedigreeData = await fetchTJKPedigree(horse.externalRef!, horse.name)
+              
+              console.log(`[Background Fetch] Pedigree data received for ${horse.name}:`, {
+                hasSire: !!pedigreeData?.sireName,
+                hasDam: !!pedigreeData?.damName,
+                hasSireSire: !!pedigreeData?.sireSire,
+                hasSireDam: !!pedigreeData?.sireDam,
+                hasDamSire: !!pedigreeData?.damSire,
+                hasDamDam: !!pedigreeData?.damDam,
+                gen4Count: pedigreeData ? [
+                  pedigreeData.sireSireSire, pedigreeData.sireSireDam, pedigreeData.sireDamSire, pedigreeData.sireDamDam,
+                  pedigreeData.damSireSire, pedigreeData.damSireDam, pedigreeData.damDamSire, pedigreeData.damDamDam
+                ].filter(Boolean).length : 0
+              })
+              
+              if (pedigreeData) {
+                // Update horse with extended pedigree data
+                const updateData: any = {}
+                
+                // Generation 2
+                if (pedigreeData.sireName) updateData.sireName = pedigreeData.sireName
+                if (pedigreeData.damName) updateData.damName = pedigreeData.damName
+                
+                // Generation 3
+                if (pedigreeData.sireSire) updateData.sireSire = pedigreeData.sireSire
+                if (pedigreeData.sireDam) updateData.sireDam = pedigreeData.sireDam
+                if (pedigreeData.damSire) updateData.damSire = pedigreeData.damSire
+                if (pedigreeData.damDam) updateData.damDam = pedigreeData.damDam
+                
+                // Generation 4
+                if (pedigreeData.sireSireSire) updateData.sireSireSire = pedigreeData.sireSireSire
+                if (pedigreeData.sireSireDam) updateData.sireSireDam = pedigreeData.sireSireDam
+                if (pedigreeData.sireDamSire) updateData.sireDamSire = pedigreeData.sireDamSire
+                if (pedigreeData.sireDamDam) updateData.sireDamDam = pedigreeData.sireDamDam
+                if (pedigreeData.damSireSire) updateData.damSireSire = pedigreeData.damSireSire
+                if (pedigreeData.damSireDam) updateData.damSireDam = pedigreeData.damSireDam
+                if (pedigreeData.damDamSire) updateData.damDamSire = pedigreeData.damDamSire
+                if (pedigreeData.damDamDam) updateData.damDamDam = pedigreeData.damDamDam
+                
+                await prisma.horse.update({
+                  where: { id: horse.id },
+                  data: updateData,
+                })
+                
+                console.log(`[Background Fetch] ✓ Stored pedigree data for ${horse.name} - Gen2: ${!!updateData.sireName && !!updateData.damName}, Gen3: ${[updateData.sireSire, updateData.sireDam, updateData.damSire, updateData.damDam].filter(Boolean).length}, Gen4: ${[updateData.sireSireSire, updateData.sireSireDam, updateData.sireDamSire, updateData.sireDamDam, updateData.damSireSire, updateData.damSireDam, updateData.damDamSire, updateData.damDamDam].filter(Boolean).length}`)
+              } else {
+                console.log(`[Background Fetch] ⚠ No pedigree data returned for ${horse.name}`)
+              }
+            } catch (pedigreeError: any) {
+              console.error(`[Background Fetch] ✗ Error fetching pedigree for ${horse.name}:`, pedigreeError.message)
+              console.error(`[Background Fetch] Pedigree error stack:`, pedigreeError.stack)
+              // Don't fail the whole process if pedigree fails
             }
 
             console.log(`[Background Fetch] Successfully processed ${horse.name}`)
