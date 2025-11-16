@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search } from 'lucide-react'
+import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
@@ -51,6 +51,8 @@ export default function HorsesPage() {
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'name-asc' | 'name-desc' | null>(null)
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -64,9 +66,21 @@ export default function HorsesPage() {
       setHorses(allHorses)
     } else {
       const query = searchQuery.toLowerCase().trim()
-      const filtered = allHorses.filter((horse) =>
-        horse.name.toLowerCase().includes(query)
-      )
+      const filtered = allHorses.filter((horse) => {
+        // Search in horse name
+        if (horse.name.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in sire name
+        if (horse.sireName && horse.sireName.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in dam name
+        if (horse.damName && horse.damName.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
       setHorses(filtered)
     }
   }, [searchQuery, allHorses])
@@ -78,13 +92,16 @@ export default function HorsesPage() {
       if (showFilters && !target.closest('.filter-dropdown-container')) {
         setShowFilters(false)
       }
+      if (showSortDropdown && !target.closest('.sort-dropdown-container')) {
+        setShowSortDropdown(false)
+      }
     }
 
-    if (showFilters) {
+    if (showFilters || showSortDropdown) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showFilters])
+  }, [showFilters, showSortDropdown])
 
   const fetchHorses = async () => {
     try {
@@ -184,19 +201,42 @@ export default function HorsesPage() {
       })
     }
     
-    // Sort by age ascending (youngest first), then alphabetically by name
-    return filtered.sort((a, b) => {
-      const ageA = a.yob ? currentYear - a.yob : 999
-      const ageB = b.yob ? currentYear - b.yob : 999
-      
-      // First sort by age
-      if (ageA !== ageB) {
-        return ageA - ageB
+    // Apply sorting
+    if (sortBy) {
+      if (sortBy === 'age-asc') {
+        filtered = filtered.sort((a, b) => {
+          const ageA = a.yob ? currentYear - a.yob : 999
+          const ageB = b.yob ? currentYear - b.yob : 999
+          return ageA - ageB
+        })
+      } else if (sortBy === 'age-desc') {
+        filtered = filtered.sort((a, b) => {
+          const ageA = a.yob ? currentYear - a.yob : 999
+          const ageB = b.yob ? currentYear - b.yob : 999
+          return ageB - ageA
+        })
+      } else if (sortBy === 'name-asc') {
+        filtered = filtered.sort((a, b) => a.name.localeCompare(b.name, 'tr'))
+      } else if (sortBy === 'name-desc') {
+        filtered = filtered.sort((a, b) => b.name.localeCompare(a.name, 'tr'))
       }
-      
-      // If ages are the same, sort alphabetically by name
-      return a.name.localeCompare(b.name, 'tr')
-    })
+    } else {
+      // Default sort: by age ascending (youngest first), then alphabetically by name
+      filtered = filtered.sort((a, b) => {
+        const ageA = a.yob ? currentYear - a.yob : 999
+        const ageB = b.yob ? currentYear - b.yob : 999
+        
+        // First sort by age
+        if (ageA !== ageB) {
+          return ageA - ageB
+        }
+        
+        // If ages are the same, sort alphabetically by name
+        return a.name.localeCompare(b.name, 'tr')
+      })
+    }
+    
+    return filtered
   }
   
   // Get unique ages from horses in current tab
@@ -613,6 +653,103 @@ export default function HorsesPage() {
             )}
             </div>
             
+            {/* Sort Button */}
+            <div className="relative sort-dropdown-container">
+              <Button
+                variant="outline"
+                onClick={() => setShowSortDropdown(!showSortDropdown)}
+                className={`border-2 font-medium px-4 h-9 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  sortBy
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Sırala
+              </Button>
+          
+              {/* Sort Dropdown */}
+              {showSortDropdown && (
+                <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Sırala</h3>
+                    <button
+                      onClick={() => setShowSortDropdown(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Sort Options */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        setSortBy('age-asc')
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        sortBy === 'age-asc'
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>Yaş</span>
+                      <ArrowUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSortBy('age-desc')
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        sortBy === 'age-desc'
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>Yaş</span>
+                      <ArrowDown className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSortBy('name-asc')
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        sortBy === 'name-asc'
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>İsim</span>
+                      <ArrowUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSortBy('name-desc')
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        sortBy === 'name-desc'
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>İsim</span>
+                      <ArrowDown className="h-4 w-4" />
+                    </button>
+                    {sortBy && (
+                      <button
+                        onClick={() => {
+                          setSortBy(null)
+                        }}
+                        className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors mt-2"
+                      >
+                        Sıralamayı Kaldır
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {/* Search Button */}
             {!isSearchOpen ? (
               <Button
@@ -625,14 +762,14 @@ export default function HorsesPage() {
                 <Search className="h-4 w-4 text-gray-600" />
               </Button>
             ) : (
-              <div className="relative w-36">
+              <div className="relative w-44">
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="At ara..."
+                  placeholder="At, origin ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex h-9 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-[#6366f1] rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500"
+                  className="flex h-9 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
                   autoFocus
                   style={{ boxShadow: 'none' }}
                   onFocus={(e) => {
