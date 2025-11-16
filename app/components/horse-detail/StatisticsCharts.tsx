@@ -181,16 +181,6 @@ export function StatisticsCharts({ races, expenses }: Props) {
   const hasRaceData = races.length > 0
   const hasExpenseData = expenses.length > 0
   
-  if (!hasRaceData && !hasExpenseData) {
-    return (
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-        <CardContent className="py-16 text-center">
-          <p className="text-gray-500">Henüz istatistik verisi bulunmuyor</p>
-        </CardContent>
-      </Card>
-    )
-  }
-  
   // Helper to prepare legend data
   const prepareLegendData = (data: any[]): LegendItem[] => {
     const total = data.reduce((sum, item) => sum + item.value, 0)
@@ -381,8 +371,8 @@ export function StatisticsCharts({ races, expenses }: Props) {
           </Card>
         )}
         
-        {/* Monthly Expenses */}
-        {hasExpenseData && monthlyExpenses.length > 0 && (
+        {/* Monthly Expenses - Always show, even with zero values */}
+        {monthlyExpenses.length > 0 && (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">

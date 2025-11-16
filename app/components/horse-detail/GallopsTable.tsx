@@ -107,7 +107,15 @@ export function GallopsTable({ gallops }: Props) {
                   
                   // Get specific distance times
                   const getDistance = (meter: string) => {
-                    return distances[meter] || '-'
+                    const time = distances[meter]
+                    if (!time) return '-'
+                    
+                    // Remove "0." prefix if present (e.g., "0.25.80" → "25.80")
+                    const timeStr = String(time)
+                    if (timeStr.startsWith('0.')) {
+                      return timeStr.substring(2)
+                    }
+                    return timeStr
                   }
                   
                   return (
