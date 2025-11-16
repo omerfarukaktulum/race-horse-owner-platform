@@ -1,5 +1,5 @@
-import { MapPin, Trophy, Calendar, Activity } from 'lucide-react'
-import { formatCurrency, formatNumber, getRelativeTime } from '@/lib/utils/format'
+import { MapPin, Trophy } from 'lucide-react'
+import { formatCurrency, getRelativeTime } from '@/lib/utils/format'
 
 interface HorseMetadata {
   name: string
@@ -41,10 +41,9 @@ export function HorseMetadataCard({ horse }: Props) {
     daysSinceRace = Math.floor((now.getTime() - lastRace.getTime()) / (1000 * 60 * 60 * 24))
   }
   
-  // Get gender color
-  const genderColor = horse.gender?.toLowerCase().includes('dişi') 
-    ? 'bg-gradient-to-r from-pink-100 to-pink-200 text-pink-800'
-    : 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800'
+  // Determine gender badge color (matching horses page)
+  const isMale = horse.gender?.toLowerCase().includes('erkek') || horse.gender?.toLowerCase().includes('aygır')
+  const isFemale = horse.gender?.toLowerCase().includes('dişi') || horse.gender?.toLowerCase().includes('kısrak')
   
   return (
     <div className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-xl p-6 mb-6">
@@ -53,45 +52,52 @@ export function HorseMetadataCard({ horse }: Props) {
         <div className="space-y-4">
           {/* Horse Name */}
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent mb-3">
               {horse.name}
             </h1>
             
-            {/* Age, Gender, Handicap */}
+            {/* Origin - Right below name */}
+            {(horse.sireName || horse.damName) && (
+              <p className="text-sm text-gray-600 mb-3">
+                {horse.sireName && horse.damName 
+                  ? `${horse.sireName} - ${horse.damName}`
+                  : horse.sireName || horse.damName}
+              </p>
+            )}
+            
+            {/* Age, Gender, Handicap - Matching horses page style */}
             <div className="flex flex-wrap gap-2 items-center">
               {age && (
-                <span className="text-gray-600 text-sm font-medium">
-                  <Calendar className="inline h-4 w-4 mr-1" />
+                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
+                  isMale 
+                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                    : isFemale
+                    ? 'bg-purple-100 text-purple-700 border-purple-200'
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
                   {age} yaş ({horse.yob})
                 </span>
               )}
               
               {horse.gender && (
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${genderColor}`}>
+                <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                  isMale 
+                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                    : isFemale
+                    ? 'bg-purple-100 text-purple-700 border-purple-200'
+                    : 'bg-gray-100 text-gray-700 border-gray-200'
+                }`}>
                   {horse.gender}
                 </span>
               )}
               
               {horse.handicapPoints !== undefined && horse.handicapPoints !== null && (
-                <span className="px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800">
-                  <Activity className="inline h-4 w-4 mr-1" />
+                <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
                   HP: {horse.handicapPoints}
                 </span>
               )}
             </div>
           </div>
-          
-          {/* Origin */}
-          {(horse.sireName || horse.damName) && (
-            <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200/50">
-              <p className="text-sm text-gray-500 mb-1">Orijin</p>
-              <p className="text-base font-semibold text-gray-800">
-                {horse.sireName && horse.damName 
-                  ? `${horse.sireName} - ${horse.damName}`
-                  : horse.sireName || horse.damName}
-              </p>
-            </div>
-          )}
           
           {/* Trainer */}
           {horse.trainerName && (
@@ -137,6 +143,33 @@ export function HorseMetadataCard({ horse }: Props) {
                 </div>
               )}
               
+              {/* Race Record - Inside Kazanç İstatistikleri */}
+              {(horse.firstPlaces || horse.secondPlaces || horse.thirdPlaces) && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500 mb-2">Derece Dağılımı</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl">🥇</span>
+                      <span className="font-bold text-gray-900">{horse.firstPlaces || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl">🥈</span>
+                      <span className="font-bold text-gray-900">{horse.secondPlaces || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xl">🥉</span>
+                      <span className="font-bold text-gray-900">{horse.thirdPlaces || 0}</span>
+                    </div>
+                    {(horse.fourthPlaces || horse.fifthPlaces) && (
+                      <div className="text-gray-600 text-xs">
+                        <span className="font-semibold">4.</span> {horse.fourthPlaces || 0} • 
+                        <span className="font-semibold ml-1">5.</span> {horse.fifthPlaces || 0}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               {/* Prize Money */}
               {horse.prizeMoney && (
                 <div>
@@ -145,7 +178,7 @@ export function HorseMetadataCard({ horse }: Props) {
                 </div>
               )}
               
-              {/* Owner Premium */}
+              {/* Owner Premium - Before Breeder Premium */}
               {horse.ownerPremium && (
                 <div>
                   <p className="text-xs text-gray-500">Sahip Primi</p>
@@ -172,43 +205,15 @@ export function HorseMetadataCard({ horse }: Props) {
               </div>
             )}
           </div>
-          
-          {/* Race Record */}
-          {(horse.firstPlaces || horse.secondPlaces || horse.thirdPlaces) && (
-            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg p-4 border border-amber-200/50">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Derece Dağılımı</h3>
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1">
-                  <span className="text-xl">🥇</span>
-                  <span className="font-bold text-gray-900">{horse.firstPlaces || 0}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xl">🥈</span>
-                  <span className="font-bold text-gray-900">{horse.secondPlaces || 0}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-xl">🥉</span>
-                  <span className="font-bold text-gray-900">{horse.thirdPlaces || 0}</span>
-                </div>
-                {(horse.fourthPlaces || horse.fifthPlaces) && (
-                  <div className="text-gray-600">
-                    <span className="font-semibold">4.</span> {horse.fourthPlaces || 0} • 
-                    <span className="font-semibold ml-1">5.</span> {horse.fifthPlaces || 0}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       
-      {/* Footer: Recent Activity */}
+      {/* Footer: Recent Activity - At bottom */}
       {(horse.totalRaces || daysSinceRace !== null) && (
-        <div className="mt-4 pt-4 border-t border-gray-200/50">
+        <div className="mt-6 pt-4 border-t border-gray-200/50">
           <div className="flex flex-wrap gap-4 text-sm text-gray-600">
             {horse.totalRaces && (
               <span className="font-medium">
-                <Trophy className="inline h-4 w-4 mr-1 text-indigo-600" />
                 {horse.totalRaces} koşu
               </span>
             )}
@@ -230,4 +235,3 @@ export function HorseMetadataCard({ horse }: Props) {
     </div>
   )
 }
-

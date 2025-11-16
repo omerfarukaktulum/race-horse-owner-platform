@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { ArrowLeft, FileText, MapPin } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
@@ -130,6 +131,7 @@ export default function HorseDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('info')
 
   useEffect(() => {
     if (horseId) {
@@ -278,24 +280,58 @@ export default function HorseDetailPage() {
           >
             <MapPin className="h-4 w-4 mr-2" />
             Konum Değiştir
-          </Button>
+            </Button>
         </div>
       </div>
 
-      {/* Horse Metadata Card */}
-      <HorseMetadataCard horse={horseMetadata} />
+      {/* Tabbed Content */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5 mb-6">
+          <TabsTrigger 
+            value="info"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            At Bilgisi
+          </TabsTrigger>
+          <TabsTrigger 
+            value="statistics"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            İstatistikler
+          </TabsTrigger>
+          <TabsTrigger 
+            value="pedigree"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            Soyağacı
+          </TabsTrigger>
+          <TabsTrigger 
+            value="races"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            Koşu Geçmişi
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Statistics Charts */}
-      <StatisticsCharts 
-        races={horse.raceHistory || []} 
-        expenses={expensesData}
-      />
+        <TabsContent value="info" className="mt-6">
+          <HorseMetadataCard horse={horseMetadata} />
+        </TabsContent>
 
-      {/* Pedigree Tree */}
-      <PedigreeTree horse={pedigreeData} />
+        <TabsContent value="statistics" className="mt-6">
+          <StatisticsCharts 
+            races={horse.raceHistory || []} 
+            expenses={expensesData}
+          />
+        </TabsContent>
 
-      {/* Race History Table */}
-      <RaceHistoryTable races={horse.raceHistory || []} />
+        <TabsContent value="pedigree" className="mt-6">
+          <PedigreeTree horse={pedigreeData} />
+        </TabsContent>
+
+        <TabsContent value="races" className="mt-6">
+          <RaceHistoryTable races={horse.raceHistory || []} />
+        </TabsContent>
+      </Tabs>
 
       {/* Modals */}
       {isNoteModalOpen && (
@@ -324,4 +360,3 @@ export default function HorseDetailPage() {
     </div>
   )
 }
-

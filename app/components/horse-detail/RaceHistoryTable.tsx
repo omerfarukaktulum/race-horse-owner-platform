@@ -72,6 +72,37 @@ export function RaceHistoryTable({ races }: Props) {
     return null
   }
   
+  // Build TJK details URL
+  const getTJKDetailsUrl = (race: RaceHistory) => {
+    if (!race.videoUrl) return null
+    
+    // Extract race code from video URL (KosuKodu parameter)
+    const match = race.videoUrl.match(/KosuKodu=(\d+)/)
+    if (!match) return null
+    
+    const raceCode = match[1]
+    const raceDate = new Date(race.raceDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    raceDate.setHours(0, 0, 0, 0)
+    
+    // Determine era
+    let era = 'past'
+    if (raceDate.getTime() === today.getTime()) {
+      era = 'today'
+    } else if (raceDate.getTime() > today.getTime()) {
+      era = 'future'
+    }
+    
+    // Format date as DD/MM/YYYY
+    const day = String(raceDate.getDate()).padStart(2, '0')
+    const month = String(raceDate.getMonth() + 1).padStart(2, '0')
+    const year = raceDate.getFullYear()
+    const formattedDate = `${day}/${month}/${year}`
+    
+    return `https://www.tjk.org/TR/YarisSever/Info/Page/GunlukYarisSonuclari?QueryParameter_Tarih=${formattedDate}&Era=${era}#${raceCode}`
+  }
+  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -204,6 +235,17 @@ export function RaceHistoryTable({ races }: Props) {
                       {/* Media Links */}
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
+                          {getTJKDetailsUrl(race) && (
+                            <a
+                              href={getTJKDetailsUrl(race)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 transition-colors text-xs font-medium underline"
+                              title="Koşu Detayları"
+                            >
+                              Details
+                            </a>
+                          )}
                           {race.videoUrl && (
                             <a
                               href={race.videoUrl}

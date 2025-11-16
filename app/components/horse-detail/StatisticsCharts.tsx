@@ -1,6 +1,6 @@
 'use client'
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { MapPin, Ruler, Layers, Users, TurkishLira } from 'lucide-react'
 import {
@@ -30,8 +30,52 @@ interface Props {
   expenses: ExpenseData[]
 }
 
-// Color palette for charts (indigo shades from design system)
-const COLORS = ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#eef2ff']
+// Distinct color palette for charts (vibrant colors)
+const COLORS = [
+  '#6366f1', // Indigo
+  '#ec4899', // Pink
+  '#10b981', // Green
+  '#f59e0b', // Amber
+  '#8b5cf6', // Purple
+  '#ef4444', // Red
+  '#3b82f6', // Blue
+  '#14b8a6', // Teal
+  '#f97316', // Orange
+  '#06b6d4', // Cyan
+]
+
+// Custom Legend Component
+interface LegendItem {
+  name: string
+  value: number
+  color: string
+  percent: number
+}
+
+const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) => {
+  // Sort by value descending
+  const sortedData = [...data].sort((a, b) => b.value - a.value)
+  
+  return (
+    <div className="mt-4 space-y-2">
+      {sortedData.map((item, index) => (
+        <div key={index} className="flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 flex-1">
+            <div
+              className="w-4 h-4 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-gray-700 truncate">{item.name}</span>
+          </div>
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className="font-semibold text-gray-900">{item.value}</span>
+            <span className="text-gray-500 w-12 text-right">{item.percent.toFixed(0)}%</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
@@ -39,7 +83,7 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
         <p className="font-semibold text-gray-900">{payload[0].name}</p>
         <p className="text-sm text-gray-600">
-          {payload[0].value} {payload[0].payload.unit || 'koşu'}
+          {payload[0].value} koşu ({(payload[0].percent * 100).toFixed(0)}%)
         </p>
       </div>
     )
@@ -68,6 +112,17 @@ export function StatisticsCharts({ races, expenses }: Props) {
     )
   }
   
+  // Helper to prepare legend data
+  const prepareLegendData = (data: any[]): LegendItem[] => {
+    const total = data.reduce((sum, item) => sum + item.value, 0)
+    return data.map((item, index) => ({
+      name: item.name,
+      value: item.value,
+      color: COLORS[index % COLORS.length],
+      percent: (item.value / total) * 100,
+    }))
+  }
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
@@ -87,15 +142,14 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={cityData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -106,6 +160,10 @@ export function StatisticsCharts({ races, expenses }: Props) {
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(cityData)}
+                  total={cityData.reduce((sum, item) => sum + item.value, 0)}
+                />
               </CardContent>
             </Card>
           )}
@@ -120,15 +178,14 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={distanceData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -139,6 +196,10 @@ export function StatisticsCharts({ races, expenses }: Props) {
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(distanceData)}
+                  total={distanceData.reduce((sum, item) => sum + item.value, 0)}
+                />
               </CardContent>
             </Card>
           )}
@@ -153,25 +214,28 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
                       data={surfaceData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       {surfaceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(surfaceData)}
+                  total={surfaceData.reduce((sum, item) => sum + item.value, 0)}
+                />
               </CardContent>
             </Card>
           )}
@@ -190,15 +254,14 @@ export function StatisticsCharts({ races, expenses }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
                     data={jockeyData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name.split(' ')[0]} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={90}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -209,6 +272,10 @@ export function StatisticsCharts({ races, expenses }: Props) {
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
+              <CustomLegend
+                data={prepareLegendData(jockeyData)}
+                total={jockeyData.reduce((sum, item) => sum + item.value, 0)}
+              />
             </CardContent>
           </Card>
         )}
@@ -275,4 +342,3 @@ export function StatisticsCharts({ races, expenses }: Props) {
     </div>
   )
 }
-
