@@ -151,37 +151,37 @@ export function GallopsTable({ gallops }: Props) {
                       
                       {/* 200m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('200')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('200')}</span>
                       </td>
                       
                       {/* 400m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('400')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('400')}</span>
                       </td>
                       
                       {/* 600m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('600')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('600')}</span>
                       </td>
                       
                       {/* 800m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('800')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('800')}</span>
                       </td>
                       
                       {/* 1000m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('1000')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('1000')}</span>
                       </td>
                       
                       {/* 1200m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('1200')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('1200')}</span>
                       </td>
                       
                       {/* 1400m */}
                       <td className="px-3 py-3 text-center">
-                        <span className="text-sm text-gray-700">{getDistance('1400')}</span>
+                        <span className="text-sm font-bold text-gray-700">{getDistance('1400')}</span>
                       </td>
                       
                       {/* Status */}
