@@ -317,44 +317,8 @@ export function StatisticsCharts({ races, expenses }: Props) {
         </div>
       )}
       
-      {/* Second Row: 2 Charts (Jockey + Expenses) */}
+      {/* Second Row: Monthly Charts (Earnings + Expenses) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Jockey Distribution */}
-        {hasRaceData && jockeyData.length > 0 && (
-          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                <Users className="h-4 w-4 mr-2 text-indigo-600" />
-                Jokey Dağılımı
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={prepareLegendData(jockeyData)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {jockeyData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <CustomLegend
-                data={prepareLegendData(jockeyData)}
-                total={jockeyData.reduce((sum, item) => sum + item.value, 0)}
-              />
-            </CardContent>
-          </Card>
-        )}
-        
         {/* Monthly Earnings */}
         {hasRaceData && monthlyEarnings.length > 0 && (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
@@ -479,6 +443,44 @@ export function StatisticsCharts({ races, expenses }: Props) {
           </Card>
         )}
       </div>
+      
+      {/* Third Row: Jockey Distribution */}
+      {hasRaceData && jockeyData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <Users className="h-4 w-4 mr-2 text-indigo-600" />
+                Jokey Dağılımı
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={prepareLegendData(jockeyData)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {jockeyData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <CustomLegend
+                data={prepareLegendData(jockeyData)}
+                total={jockeyData.reduce((sum, item) => sum + item.value, 0)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

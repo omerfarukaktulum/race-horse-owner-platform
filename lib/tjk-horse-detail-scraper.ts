@@ -507,8 +507,14 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
           else if (text.includes('antrenör') || text.includes('trainer') || text.includes('ant.')) trainerColIndex = index
           else if (text.includes('hp') || text.includes('handikap')) hpColIndex = index
           else if (text.includes('ikramiye') || text.includes('prize')) prizeColIndex = index
-          else if (text.includes('video') || text.includes('s20')) videoColIndex = index
-          else if (text.includes('foto') || text.includes('photo')) photoColIndex = index
+          else if (text.includes('video') || text.includes('s20') || text.includes('medya') || text.includes('media')) {
+            videoColIndex = index
+            console.log(`[Browser] ✓ Found video column at index ${index}`)
+          }
+          else if (text.includes('foto') || text.includes('photo') || text.includes('resim') || text.includes('image')) {
+            photoColIndex = index
+            console.log(`[Browser] ✓ Found photo column at index ${index}`)
+          }
         })
         
         // Safety check: if positionColIndex equals dereceColIndex, reset positionColIndex
@@ -792,20 +798,67 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
           }
           
           // Parse video URL
-          const videoCell = cells[videoColIndex]
-          const videoLink = videoCell?.querySelector('a')
           let videoUrl: string | undefined
-          if (videoLink) {
-            const href = videoLink.getAttribute('href')
-            if (href) {
-              videoUrl = href.startsWith('http') ? href : `https://www.tjk.org${href}`
+          if (videoColIndex >= 0 && cells[videoColIndex]) {
+            const videoCell = cells[videoColIndex]
+            // Try multiple methods to find video link
+            const videoLink = videoCell.querySelector('a')
+            if (videoLink) {
+              const href = videoLink.getAttribute('href')
+              if (href) {
+                videoUrl = href.startsWith('http') ? href : `https://www.tjk.org${href}`
+                console.log(`[Browser] ✓ Found video URL: ${videoUrl.substring(0, 80)}...`)
+              }
+            } else {
+              // Fallback: check if cell itself is a link
+              const cellHref = videoCell.getAttribute('href')
+              if (cellHref) {
+                videoUrl = cellHref.startsWith('http') ? cellHref : `https://www.tjk.org${cellHref}`
+                console.log(`[Browser] ✓ Found video URL (from cell): ${videoUrl.substring(0, 80)}...`)
+              } else {
+                // Check for onclick or data attributes
+                const onclick = videoCell.getAttribute('onclick')
+                if (onclick) {
+                  const urlMatch = onclick.match(/['"]([^'"]+)['"]/)
+                  if (urlMatch) {
+                    videoUrl = urlMatch[1].startsWith('http') ? urlMatch[1] : `https://www.tjk.org${urlMatch[1]}`
+                    console.log(`[Browser] ✓ Found video URL (from onclick): ${videoUrl.substring(0, 80)}...`)
+                  }
+                }
+              }
             }
+            if (!videoUrl) {
+              console.log(`[Browser] ⚠ No video URL found in column ${videoColIndex}, cell text: "${videoCell.textContent?.trim()}"`)
+            }
+          } else {
+            console.log(`[Browser] ⚠ Video column index ${videoColIndex} is invalid or cell not found`)
           }
           
           // Parse photo URL
-          const photoCell = cells[photoColIndex]
-          const photoImg = photoCell?.querySelector('img')
-          const photoUrl = photoImg?.getAttribute('src') || undefined
+          let photoUrl: string | undefined
+          if (photoColIndex >= 0 && cells[photoColIndex]) {
+            const photoCell = cells[photoColIndex]
+            const photoImg = photoCell.querySelector('img')
+            if (photoImg) {
+              const src = photoImg.getAttribute('src')
+              if (src) {
+                photoUrl = src.startsWith('http') ? src : `https://www.tjk.org${src}`
+                console.log(`[Browser] ✓ Found photo URL: ${photoUrl.substring(0, 80)}...`)
+              }
+            } else {
+              // Fallback: check if cell has background image or data attribute
+              const cellSrc = photoCell.getAttribute('data-src') || photoCell.getAttribute('src')
+              if (cellSrc) {
+                photoUrl = cellSrc.startsWith('http') ? cellSrc : `https://www.tjk.org${cellSrc}`
+                console.log(`[Browser] ✓ Found photo URL (from cell): ${photoUrl.substring(0, 80)}...`)
+              }
+            }
+            if (!photoUrl) {
+              console.log(`[Browser] ⚠ No photo URL found in column ${photoColIndex}, cell text: "${photoCell.textContent?.trim()}"`)
+            }
+          } else {
+            console.log(`[Browser] ⚠ Photo column index ${photoColIndex} is invalid or cell not found`)
+          }
 
           // Only add if we have at least a date
           if (dateText && dateText.match(/\d{2}\.\d{2}\.\d{4}/)) {
