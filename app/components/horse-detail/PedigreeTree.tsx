@@ -34,6 +34,10 @@ interface GraphNode {
   name: string
   generation: number
   type: 'sire' | 'dam' | 'horse'
+  x?: number
+  y?: number
+  fx?: number
+  fy?: number
 }
 
 interface GraphLink {
@@ -161,6 +165,88 @@ export function PedigreeTree({ horse }: Props) {
       }
     })
 
+    // Set initial hierarchical positions (left to right, top to bottom)
+    const width = 1000
+    const height = 800
+    const genWidth = width / 5 // Space between generations
+    
+    // Generation 1: Center left
+    const mainHorseNode = nodeMap.get('horse')
+    if (mainHorseNode) {
+      mainHorseNode.x = genWidth
+      mainHorseNode.y = height / 2
+      mainHorseNode.fx = genWidth
+      mainHorseNode.fy = height / 2
+    }
+
+    // Generation 2: Middle-left, vertically distributed
+    const sireNode = nodeMap.get('sire')
+    const damNode = nodeMap.get('dam')
+    if (sireNode) {
+      sireNode.x = genWidth * 2
+      sireNode.y = height / 2 - 100
+      sireNode.fx = genWidth * 2
+      sireNode.fy = height / 2 - 100
+    }
+    if (damNode) {
+      damNode.x = genWidth * 2
+      damNode.y = height / 2 + 100
+      damNode.fx = genWidth * 2
+      damNode.fy = height / 2 + 100
+    }
+
+    // Generation 3: Position relative to their parents
+    const sireSireNode = nodeMap.get('sire-sire')
+    const sireDamNode = nodeMap.get('sire-dam')
+    const damSireNode = nodeMap.get('dam-sire')
+    const damDamNode = nodeMap.get('dam-dam')
+    
+    if (sireSireNode && sireNode && sireNode.y !== undefined) {
+      sireSireNode.x = genWidth * 3
+      sireSireNode.y = sireNode.y - 80
+      sireSireNode.fx = genWidth * 3
+      sireSireNode.fy = sireNode.y - 80
+    }
+    if (sireDamNode && sireNode && sireNode.y !== undefined) {
+      sireDamNode.x = genWidth * 3
+      sireDamNode.y = sireNode.y + 80
+      sireDamNode.fx = genWidth * 3
+      sireDamNode.fy = sireNode.y + 80
+    }
+    if (damSireNode && damNode && damNode.y !== undefined) {
+      damSireNode.x = genWidth * 3
+      damSireNode.y = damNode.y - 80
+      damSireNode.fx = genWidth * 3
+      damSireNode.fy = damNode.y - 80
+    }
+    if (damDamNode && damNode && damNode.y !== undefined) {
+      damDamNode.x = genWidth * 3
+      damDamNode.y = damNode.y + 80
+      damDamNode.fx = genWidth * 3
+      damDamNode.fy = damNode.y + 80
+    }
+
+    // Generation 4: Position relative to their grandparents
+    const gen4Pairs = [
+      { node: nodeMap.get('sire-sire-sire'), parent: sireSireNode, offset: -60 },
+      { node: nodeMap.get('sire-sire-dam'), parent: sireSireNode, offset: 60 },
+      { node: nodeMap.get('sire-dam-sire'), parent: sireDamNode, offset: -60 },
+      { node: nodeMap.get('sire-dam-dam'), parent: sireDamNode, offset: 60 },
+      { node: nodeMap.get('dam-sire-sire'), parent: damSireNode, offset: -60 },
+      { node: nodeMap.get('dam-sire-dam'), parent: damSireNode, offset: 60 },
+      { node: nodeMap.get('dam-dam-sire'), parent: damDamNode, offset: -60 },
+      { node: nodeMap.get('dam-dam-dam'), parent: damDamNode, offset: 60 },
+    ]
+    
+    gen4Pairs.forEach(({ node, parent, offset }) => {
+      if (node && parent && parent.y !== undefined) {
+        node.x = genWidth * 4
+        node.y = parent.y + offset
+        node.fx = genWidth * 4
+        node.fy = parent.y + offset
+      }
+    })
+
     setGraphData({ nodes, links })
   }, [horse])
 
@@ -192,9 +278,11 @@ export function PedigreeTree({ horse }: Props) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
       <CardContent className="p-6">
-        <div className="w-full" style={{ height: '600px' }}>
+        <div className="w-full overflow-auto" style={{ height: '800px' }}>
           <ForceGraph2D
             graphData={graphData}
+            width={1000}
+            height={800}
             nodeLabel={(node: any) => `${node.name}\n(Generation ${node.generation})`}
             nodeColor={(node: any) => getNodeColor(node)}
             nodeVal={(node: any) => getNodeSize(node)}
@@ -203,10 +291,12 @@ export function PedigreeTree({ horse }: Props) {
             linkDirectionalArrowLength={6}
             linkDirectionalArrowRelPos={1}
             linkDirectionalArrowColor={() => '#94a3b8'}
-            cooldownTicks={100}
+            cooldownTicks={50}
             onEngineStop={() => {
               // Force graph to stabilize
             }}
+            d3AlphaDecay={0.1}
+            d3VelocityDecay={0.3}
             nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
               const label = node.name
               const fontSize = node.generation === 1 ? 14 : node.generation === 2 ? 12 : node.generation === 3 ? 10 : 9
