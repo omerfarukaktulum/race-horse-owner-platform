@@ -303,37 +303,58 @@ export async function POST(request: Request) {
 
               // Fetch and store pedigree (4 generations) for this horse
               try {
+                console.log(`[Fetch Details] Starting pedigree fetch for ${horse.name} (ID: ${horse.externalRef})`)
                 const pedigreeData = await fetchTJKPedigree(horse.externalRef!, horse.name)
+                
+                console.log(`[Fetch Details] Pedigree data received for ${horse.name}:`, {
+                  hasSire: !!pedigreeData?.sireName,
+                  hasDam: !!pedigreeData?.damName,
+                  hasSireSire: !!pedigreeData?.sireSire,
+                  hasSireDam: !!pedigreeData?.sireDam,
+                  hasDamSire: !!pedigreeData?.damSire,
+                  hasDamDam: !!pedigreeData?.damDam,
+                  gen4Count: pedigreeData ? [
+                    pedigreeData.sireSireSire, pedigreeData.sireSireDam, pedigreeData.sireDamSire, pedigreeData.sireDamDam,
+                    pedigreeData.damSireSire, pedigreeData.damSireDam, pedigreeData.damDamSire, pedigreeData.damDamDam
+                  ].filter(Boolean).length : 0
+                })
                 
                 if (pedigreeData) {
                   // Update horse with extended pedigree data
+                  const updateData: any = {}
+                  
+                  // Generation 2
+                  if (pedigreeData.sireName) updateData.sireName = pedigreeData.sireName
+                  if (pedigreeData.damName) updateData.damName = pedigreeData.damName
+                  
+                  // Generation 3
+                  if (pedigreeData.sireSire) updateData.sireSire = pedigreeData.sireSire
+                  if (pedigreeData.sireDam) updateData.sireDam = pedigreeData.sireDam
+                  if (pedigreeData.damSire) updateData.damSire = pedigreeData.damSire
+                  if (pedigreeData.damDam) updateData.damDam = pedigreeData.damDam
+                  
+                  // Generation 4
+                  if (pedigreeData.sireSireSire) updateData.sireSireSire = pedigreeData.sireSireSire
+                  if (pedigreeData.sireSireDam) updateData.sireSireDam = pedigreeData.sireSireDam
+                  if (pedigreeData.sireDamSire) updateData.sireDamSire = pedigreeData.sireDamSire
+                  if (pedigreeData.sireDamDam) updateData.sireDamDam = pedigreeData.sireDamDam
+                  if (pedigreeData.damSireSire) updateData.damSireSire = pedigreeData.damSireSire
+                  if (pedigreeData.damSireDam) updateData.damSireDam = pedigreeData.damSireDam
+                  if (pedigreeData.damDamSire) updateData.damDamSire = pedigreeData.damDamSire
+                  if (pedigreeData.damDamDam) updateData.damDamDam = pedigreeData.damDamDam
+                  
                   await prisma.horse.update({
                     where: { id: horse.id },
-                    data: {
-                      // Generation 2 already set above, but ensure from pedigree fetch too
-                      sireName: pedigreeData.sireName || undefined,
-                      damName: pedigreeData.damName || undefined,
-                      // Generation 3
-                      sireSire: pedigreeData.sireSire || undefined,
-                      sireDam: pedigreeData.sireDam || undefined,
-                      damSire: pedigreeData.damSire || undefined,
-                      damDam: pedigreeData.damDam || undefined,
-                      // Generation 4 (extended)
-                      sireSireSire: pedigreeData.sireSireSire || undefined,
-                      sireSireDam: pedigreeData.sireSireDam || undefined,
-                      sireDamSire: pedigreeData.sireDamSire || undefined,
-                      sireDamDam: pedigreeData.sireDamDam || undefined,
-                      damSireSire: pedigreeData.damSireSire || undefined,
-                      damSireDam: pedigreeData.damSireDam || undefined,
-                      damDamSire: pedigreeData.damDamSire || undefined,
-                      damDamDam: pedigreeData.damDamDam || undefined,
-                    },
+                    data: updateData,
                   })
                   
-                  console.log(`[Fetch Details] Stored pedigree data for ${horse.name}`)
+                  console.log(`[Fetch Details] ✓ Stored pedigree data for ${horse.name} - Gen2: ${!!updateData.sireName && !!updateData.damName}, Gen3: ${[updateData.sireSire, updateData.sireDam, updateData.damSire, updateData.damDam].filter(Boolean).length}, Gen4: ${[updateData.sireSireSire, updateData.sireSireDam, updateData.sireDamSire, updateData.sireDamDam, updateData.damSireSire, updateData.damSireDam, updateData.damDamSire, updateData.damDamDam].filter(Boolean).length}`)
+                } else {
+                  console.log(`[Fetch Details] ⚠ No pedigree data returned for ${horse.name}`)
                 }
               } catch (pedigreeError: any) {
-                console.error(`[Fetch Details] Error fetching pedigree for ${horse.name}:`, pedigreeError.message)
+                console.error(`[Fetch Details] ✗ Error fetching pedigree for ${horse.name}:`, pedigreeError.message)
+                console.error(`[Fetch Details] Pedigree error stack:`, pedigreeError.stack)
                 // Don't fail the whole process if pedigree fails
               }
 

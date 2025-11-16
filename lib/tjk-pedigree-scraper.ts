@@ -62,49 +62,121 @@ export async function fetchTJKPedigree(
     const pedigree = await page.evaluate(() => {
       const result: any = {}
       
-      // TJK pedigree page uses table with id="tblPedigri"
-      // Structure: Each row represents a generation level
-      // Row 1: Horse itself
-      // Row 2: Sire, Dam
-      // Row 3: Sire's Sire, Sire's Dam, Dam's Sire, Dam's Dam
-      // Row 4: 8 great-grandparents
+      // First, check if #tblPedigri exists
+      const pedigreeTable = document.querySelector('#tblPedigri')
+      console.log('[Browser] [Pedigree] #tblPedigri found:', !!pedigreeTable)
       
-      const extractName = (selector: string) => {
+      if (pedigreeTable) {
+        const rows = pedigreeTable.querySelectorAll('tbody tr, tr')
+        console.log('[Browser] [Pedigree] Found', rows.length, 'rows in #tblPedigri')
+        
+        // Log first few rows for debugging
+        rows.forEach((row, idx) => {
+          if (idx < 5) {
+            const cells = row.querySelectorAll('td')
+            const cellTexts = Array.from(cells).map(c => {
+              const link = c.querySelector('a')
+              return link ? link.textContent?.trim() : c.textContent?.trim()
+            }).filter(Boolean)
+            console.log(`[Browser] [Pedigree] Row ${idx}:`, cellTexts.slice(0, 5))
+          }
+        })
+      }
+      
+      const extractName = (selector: string, description: string) => {
         const element = document.querySelector(selector)
         if (element) {
           const link = element.querySelector('a')
           if (link) {
-            return link.textContent?.trim() || undefined
+            const name = link.textContent?.trim()
+            if (name) {
+              console.log(`[Browser] [Pedigree] ✓ Found ${description}:`, name)
+              return name
+            }
           }
-          return element.textContent?.trim() || undefined
+          const text = element.textContent?.trim()
+          if (text) {
+            console.log(`[Browser] [Pedigree] ✓ Found ${description} (no link):`, text)
+            return text
+          }
+        } else {
+          console.log(`[Browser] [Pedigree] ✗ Not found: ${description} (selector: ${selector})`)
         }
         return undefined
       }
       
-      // Generation 2 (Sire, Dam) - Row 1 and 2
-      result.sireName = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(2) > a')
-      result.damName = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(2) > a')
+      // Generation 2 (Sire, Dam) - Row 1 and 2, column 2
+      result.sireName = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(2) > a', 'Sire')
+      result.damName = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(2) > a', 'Dam')
+      
+      // Try alternative selectors for Generation 2
+      if (!result.sireName) {
+        result.sireName = extractName('#tblPedigri tbody tr:first-child td:nth-child(2) a', 'Sire (alt)')
+      }
+      if (!result.damName) {
+        result.damName = extractName('#tblPedigri tbody tr:nth-child(2) td:nth-child(2) a', 'Dam (alt)')
+      }
       
       // Generation 3 (Grandparents) - Row 1-4, column 3
-      result.sireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(3) > a')
-      result.sireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(3) > a')
-      result.damSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(3) > a')
-      result.damDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(3) > a')
+      result.sireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(3) > a', 'SireSire')
+      result.sireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(3) > a', 'SireDam')
+      result.damSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(3) > a', 'DamSire')
+      result.damDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(3) > a', 'DamDam')
       
       // Generation 4 (Great-grandparents) - Row 1-8, column 4
-      result.sireSireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(4) > a')
-      result.sireSireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(4) > a')
-      result.sireDamSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(4) > a')
-      result.sireDamDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(4) > a')
-      result.damSireSire = extractName('#tblPedigri > tbody > tr:nth-child(5) > td:nth-child(4) > a')
-      result.damSireDam = extractName('#tblPedigri > tbody > tr:nth-child(6) > td:nth-child(4) > a')
-      result.damDamSire = extractName('#tblPedigri > tbody > tr:nth-child(7) > td:nth-child(4) > a')
-      result.damDamDam = extractName('#tblPedigri > tbody > tr:nth-child(8) > td:nth-child(4) > a')
+      result.sireSireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(4) > a', 'SireSireSire')
+      result.sireSireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(4) > a', 'SireSireDam')
+      result.sireDamSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(4) > a', 'SireDamSire')
+      result.sireDamDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(4) > a', 'SireDamDam')
+      result.damSireSire = extractName('#tblPedigri > tbody > tr:nth-child(5) > td:nth-child(4) > a', 'DamSireSire')
+      result.damSireDam = extractName('#tblPedigri > tbody > tr:nth-child(6) > td:nth-child(4) > a', 'DamSireDam')
+      result.damDamSire = extractName('#tblPedigri > tbody > tr:nth-child(7) > td:nth-child(4) > a', 'DamDamSire')
+      result.damDamDam = extractName('#tblPedigri > tbody > tr:nth-child(8) > td:nth-child(4) > a', 'DamDamDam')
       
-      // Fallback: Try alternative table structure if #tblPedigri not found
+      // Fallback: Try to extract from all links in the table if specific selectors fail
+      if (pedigreeTable && (!result.sireSire && !result.sireDam && !result.damSire && !result.damDam)) {
+        console.log('[Browser] [Pedigree] Trying fallback: extract all links from table')
+        const allLinks = pedigreeTable.querySelectorAll('a[href*="AtId"], a[href*="Atkodu"]')
+        console.log('[Browser] [Pedigree] Found', allLinks.length, 'horse links in table')
+        
+        const horseNames: string[] = []
+        allLinks.forEach((link, idx) => {
+          const name = link.textContent?.trim()
+          if (name && name.length > 2 && !name.includes('http') && !name.includes('.')) {
+            horseNames.push(name)
+            if (idx < 15) {
+              console.log(`[Browser] [Pedigree] Link ${idx}:`, name)
+            }
+          }
+        })
+        
+        // Map names to pedigree positions (assuming order: horse, sire, dam, sireSire, sireDam, damSire, damDam, ...)
+        if (horseNames.length >= 3) {
+          if (!result.sireName) result.sireName = horseNames[1]
+          if (!result.damName) result.damName = horseNames[2]
+        }
+        if (horseNames.length >= 7) {
+          if (!result.sireSire) result.sireSire = horseNames[3]
+          if (!result.sireDam) result.sireDam = horseNames[4]
+          if (!result.damSire) result.damSire = horseNames[5]
+          if (!result.damDam) result.damDam = horseNames[6]
+        }
+        if (horseNames.length >= 15) {
+          if (!result.sireSireSire) result.sireSireSire = horseNames[7]
+          if (!result.sireSireDam) result.sireSireDam = horseNames[8]
+          if (!result.sireDamSire) result.sireDamSire = horseNames[9]
+          if (!result.sireDamDam) result.sireDamDam = horseNames[10]
+          if (!result.damSireSire) result.damSireSire = horseNames[11]
+          if (!result.damSireDam) result.damSireDam = horseNames[12]
+          if (!result.damDamSire) result.damDamSire = horseNames[13]
+          if (!result.damDamDam) result.damDamDam = horseNames[14]
+        }
+      }
+      
+      // Final fallback: Try alternative table structure if #tblPedigri not found
       if (!result.sireName && !result.damName) {
         const allTables = document.querySelectorAll('table')
-        console.log('[Browser] #tblPedigri not found, trying', allTables.length, 'tables')
+        console.log('[Browser] [Pedigree] #tblPedigri not found or empty, trying', allTables.length, 'tables')
         
         for (const table of allTables) {
           const rows = table.querySelectorAll('tbody tr, tr')
@@ -117,6 +189,7 @@ export async function fetchTJKPedigree(
               const sireLink = firstRowCells[1].querySelector('a')
               if (sireLink) {
                 result.sireName = sireLink.textContent?.trim() || undefined
+                console.log('[Browser] [Pedigree] Found Sire in fallback table:', result.sireName)
               }
             }
             
@@ -124,27 +197,30 @@ export async function fetchTJKPedigree(
               const damLink = secondRowCells[1].querySelector('a')
               if (damLink) {
                 result.damName = damLink.textContent?.trim() || undefined
+                console.log('[Browser] [Pedigree] Found Dam in fallback table:', result.damName)
               }
             }
             
             if (result.sireName || result.damName) {
-              console.log('[Browser] Found pedigree data in fallback table')
+              console.log('[Browser] [Pedigree] Found pedigree data in fallback table')
               break
             }
           }
         }
       }
       
-      console.log('[Browser] Extracted pedigree:', {
+      const gen4Count = [result.sireSireSire, result.sireSireDam, result.sireDamSire, result.sireDamDam, 
+                        result.damSireSire, result.damSireDam, result.damDamSire, result.damDamDam]
+                        .filter(Boolean).length
+      
+      console.log('[Browser] [Pedigree] Final extracted pedigree:', {
         sire: result.sireName,
         dam: result.damName,
         sireSire: result.sireSire,
         sireDam: result.sireDam,
         damSire: result.damSire,
         damDam: result.damDam,
-        gen4Count: [result.sireSireSire, result.sireSireDam, result.sireDamSire, result.sireDamDam, 
-                    result.damSireSire, result.damSireDam, result.damDamSire, result.damDamDam]
-                    .filter(Boolean).length
+        gen4Count: gen4Count
       })
       
       return result
