@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Search, Check, UserSearch } from 'lucide-react'
+import { Search, Check, UserSearch, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -158,15 +158,21 @@ export default function OwnerLookupPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
                         {result.externalRef && (
-                          <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                          <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
                             <img
                               src={`https://medya-cdn.tjk.org/formaftp/${result.externalRef}.jpg`}
                               alt="Eküri Forması"
                               className="w-full h-full object-contain"
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none'
+                                const container = e.currentTarget.parentElement
+                                if (container) {
+                                  const icon = container.querySelector('.fallback-icon') as HTMLElement
+                                  if (icon) icon.style.display = 'block'
+                                }
                               }}
                             />
+                            <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
                           </div>
                         )}
                         <div className="flex-1">

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
@@ -40,7 +39,7 @@ export default function HorsesPage() {
   const [horses, setHorses] = useState<HorseData[]>([])
   const [allHorses, setAllHorses] = useState<HorseData[]>([]) // Store all horses for filtering
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('ACTIVE')
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const [selectedHorseForExpense, setSelectedHorseForExpense] = useState<string | null>(null)
   const [locationModalOpen, setLocationModalOpen] = useState(false)
@@ -59,31 +58,6 @@ export default function HorsesPage() {
   useEffect(() => {
     fetchHorses()
   }, [])
-
-  // Filter horses based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setHorses(allHorses)
-    } else {
-      const query = searchQuery.toLowerCase().trim()
-      const filtered = allHorses.filter((horse) => {
-        // Search in horse name
-        if (horse.name.toLowerCase().includes(query)) {
-          return true
-        }
-        // Search in sire name
-        if (horse.sireName && horse.sireName.toLowerCase().includes(query)) {
-          return true
-        }
-        // Search in dam name
-        if (horse.damName && horse.damName.toLowerCase().includes(query)) {
-          return true
-        }
-        return false
-      })
-      setHorses(filtered)
-    }
-  }, [searchQuery, allHorses])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -128,38 +102,51 @@ export default function HorsesPage() {
     }
   }
 
-  const filterHorses = (tab: string) => {
+  const filterHorses = () => {
     const currentYear = new Date().getFullYear()
     let filtered: HorseData[] = []
     
-    if (tab === 'ACTIVE') {
-      // Hepsi: Show all horses (excluding only DEAD horses)
-      filtered = horses.filter((horse) => horse.status !== 'DEAD')
-    } else if (tab === 'FOALS') {
-      // Foals: 0, 1, 2, 3 years old (exclude dead horses)
-      filtered = horses.filter((horse) => {
-        if (!horse.yob) return false
-        if (horse.status === 'DEAD') return false // Don't show dead foals in Taylar tab
-        const age = currentYear - horse.yob
-        return age >= 0 && age <= 3
-      })
-    } else if (tab === 'MARE') {
-      filtered = horses.filter((horse) => {
-        // Include horses with MARE status
-        if (horse.status === 'MARE') return true
+    // Start with all horses (excluding only DEAD horses)
+    filtered = allHorses.filter((horse) => horse.status !== 'DEAD')
+    
+    // Apply category filters (multiple selection)
+    if (categoryFilters.length > 0) {
+      filtered = filtered.filter((horse) => {
+        const matchesFoals = categoryFilters.includes('FOALS')
+        const matchesMare = categoryFilters.includes('MARE')
         
-        // Also include girl horses (Dişi) over 7 years old
-        if (horse.yob && horse.gender) {
+        if (matchesFoals || matchesMare) {
+          let matches = false
+          
+          // Check if matches FOALS
+          if (matchesFoals) {
+            if (horse.yob) {
+              const age = currentYear - horse.yob
+              if (age >= 0 && age <= 3) {
+                matches = true
+              }
+            }
+          }
+          
+          // Check if matches MARE
+          if (matchesMare) {
+            if (horse.status === 'MARE') {
+              matches = true
+            } else if (horse.yob && horse.gender) {
           const age = currentYear - horse.yob
           const isGirl = horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || 
                         horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')
-          if (age > 7 && isGirl) return true
+              if (age > 7 && isGirl) {
+                matches = true
+              }
+            }
+          }
+          
+          return matches
         }
         
         return false
       })
-    } else if (tab === 'DEAD') {
-      filtered = horses.filter((horse) => horse.status === 'DEAD')
     }
     
     // Apply age filters (multiple selection)
@@ -179,12 +166,15 @@ export default function HorsesPage() {
     if (genderFilters.length > 0) {
       filtered = filtered.filter((horse) => {
         if (!horse.gender) return false
+        const isGelding = horse.gender.includes('İğdiş') || horse.gender.includes('İĞDİŞ') ||
+                          horse.gender.includes('Iğdiş') || horse.gender.includes('IĞDİŞ')
         const isMale = horse.gender.includes('Erkek') || horse.gender.includes('ERKEK') || 
                       horse.gender.includes('Aygır') || horse.gender.includes('AYGIR')
         const isFemale = horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || 
                          horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')
         
-        if (genderFilters.includes('male') && isMale) return true
+        if (genderFilters.includes('gelding') && isGelding) return true
+        if (genderFilters.includes('male') && isMale && !isGelding) return true
         if (genderFilters.includes('female') && isFemale) return true
         return false
       })
@@ -223,48 +213,118 @@ export default function HorsesPage() {
     } else {
       // Default sort: by age ascending (youngest first), then alphabetically by name
       filtered = filtered.sort((a, b) => {
-        const ageA = a.yob ? currentYear - a.yob : 999
-        const ageB = b.yob ? currentYear - b.yob : 999
-        
-        // First sort by age
-        if (ageA !== ageB) {
-          return ageA - ageB
-        }
-        
-        // If ages are the same, sort alphabetically by name
-        return a.name.localeCompare(b.name, 'tr')
-      })
-    }
+      const ageA = a.yob ? currentYear - a.yob : 999
+      const ageB = b.yob ? currentYear - b.yob : 999
+      
+      // First sort by age
+      if (ageA !== ageB) {
+        return ageA - ageB
+      }
+      
+      // If ages are the same, sort alphabetically by name
+      return a.name.localeCompare(b.name, 'tr')
+    })
+  }
     
     return filtered
   }
+
+  // Filter horses when activeTab or other filters change
+  useEffect(() => {
+    const filtered = filterHorses()
+    // Apply search query if exists
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      const searchFiltered = filtered.filter((horse) => {
+        // Search in horse name
+        if (horse.name.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in sire name
+        if (horse.sireName && horse.sireName.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in dam name
+        if (horse.damName && horse.damName.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
+      setHorses(searchFiltered)
+    } else {
+      setHorses(filtered)
+    }
+  }, [categoryFilters, ageFilters, genderFilters, locationFilters, sortBy, allHorses, searchQuery])
   
-  // Get unique ages from horses in current tab
+  // Get unique genders from user's horses
+  const getUniqueGenders = () => {
+    const genders: { value: string; label: string }[] = []
+    
+    allHorses.forEach((horse) => {
+      if (!horse.gender) return
+      
+      const isGelding = horse.gender.includes('İğdiş') || horse.gender.includes('İĞDİŞ') ||
+                        horse.gender.includes('Iğdiş') || horse.gender.includes('IĞDİŞ')
+      const isMale = horse.gender.includes('Erkek') || horse.gender.includes('ERKEK') || 
+                    horse.gender.includes('Aygır') || horse.gender.includes('AYGIR')
+      const isFemale = horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || 
+                       horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')
+      
+      if (isGelding && !genders.find(g => g.value === 'gelding')) {
+        genders.push({ value: 'gelding', label: 'İğdiş' })
+      }
+      if (isMale && !isGelding && !genders.find(g => g.value === 'male')) {
+        genders.push({ value: 'male', label: 'Erkek' })
+      }
+      if (isFemale && !genders.find(g => g.value === 'female')) {
+        genders.push({ value: 'female', label: 'Dişi' })
+      }
+    })
+    
+    // Return in a specific order: Erkek, Dişi, İğdiş
+    const ordered: { value: string; label: string }[] = []
+    const male = genders.find(g => g.value === 'male')
+    const female = genders.find(g => g.value === 'female')
+    const gelding = genders.find(g => g.value === 'gelding')
+    
+    if (male) ordered.push(male)
+    if (female) ordered.push(female)
+    if (gelding) ordered.push(gelding)
+    
+    return ordered
+  }
+
+  // Get unique locations from user's horses
+  const getUniqueLocations = () => {
+    const locations: { value: string; label: string }[] = []
+    
+    allHorses.forEach((horse) => {
+      if (!horse.currentLocationType) return
+      
+      if (horse.currentLocationType === 'racecourse' && !locations.find(l => l.value === 'racecourse')) {
+        locations.push({ value: 'racecourse', label: 'Hipodrom' })
+      }
+      if (horse.currentLocationType === 'farm' && !locations.find(l => l.value === 'farm')) {
+        locations.push({ value: 'farm', label: 'Çiftlik' })
+      }
+    })
+    
+    // Return in a specific order: Hipodrom, Çiftlik
+    const ordered: { value: string; label: string }[] = []
+    const racecourse = locations.find(l => l.value === 'racecourse')
+    const farm = locations.find(l => l.value === 'farm')
+    
+    if (racecourse) ordered.push(racecourse)
+    if (farm) ordered.push(farm)
+    
+    return ordered
+  }
+
+  // Get unique ages from filtered horses
   const getUniqueAges = () => {
     const currentYear = new Date().getFullYear()
-    const tabHorses = (() => {
-      if (activeTab === 'ACTIVE') {
-        return horses.filter((horse) => horse.status !== 'DEAD')
-      } else if (activeTab === 'FOALS') {
-        return horses.filter((horse) => {
-          if (!horse.yob || horse.status === 'DEAD') return false
-          const age = currentYear - horse.yob
-          return age >= 0 && age <= 3
-        })
-      } else if (activeTab === 'MARE') {
-        return horses.filter((horse) => {
-          if (horse.status === 'MARE') return true
-          if (horse.yob && horse.gender) {
-            const age = currentYear - horse.yob
-            const isGirl = horse.gender.includes('Dişi') || horse.gender.includes('DİŞİ') || 
-                          horse.gender.includes('Kısrak') || horse.gender.includes('KISRAK')
-            if (age > 7 && isGirl) return true
-          }
-          return false
-        })
-      }
-      return []
-    })()
+    // Use the filtered horses based on current filters
+    const tabHorses = filterHorses()
     
     const ages = new Set<number>()
     let hasSevenPlus = false
@@ -312,39 +372,57 @@ export default function HorsesPage() {
     )
   }
   
+  const toggleCategoryFilter = (category: string) => {
+    setCategoryFilters((prev) => 
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    )
+  }
+  
   const clearFilters = () => {
+    setCategoryFilters([])
     setAgeFilters([])
     setGenderFilters([])
     setLocationFilters([])
   }
   
-  const hasActiveFilters = ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0
+  const hasActiveFilters = categoryFilters.length > 0 || ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0
 
   const HorseCard = ({ horse }: { horse: HorseData }) => {
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
 
-    // Determine if horse is male or female
+    // Determine if horse is male, female, or gelding
+    const isGelding = horse.gender?.includes('İğdiş') || horse.gender?.includes('İĞDİŞ') ||
+                      horse.gender?.includes('Iğdiş') || horse.gender?.includes('IĞDİŞ')
     const isMale = horse.gender?.includes('Erkek') || horse.gender?.includes('ERKEK') || 
                    horse.gender?.includes('Aygır') || horse.gender?.includes('AYGIR')
+    // Note: Geldings are NOT included in isMale - they have their own styling
     const isFemale = horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
                      horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')
 
-    // Card gradient based on gender - Indigo for males, Purple/Violet for females
-    const cardGradient = isMale 
+    // Card gradient based on gender - Indigo for males, Purple/Violet for females, Teal/Cyan for geldings
+    const cardGradient = isGelding
+      ? 'bg-gradient-to-br from-teal-50 via-cyan-50 to-white border border-teal-100'
+      : isMale 
       ? 'bg-gradient-to-br from-indigo-50 via-blue-50 to-white border border-indigo-100'
       : isFemale
       ? 'bg-gradient-to-br from-purple-50 via-violet-50 to-white border border-purple-100'
       : 'bg-gradient-to-br from-slate-50 via-gray-50 to-white border border-gray-100'
 
     // Button gradient based on gender
-    const buttonGradient = isMale
+    const buttonGradient = isGelding
+      ? 'bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700'
+      : isMale
       ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700'
       : isFemale
       ? 'bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700'
       : 'bg-gradient-to-r from-gray-600 to-slate-600 hover:from-gray-700 hover:to-slate-700'
 
     // Age badge color
-    const ageBadgeColor = isMale
+    const ageBadgeColor = isGelding
+      ? 'bg-teal-100 text-teal-700 border-teal-200'
+      : isMale
       ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
       : isFemale
       ? 'bg-purple-100 text-purple-700 border-purple-200'
@@ -353,7 +431,10 @@ export default function HorsesPage() {
     // Get gender label
     const getGenderLabel = () => {
       if (!horse.gender) return null
-      if (isMale) {
+      if (isGelding) {
+        return { text: 'İğdiş', color: 'bg-teal-100 text-teal-700 border-teal-200' }
+      }
+      if (isMale && !isGelding) {
         return { text: 'Erkek', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' }
       }
       if (isFemale) {
@@ -371,7 +452,7 @@ export default function HorsesPage() {
           <div className="flex-1 min-w-0">
             <div className="mb-2">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">
-                  {horse.name}
+                {horse.name}
               </h3>
             </div>
             
@@ -388,16 +469,16 @@ export default function HorsesPage() {
             
             {/* All Labels Side by Side - Second Line */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
-                {age !== null && (
+              {age !== null && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                    {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
-                  </span>
-                )}
-                {genderLabel && (
+                  {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
+                </span>
+              )}
+              {genderLabel && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${genderLabel.color}`}>
-                    {genderLabel.text}
-                  </span>
-                )}
+                  {genderLabel.text}
+                </span>
+              )}
               {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 
                horse.status !== 'MARE' && 
                !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
@@ -445,7 +526,7 @@ export default function HorsesPage() {
               Not Ekle
             </Button>
             <Button 
-              size="sm" 
+              size="sm"
               className={`${buttonGradient} text-white font-medium py-1.5 px-3 rounded-md text-xs transition-all duration-300 hover:shadow-md`}
               onClick={(e) => {
                 e.preventDefault()
@@ -457,21 +538,21 @@ export default function HorsesPage() {
               <TurkishLira className="h-3 w-3 mr-1" />
               Gider Ekle
             </Button>
-                    <Button
-                      size="sm"
+            <Button 
+              size="sm"
               className={`${buttonGradient} text-white font-medium py-1.5 px-3 rounded-md text-xs transition-all duration-300 hover:shadow-md`}
-                      onClick={(e) => {
-                        e.preventDefault()
+              onClick={(e) => {
+                e.preventDefault()
                 e.stopPropagation()
-                        setSelectedHorseForLocation(horse)
-                        setLocationModalOpen(true)
-                      }}
-                    >
+                setSelectedHorseForLocation(horse)
+                setLocationModalOpen(true)
+              }}
+            >
               <MapPin className="h-3 w-3 mr-1" />
               Konum Değiştir
-                    </Button>
+            </Button>
           </div>
-      </Card>
+        </Card>
       </Link>
     )
   }
@@ -492,51 +573,8 @@ export default function HorsesPage() {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-center gap-3">
-            <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1 shadow-lg gap-1.5 h-9">
-            <TabsTrigger 
-              value="ACTIVE"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-            >
-              {TR.horses.active}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
-                activeTab === 'ACTIVE' 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {filterHorses('ACTIVE').length}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="FOALS"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-            >
-              {TR.horses.foals}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
-                activeTab === 'FOALS' 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {filterHorses('FOALS').length}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="MARE"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-            >
-              {TR.horses.mares}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
-                activeTab === 'MARE' 
-                  ? 'bg-white/20 text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
-                {filterHorses('MARE').length}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-          
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-3">
           {/* Filter Button and Search */}
           <div className="flex items-center gap-2">
             <div className="relative filter-dropdown-container">
@@ -553,8 +591,8 @@ export default function HorsesPage() {
                 Filtrele
                 {hasActiveFilters && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {ageFilters.length + genderFilters.length + locationFilters.length}
-                  </span>
+                    {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length}
+            </span>
                 )}
               </Button>
           
@@ -571,28 +609,53 @@ export default function HorsesPage() {
                   </button>
                 </div>
                 
-                {/* Gender Filter */}
+                {/* Category Filter (Tabs) */}
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Cinsiyet</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { value: 'male', label: 'Erkek' },
-                      { value: 'female', label: 'Dişi' },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => toggleGenderFilter(option.value)}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          genderFilters.includes(option.value)
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                      { value: 'FOALS', label: TR.horses.foals },
+                      { value: 'MARE', label: TR.horses.mares },
+                    ].map((tab) => {
+                      const isSelected = categoryFilters.includes(tab.value)
+                      return (
+                        <button
+                          key={tab.value}
+                          onClick={() => toggleCategoryFilter(tab.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isSelected
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
+                
+                {/* Gender Filter */}
+                {getUniqueGenders().length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Cinsiyet</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueGenders().map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => toggleGenderFilter(option.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            genderFilters.includes(option.value)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Age Filter */}
                 <div className="mb-4">
@@ -618,27 +681,26 @@ export default function HorsesPage() {
                 </div>
                 
                 {/* Location Filter */}
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Konum</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'racecourse', label: 'Hipodrom' },
-                      { value: 'farm', label: 'Çiftlik' },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => toggleLocationFilter(option.value)}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          locationFilters.includes(option.value)
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                {getUniqueLocations().length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Konum</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueLocations().map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => toggleLocationFilter(option.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            locationFilters.includes(option.value)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Clear Filters */}
                 {hasActiveFilters && (
@@ -670,7 +732,7 @@ export default function HorsesPage() {
           
               {/* Sort Dropdown */}
               {showSortDropdown && (
-                <div className="absolute left-0 top-full mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
+                <div className="absolute left-0 top-full mt-2 w-auto min-w-[140px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Sırala</h3>
                     <button
@@ -685,7 +747,7 @@ export default function HorsesPage() {
                   <div className="space-y-2">
                     <button
                       onClick={() => {
-                        setSortBy('age-asc')
+                        setSortBy(sortBy === 'age-asc' ? null : 'age-asc')
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         sortBy === 'age-asc'
@@ -694,11 +756,11 @@ export default function HorsesPage() {
                       }`}
                     >
                       <span>Yaş</span>
-                      <ArrowUp className="h-4 w-4" />
+                      <ArrowUp className="h-4 w-4 flex-shrink-0" />
                     </button>
                     <button
                       onClick={() => {
-                        setSortBy('age-desc')
+                        setSortBy(sortBy === 'age-desc' ? null : 'age-desc')
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         sortBy === 'age-desc'
@@ -707,11 +769,11 @@ export default function HorsesPage() {
                       }`}
                     >
                       <span>Yaş</span>
-                      <ArrowDown className="h-4 w-4" />
+                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
                     <button
                       onClick={() => {
-                        setSortBy('name-asc')
+                        setSortBy(sortBy === 'name-asc' ? null : 'name-asc')
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         sortBy === 'name-asc'
@@ -720,11 +782,11 @@ export default function HorsesPage() {
                       }`}
                     >
                       <span>İsim</span>
-                      <ArrowUp className="h-4 w-4" />
+                      <ArrowUp className="h-4 w-4 flex-shrink-0" />
                     </button>
                     <button
                       onClick={() => {
-                        setSortBy('name-desc')
+                        setSortBy(sortBy === 'name-desc' ? null : 'name-desc')
                       }}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                         sortBy === 'name-desc'
@@ -733,18 +795,8 @@ export default function HorsesPage() {
                       }`}
                     >
                       <span>İsim</span>
-                      <ArrowDown className="h-4 w-4" />
+                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
-                    {sortBy && (
-                      <button
-                        onClick={() => {
-                          setSortBy(null)
-                        }}
-                        className="w-full px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors mt-2"
-                      >
-                        Sıralamayı Kaldır
-                      </button>
-                    )}
                   </div>
                 </div>
               )}
@@ -791,76 +843,35 @@ export default function HorsesPage() {
             )}
           </div>
           </div>
-          
+        
         <Link href="/app/horses/new">
-            <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+          <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
             <Plus className="h-4 w-4 mr-2" />
             {TR.horses.addHorse}
           </Button>
         </Link>
       </div>
 
-        <TabsContent value="ACTIVE" className="space-y-4 mt-6">
-          {filterHorses('ACTIVE').length === 0 ? (
+      {/* Horses Display */}
+      <div className="space-y-4 mt-6">
+        {horses.length === 0 ? (
             <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
               <CardContent className="py-16 text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <LayoutGrid className="h-8 w-8 text-white" />
                 </div>
-                <p className="text-gray-700 font-semibold">Aktif atınız bulunmuyor</p>
+              <p className="text-gray-700 font-semibold">Atınız bulunmuyor</p>
                 <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {filterHorses('ACTIVE').map((horse) => (
+              {horses.map((horse) => (
                 <HorseCard key={horse.id} horse={horse} />
               ))}
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="FOALS" className="space-y-4 mt-6">
-          {filterHorses('FOALS').length === 0 ? (
-            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-              <CardContent className="py-16 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <LayoutGrid className="h-8 w-8 text-white" />
-                </div>
-                <p className="text-gray-700 font-semibold">Tay atınız bulunmuyor</p>
-                <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {filterHorses('FOALS').map((horse) => (
-                <HorseCard key={horse.id} horse={horse} />
-              ))}
             </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="MARE" className="space-y-4 mt-6">
-          {filterHorses('MARE').length === 0 ? (
-            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-              <CardContent className="py-16 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <LayoutGrid className="h-8 w-8 text-white" />
-                </div>
-                <p className="text-gray-700 font-semibold">Kısrak atınız bulunmuyor</p>
-                <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-              {filterHorses('MARE').map((horse) => (
-                <HorseCard key={horse.id} horse={horse} />
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-      </Tabs>
 
       {/* Modals */}
       <AddExpenseModal

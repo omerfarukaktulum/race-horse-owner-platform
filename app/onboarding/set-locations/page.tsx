@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { MapPin, Check } from 'lucide-react'
+import { MapPin, Check, UserPlus } from 'lucide-react'
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
@@ -278,15 +278,21 @@ export default function SetLocationsPage() {
                         style={horseCardWidth ? { width: `${horseCardWidth}px` } : undefined}
                       >
                         {ownerRef && (
-                          <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                          <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
                             <img
                               src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                               alt="Eküri Forması"
                               className="w-full h-full object-contain"
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none'
+                                const container = e.currentTarget.parentElement
+                                if (container) {
+                                  const icon = container.querySelector('.fallback-icon') as HTMLElement
+                                  if (icon) icon.style.display = 'block'
+                                }
                               }}
                             />
+                            <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
                           </div>
                         )}
                         <div className="min-w-0">

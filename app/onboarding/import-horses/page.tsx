@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { Download, Search, X } from 'lucide-react'
+import { Download, Search, X, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -446,16 +446,21 @@ export default function ImportHorsesPage() {
                         className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
                       />
                       {ownerRef && (
-                        <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white">
+                        <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
                           <img
                             src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                             alt="Eküri Forması"
                             className="w-full h-full object-contain"
                             onError={(e) => {
-                              // Hide image if it fails to load
                               e.currentTarget.style.display = 'none'
+                              const container = e.currentTarget.parentElement
+                              if (container) {
+                                const icon = container.querySelector('.fallback-icon') as HTMLElement
+                                if (icon) icon.style.display = 'block'
+                              }
                             }}
                           />
+                          <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

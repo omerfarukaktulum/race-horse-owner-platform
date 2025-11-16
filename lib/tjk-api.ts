@@ -202,7 +202,7 @@ export async function searchTJKHorsesPlaywright(
       // Always try table-based extraction first (most reliable for origin data)
       const rows = document.querySelectorAll('table tbody tr, tbody tr')
       console.log('[Browser] Found', rows.length, 'table rows')
-      
+
       if (rows.length > 0) {
         console.log('[Browser] Using table-based extraction (includes origin column)')
         
@@ -225,11 +225,21 @@ export async function searchTJKHorsesPlaywright(
             if (!horseId) return
           
           const breed = cells[1]?.textContent?.trim() || ''
-          const gender = cells[2]?.textContent?.trim() || ''
+          let gender = cells[2]?.textContent?.trim() || ''
           const ageText = cells[3]?.textContent?.trim() || ''
+          console.log(`[TJK API] Horse: ${name}, Table extraction - Gender cell: "${gender}", Age cell: "${ageText}"`)
+          
+          // Check if age text contains 'g' (gelding indicator) - this takes priority over gender cell
+          if (ageText && ageText.toLowerCase().includes('g')) {
+            gender = 'İğdiş'
+            console.log(`[TJK API] Horse: ${name}, Gelding detected in age text! Setting gender to İğdiş`)
+          }
+          
           const ageMatch = ageText.match(/(\d+)\s*y/)
           const currentYear = new Date().getFullYear()
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
+          
+          console.log(`[TJK API] Horse: ${name}, Final gender after gelding check: "${gender}"`)
 
           let sire = ''
           let dam = ''
@@ -245,9 +255,9 @@ export async function searchTJKHorsesPlaywright(
               const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
               if (sireMatch) {
                 sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
-              } else {
+                } else {
                 sire = sireLink.textContent?.trim() || sireLink.getAttribute('title')?.trim() || ''
-              }
+                }
               const damHref = damLink.getAttribute('href') || ''
               const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
               if (damMatch) {
@@ -306,15 +316,15 @@ export async function searchTJKHorsesPlaywright(
               externalRef: horseId,
               sire: sire || undefined,
               dam: dam || undefined,
+              ageText: ageText || undefined, // Include for logging
             })
           }
         })
         
         return results
-      }
-      
-      // Fallback to link-based extraction if no table found
-      console.log('[Browser] No table found, using link-based extraction (may miss origin data)')
+      } else {
+        // Fallback to link-based extraction if no table found
+        console.log('[Browser] No table found, using link-based extraction (may miss origin data)')
       horseNameLinks.forEach((nameLink) => {
         // Find the closest row/container for this specific horse
         let row = nameLink.closest('tr') || nameLink.closest('div[class*="row"]') || nameLink.parentElement
@@ -350,19 +360,40 @@ export async function searchTJKHorsesPlaywright(
           breed = breedMatch[1]
         }
         
-        let gender = ''
-        const genderPattern = /(Erkek|Dişi)/i
-        const genderMatch = containerText.match(genderPattern)
-        if (genderMatch) {
-          gender = genderMatch[1]
-        }
-        
+        // Look for age pattern first (e.g., "9 y dk", "11 y dg" where g = gelding)
+        // We check age first because gelding (g) is more specific than just "Erkek"
+        // Pattern matches: "11 y", "11 y d", "11 y dg", "11 y dk", etc.
         let ageText = ''
-        const agePattern = /(\d+)\s*y\s*[dkm]?[kd]?/i
+        let gender = ''
+        const agePattern = /(\d+)\s*y\s*[a-z]*g?[a-z]*/i
         const ageMatch = containerText.match(agePattern)
+        console.log(`[TJK API] Horse: ${name}, Container text snippet: ${containerText.substring(0, 200)}`)
         if (ageMatch) {
           ageText = ageMatch[0]
+          console.log(`[TJK API] Horse: ${name}, Age text matched: "${ageText}"`)
+          // Check if age text contains 'g' (gelding indicator) - this takes priority
+          if (ageText.toLowerCase().includes('g')) {
+            gender = 'İğdiş'
+            console.log(`[TJK API] Horse: ${name}, Gelding detected! Setting gender to İğdiş`)
+          } else {
+            console.log(`[TJK API] Horse: ${name}, No 'g' found in age text: "${ageText}"`)
+          }
+        } else {
+          console.log(`[TJK API] Horse: ${name}, No age pattern matched in container text`)
         }
+        
+        // Look for gender (Erkek, Dişi) only if we haven't found gelding
+        if (!gender || gender !== 'İğdiş') {
+          const genderPattern = /(Erkek|Dişi)/i
+          const genderMatch = containerText.match(genderPattern)
+          if (genderMatch) {
+            gender = genderMatch[1]
+            console.log(`[TJK API] Horse: ${name}, Gender pattern matched: "${gender}"`)
+          } else {
+            console.log(`[TJK API] Horse: ${name}, No gender pattern (Erkek/Dişi) found`)
+          }
+        }
+        console.log(`[TJK API] Horse: ${name}, Final gender: "${gender}"`)
         
         let sire = ''
         let dam = ''
@@ -438,7 +469,22 @@ export async function searchTJKHorsesPlaywright(
       })
       
       return results
+      }
     })
+
+    // Log the results in Node.js context so they appear in terminal
+    if (initialHorses && initialHorses.length > 0) {
+      initialHorses.forEach((horse: any) => {
+        console.log(`[TJK API - Terminal] Horse: ${horse.name}`)
+        console.log(`[TJK API - Terminal]   - Gender: "${horse.gender || 'N/A'}"`)
+        console.log(`[TJK API - Terminal]   - Age cell: "${horse.ageText || 'N/A'}"`)
+        if (horse.ageText && horse.ageText.toLowerCase().includes('g')) {
+          console.log(`[TJK API - Terminal]   - ✅ Gelding detected! Final gender: "${horse.gender}"`)
+        } else {
+          console.log(`[TJK API - Terminal]   - Final gender: "${horse.gender || 'N/A'}"`)
+        }
+      })
+    }
 
     console.log(`[TJK Playwright] Extracted ${initialHorses.length} horses from initial page`)
     allHorses = allHorses.concat(initialHorses)
@@ -622,19 +668,38 @@ export async function searchTJKHorsesPlaywright(
             breed = breedMatch[1]
           }
           
-          // Look for gender (Erkek, Dişi)
-          const genderPattern = /(Erkek|Dişi)/i
-          const genderMatch = containerText.match(genderPattern)
-          if (genderMatch) {
-            gender = genderMatch[1]
-          }
-          
-          // Look for age pattern (e.g., "9 y dk")
-          const agePattern = /(\d+)\s*y\s*[dkm]?[kd]?/i
+          // Look for age pattern first (e.g., "9 y dk", "11 y dg" where g = gelding)
+          // We check age first because gelding (g) is more specific than just "Erkek"
+          // Pattern matches: "11 y", "11 y d", "11 y dg", "11 y dk", etc.
+          const agePattern = /(\d+)\s*y\s*[a-z]*g?[a-z]*/i
           const ageMatch = containerText.match(agePattern)
+          console.log(`[TJK API] Horse: ${name}, Container text snippet: ${containerText.substring(0, 200)}`)
           if (ageMatch) {
             ageText = ageMatch[0]
+            console.log(`[TJK API] Horse: ${name}, Age text matched: "${ageText}"`)
+            // Check if age text contains 'g' (gelding indicator) - this takes priority
+            if (ageText.toLowerCase().includes('g')) {
+              gender = 'İğdiş'
+              console.log(`[TJK API] Horse: ${name}, Gelding detected! Setting gender to İğdiş`)
+            } else {
+              console.log(`[TJK API] Horse: ${name}, No 'g' found in age text: "${ageText}"`)
+            }
+          } else {
+            console.log(`[TJK API] Horse: ${name}, No age pattern matched in container text`)
           }
+          
+          // Look for gender (Erkek, Dişi) only if we haven't found gelding
+          if (!gender || gender !== 'İğdiş') {
+            const genderPattern = /(Erkek|Dişi)/i
+            const genderMatch = containerText.match(genderPattern)
+            if (genderMatch) {
+              gender = genderMatch[1]
+              console.log(`[TJK API] Horse: ${name}, Gender pattern matched: "${gender}"`)
+            } else {
+              console.log(`[TJK API] Horse: ${name}, No gender pattern (Erkek/Dişi) found`)
+            }
+          }
+          console.log(`[TJK API] Horse: ${name}, Final gender: "${gender}"`)
           
           // Extract origin (Sire - Dam) from links in the container
           const originLinks = container.querySelectorAll('a[href*="Orijin"]')
@@ -739,21 +804,40 @@ export async function searchTJKHorsesPlaywright(
           breed = breedMatch[1]
         }
         
-        // Look for gender (Erkek, Dişi)
-        let gender = ''
-        const genderPattern = /(Erkek|Dişi)/i
-        const genderMatch = containerText.match(genderPattern)
-        if (genderMatch) {
-          gender = genderMatch[1]
-        }
-        
-        // Look for age pattern (e.g., "9 y dk")
+        // Look for age pattern first (e.g., "9 y dk", "11 y dg" where g = gelding)
+        // We check age first because gelding (g) is more specific than just "Erkek"
+        // Pattern matches: "11 y", "11 y d", "11 y dg", "11 y dk", etc.
         let ageText = ''
-        const agePattern = /(\d+)\s*y\s*[dkm]?[kd]?/i
+        let gender = ''
+        const agePattern = /(\d+)\s*y\s*[a-z]*g?[a-z]*/i
         const ageMatch = containerText.match(agePattern)
+        console.log(`[TJK API] Horse: ${name}, Container text snippet: ${containerText.substring(0, 200)}`)
         if (ageMatch) {
           ageText = ageMatch[0]
+          console.log(`[TJK API] Horse: ${name}, Age text matched: "${ageText}"`)
+          // Check if age text contains 'g' (gelding indicator) - this takes priority
+          if (ageText.toLowerCase().includes('g')) {
+            gender = 'İğdiş'
+            console.log(`[TJK API] Horse: ${name}, Gelding detected! Setting gender to İğdiş`)
+          } else {
+            console.log(`[TJK API] Horse: ${name}, No 'g' found in age text: "${ageText}"`)
+          }
+        } else {
+          console.log(`[TJK API] Horse: ${name}, No age pattern matched in container text`)
         }
+        
+        // Look for gender (Erkek, Dişi) only if we haven't found gelding
+        if (!gender || gender !== 'İğdiş') {
+          const genderPattern = /(Erkek|Dişi)/i
+          const genderMatch = containerText.match(genderPattern)
+          if (genderMatch) {
+            gender = genderMatch[1]
+            console.log(`[TJK API] Horse: ${name}, Gender pattern matched: "${gender}"`)
+          } else {
+            console.log(`[TJK API] Horse: ${name}, No gender pattern (Erkek/Dişi) found`)
+          }
+        }
+        console.log(`[TJK API] Horse: ${name}, Final gender: "${gender}"`)
         
         // Extract origin (Sire - Dam) from links in the container
         // Find origin links closest to this nameLink to avoid getting links from other horses

@@ -5,7 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, User } from 'lucide-react'
+import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, UserPlus, User } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
@@ -67,21 +67,25 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {ownerOfficialRef ? (
-              <img
-                src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
-                alt="Eküri Forması"
-                className="h-8 w-8 object-contain flex-shrink-0"
-                onError={(e) => {
-                  // Hide image on error, show icon instead
-                  e.currentTarget.style.display = 'none'
-                  const icon = e.currentTarget.nextElementSibling as HTMLElement
-                  if (icon) icon.style.display = 'block'
-                }}
-              />
-            ) : null}
-            <LayoutGrid 
-              className={`h-6 w-6 text-[#6366f1] flex-shrink-0 ${ownerOfficialRef ? 'hidden' : ''}`}
-            />
+              <div className="h-8 w-8 flex-shrink-0 relative flex items-center justify-center">
+                <img
+                  src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
+                  alt="Eküri Forması"
+                  className="h-8 w-8 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                    const container = e.currentTarget.parentElement
+                    if (container) {
+                      const icon = container.querySelector('.fallback-icon') as HTMLElement
+                      if (icon) icon.style.display = 'block'
+                    }
+                  }}
+                />
+                <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden" />
+              </div>
+            ) : (
+              <LayoutGrid className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
+            )}
             <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
               {stablemateName ? `${stablemateName} EKÜRİSİ` : 'EKÜRİM'}
             </span>

@@ -181,7 +181,9 @@ export default function HorseDetailPage() {
 
   // Determine if horse is male or female for styling
   const isMale = horse.gender?.includes('Erkek') || horse.gender?.includes('ERKEK') || 
-                 horse.gender?.includes('Aygır') || horse.gender?.includes('AYGIR')
+                 horse.gender?.includes('Aygır') || horse.gender?.includes('AYGIR') ||
+                 horse.gender?.includes('İğdiş') || horse.gender?.includes('İĞDİŞ') ||
+                 horse.gender?.includes('Iğdiş') || horse.gender?.includes('IĞDİŞ')
   const isFemale = horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
                    horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')
 
@@ -238,7 +240,11 @@ export default function HorseDetailPage() {
                         ? 'bg-purple-100 text-purple-700 border-purple-200'
                         : 'bg-gray-100 text-gray-700 border-gray-200'
                     }`}>
-                      {isMale ? 'Erkek' : isFemale ? 'Dişi' : horse.gender}
+                      {isMale && !horse.gender?.includes('İğdiş') && !horse.gender?.includes('İĞDİŞ') && !horse.gender?.includes('Iğdiş') && !horse.gender?.includes('IĞDİŞ') 
+                        ? 'Erkek' 
+                        : isFemale 
+                        ? 'Dişi' 
+                        : horse.gender}
                     </span>
                   )}
                   <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
