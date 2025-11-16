@@ -189,41 +189,45 @@ export function HorseMetadataCard({ horse }: Props) {
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-3">
-              {/* Prize Money */}
-              {horse.prizeMoney && (
-                <div>
-                  <p className="text-xs text-gray-500">İkramiye</p>
-                  <p className="text-lg font-bold text-gray-900">{formatCurrency(horse.prizeMoney)}</p>
-                </div>
-              )}
-              
-              {/* Owner Premium - Before Breeder Premium */}
-              {horse.ownerPremium && (
-                <div>
-                  <p className="text-xs text-gray-500">Sahip Primi</p>
-                  <p className="text-lg font-bold text-gray-900">{formatCurrency(horse.ownerPremium)}</p>
-                </div>
-              )}
-              
-              {/* Breeder Premium */}
-              {horse.breederPremium && (
-                <div>
-                  <p className="text-xs text-gray-500">Yetiştirici Primi</p>
-                  <p className="text-lg font-bold text-gray-900">{formatCurrency(horse.breederPremium)}</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Total Earnings - Highlighted */}
-            {horse.totalEarnings && (
-              <div className="mt-3 pt-3 border-t border-indigo-200/50">
-                <p className="text-xs text-gray-500 mb-1">Toplam Kazanç</p>
-                <p className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
-                  {formatCurrency(horse.totalEarnings)}
-                </p>
+            {/* Prize Money */}
+            {horse.prizeMoney && (
+              <div className="mb-3">
+                <p className="text-xs text-gray-500">İkramiye</p>
+                <p className="text-lg font-bold text-gray-900">{formatCurrency(horse.prizeMoney)}</p>
               </div>
             )}
+            
+            {/* Total Earnings with Premiums */}
+            <div className="mt-3 pt-3 border-t border-indigo-200/50">
+              <div className="grid grid-cols-2 gap-4">
+                {/* Left: Toplam Kazanç */}
+                {horse.totalEarnings && (
+                  <div className="flex flex-col justify-center">
+                    <p className="text-xs text-gray-500 mb-1">Toplam Kazanç</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
+                      {formatCurrency(horse.totalEarnings)}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Right: Premiums stacked */}
+                <div className="space-y-2">
+                  {horse.ownerPremium && (
+                    <div>
+                      <p className="text-xs text-gray-500">Sahip Primi</p>
+                      <p className="text-sm font-bold text-gray-900">{formatCurrency(horse.ownerPremium)}</p>
+                    </div>
+                  )}
+                  
+                  {horse.breederPremium && (
+                    <div>
+                      <p className="text-xs text-gray-500">Yetiştirici Primi</p>
+                      <p className="text-sm font-bold text-gray-900">{formatCurrency(horse.breederPremium)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
