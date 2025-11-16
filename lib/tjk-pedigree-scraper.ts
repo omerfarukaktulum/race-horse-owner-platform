@@ -61,8 +61,8 @@ export async function fetchTJKPedigree(
       console.error('[TJK Pedigree] Page error:', error.message)
     })
     
-    // Navigate to pedigree page
-    const pedigreeUrl = `https://www.tjk.org/TR/YarisSever/Query/Pedigri/Pedigri?Atkodu=${horseId}`
+    // Navigate to pedigree page (correct URL: /TR/map/Query/Pedigri/Pedigri)
+    const pedigreeUrl = `https://www.tjk.org/TR/map/Query/Pedigri/Pedigri?Atkodu=${horseId}`
     console.log('[TJK Pedigree] Navigating to:', pedigreeUrl)
     
     await page.goto(pedigreeUrl, {
@@ -75,10 +75,10 @@ export async function fetchTJKPedigree(
     
     // Try to wait for the pedigree table to appear (it might load via AJAX)
     try {
-      await page.waitForSelector('#tblPedigri', { timeout: 5000 })
-      console.log('[TJK Pedigree] ✓ Found #tblPedigri table')
+      await page.waitForSelector('#pedigri', { timeout: 5000 })
+      console.log('[TJK Pedigree] ✓ Found #pedigri table')
     } catch (e) {
-      console.log('[TJK Pedigree] ⚠ #tblPedigri not found after waiting, will try alternative methods')
+      console.log('[TJK Pedigree] ⚠ #pedigri not found after waiting, will try alternative methods')
     }
     
     // Additional wait for any dynamic content
@@ -110,17 +110,17 @@ export async function fetchTJKPedigree(
         }
       })
       
-      // First, check if #tblPedigri exists
-      const pedigreeTable = document.querySelector('#tblPedigri')
-      console.log('[Browser] [Pedigree] #tblPedigri found:', !!pedigreeTable)
+      // First, check if #pedigri exists (correct table ID)
+      const pedigreeTable = document.querySelector('#pedigri')
+      console.log('[Browser] [Pedigree] #pedigri found:', !!pedigreeTable)
       
       if (pedigreeTable) {
-        console.log('[Browser] [Pedigree] #tblPedigri HTML preview:', pedigreeTable.outerHTML.substring(0, 500))
+        console.log('[Browser] [Pedigree] #pedigri HTML preview:', pedigreeTable.outerHTML.substring(0, 500))
       }
       
       if (pedigreeTable) {
         const rows = pedigreeTable.querySelectorAll('tbody tr, tr')
-        console.log('[Browser] [Pedigree] Found', rows.length, 'rows in #tblPedigri')
+        console.log('[Browser] [Pedigree] Found', rows.length, 'rows in #pedigri')
         
         // Log first few rows for debugging
         rows.forEach((row, idx) => {
@@ -139,17 +139,36 @@ export async function fetchTJKPedigree(
         const element = document.querySelector(selector)
         if (element) {
           const link = element.querySelector('a')
+          let rawText = ''
+          
           if (link) {
-            const name = link.textContent?.trim()
-            if (name) {
-              console.log(`[Browser] [Pedigree] ✓ Found ${description}:`, name)
-              return name
-            }
+            rawText = link.textContent?.trim() || ''
+          } else {
+            rawText = element.textContent?.trim() || ''
           }
-          const text = element.textContent?.trim()
-          if (text) {
-            console.log(`[Browser] [Pedigree] ✓ Found ${description} (no link):`, text)
-            return text
+          
+          if (rawText) {
+            // Clean up the text: format is "NAME (COUNTRY) gender codes (YEAR)"
+            // We want to extract just "NAME (COUNTRY)" or "NAME"
+            // Remove gender codes (d, k, a, e, etc.) and year at the end
+            // Pattern: text like "AUTHORIZED (IRE) d  a (2004)" -> "AUTHORIZED (IRE)"
+            let cleanedName = rawText
+            
+            // Remove year in parentheses at the end: (2004)
+            cleanedName = cleanedName.replace(/\s*\(\d{4}\)\s*$/, '')
+            
+            // Remove gender codes (single letters like d, k, a, e, etc. with spaces)
+            // These appear after the country code
+            cleanedName = cleanedName.replace(/\s+[dkae]\s+[dkae]?\s*$/, '')
+            cleanedName = cleanedName.replace(/\s+[dkae]\s*$/, '')
+            
+            // Trim any remaining whitespace
+            cleanedName = cleanedName.trim()
+            
+            if (cleanedName) {
+              console.log(`[Browser] [Pedigree] ✓ Found ${description}: "${cleanedName}" (from: "${rawText}")`)
+              return cleanedName
+            }
           }
         } else {
           console.log(`[Browser] [Pedigree] ✗ Not found: ${description} (selector: ${selector})`)
@@ -157,33 +176,39 @@ export async function fetchTJKPedigree(
         return undefined
       }
       
-      // Generation 2 (Sire, Dam) - Row 1 and 2, column 2
-      result.sireName = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(2) > a', 'Sire')
-      result.damName = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(2) > a', 'Dam')
+      // Generation 2 (Sire, Dam) - Row 1 and Row 5, first column
+      // Row 1 (index 0): AUTHORIZED (IRE) - Sire
+      // Row 5 (index 4): CHANTALLE RUA - Dam
+      result.sireName = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(1)', 'Sire')
+      result.damName = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(1)', 'Dam')
       
-      // Try alternative selectors for Generation 2
-      if (!result.sireName) {
-        result.sireName = extractName('#tblPedigri tbody tr:first-child td:nth-child(2) a', 'Sire (alt)')
-      }
-      if (!result.damName) {
-        result.damName = extractName('#tblPedigri tbody tr:nth-child(2) td:nth-child(2) a', 'Dam (alt)')
-      }
+      // Generation 3 (Grandparents) - Various rows, second column
+      // Row 1: MONTJEU (IRE) - SireSire
+      // Row 3: FUNSIE (FR) - SireDam
+      // Row 5: MOUNTAIN CAT (USA) - DamSire
+      // Row 7: GREENEST HILLS (FR) - DamDam
+      result.sireSire = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(2)', 'SireSire')
+      result.sireDam = extractName('#pedigri > tbody > tr:nth-child(3) > td:nth-child(2)', 'SireDam')
+      result.damSire = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(2)', 'DamSire')
+      result.damDam = extractName('#pedigri > tbody > tr:nth-child(7) > td:nth-child(2)', 'DamDam')
       
-      // Generation 3 (Grandparents) - Row 1-4, column 3
-      result.sireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(3) > a', 'SireSire')
-      result.sireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(3) > a', 'SireDam')
-      result.damSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(3) > a', 'DamSire')
-      result.damDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(3) > a', 'DamDam')
-      
-      // Generation 4 (Great-grandparents) - Row 1-8, column 4
-      result.sireSireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(4) > a', 'SireSireSire')
-      result.sireSireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(4) > a', 'SireSireDam')
-      result.sireDamSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(4) > a', 'SireDamSire')
-      result.sireDamDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(4) > a', 'SireDamDam')
-      result.damSireSire = extractName('#tblPedigri > tbody > tr:nth-child(5) > td:nth-child(4) > a', 'DamSireSire')
-      result.damSireDam = extractName('#tblPedigri > tbody > tr:nth-child(6) > td:nth-child(4) > a', 'DamSireDam')
-      result.damDamSire = extractName('#tblPedigri > tbody > tr:nth-child(7) > td:nth-child(4) > a', 'DamDamSire')
-      result.damDamDam = extractName('#tblPedigri > tbody > tr:nth-child(8) > td:nth-child(4) > a', 'DamDamDam')
+      // Generation 4 (Great-grandparents) - Various rows, third column
+      // Row 1: SADLER'S WELLS (USA) - SireSireSire
+      // Row 2: FLORIPEDES (FR) - SireSireDam
+      // Row 3: SAUMAREZ (GB) - SireDamSire
+      // Row 4: VALLEE DANSANTE (USA) - SireDamDam
+      // Row 5: STORM CAT (USA) - DamSireSire
+      // Row 6: ALWAYS MINT (CAN) - DamSireDam
+      // Row 7: DANEHILL (USA) - DamDamSire
+      // Row 8: ALYMATRICE (USA) - DamDamDam
+      result.sireSireSire = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(3)', 'SireSireSire')
+      result.sireSireDam = extractName('#pedigri > tbody > tr:nth-child(2) > td:nth-child(3)', 'SireSireDam')
+      result.sireDamSire = extractName('#pedigri > tbody > tr:nth-child(3) > td:nth-child(3)', 'SireDamSire')
+      result.sireDamDam = extractName('#pedigri > tbody > tr:nth-child(4) > td:nth-child(3)', 'SireDamDam')
+      result.damSireSire = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(3)', 'DamSireSire')
+      result.damSireDam = extractName('#pedigri > tbody > tr:nth-child(6) > td:nth-child(3)', 'DamSireDam')
+      result.damDamSire = extractName('#pedigri > tbody > tr:nth-child(7) > td:nth-child(3)', 'DamDamSire')
+      result.damDamDam = extractName('#pedigri > tbody > tr:nth-child(8) > td:nth-child(3)', 'DamDamDam')
       
       // Fallback: Try to extract from all links in the table if specific selectors fail
       if (pedigreeTable && (!result.sireSire && !result.sireDam && !result.damSire && !result.damDam)) {
@@ -225,10 +250,10 @@ export async function fetchTJKPedigree(
         }
       }
       
-      // Final fallback: Try alternative table structure if #tblPedigri not found
+      // Final fallback: Try alternative table structure if #pedigri not found or extraction failed
       if (!result.sireName && !result.damName) {
         const allTables = document.querySelectorAll('table')
-        console.log('[Browser] [Pedigree] #tblPedigri not found or empty, trying', allTables.length, 'tables')
+        console.log('[Browser] [Pedigree] #pedigri not found or extraction failed, trying', allTables.length, 'tables')
         
         for (const table of allTables) {
           const rows = table.querySelectorAll('tbody tr, tr')
