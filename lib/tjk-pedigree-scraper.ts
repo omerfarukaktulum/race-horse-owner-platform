@@ -62,78 +62,90 @@ export async function fetchTJKPedigree(
     const pedigree = await page.evaluate(() => {
       const result: any = {}
       
-      // TJK pedigree page typically shows a tree structure
-      // We need to extract horse names from the tree
-      // The structure is usually in a table or divs with specific classes
+      // TJK pedigree page uses table with id="tblPedigri"
+      // Structure: Each row represents a generation level
+      // Row 1: Horse itself
+      // Row 2: Sire, Dam
+      // Row 3: Sire's Sire, Sire's Dam, Dam's Sire, Dam's Dam
+      // Row 4: 8 great-grandparents
       
-      // Try to find the pedigree table or tree structure
-      // Common selectors: table.pedigree, div.pedigree-tree, etc.
-      const pedigreeTable = document.querySelector('table') || document.querySelector('.pedigree')
-      
-      if (!pedigreeTable) {
-        console.log('[Browser] No pedigree table found')
-        return result
+      const extractName = (selector: string) => {
+        const element = document.querySelector(selector)
+        if (element) {
+          const link = element.querySelector('a')
+          if (link) {
+            return link.textContent?.trim() || undefined
+          }
+          return element.textContent?.trim() || undefined
+        }
+        return undefined
       }
       
-      // Extract all text content and horse links
-      const horseLinks = Array.from(document.querySelectorAll('a[href*="AtId"], a[href*="Atkodu"]'))
-      console.log('[Browser] Found', horseLinks.length, 'horse links in pedigree')
+      // Generation 2 (Sire, Dam) - Row 1 and 2
+      result.sireName = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(2) > a')
+      result.damName = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(2) > a')
       
-      // The pedigree page usually has a specific structure
-      // Let's try to extract from all table cells
-      const cells = Array.from(pedigreeTable.querySelectorAll('td, div'))
-      const horseNames: string[] = []
+      // Generation 3 (Grandparents) - Row 1-4, column 3
+      result.sireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(3) > a')
+      result.sireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(3) > a')
+      result.damSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(3) > a')
+      result.damDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(3) > a')
       
-      cells.forEach((cell) => {
-        const text = cell.textContent?.trim() || ''
-        const link = cell.querySelector('a')
+      // Generation 4 (Great-grandparents) - Row 1-8, column 4
+      result.sireSireSire = extractName('#tblPedigri > tbody > tr:nth-child(1) > td:nth-child(4) > a')
+      result.sireSireDam = extractName('#tblPedigri > tbody > tr:nth-child(2) > td:nth-child(4) > a')
+      result.sireDamSire = extractName('#tblPedigri > tbody > tr:nth-child(3) > td:nth-child(4) > a')
+      result.sireDamDam = extractName('#tblPedigri > tbody > tr:nth-child(4) > td:nth-child(4) > a')
+      result.damSireSire = extractName('#tblPedigri > tbody > tr:nth-child(5) > td:nth-child(4) > a')
+      result.damSireDam = extractName('#tblPedigri > tbody > tr:nth-child(6) > td:nth-child(4) > a')
+      result.damDamSire = extractName('#tblPedigri > tbody > tr:nth-child(7) > td:nth-child(4) > a')
+      result.damDamDam = extractName('#tblPedigri > tbody > tr:nth-child(8) > td:nth-child(4) > a')
+      
+      // Fallback: Try alternative table structure if #tblPedigri not found
+      if (!result.sireName && !result.damName) {
+        const allTables = document.querySelectorAll('table')
+        console.log('[Browser] #tblPedigri not found, trying', allTables.length, 'tables')
         
-        if (link && link.textContent) {
-          const name = link.textContent.trim()
-          if (name && name.length > 2 && !name.includes('http') && !name.includes('.')) {
-            horseNames.push(name)
-          }
-        } else if (text && text.length > 2 && text.length < 50 && !text.includes('http')) {
-          // Might be a horse name without link
-          const cleanName = text.replace(/\([^)]*\)/g, '').trim()
-          if (cleanName && cleanName.length > 2) {
-            horseNames.push(cleanName)
+        for (const table of allTables) {
+          const rows = table.querySelectorAll('tbody tr, tr')
+          if (rows.length >= 2) {
+            // Try to extract from first two rows
+            const firstRowCells = rows[0].querySelectorAll('td')
+            const secondRowCells = rows[1].querySelectorAll('td')
+            
+            if (firstRowCells.length >= 2) {
+              const sireLink = firstRowCells[1].querySelector('a')
+              if (sireLink) {
+                result.sireName = sireLink.textContent?.trim() || undefined
+              }
+            }
+            
+            if (secondRowCells.length >= 2) {
+              const damLink = secondRowCells[1].querySelector('a')
+              if (damLink) {
+                result.damName = damLink.textContent?.trim() || undefined
+              }
+            }
+            
+            if (result.sireName || result.damName) {
+              console.log('[Browser] Found pedigree data in fallback table')
+              break
+            }
           }
         }
+      }
+      
+      console.log('[Browser] Extracted pedigree:', {
+        sire: result.sireName,
+        dam: result.damName,
+        sireSire: result.sireSire,
+        sireDam: result.sireDam,
+        damSire: result.damSire,
+        damDam: result.damDam,
+        gen4Count: [result.sireSireSire, result.sireSireDam, result.sireDamSire, result.sireDamDam, 
+                    result.damSireSire, result.damSireDam, result.damDamSire, result.damDamDam]
+                    .filter(Boolean).length
       })
-      
-      console.log('[Browser] Extracted horse names:', horseNames.slice(0, 15))
-      
-      // The pedigree tree typically follows this order:
-      // Generation 1: Horse itself (index 0)
-      // Generation 2: Sire (1), Dam (2)
-      // Generation 3: Sire's Sire (3), Sire's Dam (4), Dam's Sire (5), Dam's Dam (6)
-      // Generation 4: 8 great-grandparents (7-14)
-      
-      // However, the actual structure might vary. Let's extract based on position
-      if (horseNames.length >= 3) {
-        result.horseName = horseNames[0]
-        result.sireName = horseNames[1] || undefined
-        result.damName = horseNames[2] || undefined
-      }
-      
-      if (horseNames.length >= 7) {
-        result.sireSire = horseNames[3] || undefined
-        result.sireDam = horseNames[4] || undefined
-        result.damSire = horseNames[5] || undefined
-        result.damDam = horseNames[6] || undefined
-      }
-      
-      if (horseNames.length >= 15) {
-        result.sireSireSire = horseNames[7] || undefined
-        result.sireSireDam = horseNames[8] || undefined
-        result.sireDamSire = horseNames[9] || undefined
-        result.sireDamDam = horseNames[10] || undefined
-        result.damSireSire = horseNames[11] || undefined
-        result.damSireDam = horseNames[12] || undefined
-        result.damDamSire = horseNames[13] || undefined
-        result.damDamDam = horseNames[14] || undefined
-      }
       
       return result
     })
