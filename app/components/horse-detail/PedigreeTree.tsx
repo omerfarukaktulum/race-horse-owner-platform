@@ -32,8 +32,29 @@ export function PedigreeTree({ horse }: Props) {
   const svgRef = useRef<SVGSVGElement>(null)
   
   useEffect(() => {
+    // Debug: Log what data we're receiving
+    console.log('[PedigreeTree] Received horse data:', {
+      name: horse.name,
+      sireName: horse.sireName,
+      damName: horse.damName,
+      sireSire: horse.sireSire,
+      sireDam: horse.sireDam,
+      damSire: horse.damSire,
+      damDam: horse.damDam,
+      sireSireSire: horse.sireSireSire,
+      sireSireDam: horse.sireSireDam,
+      sireDamSire: horse.sireDamSire,
+      sireDamDam: horse.sireDamDam,
+      damSireSire: horse.damSireSire,
+      damSireDam: horse.damSireDam,
+      damDamSire: horse.damDamSire,
+      damDamDam: horse.damDamDam,
+    })
+    
     // Build and calculate tree positions
     const builtTree = buildPedigreeTree(horse)
+    console.log('[PedigreeTree] Built tree with', builtTree.nodes.length, 'nodes:', builtTree.nodes.map(n => `${n.id}: ${n.name} (gen ${n.generation})`))
+    
     const positionedTree = calculateTreePositions(builtTree, {
       generationWidth: 280,
       nodeHeight: 100,
