@@ -104,16 +104,7 @@ export function RaceHistoryTable({ races }: Props) {
   }
   
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
-          Koşu Geçmişi
-        </h2>
-        <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-semibold">
-          {races.length} koşu
-        </span>
-      </div>
-      
+    <div>
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">

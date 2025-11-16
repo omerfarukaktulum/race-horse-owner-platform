@@ -60,11 +60,7 @@ export function PedigreeTree({ horse }: Props) {
   const svgHeight = Math.max(maxY - minY, 600) // Minimum 600px height
   
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
-        Soyağacı
-      </h2>
-      
+    <div>
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
         <CardContent className="p-6">
           {/* Desktop: Horizontal Tree */}

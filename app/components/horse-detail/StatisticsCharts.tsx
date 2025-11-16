@@ -18,6 +18,7 @@ interface RaceHistory {
   distance?: number
   surface?: string
   jockeyName?: string
+  prizeMoney?: string
 }
 
 interface ExpenseData {
@@ -103,6 +104,43 @@ export function StatisticsCharts({ races, expenses }: Props) {
   const jockeyData = getJockeyDistribution(races)
   const expensesData = getExpensesTrend(expenses)
   
+  // Process monthly earnings for the last 12 months
+  const getMonthlyEarnings = (races: RaceHistory[]) => {
+    const now = new Date()
+    const monthlyData: { [key: string]: number } = {}
+    
+    // Initialize last 12 months with 0
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      monthlyData[monthKey] = 0
+    }
+    
+    // Aggregate earnings by month
+    races.forEach(race => {
+      if (race.prizeMoney && parseFloat(race.prizeMoney) > 0) {
+        const raceDate = new Date(race.raceDate)
+        const monthKey = `${raceDate.getFullYear()}-${String(raceDate.getMonth() + 1).padStart(2, '0')}`
+        
+        if (monthlyData.hasOwnProperty(monthKey)) {
+          monthlyData[monthKey] += parseFloat(race.prizeMoney)
+        }
+      }
+    })
+    
+    // Convert to array format for chart
+    return Object.entries(monthlyData).map(([month, earnings]) => {
+      const [year, monthNum] = month.split('-')
+      const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+      return {
+        month: `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`,
+        earnings: Math.round(earnings)
+      }
+    })
+  }
+  
+  const monthlyEarnings = getMonthlyEarnings(races)
+  
   // Check if we have data
   const hasRaceData = races.length > 0
   const hasExpenseData = expenses.length > 0
@@ -130,10 +168,6 @@ export function StatisticsCharts({ races, expenses }: Props) {
   
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
-        İstatistikler
-      </h2>
-      
       {/* First Row: 3 Pie Charts */}
       {hasRaceData && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -281,6 +315,68 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 data={prepareLegendData(jockeyData)}
                 total={jockeyData.reduce((sum, item) => sum + item.value, 0)}
               />
+            </CardContent>
+          </Card>
+        )}
+        
+        {/* Monthly Earnings */}
+        {hasRaceData && monthlyEarnings.length > 0 && (
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                Aylık Kazanç (Son 12 Ay)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={monthlyEarnings}>
+                  <defs>
+                    <linearGradient id="colorEarnings" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#6b7280"
+                    style={{ fontSize: '11px' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    style={{ fontSize: '12px' }}
+                    tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                            <p className="font-semibold text-gray-900">{payload[0].payload.month}</p>
+                            <p className="text-sm text-green-600 font-semibold">
+                              ₺{payload[0].value?.toLocaleString('tr-TR')}
+                            </p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="earnings"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    fill="url(#colorEarnings)"
+                    dot={{ fill: '#10b981', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         )}
