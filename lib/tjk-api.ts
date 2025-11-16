@@ -199,11 +199,12 @@ export async function searchTJKHorsesPlaywright(
       
       console.log('[Browser] Found', horseNameLinks.length, 'horse name links on initial page')
       
-      // If still no links, try table-based extraction
-      if (horseNameLinks.length === 0) {
-        console.log('[Browser] No links found, trying table-based extraction...')
-        const rows = document.querySelectorAll('table tbody tr, tbody tr')
-        console.log('[Browser] Found', rows.length, 'table rows')
+      // Always try table-based extraction first (most reliable for origin data)
+      const rows = document.querySelectorAll('table tbody tr, tbody tr')
+      console.log('[Browser] Found', rows.length, 'table rows')
+      
+      if (rows.length > 0) {
+        console.log('[Browser] Using table-based extraction (includes origin column)')
         
         rows.forEach((row) => {
           const cells = row.querySelectorAll('td')
@@ -232,28 +233,55 @@ export async function searchTJKHorsesPlaywright(
 
           let sire = ''
           let dam = ''
-            const originCell = cells[4]
+          // Origin is in column 4 (index 4): "Orijin(Baba-Anne)"
+          const originCell = cells[4]
           if (originCell) {
-              const originLinks = originCell.querySelectorAll('a[href*="Orijin"]')
-              if (originLinks.length >= 2) {
-                const sireLink = originLinks[0]
-                const damLink = originLinks[1]
-                const sireHref = sireLink.getAttribute('href') || ''
-                const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
-                if (sireMatch) {
-                  sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
-                } else {
-                  sire = sireLink.textContent?.trim() || ''
-                }
-                const damHref = damLink.getAttribute('href') || ''
-                const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
-                if (damMatch) {
-                  dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
+            // First, try to get from links (if they exist)
+            const originLinks = originCell.querySelectorAll('a[href*="Orijin"], a[href*="Baba"], a[href*="Anne"]')
+            if (originLinks.length >= 2) {
+              const sireLink = originLinks[0]
+              const damLink = originLinks[1]
+              const sireHref = sireLink.getAttribute('href') || ''
+              const sireMatch = sireHref.match(/QueryParameter_BabaAdi=([^&]+)/)
+              if (sireMatch) {
+                sire = decodeURIComponent(sireMatch[1].replace(/\+/g, ' '))
               } else {
-                  dam = damLink.textContent?.trim() || ''
+                sire = sireLink.textContent?.trim() || sireLink.getAttribute('title')?.trim() || ''
+              }
+              const damHref = damLink.getAttribute('href') || ''
+              const damMatch = damHref.match(/QueryParameter_AnneAdi=([^&]+)/)
+              if (damMatch) {
+                dam = decodeURIComponent(damMatch[1].replace(/\+/g, ' '))
+              } else {
+                dam = damLink.textContent?.trim() || damLink.getAttribute('title')?.trim() || ''
+              }
+            } else {
+              // Primary method: Parse plain text from origin column (format: "SIRE - DAM" or "SIRE(COUNTRY) - DAM(COUNTRY)")
+              const originText = originCell.textContent?.trim() || originCell.innerText?.trim() || ''
+              if (originText) {
+                // Handle format: "COOGER - ŞAHİZER" or "SIDNEY'S CANDY (USA) - RAIN DROP"
+                // Split by " - " but be careful with country codes in parentheses
+                const dashIndex = originText.indexOf(' - ')
+                if (dashIndex > 0) {
+                  sire = originText.substring(0, dashIndex).trim()
+                  dam = originText.substring(dashIndex + 3).trim()
+                } else {
+                  // Try alternative separators
+                  const altSeparators = [' – ', ' — ', ' -', '- ']
+                  for (const sep of altSeparators) {
+                    if (originText.includes(sep)) {
+                      const parts = originText.split(sep).map(p => p.trim())
+                      if (parts.length >= 2) {
+                        sire = parts[0]
+                        dam = parts[1]
+                        break
+                      }
+                    }
+                  }
                 }
               }
             }
+          }
             
             let status = 'STALLION'
             if (gender && gender.toLowerCase().includes('dişi')) {
@@ -261,6 +289,14 @@ export async function searchTJKHorsesPlaywright(
             }
             
             const cleanName = name.replace(/\(.*?\)/g, '').trim()
+            
+            // Log origin extraction for debugging
+            if (sire || dam) {
+              console.log(`[Browser] Extracted origin for ${cleanName}: Sire="${sire}", Dam="${dam}"`)
+            } else {
+              console.log(`[Browser] ⚠ No origin extracted for ${cleanName} from cell:`, originCell?.textContent?.substring(0, 100))
+            }
+            
             results.push({
               name: cleanName,
               yob,
@@ -277,6 +313,8 @@ export async function searchTJKHorsesPlaywright(
         return results
       }
       
+      // Fallback to link-based extraction if no table found
+      console.log('[Browser] No table found, using link-based extraction (may miss origin data)')
       horseNameLinks.forEach((nameLink) => {
         // Find the closest row/container for this specific horse
         let row = nameLink.closest('tr') || nameLink.closest('div[class*="row"]') || nameLink.parentElement
@@ -620,6 +658,17 @@ export async function searchTJKHorsesPlaywright(
             } else {
               dam = damLink.textContent?.trim() || ''
             }
+          } else {
+            // Fallback: Try to parse plain text origin from the container (format: "SIRE - DAM")
+            // Look for origin text in the container - it might be in a specific cell or as plain text
+            const originText = container.textContent || ''
+            // Try to find origin pattern: "SIRE - DAM" or "SIRE(COUNTRY) - DAM(COUNTRY)"
+            const originPattern = /([A-Z][A-Z\s()]+?)\s*-\s*([A-Z][A-Z\s()]+?)(?:\s|$)/i
+            const originMatch = originText.match(originPattern)
+            if (originMatch && originMatch.length >= 3) {
+              sire = originMatch[1].trim()
+              dam = originMatch[2].trim()
+            }
           }
           
           // Extract year of birth from age
@@ -743,6 +792,16 @@ export async function searchTJKHorsesPlaywright(
             } else {
               dam = damLink.textContent?.trim() || ''
             }
+          }
+        } else {
+          // Fallback: Try to parse plain text origin from the container (format: "SIRE - DAM")
+          const originText = container.textContent || ''
+          // Try to find origin pattern: "SIRE - DAM" or "SIRE(COUNTRY) - DAM(COUNTRY)"
+          const originPattern = /([A-Z][A-Z\s()]+?)\s*-\s*([A-Z][A-Z\s()]+?)(?:\s|$)/i
+          const originMatch = originText.match(originPattern)
+          if (originMatch && originMatch.length >= 3) {
+            sire = originMatch[1].trim()
+            dam = originMatch[2].trim()
           }
         }
         

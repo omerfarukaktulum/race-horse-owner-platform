@@ -285,20 +285,6 @@ export default function HorsesPage() {
 
     const genderLabel = getGenderLabel()
 
-    // Get status label (only for STALLION and MARE, exclude RACING and DEAD)
-    const getStatusLabel = () => {
-      switch (horse.status) {
-        case 'STALLION':
-          return { text: 'Aygır', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' }
-        case 'MARE':
-          return { text: 'Kısrak', color: 'bg-purple-100 text-purple-700 border-purple-200' }
-        default:
-          return null
-      }
-    }
-
-    const statusLabel = getStatusLabel()
-
     return (
       <Link href={`/app/horses/${horse.id}`}>
         <Card className={`p-4 sm:p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg cursor-pointer ${cardGradient}`}>
@@ -331,11 +317,6 @@ export default function HorsesPage() {
               {genderLabel && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${genderLabel.color}`}>
                   {genderLabel.text}
-                </span>
-              )}
-              {statusLabel && (
-                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusLabel.color}`}>
-                  {statusLabel.text}
                 </span>
               )}
               {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 

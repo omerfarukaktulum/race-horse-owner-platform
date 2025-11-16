@@ -191,6 +191,8 @@ export default function ImportHorsesPage() {
             status: h.status || 'RACING',
             gender: h.gender,
             externalRef: h.externalRef,
+            sire: h.sire,
+            dam: h.dam,
           })),
         }),
       })
