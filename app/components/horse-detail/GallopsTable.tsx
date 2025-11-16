@@ -66,19 +66,37 @@ export function GallopsTable({ gallops }: Props) {
                     Tarih
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Durum
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Hipodrom
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Pist
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Jokey
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Mesafeler
+                    Pist
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    200m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    400m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    600m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    800m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    1000m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    1200m
+                  </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    1400m
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Durum
                   </th>
                 </tr>
               </thead>
@@ -86,7 +104,11 @@ export function GallopsTable({ gallops }: Props) {
                 {sortedGallops.map((gallop, index) => {
                   const isStriped = index % 2 === 1
                   const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
-                  const distanceEntries = Object.entries(distances).sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+                  
+                  // Get specific distance times
+                  const getDistance = (meter: string) => {
+                    return distances[meter] || '-'
+                  }
                   
                   return (
                     <tr
@@ -100,14 +122,14 @@ export function GallopsTable({ gallops }: Props) {
                         </span>
                       </td>
                       
-                      {/* Status */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{gallop.status || '-'}</span>
-                      </td>
-                      
                       {/* Racecourse */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-700">{gallop.racecourse || '-'}</span>
+                      </td>
+                      
+                      {/* Jockey */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-700">{gallop.jockeyName || '-'}</span>
                       </td>
                       
                       {/* Surface */}
@@ -119,24 +141,44 @@ export function GallopsTable({ gallops }: Props) {
                         )}
                       </td>
                       
-                      {/* Jockey */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{gallop.jockeyName || '-'}</span>
+                      {/* 200m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('200')}</span>
                       </td>
                       
-                      {/* Distances */}
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          {distanceEntries.length > 0 ? (
-                            distanceEntries.map(([distance, time]) => (
-                              <span key={distance} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                                {distance}m: <span className="font-mono font-medium">{time as string}</span>
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </div>
+                      {/* 400m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('400')}</span>
+                      </td>
+                      
+                      {/* 600m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('600')}</span>
+                      </td>
+                      
+                      {/* 800m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('800')}</span>
+                      </td>
+                      
+                      {/* 1000m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('1000')}</span>
+                      </td>
+                      
+                      {/* 1200m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('1200')}</span>
+                      </td>
+                      
+                      {/* 1400m */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-sm font-mono text-gray-700">{getDistance('1400')}</span>
+                      </td>
+                      
+                      {/* Status */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-700">{gallop.status || '-'}</span>
                       </td>
                     </tr>
                   )

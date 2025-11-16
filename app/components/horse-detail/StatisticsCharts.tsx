@@ -102,7 +102,6 @@ export function StatisticsCharts({ races, expenses }: Props) {
   const distanceData = getDistanceDistribution(races)
   const surfaceData = getSurfaceDistribution(races)
   const jockeyData = getJockeyDistribution(races)
-  const expensesData = getExpensesTrend(expenses)
   
   // Process monthly earnings for the last 12 months
   const getMonthlyEarnings = (races: RaceHistory[]) => {
@@ -140,6 +139,43 @@ export function StatisticsCharts({ races, expenses }: Props) {
   }
   
   const monthlyEarnings = getMonthlyEarnings(races)
+  
+  // Process monthly expenses for the last 12 months
+  const getMonthlyExpenses = (expenses: ExpenseData[]) => {
+    const now = new Date()
+    const monthlyData: { [key: string]: number } = {}
+    
+    // Initialize last 12 months with 0
+    for (let i = 11; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      monthlyData[monthKey] = 0
+    }
+    
+    // Aggregate expenses by month
+    expenses.forEach(expense => {
+      if (expense.amount && parseFloat(expense.amount) > 0) {
+        const expenseDate = new Date(expense.date)
+        const monthKey = `${expenseDate.getFullYear()}-${String(expenseDate.getMonth() + 1).padStart(2, '0')}`
+        
+        if (monthlyData.hasOwnProperty(monthKey)) {
+          monthlyData[monthKey] += parseFloat(expense.amount)
+        }
+      }
+    })
+    
+    // Convert to array format for chart
+    return Object.entries(monthlyData).map(([month, total]) => {
+      const [year, monthNum] = month.split('-')
+      const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+      return {
+        month: `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`,
+        expenses: Math.round(total)
+      }
+    })
+  }
+  
+  const monthlyExpenses = getMonthlyExpenses(expenses)
   
   // Check if we have data
   const hasRaceData = races.length > 0
@@ -381,42 +417,45 @@ export function StatisticsCharts({ races, expenses }: Props) {
           </Card>
         )}
         
-        {/* Expenses Trend */}
-        {hasExpenseData && expensesData.length > 0 && (
+        {/* Monthly Expenses */}
+        {hasExpenseData && monthlyExpenses.length > 0 && (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-                Gider Trendi (Son 3 Ay)
+                Aylık Gider (Son 12 Ay)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={expensesData}>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={monthlyExpenses}>
                   <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
-                    dataKey="week"
+                    dataKey="month"
                     stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
+                    style={{ fontSize: '11px' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis
                     stroke="#6b7280"
                     style={{ fontSize: '12px' }}
-                    tickFormatter={(value) => `₺${value}`}
+                    tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                            <p className="font-semibold text-gray-900">{payload[0].payload.week}</p>
-                            <p className="text-sm text-gray-600">
+                            <p className="font-semibold text-gray-900">{payload[0].payload.month}</p>
+                            <p className="text-sm text-red-600 font-semibold">
                               ₺{payload[0].value?.toLocaleString('tr-TR')}
                             </p>
                           </div>
@@ -427,11 +466,11 @@ export function StatisticsCharts({ races, expenses }: Props) {
                   />
                   <Line
                     type="monotone"
-                    dataKey="amount"
-                    stroke="#6366f1"
+                    dataKey="expenses"
+                    stroke="#ef4444"
                     strokeWidth={3}
-                    fill="url(#colorAmount)"
-                    dot={{ fill: '#6366f1', r: 4 }}
+                    fill="url(#colorExpenses)"
+                    dot={{ fill: '#ef4444', r: 4 }}
                     activeDot={{ r: 6 }}
                   />
                 </LineChart>
