@@ -235,7 +235,7 @@ export function RaceHistoryTable({ races }: Props) {
                       {/* Media Links */}
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
-                          {getTJKDetailsUrl(race) && (
+                          {getTJKDetailsUrl(race) ? (
                             <a
                               href={getTJKDetailsUrl(race)!}
                               target="_blank"
@@ -245,8 +245,8 @@ export function RaceHistoryTable({ races }: Props) {
                             >
                               Details
                             </a>
-                          )}
-                          {race.videoUrl && (
+                          ) : null}
+                          {race.videoUrl ? (
                             <a
                               href={race.videoUrl}
                               target="_blank"
@@ -256,8 +256,8 @@ export function RaceHistoryTable({ races }: Props) {
                             >
                               <Video className="h-4 w-4" />
                             </a>
-                          )}
-                          {race.photoUrl && (
+                          ) : null}
+                          {race.photoUrl ? (
                             <a
                               href={race.photoUrl}
                               target="_blank"
@@ -267,6 +267,9 @@ export function RaceHistoryTable({ races }: Props) {
                             >
                               <ImageIcon className="h-4 w-4" />
                             </a>
+                          ) : null}
+                          {!getTJKDetailsUrl(race) && !race.videoUrl && !race.photoUrl && (
+                            <span className="text-sm text-gray-400">-</span>
                           )}
                         </div>
                       </td>
