@@ -66,7 +66,7 @@ export function HorseMetadataCard({ horse }: Props) {
             )}
             
             {/* Age, Gender, Handicap - Matching horses page style */}
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center mb-3">
               {age && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
                   isMale 
@@ -97,6 +97,29 @@ export function HorseMetadataCard({ horse }: Props) {
                 </span>
               )}
             </div>
+            
+            {/* Activity Summary - Right after badges */}
+            {(horse.totalRaces || daysSinceRace !== null) && (
+              <div className="flex flex-wrap gap-3 text-xs text-gray-600 mb-3">
+                {horse.totalRaces && (
+                  <span className="font-medium">
+                    {horse.totalRaces} koşu
+                  </span>
+                )}
+                
+                {daysSinceRace !== null && (
+                  <span className="font-medium">
+                    • Son koşu {daysSinceRace} gün önce
+                  </span>
+                )}
+                
+                {horse.lastPrizeDate && (
+                  <span className="font-medium">
+                    • Son kazanç {getRelativeTime(horse.lastPrizeDate)}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Trainer */}
@@ -134,42 +157,39 @@ export function HorseMetadataCard({ horse }: Props) {
               Kazanç İstatistikleri
             </h3>
             
-            <div className="grid grid-cols-2 gap-3">
-              {/* Total Races */}
-              {horse.totalRaces !== undefined && horse.totalRaces !== null && (
-                <div>
-                  <p className="text-xs text-gray-500">Toplam Koşu</p>
-                  <p className="text-lg font-bold text-gray-900">{horse.totalRaces}</p>
-                </div>
-              )}
-              
-              {/* Race Record - Inside Kazanç İstatistikleri */}
-              {(horse.firstPlaces || horse.secondPlaces || horse.thirdPlaces) && (
-                <div className="col-span-2">
-                  <p className="text-xs text-gray-500 mb-2">Derece Dağılımı</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl">🥇</span>
-                      <span className="font-bold text-gray-900">{horse.firstPlaces || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl">🥈</span>
-                      <span className="font-bold text-gray-900">{horse.secondPlaces || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xl">🥉</span>
-                      <span className="font-bold text-gray-900">{horse.thirdPlaces || 0}</span>
-                    </div>
-                    {(horse.fourthPlaces || horse.fifthPlaces) && (
-                      <div className="text-gray-600 text-xs">
-                        <span className="font-semibold">4.</span> {horse.fourthPlaces || 0} • 
-                        <span className="font-semibold ml-1">5.</span> {horse.fifthPlaces || 0}
-                      </div>
-                    )}
+            {/* Race Record as columns */}
+            {horse.totalRaces !== undefined && horse.totalRaces !== null && (
+              <div className="mb-4">
+                <div className="grid grid-cols-6 gap-2 text-center">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Toplam Koşu</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.totalRaces}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">1.lik</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.firstPlaces || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">2.lik</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.secondPlaces || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">3.lük</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.thirdPlaces || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">4.lük</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.fourthPlaces || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">5.lik</p>
+                    <p className="text-lg font-bold text-gray-900">{horse.fifthPlaces || 0}</p>
                   </div>
                 </div>
-              )}
-              
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-3">
               {/* Prize Money */}
               {horse.prizeMoney && (
                 <div>
@@ -207,31 +227,6 @@ export function HorseMetadataCard({ horse }: Props) {
           </div>
         </div>
       </div>
-      
-      {/* Footer: Recent Activity - At bottom */}
-      {(horse.totalRaces || daysSinceRace !== null) && (
-        <div className="mt-6 pt-4 border-t border-gray-200/50">
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-            {horse.totalRaces && (
-              <span className="font-medium">
-                {horse.totalRaces} koşu
-              </span>
-            )}
-            
-            {daysSinceRace !== null && (
-              <span className="font-medium">
-                • Son koşu {daysSinceRace} gün önce
-              </span>
-            )}
-            
-            {horse.lastPrizeDate && (
-              <span className="font-medium">
-                • Son kazanç {getRelativeTime(horse.lastPrizeDate)}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

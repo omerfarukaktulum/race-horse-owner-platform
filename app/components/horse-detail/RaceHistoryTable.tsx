@@ -127,6 +127,9 @@ export function RaceHistoryTable({ races }: Props) {
                     Şehir
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Koşu Türü
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Mesafe
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -140,9 +143,6 @@ export function RaceHistoryTable({ races }: Props) {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Jokey
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Koşu Türü
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     İkramiye
@@ -174,10 +174,19 @@ export function RaceHistoryTable({ races }: Props) {
                         <span className="text-sm text-gray-700">{race.city || '-'}</span>
                       </td>
                       
-                      {/* Distance */}
+                      {/* Race Type - Moved here */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {race.raceType && (
+                          <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
+                            {race.raceType}
+                          </span>
+                        )}
+                      </td>
+                      
+                      {/* Distance - Removed 'm' */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm font-medium text-gray-900">
-                          {race.distance ? `${race.distance}m` : '-'}
+                          {race.distance || '-'}
                         </span>
                       </td>
                       
@@ -200,9 +209,9 @@ export function RaceHistoryTable({ races }: Props) {
                         </div>
                       </td>
                       
-                      {/* Derece (Time) */}
+                      {/* Derece (Time) - Matching mesafe font */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-600 font-mono">
+                        <span className="text-sm font-medium text-gray-900">
                           {race.derece || '-'}
                         </span>
                       </td>
@@ -210,15 +219,6 @@ export function RaceHistoryTable({ races }: Props) {
                       {/* Jockey */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-700">{race.jockeyName || '-'}</span>
-                      </td>
-                      
-                      {/* Race Type */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {race.raceType && (
-                          <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
-                            {race.raceType}
-                          </span>
-                        )}
                       </td>
                       
                       {/* Prize Money */}

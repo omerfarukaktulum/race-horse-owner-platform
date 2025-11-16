@@ -79,11 +79,12 @@ const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) =>
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
+    const percent = payload[0].percent ? (payload[0].percent * 100).toFixed(0) : '0'
     return (
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
         <p className="font-semibold text-gray-900">{payload[0].name}</p>
         <p className="text-sm text-gray-600">
-          {payload[0].value} koşu ({(payload[0].percent * 100).toFixed(0)}%)
+          {payload[0].value} koşu ({percent}%)
         </p>
       </div>
     )

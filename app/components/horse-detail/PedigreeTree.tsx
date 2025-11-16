@@ -54,10 +54,10 @@ export function PedigreeTree({ horse }: Props) {
   }
   
   // Calculate SVG dimensions based on node positions
-  const maxX = Math.max(...tree.nodes.map(n => n.x)) + 200
-  const maxY = Math.max(...tree.nodes.map(n => n.y)) + 100
-  const minY = Math.min(...tree.nodes.map(n => n.y)) - 100
-  const svgHeight = maxY - minY
+  const maxX = Math.max(...tree.nodes.map(n => n.x)) + 250
+  const maxY = Math.max(...tree.nodes.map(n => n.y)) + 150
+  const minY = Math.min(...tree.nodes.map(n => n.y)) - 150
+  const svgHeight = Math.max(maxY - minY, 600) // Minimum 600px height
   
   return (
     <div className="space-y-4">
