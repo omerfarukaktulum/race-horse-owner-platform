@@ -99,24 +99,18 @@ export function HorseMetadataCard({ horse }: Props) {
             </div>
             
             {/* Activity Summary - Right after badges */}
-            {(horse.totalRaces || daysSinceRace !== null) && (
-              <div className="flex flex-wrap gap-3 text-xs text-gray-600 mb-3">
-                {horse.totalRaces && (
-                  <span className="font-medium">
-                    {horse.totalRaces} koşu
-                  </span>
-                )}
-                
+            {(daysSinceRace !== null || horse.lastPrizeDate) && (
+              <div className="space-y-1 text-xs text-gray-600 mb-3">
                 {daysSinceRace !== null && (
-                  <span className="font-medium">
+                  <div className="font-medium">
                     • Son koşu {daysSinceRace} gün önce
-                  </span>
+                  </div>
                 )}
                 
                 {horse.lastPrizeDate && (
-                  <span className="font-medium">
+                  <div className="font-medium">
                     • Son kazanç {getRelativeTime(horse.lastPrizeDate)}
-                  </span>
+                  </div>
                 )}
               </div>
             )}

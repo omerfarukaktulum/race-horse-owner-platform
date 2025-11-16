@@ -65,16 +65,18 @@ export function PedigreeTree({ horse }: Props) {
         Soyağacı
       </h2>
       
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
         <CardContent className="p-6">
           {/* Desktop: Horizontal Tree */}
-          <div className="hidden md:block overflow-x-auto">
-            <svg
-              ref={svgRef}
-              width={maxX}
-              height={svgHeight}
-              className="mx-auto"
-            >
+          <div className="hidden md:block overflow-x-auto overflow-y-auto" style={{ maxHeight: '800px' }}>
+            <div style={{ minWidth: `${maxX}px`, minHeight: `${svgHeight}px` }}>
+              <svg
+                ref={svgRef}
+                width={maxX}
+                height={svgHeight}
+                viewBox={`0 0 ${maxX} ${svgHeight}`}
+                className="mx-auto"
+              >
               {/* Draw connections first (lines behind nodes) */}
               {tree.connections.map((conn, index) => {
                 const fromNode = tree.nodes.find(n => n.id === conn.from)
@@ -157,7 +159,8 @@ export function PedigreeTree({ horse }: Props) {
                   </g>
                 )
               })}
-            </svg>
+              </svg>
+            </div>
           </div>
           
           {/* Mobile: Vertical List */}

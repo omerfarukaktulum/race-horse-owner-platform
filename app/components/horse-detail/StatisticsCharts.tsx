@@ -79,12 +79,16 @@ const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) =>
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
-    const percent = payload[0].percent ? (payload[0].percent * 100).toFixed(0) : '0'
+    // Calculate percent from the payload data
+    const data = payload[0].payload
+    const value = data.value || 0
+    const percent = data.percent ? data.percent.toFixed(0) : '0'
+    
     return (
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-gray-900">{payload[0].name}</p>
+        <p className="font-semibold text-gray-900">{data.name}</p>
         <p className="text-sm text-gray-600">
-          {payload[0].value} koşu ({percent}%)
+          {value} koşu ({percent}%)
         </p>
       </div>
     )
@@ -146,7 +150,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={cityData}
+                      data={prepareLegendData(cityData)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -182,7 +186,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={distanceData}
+                      data={prepareLegendData(distanceData)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -218,7 +222,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={surfaceData}
+                      data={prepareLegendData(surfaceData)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -258,7 +262,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
-                    data={jockeyData}
+                    data={prepareLegendData(jockeyData)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
