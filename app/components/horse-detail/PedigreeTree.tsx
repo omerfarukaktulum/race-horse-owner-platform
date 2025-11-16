@@ -47,7 +47,7 @@ export function PedigreeTree({ horse }: Props) {
     return (
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
         <CardContent className="py-16 text-center">
-          <p className="text-gray-500">Soyağacı bilgisi bulunmuyor</p>
+          <p className="text-gray-500">Pedigri bilgisi bulunmuyor</p>
         </CardContent>
       </Card>
     )

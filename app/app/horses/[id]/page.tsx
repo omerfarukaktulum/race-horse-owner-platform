@@ -325,7 +325,7 @@ export default function HorseDetailPage() {
             value="pedigree"
             className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
           >
-            Soyağacı
+            Pedigri
           </TabsTrigger>
         </TabsList>
 
