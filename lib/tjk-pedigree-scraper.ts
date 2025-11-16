@@ -46,12 +46,19 @@ export async function fetchTJKPedigree(
     
     const page = await context.newPage()
     
-    // Capture browser console logs and forward to server console
+    // Capture ALL browser console logs and forward to server console
     page.on('console', (msg) => {
       const text = msg.text()
-      if (text.includes('[Browser]') || text.includes('[Pedigree]')) {
-        console.log('[TJK Pedigree]', text)
+      const type = msg.type()
+      // Forward all console messages that contain [Browser] or [Pedigree]
+      if (text.includes('[Browser]') || text.includes('[Pedigree]') || text.includes('tblPedigri')) {
+        console.log(`[TJK Pedigree] [${type.toUpperCase()}]`, text)
       }
+    })
+    
+    // Also capture page errors
+    page.on('pageerror', (error) => {
+      console.error('[TJK Pedigree] Page error:', error.message)
     })
     
     // Navigate to pedigree page
@@ -66,8 +73,11 @@ export async function fetchTJKPedigree(
     // Wait for page to load
     await page.waitForTimeout(2000)
     
+    console.log('[TJK Pedigree] Page loaded, starting extraction...')
+    
     // Extract pedigree data from the page
     const pedigree = await page.evaluate(() => {
+      console.log('[Browser] [Pedigree] Starting pedigree extraction in browser context...')
       const result: any = {}
       
       // First, check if #tblPedigri exists
@@ -232,6 +242,13 @@ export async function fetchTJKPedigree(
       })
       
       return result
+    })
+    
+    console.log('[TJK Pedigree] Extraction completed, received data:', {
+      hasSire: !!pedigree.sireName,
+      hasDam: !!pedigree.damName,
+      hasGen3: !!(pedigree.sireSire || pedigree.sireDam || pedigree.damSire || pedigree.damDam),
+      hasGen4: !!(pedigree.sireSireSire || pedigree.sireSireDam || pedigree.sireDamSire || pedigree.sireDamDam || pedigree.damSireSire || pedigree.damSireDam || pedigree.damDamSire || pedigree.damDamDam)
     })
     
     await context.close()
