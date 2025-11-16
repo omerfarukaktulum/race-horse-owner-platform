@@ -97,7 +97,8 @@ export default function HorsesPage() {
     let filtered: HorseData[] = []
     
     if (tab === 'ACTIVE') {
-      filtered = horses.filter((horse) => horse.status === 'RACING')
+      // Hepsi: Show all horses (excluding only DEAD horses)
+      filtered = horses.filter((horse) => horse.status !== 'DEAD')
     } else if (tab === 'FOALS') {
       // Foals: 0, 1, 2, 3 years old (exclude dead horses)
       filtered = horses.filter((horse) => {
@@ -173,7 +174,7 @@ export default function HorsesPage() {
     const currentYear = new Date().getFullYear()
     const tabHorses = (() => {
       if (activeTab === 'ACTIVE') {
-        return horses.filter((horse) => horse.status === 'RACING')
+        return horses.filter((horse) => horse.status !== 'DEAD')
       } else if (activeTab === 'FOALS') {
         return horses.filter((horse) => {
           if (!horse.yob || horse.status === 'DEAD') return false
