@@ -587,6 +587,17 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
           const dateLink = dateCell?.querySelector('a')
           const dateText = dateLink?.textContent?.trim() || dateCell?.textContent?.trim() || ''
           
+          // Extract video URL from date link (the date link contains the race details URL)
+          let videoUrlFromDate: string | undefined
+          if (dateLink) {
+            const dateHref = dateLink.getAttribute('href')
+            if (dateHref) {
+              // The date link format: /TR/YarisSever/Info/Page/GunlukYarisSonuclari?QueryParameter_Tarih=27/09/2025&Era=past#220173
+              videoUrlFromDate = dateHref.startsWith('http') ? dateHref : `https://www.tjk.org${dateHref}`
+              console.log(`[Browser] ✓ Found video URL from date link: ${videoUrlFromDate.substring(0, 80)}...`)
+            }
+          }
+          
           // Parse city
           const cityCell = cells[cityColIndex]
           const cityLink = cityCell?.querySelector('a')
@@ -797,9 +808,11 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
             prizeMoney = parseFloat(prizeText.replace(/\./g, '').replace(',', '.'))
           }
           
-          // Parse video URL
-          let videoUrl: string | undefined
-          if (videoColIndex >= 0 && cells[videoColIndex]) {
+          // Parse video URL - prioritize date link, then fall back to video column
+          let videoUrl: string | undefined = videoUrlFromDate
+          
+          // If not found in date link, try the video column
+          if (!videoUrl && videoColIndex >= 0 && cells[videoColIndex]) {
             const videoCell = cells[videoColIndex]
             // Try multiple methods to find video link
             const videoLink = videoCell.querySelector('a')
@@ -807,7 +820,7 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
               const href = videoLink.getAttribute('href')
               if (href) {
                 videoUrl = href.startsWith('http') ? href : `https://www.tjk.org${href}`
-                console.log(`[Browser] ✓ Found video URL: ${videoUrl.substring(0, 80)}...`)
+                console.log(`[Browser] ✓ Found video URL from video column: ${videoUrl.substring(0, 80)}...`)
               }
             } else {
               // Fallback: check if cell itself is a link
@@ -830,8 +843,8 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
             if (!videoUrl) {
               console.log(`[Browser] ⚠ No video URL found in column ${videoColIndex}, cell text: "${videoCell.textContent?.trim()}"`)
             }
-          } else {
-            console.log(`[Browser] ⚠ Video column index ${videoColIndex} is invalid or cell not found`)
+          } else if (!videoUrl) {
+            console.log(`[Browser] ⚠ Video column index ${videoColIndex} is invalid or cell not found, using date link only`)
           }
           
           // Parse photo URL
