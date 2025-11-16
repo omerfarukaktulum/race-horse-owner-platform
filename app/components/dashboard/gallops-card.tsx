@@ -62,6 +62,8 @@ export function GallopsCard() {
       return 'Çok Rahat'
     } else if (status.trim() === 'Ç') {
       return 'Çalışarak'
+    } else if (status.trim() === 'HÇ') {
+      return 'Hafif Çalışarak'
     }
     
     return status

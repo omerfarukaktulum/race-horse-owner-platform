@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin } from 'lucide-react'
+import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
+import { Input } from '@/app/components/ui/input'
 
 interface HorseData {
   id: string
@@ -38,6 +39,7 @@ interface HorseData {
 
 export default function HorsesPage() {
   const [horses, setHorses] = useState<HorseData[]>([])
+  const [allHorses, setAllHorses] = useState<HorseData[]>([]) // Store all horses for filtering
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('ACTIVE')
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
@@ -49,10 +51,25 @@ export default function HorsesPage() {
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchHorses()
   }, [])
+
+  // Filter horses based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setHorses(allHorses)
+    } else {
+      const query = searchQuery.toLowerCase().trim()
+      const filtered = allHorses.filter((horse) =>
+        horse.name.toLowerCase().includes(query)
+      )
+      setHorses(filtered)
+    }
+  }, [searchQuery, allHorses])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -83,7 +100,9 @@ export default function HorsesPage() {
       }
 
       console.log('[Horses Page] Setting', data.horses?.length || 0, 'horses')
-      setHorses(data.horses || [])
+      const fetchedHorses = data.horses || []
+      setAllHorses(fetchedHorses)
+      setHorses(fetchedHorses)
     } catch (error) {
       console.error('Fetch horses error:', error)
       toast.error('Atlar yüklenirken bir hata oluştu')
@@ -292,7 +311,7 @@ export default function HorsesPage() {
           <div className="flex-1 min-w-0">
             <div className="mb-2">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">
-                {horse.name}
+                  {horse.name}
               </h3>
             </div>
             
@@ -309,16 +328,16 @@ export default function HorsesPage() {
             
             {/* All Labels Side by Side - Second Line */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              {age !== null && (
+                {age !== null && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-                  {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
-                </span>
-              )}
-              {genderLabel && (
+                    {age} yaş{horse.yob ? ` (${horse.yob})` : ''}
+                  </span>
+                )}
+                {genderLabel && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${genderLabel.color}`}>
-                  {genderLabel.text}
-                </span>
-              )}
+                    {genderLabel.text}
+                  </span>
+                )}
               {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 
                horse.status !== 'MARE' && 
                !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
@@ -366,7 +385,7 @@ export default function HorsesPage() {
               Not Ekle
             </Button>
             <Button 
-              size="sm"
+              size="sm" 
               className={`${buttonGradient} text-white font-medium py-1.5 px-3 rounded-md text-xs transition-all duration-300 hover:shadow-md`}
               onClick={(e) => {
                 e.preventDefault()
@@ -378,21 +397,21 @@ export default function HorsesPage() {
               <TurkishLira className="h-3 w-3 mr-1" />
               Gider Ekle
             </Button>
-            <Button 
-              size="sm"
+                    <Button
+                      size="sm"
               className={`${buttonGradient} text-white font-medium py-1.5 px-3 rounded-md text-xs transition-all duration-300 hover:shadow-md`}
-              onClick={(e) => {
-                e.preventDefault()
+                      onClick={(e) => {
+                        e.preventDefault()
                 e.stopPropagation()
-                setSelectedHorseForLocation(horse)
-                setLocationModalOpen(true)
-              }}
-            >
+                        setSelectedHorseForLocation(horse)
+                        setLocationModalOpen(true)
+                      }}
+                    >
               <MapPin className="h-3 w-3 mr-1" />
               Konum Değiştir
-            </Button>
+                    </Button>
           </div>
-        </Card>
+      </Card>
       </Link>
     )
   }
@@ -416,10 +435,10 @@ export default function HorsesPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-3">
-            <TabsList className="inline-flex h-12 items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5">
+            <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5">
             <TabsTrigger 
               value="ACTIVE"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
             >
               {TR.horses.active}
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
@@ -432,7 +451,7 @@ export default function HorsesPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="FOALS"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
             >
               {TR.horses.foals}
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
@@ -445,7 +464,7 @@ export default function HorsesPage() {
             </TabsTrigger>
             <TabsTrigger 
               value="MARE"
-              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="group inline-flex items-center justify-center whitespace-nowrap rounded-md px-2 py-1 text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
             >
               {TR.horses.mares}
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-semibold transition-colors ${
@@ -458,25 +477,26 @@ export default function HorsesPage() {
             </TabsTrigger>
           </TabsList>
           
-          {/* Filter Button */}
-          <div className="relative filter-dropdown-container">
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`border-2 font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtrele
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                {ageFilters.length + genderFilters.length}
-              </span>
-            )}
-          </Button>
+          {/* Filter Button and Search */}
+          <div className="flex items-center gap-2">
+            <div className="relative filter-dropdown-container">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={`border-2 font-medium px-4 h-9 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtrele
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {ageFilters.length + genderFilters.length}
+                  </span>
+                )}
+              </Button>
           
           {/* Filter Dropdown */}
           {showFilters && (
@@ -548,16 +568,52 @@ export default function HorsesPage() {
                 )}
               </div>
             )}
+            </div>
+            
+            {/* Search Button */}
+            {!isSearchOpen ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSearchOpen(true)}
+                className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50"
+              >
+                <Search className="h-4 w-4 text-gray-600" />
+              </Button>
+            ) : (
+              <div className="relative w-36">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="At ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-8 h-9 text-sm border-2 border-[#6366f1] bg-indigo-50 text-[#6366f1] rounded-lg shadow-md focus:border-[#6366f1] focus:ring-[#6366f1] focus:shadow-lg transition-all duration-300"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false)
+                    setSearchQuery('')
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
           </div>
           
-          <Link href="/app/horses/new">
+        <Link href="/app/horses/new">
             <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-              <Plus className="h-4 w-4 mr-2" />
-              {TR.horses.addHorse}
-            </Button>
-          </Link>
-        </div>
+            <Plus className="h-4 w-4 mr-2" />
+            {TR.horses.addHorse}
+          </Button>
+        </Link>
+      </div>
 
         <TabsContent value="ACTIVE" className="space-y-4 mt-6">
           {filterHorses('ACTIVE').length === 0 ? (
