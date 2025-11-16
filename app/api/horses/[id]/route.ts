@@ -61,6 +61,10 @@ export async function GET(
           orderBy: { raceDate: 'desc' },
           take: 50, // Latest 50 races
         },
+        gallops: {
+          orderBy: { gallopDate: 'desc' },
+          take: 100, // Latest 100 gallops
+        },
       },
     })
 

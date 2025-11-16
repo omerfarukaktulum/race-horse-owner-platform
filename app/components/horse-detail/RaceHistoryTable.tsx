@@ -58,10 +58,18 @@ export function RaceHistoryTable({ races }: Props) {
       return 'bg-green-100 text-green-800'
     } else if (surface.startsWith('K:') || surface === 'K' || surface === 'Kum') {
       return 'bg-orange-100 text-orange-800'
-    } else if (surface.startsWith('S:') || surface === 'S' || surface === 'Sentetik') {
-      return 'bg-gray-100 text-gray-800'
+    } else if (surface.startsWith('S:') || surface === 'S' || surface.toLowerCase().includes('sentetik')) {
+      return 'bg-[#d39b1e] text-white'
     }
     return 'bg-gray-100 text-gray-800'
+  }
+  
+  // Format surface display
+  const formatSurface = (surface?: string) => {
+    if (!surface) return '-'
+    if (surface.toLowerCase().includes('sentetik')) return 'Sen'
+    if (surface.startsWith('S:') || surface === 'S') return 'Sen'
+    return surface
   }
   
   // Get position medal
@@ -185,7 +193,7 @@ export function RaceHistoryTable({ races }: Props) {
                       <td className="px-4 py-3 whitespace-nowrap">
                         {race.surface && (
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(race.surface)}`}>
-                            {race.surface}
+                            {formatSurface(race.surface)}
                           </span>
                         )}
                       </td>

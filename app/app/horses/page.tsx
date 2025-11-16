@@ -484,7 +484,7 @@ export default function HorsesPage() {
                !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
                  horse.gender?.includes('Kısrak') || horse.gender?.includes('KISRAK')) && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
-                  Hand: {horse.handicapPoints}
+                  HP: {horse.handicapPoints}
                 </span>
               )}
               {horse.status === 'RACING' && horse.racecourse && (

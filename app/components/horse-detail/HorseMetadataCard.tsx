@@ -1,5 +1,5 @@
 import { MapPin, Trophy } from 'lucide-react'
-import { formatCurrency, getRelativeTime } from '@/lib/utils/format'
+import { formatCurrency } from '@/lib/utils/format'
 
 interface HorseMetadata {
   name: string
@@ -39,6 +39,14 @@ export function HorseMetadataCard({ horse }: Props) {
     const lastRace = new Date(horse.lastRaceDate)
     const now = new Date()
     daysSinceRace = Math.floor((now.getTime() - lastRace.getTime()) / (1000 * 60 * 60 * 24))
+  }
+  
+  // Calculate days since last prize
+  let daysSincePrize = null
+  if (horse.lastPrizeDate) {
+    const lastPrize = new Date(horse.lastPrizeDate)
+    const now = new Date()
+    daysSincePrize = Math.floor((now.getTime() - lastPrize.getTime()) / (1000 * 60 * 60 * 24))
   }
   
   // Determine gender badge color (matching horses page)
@@ -99,7 +107,7 @@ export function HorseMetadataCard({ horse }: Props) {
             </div>
             
             {/* Activity Summary - Right after badges */}
-            {(daysSinceRace !== null || horse.lastPrizeDate) && (
+            {(daysSinceRace !== null || daysSincePrize !== null) && (
               <div className="space-y-1 text-xs text-gray-600 mb-3">
                 {daysSinceRace !== null && (
                   <div className="font-medium">
@@ -107,9 +115,9 @@ export function HorseMetadataCard({ horse }: Props) {
                   </div>
                 )}
                 
-                {horse.lastPrizeDate && (
+                {daysSincePrize !== null && (
                   <div className="font-medium">
-                    • Son kazanç {getRelativeTime(horse.lastPrizeDate)}
+                    • Son kazanç {daysSincePrize} gün önce
                   </div>
                 )}
               </div>

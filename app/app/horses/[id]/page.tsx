@@ -13,6 +13,7 @@ import { HorseMetadataCard } from '@/app/components/horse-detail/HorseMetadataCa
 import { StatisticsCharts } from '@/app/components/horse-detail/StatisticsCharts'
 import { PedigreeTree } from '@/app/components/horse-detail/PedigreeTree'
 import { RaceHistoryTable } from '@/app/components/horse-detail/RaceHistoryTable'
+import { GallopsTable } from '@/app/components/horse-detail/GallopsTable'
 
 interface LocationHistory {
   id: string
@@ -120,6 +121,15 @@ interface HorseDetail {
   }>
   locationHistory?: LocationHistory[]
   raceHistory?: RaceHistory[]
+  gallops?: Array<{
+    id: string
+    gallopDate: string
+    status?: string
+    racecourse?: string
+    surface?: string
+    jockeyName?: string
+    distances: any
+  }>
 }
 
 export default function HorseDetailPage() {
@@ -294,6 +304,18 @@ export default function HorseDetailPage() {
             At Bilgisi
           </TabsTrigger>
           <TabsTrigger 
+            value="races"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            Koşu Geçmişi
+          </TabsTrigger>
+          <TabsTrigger 
+            value="gallops"
+            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+          >
+            İdmanlar
+          </TabsTrigger>
+          <TabsTrigger 
             value="statistics"
             className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
           >
@@ -305,16 +327,18 @@ export default function HorseDetailPage() {
           >
             Soyağacı
           </TabsTrigger>
-          <TabsTrigger 
-            value="races"
-            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-          >
-            Koşu Geçmişi
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" className="mt-6">
           <HorseMetadataCard horse={horseMetadata} />
+        </TabsContent>
+
+        <TabsContent value="races" className="mt-6">
+          <RaceHistoryTable races={horse.raceHistory || []} />
+        </TabsContent>
+
+        <TabsContent value="gallops" className="mt-6">
+          <GallopsTable gallops={horse.gallops || []} />
         </TabsContent>
 
         <TabsContent value="statistics" className="mt-6">
@@ -326,10 +350,6 @@ export default function HorseDetailPage() {
 
         <TabsContent value="pedigree" className="mt-6">
           <PedigreeTree horse={pedigreeData} />
-        </TabsContent>
-
-        <TabsContent value="races" className="mt-6">
-          <RaceHistoryTable races={horse.raceHistory || []} />
         </TabsContent>
       </Tabs>
 
