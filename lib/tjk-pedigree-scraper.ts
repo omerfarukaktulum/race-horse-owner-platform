@@ -46,6 +46,14 @@ export async function fetchTJKPedigree(
     
     const page = await context.newPage()
     
+    // Capture browser console logs and forward to server console
+    page.on('console', (msg) => {
+      const text = msg.text()
+      if (text.includes('[Browser]') || text.includes('[Pedigree]')) {
+        console.log('[TJK Pedigree]', text)
+      }
+    })
+    
     // Navigate to pedigree page
     const pedigreeUrl = `https://www.tjk.org/TR/YarisSever/Query/Pedigri/Pedigri?Atkodu=${horseId}`
     console.log('[TJK Pedigree] Navigating to:', pedigreeUrl)
@@ -229,7 +237,19 @@ export async function fetchTJKPedigree(
     await context.close()
     await browser.close()
     
-    console.log('[TJK Pedigree] Successfully fetched pedigree:', pedigree)
+    // Log detailed summary of what was extracted
+    const gen2Count = [pedigree.sireName, pedigree.damName].filter(Boolean).length
+    const gen3Count = [pedigree.sireSire, pedigree.sireDam, pedigree.damSire, pedigree.damDam].filter(Boolean).length
+    const gen4Count = [pedigree.sireSireSire, pedigree.sireSireDam, pedigree.sireDamSire, pedigree.sireDamDam,
+                       pedigree.damSireSire, pedigree.damSireDam, pedigree.damDamSire, pedigree.damDamDam].filter(Boolean).length
+    
+    console.log('[TJK Pedigree] ✓ Extraction complete for', horseName || horseId)
+    console.log('[TJK Pedigree]   Generation 2 (Parents):', gen2Count, '/ 2', pedigree.sireName ? `- Sire: ${pedigree.sireName}` : '', pedigree.damName ? `Dam: ${pedigree.damName}` : '')
+    console.log('[TJK Pedigree]   Generation 3 (Grandparents):', gen3Count, '/ 4')
+    if (gen3Count > 0) {
+      console.log('[TJK Pedigree]     -', pedigree.sireSire || 'N/A', pedigree.sireDam || 'N/A', pedigree.damSire || 'N/A', pedigree.damDam || 'N/A')
+    }
+    console.log('[TJK Pedigree]   Generation 4 (Great-grandparents):', gen4Count, '/ 8')
     
     // If we have a horseName parameter, use it if extraction failed
     if (horseName && !pedigree.horseName) {
