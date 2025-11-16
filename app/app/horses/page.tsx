@@ -12,7 +12,6 @@ import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
-import { Input } from '@/app/components/ui/input'
 
 interface HorseData {
   id: string
@@ -50,6 +49,7 @@ export default function HorsesPage() {
   const [selectedHorseForNote, setSelectedHorseForNote] = useState<HorseData | null>(null)
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
+  const [locationFilters, setLocationFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -173,6 +173,17 @@ export default function HorsesPage() {
       })
     }
     
+    // Apply location filters (multiple selection)
+    if (locationFilters.length > 0) {
+      filtered = filtered.filter((horse) => {
+        if (!horse.currentLocationType) return false
+        
+        if (locationFilters.includes('racecourse') && horse.currentLocationType === 'racecourse') return true
+        if (locationFilters.includes('farm') && horse.currentLocationType === 'farm') return true
+        return false
+      })
+    }
+    
     // Sort by age ascending (youngest first), then alphabetically by name
     return filtered.sort((a, b) => {
       const ageA = a.yob ? currentYear - a.yob : 999
@@ -253,12 +264,21 @@ export default function HorsesPage() {
     )
   }
   
+  const toggleLocationFilter = (location: string) => {
+    setLocationFilters((prev) => 
+      prev.includes(location)
+        ? prev.filter((l) => l !== location)
+        : [...prev, location]
+    )
+  }
+  
   const clearFilters = () => {
     setAgeFilters([])
     setGenderFilters([])
+    setLocationFilters([])
   }
   
-  const hasActiveFilters = ageFilters.length > 0 || genderFilters.length > 0
+  const hasActiveFilters = ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0
 
   const HorseCard = ({ horse }: { horse: HorseData }) => {
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
@@ -493,7 +513,7 @@ export default function HorsesPage() {
                 Filtrele
                 {hasActiveFilters && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {ageFilters.length + genderFilters.length}
+                    {ageFilters.length + genderFilters.length + locationFilters.length}
                   </span>
                 )}
               </Button>
@@ -557,6 +577,29 @@ export default function HorsesPage() {
                   </div>
                 </div>
                 
+                {/* Location Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Konum</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: 'racecourse', label: 'Hipodrom' },
+                      { value: 'farm', label: 'Çiftlik' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => toggleLocationFilter(option.value)}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          locationFilters.includes(option.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
                 {/* Clear Filters */}
                 {hasActiveFilters && (
                   <button
@@ -584,13 +627,18 @@ export default function HorsesPage() {
             ) : (
               <div className="relative w-36">
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <Input
+                <input
                   type="text"
                   placeholder="At ara..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-8 h-9 text-sm border-2 border-[#6366f1] bg-indigo-50 text-[#6366f1] rounded-lg shadow-md focus:border-[#6366f1] focus:ring-[#6366f1] focus:shadow-lg transition-all duration-300"
+                  className="flex h-9 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-[#6366f1] rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500"
                   autoFocus
+                  style={{ boxShadow: 'none' }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = 'none'
+                    e.target.style.outline = 'none'
+                  }}
                 />
                 <button
                   type="button"
