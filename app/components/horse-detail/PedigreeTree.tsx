@@ -50,72 +50,84 @@ export function PedigreeTree({ horse }: Props) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
       <CardContent className="p-6">
-        <div className="overflow-x-auto">
-          <table
-            className="border-collapse"
-            style={{ width: '940px', border: '1px solid black' }}
-          >
-            <tbody>
-              <tr>
-                <td rowSpan={4} className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.sireName)}
-                </td>
-                <td rowSpan={2} className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.sireSire)}
-                </td>
-                <td className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.sireSireSire)}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.sireSireDam)}
-                </td>
-              </tr>
-              <tr>
-                <td rowSpan={2} className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.sireDam)}
-                </td>
-                <td className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.sireDamSire)}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.sireDamDam)}
-                </td>
-              </tr>
-              <tr>
-                <td rowSpan={4} className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.damName)}
-                </td>
-                <td rowSpan={2} className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.damSire)}
-                </td>
-                <td className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.damSireSire)}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.damSireDam)}
-                </td>
-              </tr>
-              <tr>
-                <td rowSpan={2} className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.damDam)}
-                </td>
-                <td className="p-2" style={cellStyle(true)}>
-                  {formatValue(horse.damDamSire)}
-                </td>
-              </tr>
-              <tr>
-                <td className="p-2" style={cellStyle(false)}>
-                  {formatValue(horse.damDamDam)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="flex gap-6">
+          <div className="overflow-x-auto">
+            <table
+              className="border-collapse"
+              style={{ width: '940px', border: '1px solid black' }}
+            >
+              <tbody>
+                <tr>
+                  <td rowSpan={4} className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.sireName)}
+                  </td>
+                  <td rowSpan={2} className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.sireSire)}
+                  </td>
+                  <td className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.sireSireSire)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.sireSireDam)}
+                  </td>
+                </tr>
+                <tr>
+                  <td rowSpan={2} className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.sireDam)}
+                  </td>
+                  <td className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.sireDamSire)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.sireDamDam)}
+                  </td>
+                </tr>
+                <tr>
+                  <td rowSpan={4} className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.damName)}
+                  </td>
+                  <td rowSpan={2} className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.damSire)}
+                  </td>
+                  <td className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.damSireSire)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.damSireDam)}
+                  </td>
+                </tr>
+                <tr>
+                  <td rowSpan={2} className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.damDam)}
+                  </td>
+                  <td className="p-2" style={cellStyle(true)}>
+                    {formatValue(horse.damDamSire)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="p-2" style={cellStyle(false)}>
+                    {formatValue(horse.damDamDam)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="flex flex-col gap-3 text-sm">
+            <div className="flex items-center gap-3">
+              <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe' }} />
+              <span className="text-gray-700 font-medium">Baba Hattı (Sire)</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-block w-4 h-4 rounded border" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db' }} />
+              <span className="text-gray-700 font-medium">Anne Hattı (Dam)</span>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>
