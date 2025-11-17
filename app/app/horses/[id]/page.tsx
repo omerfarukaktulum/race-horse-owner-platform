@@ -1,19 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { ArrowLeft, FileText, MapPin } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, Filter, Plus } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
+import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { HorseMetadataCard } from '@/app/components/horse-detail/HorseMetadataCard'
 import { StatisticsCharts } from '@/app/components/horse-detail/StatisticsCharts'
 import { PedigreeTree } from '@/app/components/horse-detail/PedigreeTree'
 import { RaceHistoryTable } from '@/app/components/horse-detail/RaceHistoryTable'
 import { GallopsTable } from '@/app/components/horse-detail/GallopsTable'
+import { HorseExpensesTable } from '@/app/components/horse-detail/HorseExpensesTable'
+import { HorseNotesList } from '@/app/components/horse-detail/HorseNotesList'
 
 interface LocationHistory {
   id: string
@@ -96,7 +99,7 @@ interface HorseDetail {
   // Metadata
   dataFetchedAt?: string
   dataFetchError?: string
-  expenses: Array<{
+  expenses?: Array<{
     id: string
     date: string
     category: string
@@ -104,6 +107,7 @@ interface HorseDetail {
     amount: number
     currency: string
     note?: string
+    photoUrl?: string | string[] | null
     addedBy: {
       email: string
       role: string
@@ -141,7 +145,10 @@ export default function HorseDetailPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('info')
+  const filterTriggerRef = useRef<(() => void) | null>(null)
+  const notesFilterTriggerRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (horseId) {
@@ -212,6 +219,10 @@ export default function HorseDetailPage() {
   const lastPrizeDate = horse.raceHistory && horse.raceHistory.length > 0
     ? horse.raceHistory.find(r => r.prizeMoney && parseFloat(r.prizeMoney) > 0)?.raceDate
     : undefined
+    
+  const lastExpenseDate = horse.expenses && horse.expenses.length > 0
+    ? horse.expenses[0].date
+    : undefined
 
   // Prepare metadata for card
   const horseMetadata = {
@@ -236,6 +247,7 @@ export default function HorseDetailPage() {
     fifthPlaces: horse.fifthPlaces,
     lastRaceDate,
     lastPrizeDate,
+    lastExpenseDate,
   }
 
   // Prepare pedigree data
@@ -258,7 +270,7 @@ export default function HorseDetailPage() {
   }
 
   // Prepare expenses data for chart
-  const expensesData = horse.expenses.map(e => ({
+  const expensesData = (horse.expenses || []).map(e => ({
     date: e.date,
     amount: e.amount.toString(),
   }))
@@ -311,23 +323,61 @@ export default function HorseDetailPage() {
             >
               İstatistikler
             </TabsTrigger>
+            <TabsTrigger 
+              value="expenses"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+            >
+              Giderler
+            </TabsTrigger>
+            <TabsTrigger 
+              value="notes"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+            >
+              Notlar
+            </TabsTrigger>
           </TabsList>
-          <div className="flex items-center gap-2 ml-auto">
-            <Button 
-              onClick={() => setIsNoteModalOpen(true)}
-              className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Not Ekle
-            </Button>
-            <Button 
-              onClick={() => setIsLocationModalOpen(true)}
-              className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Konum Değiştir
-            </Button>
-          </div>
+          {activeTab === 'expenses' && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Button 
+                onClick={() => {
+                  filterTriggerRef.current?.()
+                }}
+                variant="outline"
+                className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtrele
+              </Button>
+              <Button 
+                onClick={() => setIsExpenseModalOpen(true)}
+                className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Gider Ekle
+              </Button>
+            </div>
+          )}
+          {activeTab === 'notes' && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Button 
+                onClick={() => {
+                  notesFilterTriggerRef.current?.()
+                }}
+                variant="outline"
+                className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtrele
+              </Button>
+              <Button 
+                onClick={() => setIsNoteModalOpen(true)}
+                className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Not Ekle
+              </Button>
+            </div>
+          )}
         </div>
 
         <TabsContent value="info" className="mt-6">
@@ -350,6 +400,33 @@ export default function HorseDetailPage() {
           <StatisticsCharts 
             races={horse.raceHistory || []} 
             expenses={expensesData}
+          />
+        </TabsContent>
+
+        <TabsContent value="expenses" className="mt-6">
+          <HorseExpensesTable 
+            expenses={horse.expenses || []}
+            onAddExpense={() => setIsExpenseModalOpen(true)}
+            horseId={horse.id}
+            horseName={horse.name}
+            onRefresh={fetchHorse}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              filterTriggerRef.current = trigger
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-6">
+          <HorseNotesList 
+            notes={horse.notes || []}
+            horseId={horse.id}
+            horseName={horse.name}
+            onRefresh={fetchHorse}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              notesFilterTriggerRef.current = trigger
+            }}
           />
         </TabsContent>
       </Tabs>
@@ -375,6 +452,19 @@ export default function HorseDetailPage() {
           onClose={() => {
             setIsLocationModalOpen(false)
             fetchHorse() // Refresh data
+          }}
+        />
+      )}
+
+      {isExpenseModalOpen && (
+        <AddExpenseModal
+          open={isExpenseModalOpen}
+          onClose={() => setIsExpenseModalOpen(false)}
+          preselectedHorseId={horse.id}
+          preselectedHorseName={horse.name}
+          onSuccess={() => {
+            setIsExpenseModalOpen(false)
+            fetchHorse()
           }}
         />
       )}

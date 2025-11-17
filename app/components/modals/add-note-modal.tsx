@@ -8,30 +8,79 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { toast } from 'sonner'
 import { FileText } from 'lucide-react'
 
+type NoteModalMode = 'create' | 'edit'
+
+interface InitialNoteValues {
+  date: string
+  note: string
+  photoUrl?: string | string[] | null
+}
+
 interface AddNoteModalProps {
   open: boolean
   onClose: () => void
   horseId: string
   horseName: string
   onSuccess?: () => void
+  mode?: NoteModalMode
+  noteId?: string
+  initialNote?: InitialNoteValues
+  submitLabel?: string
 }
 
-export function AddNoteModal({ open, onClose, horseId, horseName, onSuccess }: AddNoteModalProps) {
+export function AddNoteModal({
+  open,
+  onClose,
+  horseId,
+  horseName,
+  onSuccess,
+  mode = 'create',
+  noteId,
+  initialNote,
+  submitLabel,
+}: AddNoteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
 
+  const isEditMode = mode === 'edit'
+
   useEffect(() => {
     if (open) {
-      // Reset form
-      setDate(new Date().toISOString().split('T')[0])
-      setNote('')
-      setPhotos([])
-      setPhotoPreviews([])
+      if (isEditMode && initialNote) {
+        const formattedDate = initialNote.date
+          ? new Date(initialNote.date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0]
+        setDate(formattedDate)
+        setNote(initialNote.note || '')
+        const initialPhotos =
+          typeof initialNote.photoUrl === 'string'
+            ? (() => {
+                try {
+                  const parsed = JSON.parse(initialNote.photoUrl)
+                  if (Array.isArray(parsed)) {
+                    return parsed as string[]
+                  }
+                } catch {
+                  // ignore
+                }
+                return initialNote.photoUrl ? [initialNote.photoUrl] : []
+              })()
+            : Array.isArray(initialNote.photoUrl)
+              ? initialNote.photoUrl
+              : []
+        setPhotoPreviews(initialPhotos as string[])
+        setPhotos([])
+      } else {
+        setDate(new Date().toISOString().split('T')[0])
+        setNote('')
+        setPhotos([])
+        setPhotoPreviews([])
+      }
     }
-  }, [open])
+  }, [open, isEditMode, initialNote])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -88,19 +137,31 @@ export function AddNoteModal({ open, onClose, horseId, horseName, onSuccess }: A
         formData.append('photos', photo)
       })
 
-      const response = await fetch(`/api/horses/${horseId}/notes`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
+      let response: Response
+      if (isEditMode) {
+        if (!noteId) {
+          throw new Error('Not bulunamadı')
+        }
+        response = await fetch(`/api/horse-notes/${noteId}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          body: formData,
+        })
+      } else {
+        response = await fetch(`/api/horses/${horseId}/notes`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        })
+      }
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Not eklenemedi')
+        throw new Error(data.error || 'İşlem başarısız')
       }
 
-      toast.success('Not başarıyla eklendi')
+      toast.success(isEditMode ? 'Not başarıyla güncellendi' : 'Not başarıyla eklendi')
       onSuccess?.()
       onClose()
     } catch (error) {
@@ -220,7 +281,9 @@ export function AddNoteModal({ open, onClose, horseId, horseName, onSuccess }: A
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {isSubmitting ? 'Kaydediliyor...' : 'Not Ekle'}
+                  {isSubmitting
+                    ? 'Kaydediliyor...'
+                    : submitLabel || (isEditMode ? 'Notu Kaydet' : 'Not Ekle')}
                 </Button>
               </div>
             </div>

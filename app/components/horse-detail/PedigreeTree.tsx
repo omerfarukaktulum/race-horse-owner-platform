@@ -120,11 +120,11 @@ export function PedigreeTree({ horse }: Props) {
           </div>
           <div className="flex flex-col gap-3 text-sm">
             <div className="flex items-center gap-3">
-              <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe' }} />
+              <span className="inline-block w-12 h-4 rounded border" style={{ backgroundColor: '#e0e7ff', border: '1px solid #c7d2fe' }} />
               <span className="text-gray-700 font-medium">Baba Hattı (Sire)</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="inline-block w-4 h-4 rounded border" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db' }} />
+              <span className="inline-block w-12 h-4 rounded border" style={{ backgroundColor: '#ffffff', borderColor: '#d1d5db' }} />
               <span className="text-gray-700 font-medium">Anne Hattı (Dam)</span>
             </div>
           </div>

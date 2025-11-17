@@ -23,6 +23,7 @@ interface HorseMetadata {
   fifthPlaces?: number
   lastRaceDate?: string
   lastPrizeDate?: string
+  lastExpenseDate?: string
 }
 
 interface Props {
@@ -47,6 +48,14 @@ export function HorseMetadataCard({ horse }: Props) {
     const lastPrize = new Date(horse.lastPrizeDate)
     const now = new Date()
     daysSincePrize = Math.floor((now.getTime() - lastPrize.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  // Calculate days since last expense
+  let daysSinceExpense = null
+  if (horse.lastExpenseDate) {
+    const lastExpense = new Date(horse.lastExpenseDate)
+    const now = new Date()
+    daysSinceExpense = Math.floor((now.getTime() - lastExpense.getTime()) / (1000 * 60 * 60 * 24))
   }
   
   // Determine gender badge color (matching horses page)
@@ -107,7 +116,7 @@ export function HorseMetadataCard({ horse }: Props) {
             </div>
             
             {/* Activity Summary - Right after badges */}
-            {(daysSinceRace !== null || daysSincePrize !== null) && (
+            {(daysSinceRace !== null || daysSincePrize !== null || daysSinceExpense !== null) && (
               <div className="space-y-1 text-xs text-gray-600 mb-3">
                 {daysSinceRace !== null && (
                   <div className="font-medium">
@@ -120,8 +129,15 @@ export function HorseMetadataCard({ horse }: Props) {
                     • Son kazanç {daysSincePrize} gün önce
                   </div>
                 )}
+
+                {daysSinceExpense !== null && (
+                  <div className="font-medium">
+                    • Son gider {daysSinceExpense} gün önce
+                  </div>
+                )}
               </div>
             )}
+
           </div>
           
           {/* Trainer */}
@@ -201,7 +217,7 @@ export function HorseMetadataCard({ horse }: Props) {
             
             {/* Total Earnings with Premiums */}
             <div className="mt-3 pt-3 border-t border-indigo-200/50">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 {/* Left: Toplam Kazanç */}
                 {horse.totalEarnings && (
                   <div className="flex flex-col justify-center">
@@ -212,17 +228,17 @@ export function HorseMetadataCard({ horse }: Props) {
                   </div>
                 )}
                 
-                {/* Right: Premiums stacked */}
-                <div className="space-y-2">
+                {/* Right: Premiums side by side */}
+                <div className="flex flex-wrap gap-3">
                   {horse.ownerPremium && (
-                    <div>
+                    <div className="min-w-[140px] bg-white/70 border border-indigo-100 rounded-lg px-3 py-2 shadow-sm">
                       <p className="text-xs text-gray-500">Sahip Primi</p>
                       <p className="text-sm font-bold text-gray-900">{formatCurrency(horse.ownerPremium)}</p>
                     </div>
                   )}
                   
                   {horse.breederPremium && (
-                    <div>
+                    <div className="min-w-[140px] bg-white/70 border border-indigo-100 rounded-lg px-3 py-2 shadow-sm">
                       <p className="text-xs text-gray-500">Yetiştirici Primi</p>
                       <p className="text-sm font-bold text-gray-900">{formatCurrency(horse.breederPremium)}</p>
                     </div>

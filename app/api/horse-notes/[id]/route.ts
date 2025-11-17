@@ -43,6 +43,7 @@ async function getAuthenticatedUser() {
         return { error: NextResponse.json({ error: 'Owner profile not found' }, { status: 403 }) }
       }
     }
+
     if (decoded.role === 'TRAINER') {
       if (!decoded.trainerId) {
         decoded.trainerId = await getTrainerId(decoded.id)
@@ -58,9 +59,9 @@ async function getAuthenticatedUser() {
   }
 }
 
-async function getExpenseWithRelations(expenseId: string) {
-  return prisma.expense.findUnique({
-    where: { id: expenseId },
+async function getHorseNote(noteId: string) {
+  return prisma.horseNote.findUnique({
+    where: { id: noteId },
     include: {
       horse: {
         include: {
@@ -71,13 +72,13 @@ async function getExpenseWithRelations(expenseId: string) {
   })
 }
 
-function canModifyExpense(decoded: DecodedToken, expense: any) {
+function canModifyNote(decoded: DecodedToken, note: any) {
   if (decoded.role === 'ADMIN') return true
   if (decoded.role === 'OWNER') {
-    return expense.horse.stablemate.ownerId === decoded.ownerId
+    return note.horse.stablemate.ownerId === decoded.ownerId
   }
   if (decoded.role === 'TRAINER') {
-    return expense.horse.trainerId === decoded.trainerId
+    return note.horse.trainerId === decoded.trainerId
   }
   return false
 }
@@ -95,28 +96,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const expense = await getExpenseWithRelations(params.id)
+    const note = await getHorseNote(params.id)
 
-    if (!expense) {
+    if (!note) {
       return NextResponse.json(
-        { error: 'Expense not found' },
+        { error: 'Note not found' },
         { status: 404 }
       )
     }
 
-    if (!canModifyExpense(decoded, expense)) {
+    if (!canModifyNote(decoded, note)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    await prisma.expense.delete({
-      where: { id: params.id },
-    })
+    await prisma.horseNote.delete({ where: { id: params.id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Delete expense error:', error)
+    console.error('Delete note error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete expense' },
+      { error: 'Failed to delete note' },
       { status: 500 }
     )
   }
@@ -135,16 +134,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const expense = await getExpenseWithRelations(params.id)
+    const note = await getHorseNote(params.id)
 
-    if (!expense) {
+    if (!note) {
       return NextResponse.json(
-        { error: 'Expense not found' },
+        { error: 'Note not found' },
         { status: 404 }
       )
     }
 
-    if (!canModifyExpense(decoded, expense)) {
+    if (!canModifyNote(decoded, note)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -153,41 +152,12 @@ export async function PATCH(
 
     const date = formData.get('date') as string | null
     if (date) {
-      const selectedDate = new Date(date)
-      const now = new Date()
-      updateData.date = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate(),
-        now.getHours(),
-        now.getMinutes(),
-        now.getSeconds()
-      )
+      updateData.date = new Date(date)
     }
 
-    const category = formData.get('category') as string | null
-    if (category) {
-      updateData.category = category
-    }
-
-    const customName = formData.get('customName') as string | null
-    if (customName !== null) {
-      updateData.customName = customName || null
-    }
-
-    const amount = formData.get('amount') as string | null
-    if (amount) {
-      updateData.amount = parseFloat(amount)
-    }
-
-    const currency = formData.get('currency') as string | null
-    if (currency) {
-      updateData.currency = currency
-    }
-
-    const note = formData.get('notes') as string | null
-    if (note !== null) {
-      updateData.note = note || null
+    const noteText = formData.get('note') as string | null
+    if (noteText !== null) {
+      updateData.note = noteText.trim()
     }
 
     const photos = formData.getAll('photos') as File[]
@@ -206,23 +176,24 @@ export async function PATCH(
       }
     }
 
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: 'No fields to update' },
-        { status: 400 }
-      )
-    }
-
-    const updatedExpense = await prisma.expense.update({
+    const updatedNote = await prisma.horseNote.update({
       where: { id: params.id },
       data: updateData,
+      include: {
+        addedBy: {
+          select: {
+            email: true,
+            role: true,
+          },
+        },
+      },
     })
 
-    return NextResponse.json({ success: true, expense: updatedExpense })
+    return NextResponse.json({ success: true, note: updatedNote })
   } catch (error) {
-    console.error('Update expense error:', error)
+    console.error('Update note error:', error)
     return NextResponse.json(
-      { error: 'Failed to update expense' },
+      { error: 'Failed to update note' },
       { status: 500 }
     )
   }

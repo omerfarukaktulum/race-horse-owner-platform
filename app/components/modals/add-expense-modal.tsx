@@ -18,19 +18,46 @@ interface Horse {
   selected: boolean
 }
 
+type AddExpenseMode = 'create' | 'edit'
+
+interface InitialExpenseValues {
+  date: string
+  category: string
+  amount: number | string
+  currency?: string
+  note?: string | null
+  customName?: string | null
+  photoUrl?: string | string[] | null
+}
+
 interface AddExpenseModalProps {
   open: boolean
   onClose: () => void
   preselectedHorseId?: string
   preselectedHorseName?: string
   onSuccess?: () => void
+  mode?: AddExpenseMode
+  expenseId?: string
+  initialExpense?: InitialExpenseValues
+  submitLabel?: string
 }
 
-export function AddExpenseModal({ open, onClose, preselectedHorseId, preselectedHorseName, onSuccess }: AddExpenseModalProps) {
+export function AddExpenseModal({
+  open,
+  onClose,
+  preselectedHorseId,
+  preselectedHorseName,
+  onSuccess,
+  mode = 'create',
+  expenseId,
+  initialExpense,
+  submitLabel,
+}: AddExpenseModalProps) {
   const [horses, setHorses] = useState<Horse[]>([])
   const [isLoadingHorses, setIsLoadingHorses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSingleHorseMode = !!preselectedHorseId && !!preselectedHorseName
+  const isEditMode = mode === 'edit'
 
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -44,7 +71,6 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
   useEffect(() => {
     if (open) {
       if (isSingleHorseMode) {
-        // For single horse mode, just set the horse directly
         setHorses([{
           id: preselectedHorseId!,
           name: preselectedHorseName!,
@@ -55,16 +81,48 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
       } else {
         fetchHorses()
       }
-      // Reset form
-      setDate(new Date().toISOString().split('T')[0])
-      setCategory('')
-      setCustomCategory('')
-      setAmount('')
-      setNotes('')
-      setPhotos([])
-      setPhotoPreviews([])
+
+      if (mode === 'edit' && initialExpense) {
+        const formattedDate = initialExpense.date
+          ? new Date(initialExpense.date).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0]
+        setDate(formattedDate)
+        setCategory(initialExpense.category || '')
+        setCustomCategory(initialExpense.customName || '')
+        setAmount(initialExpense.amount?.toString() || '')
+        setNotes(initialExpense.note || '')
+        const initialPhotos =
+          typeof initialExpense.photoUrl === 'string'
+            ? (() => {
+                const trimmed = initialExpense.photoUrl.trim()
+                if (trimmed.startsWith('[')) {
+                  try {
+                    const parsed = JSON.parse(trimmed)
+                    if (Array.isArray(parsed)) {
+                      return parsed.filter(Boolean) as string[]
+                    }
+                  } catch {
+                    // ignore parse error
+                  }
+                }
+                return trimmed ? [trimmed] : []
+              })()
+            : Array.isArray(initialExpense.photoUrl)
+              ? initialExpense.photoUrl.filter(Boolean)
+              : []
+        setPhotoPreviews(initialPhotos as string[])
+        setPhotos([])
+      } else {
+        setDate(new Date().toISOString().split('T')[0])
+        setCategory('')
+        setCustomCategory('')
+        setAmount('')
+        setNotes('')
+        setPhotos([])
+        setPhotoPreviews([])
+      }
     }
-  }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode])
+  }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode, mode, initialExpense])
 
   const fetchHorses = async () => {
     try {
@@ -142,14 +200,13 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const selectedHorses = horses.filter((h) => h.selected)
-    if (selectedHorses.length === 0) {
-      toast.error('Lütfen en az bir at seçin')
+    if (!category) {
+      toast.error('Lütfen bir kategori seçin')
       return
     }
 
-    if (!category) {
-      toast.error('Lütfen bir kategori seçin')
+    if (category === 'OZEL' && !customCategory) {
+      toast.error('Lütfen özel kategori adı girin')
       return
     }
 
@@ -158,38 +215,85 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
       return
     }
 
+    if (!date) {
+      toast.error('Lütfen geçerli bir tarih seçin')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      const formData = new FormData()
-      formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
-      formData.append('date', date)
-      formData.append('category', category)
-      if (category === 'OZEL' && customCategory) {
-        formData.append('customName', customCategory)
+      if (isEditMode) {
+        if (!expenseId) {
+          throw new Error('Gider bulunamadı')
+        }
+
+        const formData = new FormData()
+        formData.append('date', date)
+        formData.append('category', category)
+        if (category === 'OZEL' && customCategory) {
+          formData.append('customName', customCategory)
+        }
+        formData.append('amount', amount)
+        formData.append('currency', 'TRY')
+        formData.append('notes', notes)
+        photos.forEach((photo) => {
+          formData.append('photos', photo)
+        })
+
+        const response = await fetch(`/api/expenses/${expenseId}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          body: formData,
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Gider güncellenemedi')
+        }
+
+        toast.success('Gider başarıyla kaydedildi')
+        onSuccess?.()
+        onClose()
+      } else {
+        const selectedHorses = horses.filter((h) => h.selected)
+        if (selectedHorses.length === 0) {
+          toast.error('Lütfen en az bir at seçin')
+          setIsSubmitting(false)
+          return
+        }
+
+        const formData = new FormData()
+        formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
+        formData.append('date', date)
+        formData.append('category', category)
+        if (category === 'OZEL' && customCategory) {
+          formData.append('customName', customCategory)
+        }
+        formData.append('amount', amount)
+        formData.append('currency', 'TRY')
+        formData.append('notes', notes)
+        photos.forEach((photo) => {
+          formData.append('photos', photo)
+        })
+
+        const response = await fetch('/api/expenses', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Gider eklenemedi')
+        }
+
+        toast.success('Gider başarıyla eklendi')
+        onSuccess?.()
+        onClose()
       }
-      formData.append('amount', amount)
-      formData.append('currency', 'TRY')
-      formData.append('notes', notes)
-      photos.forEach((photo) => {
-        formData.append('photos', photo)
-      })
-
-      const response = await fetch('/api/expenses', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Gider eklenemedi')
-      }
-
-      toast.success('Gider başarıyla eklendi')
-      onSuccess?.()
-      onClose()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
@@ -419,7 +523,9 @@ export function AddExpenseModal({ open, onClose, preselectedHorseId, preselected
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {isSubmitting ? TR.common.loading : TR.expenses.addExpense}
+                  {isSubmitting
+                    ? TR.common.loading
+                    : submitLabel || (isEditMode ? 'Gider Kaydet' : TR.expenses.addExpense)}
                 </Button>
               </div>
             </div>
