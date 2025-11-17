@@ -69,9 +69,6 @@ export function PedigreeTree({ horse }: Props) {
     <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
       <CardContent className="p-6">
         <div className="overflow-x-auto">
-          <div className="mb-4 text-center">
-            <h3 className="text-lg font-semibold text-gray-800">{horse.name}</h3>
-          </div>
           <table 
             id="pedigri"
             className="border-collapse"

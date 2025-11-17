@@ -321,16 +321,11 @@ export default function HorseDetailPage() {
           >
             İstatistikler
           </TabsTrigger>
-          <TabsTrigger 
-            value="pedigree"
-            className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-          >
-            Pedigri
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="info" className="mt-6">
+        <TabsContent value="info" className="mt-6 space-y-6">
           <HorseMetadataCard horse={horseMetadata} />
+          <PedigreeTree horse={pedigreeData} />
         </TabsContent>
 
         <TabsContent value="races" className="mt-6">
@@ -346,10 +341,6 @@ export default function HorseDetailPage() {
             races={horse.raceHistory || []} 
             expenses={expensesData}
           />
-        </TabsContent>
-
-        <TabsContent value="pedigree" className="mt-6">
-          <PedigreeTree horse={pedigreeData} />
         </TabsContent>
       </Tabs>
 
