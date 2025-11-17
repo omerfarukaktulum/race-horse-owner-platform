@@ -279,8 +279,8 @@ export default function HorseDetailPage() {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <TabsList className="inline-flex flex-wrap items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5 flex-grow">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5">
             <TabsTrigger 
               value="info"
               className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
@@ -312,7 +312,7 @@ export default function HorseDetailPage() {
               İstatistikler
             </TabsTrigger>
           </TabsList>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             <Button 
               onClick={() => setIsNoteModalOpen(true)}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
