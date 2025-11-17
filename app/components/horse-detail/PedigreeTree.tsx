@@ -50,7 +50,7 @@ export function PedigreeTree({ horse }: Props) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
       <CardContent className="p-6">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto flex justify-center">
           <table
             className="border-collapse"
             style={{ width: '940px', border: '1px solid black' }}
