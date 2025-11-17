@@ -40,7 +40,7 @@ export function PedigreeTree({ horse }: Props) {
   }
 
   const cellStyle = (isSire: boolean) => ({
-    backgroundColor: isSire ? '#e0e7ff' : '#eef2ff',
+    backgroundColor: isSire ? '#e0e7ff' : '#ffffff',
     fontSize: '15px',
     border: '1px solid black',
     textAlign: 'center' as const,
@@ -50,7 +50,7 @@ export function PedigreeTree({ horse }: Props) {
   return (
     <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
       <CardContent className="p-6">
-        <div className="overflow-x-auto flex justify-center">
+        <div className="overflow-x-auto">
           <table
             className="border-collapse"
             style={{ width: '940px', border: '1px solid black' }}
