@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Filter, Pencil, Trash2, Eye, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -322,7 +322,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Ekleyen
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         İşlem
                       </th>
                     </tr>
@@ -359,7 +359,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                               <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex justify-end gap-2">
+                              <div className="flex justify-start gap-2">
                                 {attachments.length > 0 && (
                                   <button
                                     type="button"
@@ -367,7 +367,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                     className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
                                     title={`${attachments.length} ek görüntüle`}
                                   >
-                                    <Eye className="h-4 w-4" />
+                                    <Paperclip className="h-4 w-4" />
                                   </button>
                                 )}
                                 <button

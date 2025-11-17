@@ -187,7 +187,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
     return data.map((item, index) => ({
       name: item.name,
       value: item.value,
-      color: COLORS[index % COLORS.length],
+      color: item.color || COLORS[index % COLORS.length],
       percent: (item.value / total) * 100,
     }))
   }
@@ -291,7 +291,7 @@ export function StatisticsCharts({ races, expenses }: Props) {
                       dataKey="value"
                     >
                       {surfaceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />

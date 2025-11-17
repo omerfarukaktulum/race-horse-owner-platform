@@ -50,18 +50,18 @@ export function RaceHistoryTable({ races }: Props) {
     return new Date(b.raceDate).getTime() - new Date(a.raceDate).getTime()
   })
   
-  // Get surface color
+  // Get surface color using official colors
   const getSurfaceColor = (surface?: string) => {
-    if (!surface) return 'bg-gray-100 text-gray-800'
+    if (!surface) return { backgroundColor: '#f3f4f6', color: '#374151' }
     
     if (surface.startsWith('Ç:') || surface === 'Ç' || surface === 'Çim') {
-      return 'bg-green-100 text-green-800'
+      return { backgroundColor: '#009900', color: '#ffffff' } // Official Çim color
     } else if (surface.startsWith('K:') || surface === 'K' || surface === 'Kum') {
-      return 'bg-orange-100 text-orange-800'
+      return { backgroundColor: '#996633', color: '#ffffff' } // Official Kum color
     } else if (surface.startsWith('S:') || surface === 'S' || surface.toLowerCase().includes('sentetik')) {
-      return 'bg-[#d39b1e] text-white'
+      return { backgroundColor: '#d39b1e', color: '#ffffff' } // Official Sentetik color
     }
-    return 'bg-gray-100 text-gray-800'
+    return { backgroundColor: '#f3f4f6', color: '#374151' }
   }
   
   // Format surface display
@@ -192,7 +192,10 @@ export function RaceHistoryTable({ races }: Props) {
                       {/* Surface */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         {race.surface && (
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(race.surface)}`}>
+                          <span 
+                            className="px-2 py-1 rounded-full text-xs font-semibold"
+                            style={getSurfaceColor(race.surface)}
+                          >
                             {formatSurface(race.surface)}
                           </span>
                         )}

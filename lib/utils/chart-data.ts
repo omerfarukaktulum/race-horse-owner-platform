@@ -97,12 +97,12 @@ export function getDistanceDistribution(races: RaceHistory[], topN: number = 5):
 export function getSurfaceDistribution(races: RaceHistory[]): ChartDataPoint[] {
   const surfaceCount: Record<string, number> = {}
   const surfaceColors: Record<string, string> = {
-    'Çim': '#10b981', // Green
-    'Kum': '#d97706', // Brown/Orange
-    'Sentetik': '#6b7280', // Gray
-    'S': '#6b7280', // Gray (alternative notation)
-    'Ç': '#10b981', // Green (alternative notation)
-    'K': '#d97706', // Brown (alternative notation)
+    'Çim': '#009900', // Official green color
+    'Kum': '#996633', // Official brown color
+    'Sentetik': '#d39b1e', // Official gold/yellow color
+    'S': '#d39b1e', // Gold/Yellow (alternative notation)
+    'Ç': '#009900', // Green (alternative notation)
+    'K': '#996633', // Brown (alternative notation)
   }
   
   races.forEach((race) => {
