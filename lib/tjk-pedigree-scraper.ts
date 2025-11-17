@@ -93,12 +93,11 @@ export async function fetchTJKPedigree(
       
       const cleanName = (rawText?: string) => {
         if (!rawText) return undefined
-        let cleanedName = rawText.trim()
-        cleanedName = cleanedName.replace(/\s*\(\d{4}\)\s*$/, '')
-        cleanedName = cleanedName.replace(/\s+[dkae]\s+[dkae]?\s*$/, '')
-        cleanedName = cleanedName.replace(/\s+[dkae]\s*$/, '')
-        cleanedName = cleanedName.trim()
-        return cleanedName || undefined
+        const normalized = rawText
+          .replace(/\u00a0/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        return normalized || undefined
       }
       
       const pedigreeTable = document.querySelector('#pedigri')
