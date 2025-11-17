@@ -315,14 +315,14 @@ export default function HorseDetailPage() {
           <div className="flex items-center gap-2 ml-auto">
             <Button 
               onClick={() => setIsNoteModalOpen(true)}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <FileText className="h-4 w-4 mr-2" />
               Not Ekle
             </Button>
             <Button 
               onClick={() => setIsLocationModalOpen(true)}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <MapPin className="h-4 w-4 mr-2" />
               Konum Değiştir
