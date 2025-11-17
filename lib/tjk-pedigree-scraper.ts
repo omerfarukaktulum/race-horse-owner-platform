@@ -91,237 +91,69 @@ export async function fetchTJKPedigree(
       console.log('[Browser] [Pedigree] Starting pedigree extraction in browser context...')
       const result: any = {}
       
-      // Debug: Log all tables on the page
-      const allTables = document.querySelectorAll('table')
-      console.log(`[Browser] [Pedigree] Found ${allTables.length} tables on page`)
-      allTables.forEach((table, idx) => {
-        const id = table.id || 'no-id'
-        const classes = table.className || 'no-class'
-        const rows = table.querySelectorAll('tr').length
-        console.log(`[Browser] [Pedigree] Table ${idx}: id="${id}", class="${classes}", rows=${rows}`)
-      })
+      const cleanName = (rawText?: string) => {
+        if (!rawText) return undefined
+        let cleanedName = rawText.trim()
+        cleanedName = cleanedName.replace(/\s*\(\d{4}\)\s*$/, '')
+        cleanedName = cleanedName.replace(/\s+[dkae]\s+[dkae]?\s*$/, '')
+        cleanedName = cleanedName.replace(/\s+[dkae]\s*$/, '')
+        cleanedName = cleanedName.trim()
+        return cleanedName || undefined
+      }
       
-      // Debug: Check for any element with "pedigri" in id or class
-      const pedigreeElements = document.querySelectorAll('[id*="pedigri"], [id*="Pedigri"], [class*="pedigri"], [class*="Pedigri"]')
-      console.log(`[Browser] [Pedigree] Found ${pedigreeElements.length} elements with "pedigri" in id/class`)
-      pedigreeElements.forEach((el, idx) => {
-        if (idx < 5) {
-          console.log(`[Browser] [Pedigree] Element ${idx}: tag=${el.tagName}, id="${el.id}", class="${el.className}"`)
-        }
-      })
-      
-      // First, check if #pedigri exists (correct table ID)
       const pedigreeTable = document.querySelector('#pedigri')
       console.log('[Browser] [Pedigree] #pedigri found:', !!pedigreeTable)
       
-      if (pedigreeTable) {
-        console.log('[Browser] [Pedigree] #pedigri HTML preview:', pedigreeTable.outerHTML.substring(0, 500))
+      if (!pedigreeTable) {
+        console.log('[Browser] [Pedigree] ✗ Pedigree table not found')
+        return result
       }
       
-      if (pedigreeTable) {
-        const rows = pedigreeTable.querySelectorAll('tbody tr, tr')
-        console.log('[Browser] [Pedigree] Found', rows.length, 'rows in #pedigri')
-        
-        // Log first few rows for debugging
-        rows.forEach((row, idx) => {
-          if (idx < 5) {
-            const cells = row.querySelectorAll('td')
-            const cellTexts = Array.from(cells).map(c => {
-              const link = c.querySelector('a')
-              return link ? link.textContent?.trim() : c.textContent?.trim()
-            }).filter(Boolean)
-            console.log(`[Browser] [Pedigree] Row ${idx}:`, cellTexts.slice(0, 5))
-          }
-        })
-      }
+      const rows = Array.from(pedigreeTable.querySelectorAll('tbody tr'))
+      console.log('[Browser] [Pedigree] Found', rows.length, 'rows in #pedigri')
       
-      const extractName = (selector: string, description: string) => {
-        const element = document.querySelector(selector)
-        if (element) {
-          const link = element.querySelector('a')
-          let rawText = ''
-          
-          if (link) {
-            rawText = link.textContent?.trim() || ''
-          } else {
-            rawText = element.textContent?.trim() || ''
-          }
-          
-          if (rawText) {
-            // Clean up the text: format is "NAME (COUNTRY) gender codes (YEAR)"
-            // We want to extract just "NAME (COUNTRY)" or "NAME"
-            // Remove gender codes (d, k, a, e, etc.) and year at the end
-            // Pattern: text like "AUTHORIZED (IRE) d  a (2004)" -> "AUTHORIZED (IRE)"
-            let cleanedName = rawText
-            
-            // Remove year in parentheses at the end: (2004)
-            cleanedName = cleanedName.replace(/\s*\(\d{4}\)\s*$/, '')
-            
-            // Remove gender codes (single letters like d, k, a, e, etc. with spaces)
-            // These appear after the country code
-            cleanedName = cleanedName.replace(/\s+[dkae]\s+[dkae]?\s*$/, '')
-            cleanedName = cleanedName.replace(/\s+[dkae]\s*$/, '')
-            
-            // Trim any remaining whitespace
-            cleanedName = cleanedName.trim()
-            
-            if (cleanedName) {
-              console.log(`[Browser] [Pedigree] ✓ Found ${description}: "${cleanedName}" (from: "${rawText}")`)
-              return cleanedName
-            }
-          }
+      const getCellName = (rowIndex: number, cellIndex: number, description: string) => {
+        const row = rows[rowIndex]
+        if (!row) {
+          console.log(`[Browser] [Pedigree] ✗ Row ${rowIndex} not found for ${description}`)
+          return undefined
+        }
+        const cells = row.querySelectorAll('td')
+        const cell = cells[cellIndex]
+        if (!cell) {
+          console.log(`[Browser] [Pedigree] ✗ Cell ${cellIndex} not found in row ${rowIndex} for ${description}`)
+          return undefined
+        }
+        const rawText = cell.textContent?.trim()
+        const cleaned = cleanName(rawText)
+        if (cleaned) {
+          console.log(`[Browser] [Pedigree] ✓ Found ${description}: "${cleaned}" (from: "${rawText}")`)
         } else {
-          console.log(`[Browser] [Pedigree] ✗ Not found: ${description} (selector: ${selector})`)
+          console.log(`[Browser] [Pedigree] ✗ Unable to clean ${description}: raw="${rawText}"`)
         }
-        return undefined
+        return cleaned
       }
       
-      // Generation 2 (Sire, Dam) - Row 1 and Row 5, first column
-      // Row 1 (index 0): AUTHORIZED (IRE) - Sire
-      // Row 5 (index 4): CHANTALLE RUA - Dam
-      result.sireName = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(1)', 'Sire')
-      result.damName = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(1)', 'Dam')
+      // Map rows/cells to pedigree fields based on known structure
+      result.sireName = getCellName(0, 0, 'Sire')
+      result.sireSire = getCellName(0, 1, 'SireSire')
+      result.sireSireSire = getCellName(0, 2, 'SireSireSire')
+      result.sireSireDam = getCellName(1, 0, 'SireSireDam')
+      result.sireDam = getCellName(2, 0, 'SireDam')
+      result.sireDamSire = getCellName(2, 1, 'SireDamSire')
+      result.sireDamDam = getCellName(3, 0, 'SireDamDam')
+      result.damName = getCellName(4, 0, 'Dam')
+      result.damSire = getCellName(4, 1, 'DamSire')
+      result.damSireSire = getCellName(4, 2, 'DamSireSire')
+      result.damSireDam = getCellName(5, 0, 'DamSireDam')
+      result.damDam = getCellName(6, 0, 'DamDam')
+      result.damDamSire = getCellName(6, 1, 'DamDamSire')
+      result.damDamDam = getCellName(7, 0, 'DamDamDam')
       
-      // Generation 3 (Grandparents) - Various rows, second column
-      // Row 1: MONTJEU (IRE) - SireSire
-      // Row 3: FUNSIE (FR) - SireDam
-      // Row 5: MOUNTAIN CAT (USA) - DamSire
-      // Row 7: GREENEST HILLS (FR) - DamDam
-      result.sireSire = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(2)', 'SireSire')
-      result.sireDam = extractName('#pedigri > tbody > tr:nth-child(3) > td:nth-child(2)', 'SireDam')
-      result.damSire = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(2)', 'DamSire')
-      result.damDam = extractName('#pedigri > tbody > tr:nth-child(7) > td:nth-child(2)', 'DamDam')
-      
-      // Generation 4 (Great-grandparents) - Various rows, third column
-      // Row 1: SADLER'S WELLS (USA) - SireSireSire
-      // Row 2: FLORIPEDES (FR) - SireSireDam
-      // Row 3: SAUMAREZ (GB) - SireDamSire
-      // Row 4: VALLEE DANSANTE (USA) - SireDamDam
-      // Row 5: STORM CAT (USA) - DamSireSire
-      // Row 6: ALWAYS MINT (CAN) - DamSireDam
-      // Row 7: DANEHILL (USA) - DamDamSire
-      // Row 8: ALYMATRICE (USA) - DamDamDam
-      result.sireSireSire = extractName('#pedigri > tbody > tr:nth-child(1) > td:nth-child(3)', 'SireSireSire')
-      result.sireSireDam = extractName('#pedigri > tbody > tr:nth-child(2) > td:nth-child(3)', 'SireSireDam')
-      result.sireDamSire = extractName('#pedigri > tbody > tr:nth-child(3) > td:nth-child(3)', 'SireDamSire')
-      result.sireDamDam = extractName('#pedigri > tbody > tr:nth-child(4) > td:nth-child(3)', 'SireDamDam')
-      result.damSireSire = extractName('#pedigri > tbody > tr:nth-child(5) > td:nth-child(3)', 'DamSireSire')
-      result.damSireDam = extractName('#pedigri > tbody > tr:nth-child(6) > td:nth-child(3)', 'DamSireDam')
-      result.damDamSire = extractName('#pedigri > tbody > tr:nth-child(7) > td:nth-child(3)', 'DamDamSire')
-      result.damDamDam = extractName('#pedigri > tbody > tr:nth-child(8) > td:nth-child(3)', 'DamDamDam')
-      
-      // Fallback: Try to extract from all links in the table if specific selectors fail
-      if (pedigreeTable && (!result.sireSire && !result.sireDam && !result.damSire && !result.damDam)) {
-        console.log('[Browser] [Pedigree] Trying fallback: extract all links from table')
-        const allLinks = pedigreeTable.querySelectorAll('a[href*="AtId"], a[href*="Atkodu"]')
-        console.log('[Browser] [Pedigree] Found', allLinks.length, 'horse links in table')
-        
-        const horseNames: string[] = []
-        allLinks.forEach((link, idx) => {
-          const name = link.textContent?.trim()
-          if (name && name.length > 2 && !name.includes('http') && !name.includes('.')) {
-            horseNames.push(name)
-            if (idx < 15) {
-              console.log(`[Browser] [Pedigree] Link ${idx}:`, name)
-            }
-          }
-        })
-        
-        // Map names to pedigree positions (assuming order: horse, sire, dam, sireSire, sireDam, damSire, damDam, ...)
-        if (horseNames.length >= 3) {
-          if (!result.sireName) result.sireName = horseNames[1]
-          if (!result.damName) result.damName = horseNames[2]
-        }
-        if (horseNames.length >= 7) {
-          if (!result.sireSire) result.sireSire = horseNames[3]
-          if (!result.sireDam) result.sireDam = horseNames[4]
-          if (!result.damSire) result.damSire = horseNames[5]
-          if (!result.damDam) result.damDam = horseNames[6]
-        }
-        if (horseNames.length >= 15) {
-          if (!result.sireSireSire) result.sireSireSire = horseNames[7]
-          if (!result.sireSireDam) result.sireSireDam = horseNames[8]
-          if (!result.sireDamSire) result.sireDamSire = horseNames[9]
-          if (!result.sireDamDam) result.sireDamDam = horseNames[10]
-          if (!result.damSireSire) result.damSireSire = horseNames[11]
-          if (!result.damSireDam) result.damSireDam = horseNames[12]
-          if (!result.damDamSire) result.damDamSire = horseNames[13]
-          if (!result.damDamDam) result.damDamDam = horseNames[14]
-        }
-      }
-      
-      // Final fallback: Try alternative table structure if #pedigri not found or extraction failed
-      if (!result.sireName && !result.damName) {
-        const allTables = document.querySelectorAll('table')
-        console.log('[Browser] [Pedigree] #pedigri not found or extraction failed, trying', allTables.length, 'tables')
-        
-        for (const table of allTables) {
-          const rows = table.querySelectorAll('tbody tr, tr')
-          console.log(`[Browser] [Pedigree] Checking table with ${rows.length} rows`)
-          
-          if (rows.length >= 2) {
-            // Log first few rows for debugging
-            rows.forEach((row, idx) => {
-              if (idx < 5) {
-                const cells = row.querySelectorAll('td, th')
-                const cellTexts = Array.from(cells).map(c => {
-                  const link = c.querySelector('a')
-                  return link ? link.textContent?.trim() : c.textContent?.trim()
-                }).filter(Boolean).slice(0, 5)
-                console.log(`[Browser] [Pedigree] Table row ${idx}:`, cellTexts)
-              }
-            })
-            
-            // Try to extract from first two rows
-            const firstRowCells = rows[0].querySelectorAll('td')
-            const secondRowCells = rows[1].querySelectorAll('td')
-            
-            console.log(`[Browser] [Pedigree] First row has ${firstRowCells.length} cells, second row has ${secondRowCells.length} cells`)
-            
-            if (firstRowCells.length >= 2) {
-              const sireLink = firstRowCells[1].querySelector('a')
-              if (sireLink) {
-                result.sireName = sireLink.textContent?.trim() || undefined
-                console.log('[Browser] [Pedigree] Found Sire in fallback table:', result.sireName)
-              }
-            }
-            
-            if (secondRowCells.length >= 2) {
-              const damLink = secondRowCells[1].querySelector('a')
-              if (damLink) {
-                result.damName = damLink.textContent?.trim() || undefined
-                console.log('[Browser] [Pedigree] Found Dam in fallback table:', result.damName)
-              }
-            }
-            
-            // Also try to find all links with horse names (links that go to AtKosuBilgileri or similar)
-            const allHorseLinks = table.querySelectorAll('a[href*="AtId"], a[href*="Atkodu"], a[href*="AtKosuBilgileri"]')
-            console.log(`[Browser] [Pedigree] Found ${allHorseLinks.length} horse links in this table`)
-            
-            if (allHorseLinks.length >= 2 && !result.sireName && !result.damName) {
-              // Try to extract from links
-              const linkTexts = Array.from(allHorseLinks).map(link => link.textContent?.trim()).filter(Boolean)
-              console.log(`[Browser] [Pedigree] Horse link texts:`, linkTexts.slice(0, 10))
-              
-              // Usually first link is the horse itself, second is sire, third is dam
-              if (linkTexts.length >= 3) {
-                result.sireName = linkTexts[1]
-                result.damName = linkTexts[2]
-                console.log('[Browser] [Pedigree] Extracted from links - Sire:', result.sireName, 'Dam:', result.damName)
-              }
-            }
-            
-            if (result.sireName || result.damName) {
-              console.log('[Browser] [Pedigree] Found pedigree data in fallback table')
-              break
-            }
-          }
-        }
-      }
-      
-      const gen4Count = [result.sireSireSire, result.sireSireDam, result.sireDamSire, result.sireDamDam, 
-                        result.damSireSire, result.damSireDam, result.damDamSire, result.damDamDam]
-                        .filter(Boolean).length
+      const gen4Count = [
+        result.sireSireSire, result.sireSireDam, result.sireDamSire, result.sireDamDam,
+        result.damSireSire, result.damSireDam, result.damDamSire, result.damDamDam,
+      ].filter(Boolean).length
       
       console.log('[Browser] [Pedigree] Final extracted pedigree:', {
         sire: result.sireName,
@@ -330,7 +162,7 @@ export async function fetchTJKPedigree(
         sireDam: result.sireDam,
         damSire: result.damSire,
         damDam: result.damDam,
-        gen4Count: gen4Count
+        gen4Count,
       })
       
       return result
