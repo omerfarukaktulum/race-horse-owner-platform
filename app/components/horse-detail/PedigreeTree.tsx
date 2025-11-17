@@ -40,7 +40,7 @@ export function PedigreeTree({ horse }: Props) {
   }
 
   const cellStyle = (isSire: boolean) => ({
-    backgroundColor: isSire ? '#dbdbdb' : '#ffffff',
+    backgroundColor: isSire ? '#e0e7ff' : '#eef2ff',
     fontSize: '15px',
     border: '1px solid black',
     textAlign: 'center' as const,
