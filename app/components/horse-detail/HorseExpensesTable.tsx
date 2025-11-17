@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatCurrency, formatDateShort } from '@/lib/utils/format'
@@ -35,6 +36,10 @@ interface Props {
   onRefresh?: () => void
   hideButtons?: boolean
   onFilterTriggerReady?: (trigger: () => void) => void
+  showFilterDropdown?: boolean
+  onFilterDropdownChange?: (show: boolean) => void
+  filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  searchQuery?: string
 }
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -65,10 +70,26 @@ const getAttachments = (input?: string | string[] | null) => {
   return []
 }
 
-export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady }: Props) {
+export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, searchQuery: externalSearchQuery }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [addedByFilters, setAddedByFilters] = useState<string[]>([])
+  const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
+  const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const filterDropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownContentRef = useRef<HTMLDivElement>(null)
+  
+  // Use external search query when hideButtons is true, otherwise use internal state
+  const searchQuery = hideButtons ? (externalSearchQuery || '') : internalSearchQuery
+  
+  // Use external control when hideButtons is true, otherwise use internal state
+  const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
+  const setShowFilterDropdown = hideButtons 
+    ? (value: boolean | ((prev: boolean) => boolean)) => {
+        const newValue = typeof value === 'function' ? value(showFilterDropdown) : value
+        onFilterDropdownChange?.(newValue)
+      }
+    : setInternalShowFilterDropdown
   
   // Expose filter trigger to parent
   useEffect(() => {
@@ -77,7 +98,7 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
         setShowFilterDropdown(prev => !prev)
       })
     }
-  }, [onFilterTriggerReady])
+  }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
   const hasExpenses = (expenses?.length || 0) > 0
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -171,17 +192,31 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
     if (!showFilterDropdown) return
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node
+      
+      // Check if click is inside the dropdown content itself
+      const isInsideDropdownContent = dropdownContentRef.current?.contains(target)
+      
+      // Check if click is inside the dropdown container (when not using portal)
+      const isInsideDropdown = filterDropdownRef.current?.contains(target)
+      
+      // Check if click is inside the portal container (when using portal)
+      const isInsidePortal = filterDropdownContainerRef?.current?.contains(target)
+      
+      // Check if click is on the filter button itself
+      const clickedElement = event.target as HTMLElement
+      const isFilterButton = clickedElement?.closest('button')?.textContent?.includes('Filtrele') || 
+                            clickedElement?.closest('[class*="Filtrele"]')
+      
+      // Only close if click is outside all dropdown areas and not on the button
+      if (!isInsideDropdownContent && !isInsideDropdown && !isInsidePortal && !isFilterButton) {
         setShowFilterDropdown(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, filterDropdownContainerRef])
 
   const sortedExpenses = useMemo(() => {
     return [...(expenses || [])].sort((a, b) => {
@@ -200,44 +235,7 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
     return 0
   }
 
-  const filteredExpenses = useMemo(() => {
-    if (!selectedRange) return sortedExpenses
-
-    const now = new Date()
-    let startDate: Date | null = null
-
-    switch (selectedRange) {
-      case 'lastWeek':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case 'lastMonth':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 1)
-        break
-      case 'last3Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 3)
-        break
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      default:
-        startDate = null
-    }
-
-    if (!startDate) return sortedExpenses
-
-    return sortedExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date)
-      return expenseDate >= startDate
-    })
-  }, [selectedRange, sortedExpenses])
-
-  const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
-  const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
-
-  const getCategoryLabel = (expense: Expense) => {
+  const getCategoryLabel = useCallback((expense: Expense) => {
     if (expense.customName && expense.customName.trim().length > 0) {
       return expense.customName
     }
@@ -248,12 +246,150 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
       ]
 
     return translation || expense.category
+  }, [])
+
+  const filteredExpenses = useMemo(() => {
+    let filtered = sortedExpenses
+
+    // Apply date range filter
+    if (selectedRange) {
+      const now = new Date()
+      let startDate: Date | null = null
+
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(expense => {
+          const expenseDate = new Date(expense.date)
+          return expenseDate >= startDate!
+        })
+      }
+    }
+
+    // Apply category filter
+    if (categoryFilters.length > 0) {
+      filtered = filtered.filter((expense) => {
+        const categoryLabel = getCategoryLabel(expense)
+        return categoryFilters.includes(categoryLabel)
+      })
+    }
+
+    // Apply addedBy filter
+    if (addedByFilters.length > 0) {
+      filtered = filtered.filter((expense) => {
+        const role = expense.addedBy?.role || 'Unknown'
+        return addedByFilters.includes(role)
+      })
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter((expense) => {
+        // Search in horse name
+        if (horseName.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in category
+        const categoryLabel = getCategoryLabel(expense)
+        if (categoryLabel.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in detail (note)
+        if (expense.note && expense.note.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
+    }
+
+    return filtered
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, searchQuery, horseName])
+
+  const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
+  const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
+
+  // Get unique categories
+  const getUniqueCategories = useMemo(() => {
+    const categorySet = new Set<string>()
+    sortedExpenses.forEach((expense) => {
+      const categoryLabel = getCategoryLabel(expense)
+      if (categoryLabel) {
+        categorySet.add(categoryLabel)
+      }
+    })
+    return Array.from(categorySet).sort()
+  }, [sortedExpenses])
+
+  // Get unique addedBy users
+  const getUniqueAddedBy = useMemo(() => {
+    const roleMap: Record<string, string> = {
+      OWNER: 'At Sahibi',
+      TRAINER: 'Trainer',
+      GROOM: 'Groom',
+    }
+    const addedByMap = new Map<string, string>()
+    sortedExpenses.forEach((expense) => {
+      if (expense.addedBy?.role) {
+        const role = expense.addedBy.role
+        if (!addedByMap.has(role)) {
+          addedByMap.set(role, roleMap[role] || role)
+        }
+      }
+    })
+    return Array.from(addedByMap.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }))
+  }, [sortedExpenses])
+
+  // Toggle functions
+  const toggleCategoryFilter = (category: string) => {
+    setCategoryFilters((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    )
   }
+
+  const toggleAddedByFilter = (addedBy: string) => {
+    setAddedByFilters((prev) =>
+      prev.includes(addedBy)
+        ? prev.filter((a) => a !== addedBy)
+        : [...prev, addedBy]
+    )
+  }
+
+  const clearFilters = () => {
+    setSelectedRange(null)
+    setCategoryFilters([])
+    setAddedByFilters([])
+  }
+
+  const hasActiveFilters = !!selectedRange || categoryFilters.length > 0 || addedByFilters.length > 0
 
   const formatAddedBy = (expense: Expense) => {
     if (!expense.addedBy) return '-'
     const roleMap: Record<string, string> = {
-      OWNER: 'Horse Owner',
+      OWNER: 'At Sahibi',
     }
     const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
     return roleLabel
@@ -277,69 +413,142 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
             className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              !!selectedRange
+              hasActiveFilters
                 ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                 : 'border-gray-300 text-gray-700 hover:border-gray-400'
             }`}
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtrele
-            {selectedRange && (
+            {hasActiveFilters && (
               <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                1
+                {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length}
               </span>
             )}
           </Button>
         )}
 
-        {showFilterDropdown && (
-          <div className={`absolute ${hideButtons ? 'fixed' : ''} left-0 top-full mt-2 w-fit min-w-[200px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 text-sm">Filtreler</h3>
-              <button
-                onClick={() => setShowFilterDropdown(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+        {showFilterDropdown && (() => {
+          const dropdownContent = (
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-            <div className="space-y-2">
-              {RANGE_OPTIONS.map(option => {
-                const isActive = selectedRange === option.value
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      const nextValue = isActive ? null : option.value
-                      setSelectedRange(nextValue)
-                      setShowFilterDropdown(false)
-                    }}
-                    className={`w-[140px] text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-[#6366f1] text-white shadow'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map(option => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
-            {selectedRange && (
-              <button
-                onClick={() => {
-                  setSelectedRange(null)
-                  setShowFilterDropdown(false)
-                }}
-                className="mt-4 w-full text-sm text-[#6366f1] font-medium hover:underline"
-              >
-                Filtreyi Temizle
-              </button>
-            )}
-          </div>
-        )}
+              {/* Category Filter */}
+              {getUniqueCategories.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueCategories.map((category) => (
+                      <button
+                        type="button"
+                        key={category}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleCategoryFilter(category)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          categoryFilters.includes(category)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Added By Filter */}
+              {getUniqueAddedBy.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueAddedBy.map((option) => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleAddedByFilter(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          addedByFilters.includes(option.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )
+
+          // Render in parent's container if hideButtons is true and ref is provided
+          if (hideButtons && filterDropdownContainerRef?.current) {
+            return createPortal(dropdownContent, filterDropdownContainerRef.current)
+          }
+
+          return dropdownContent
+        })()}
       </div>
 
       {!hideButtons && (

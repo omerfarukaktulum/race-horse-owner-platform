@@ -1,62 +1,100 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Plus, Trash2, Calendar, TurkishLira, Filter, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { formatCurrency, formatDateShort } from '@/lib/utils/format'
 import { TR } from '@/lib/constants/tr'
-import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
-import { formatCurrency, formatDate } from '@/lib/utils/format'
+import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
+import { toast } from 'sonner'
 
 interface Expense {
   id: string
   date: string
   category: string
-  amount: number
-  notes: string | null
-  photoUrl: string | string[] | null
+  customName?: string
+  amount: number | string
+  currency: string
+  note?: string
+  photoUrl?: string | string[] | null
   horse: {
     id: string
     name: string
   }
   addedBy: {
     email: string
+    role: string
     ownerProfile?: { officialName: string }
     trainerProfile?: { fullName: string }
   }
+}
+
+type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'thisYear'
+
+const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
+  { value: 'lastWeek', label: 'Son 1 Hafta' },
+  { value: 'lastMonth', label: 'Son 1 Ay' },
+  { value: 'last3Months', label: 'Son 3 Ay' },
+  { value: 'thisYear', label: 'Bu Yıl' },
+]
+
+const getAttachments = (input?: string | string[] | null) => {
+  if (!input) return []
+  if (Array.isArray(input)) return input.filter(Boolean)
+  if (typeof input === 'string') {
+    const trimmed = input.trim()
+    if (!trimmed) return []
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return parsed.filter(Boolean)
+        }
+      } catch {
+        // ignore parse error
+      }
+    }
+    return [trimmed]
+  }
+  return []
 }
 
 export default function ExpensesPage() {
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  
-  // Filters
-  const [showFilters, setShowFilters] = useState(false)
-  const [filterCategory, setFilterCategory] = useState('')
-  const [filterStartDate, setFilterStartDate] = useState('')
-  const [filterEndDate, setFilterEndDate] = useState('')
-  const [filterHorseId, setFilterHorseId] = useState('')
+  const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
+  const [categoryFilters, setCategoryFilters] = useState<string[]>([])
+  const [addedByFilters, setAddedByFilters] = useState<string[]>([])
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const filterDropdownRef = useRef<HTMLDivElement>(null)
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [attachmentViewer, setAttachmentViewer] = useState<{
+    open: boolean
+    attachments: string[]
+    currentIndex: number
+  }>({
+    open: false,
+    attachments: [],
+    currentIndex: 0,
+  })
 
   useEffect(() => {
     fetchExpenses()
-  }, [filterCategory, filterStartDate, filterEndDate, filterHorseId])
+  }, [])
 
   const fetchExpenses = async () => {
     setIsLoading(true)
     try {
-      const params = new URLSearchParams()
-      if (filterCategory) params.append('category', filterCategory)
-      if (filterStartDate) params.append('startDate', filterStartDate)
-      if (filterEndDate) params.append('endDate', filterEndDate)
-      if (filterHorseId) params.append('horseId', filterHorseId)
-
-      const response = await fetch(`/api/expenses?${params.toString()}`, {
+      const response = await fetch('/api/expenses', {
         credentials: 'include',
       })
       const data = await response.json()
@@ -65,7 +103,12 @@ export default function ExpensesPage() {
         throw new Error(data.error || 'Giderler yüklenemedi')
       }
 
-      setExpenses(data.expenses || [])
+      // Transform the data to match our interface
+      const transformedExpenses = (data.expenses || []).map((exp: any) => ({
+        ...exp,
+        currency: exp.currency || 'TRY',
+      }))
+      setExpenses(transformedExpenses)
     } catch (error) {
       console.error('Fetch expenses error:', error)
       toast.error('Giderler yüklenirken bir hata oluştu')
@@ -74,246 +117,638 @@ export default function ExpensesPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu gideri silmek istediğinizden emin misiniz?')) {
-      return
-    }
+  const handleEditClick = (expense: Expense) => {
+    setEditingExpense(expense)
+    setIsEditModalOpen(true)
+  }
 
-    setIsDeleting(id)
+  const handleDeleteClick = (expense: Expense) => {
+    setExpenseToDelete(expense)
+    setIsDeleteDialogOpen(true)
+  }
 
+  const handleDeleteExpense = async () => {
+    if (!expenseToDelete) return
+    setIsDeleting(true)
     try {
-      const response = await fetch(`/api/expenses/${id}`, {
+      const response = await fetch(`/api/expenses/${expenseToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
-
+      const data = await response.json().catch(() => ({}))
       if (!response.ok) {
-        const data = await response.json()
         throw new Error(data.error || 'Gider silinemedi')
       }
-
-      toast.success('Gider silindi')
+      toast.success('Gider başarıyla silindi')
+      setIsDeleteDialogOpen(false)
+      setExpenseToDelete(null)
       fetchExpenses()
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Bir hata oluştu'
+      const message = error instanceof Error ? error.message : 'Gider silinirken hata oluştu'
       toast.error(message)
     } finally {
-      setIsDeleting(null)
+      setIsDeleting(false)
     }
+  }
+
+  const openAttachmentViewer = (attachments: string[], startIndex = 0) => {
+    if (!attachments.length) return
+    setAttachmentViewer({
+      open: true,
+      attachments,
+      currentIndex: startIndex,
+    })
+  }
+
+  const closeAttachmentViewer = () => {
+    setAttachmentViewer({
+      open: false,
+      attachments: [],
+      currentIndex: 0,
+    })
+  }
+
+  const showPrevAttachment = () => {
+    setAttachmentViewer((prev) => {
+      const total = prev.attachments.length
+      if (!total) return prev
+      return {
+        ...prev,
+        currentIndex: (prev.currentIndex - 1 + total) % total,
+      }
+    })
+  }
+
+  const showNextAttachment = () => {
+    setAttachmentViewer((prev) => {
+      const total = prev.attachments.length
+      if (!total) return prev
+      return {
+        ...prev,
+        currentIndex: (prev.currentIndex + 1) % total,
+      }
+    })
+  }
+
+  useEffect(() => {
+    if (!showFilterDropdown) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowFilterDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFilterDropdown])
+
+  const sortedExpenses = useMemo(() => {
+    return [...expenses].sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+  }, [expenses])
+
+  const getAmountValue = (amount?: number | string) => {
+    if (typeof amount === 'number') {
+      return isNaN(amount) ? 0 : amount
+    }
+    if (typeof amount === 'string') {
+      const parsed = parseFloat(amount)
+      return isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
+  const getCategoryLabel = (expense: Expense) => {
+    if (expense.customName && expense.customName.trim().length > 0) {
+      return expense.customName
+    }
+
+    const translation =
+      TR.expenseCategories[
+        expense.category as keyof typeof TR.expenseCategories
+      ]
+
+    return translation || expense.category
+  }
+
+  const filteredExpenses = useMemo(() => {
+    let filtered = sortedExpenses
+
+    // Apply date range filter
+    if (selectedRange) {
+      const now = new Date()
+      let startDate: Date | null = null
+
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(expense => {
+          const expenseDate = new Date(expense.date)
+          return expenseDate >= startDate!
+        })
+      }
+    }
+
+    // Apply category filter
+    if (categoryFilters.length > 0) {
+      filtered = filtered.filter((expense) => {
+        const categoryLabel = getCategoryLabel(expense)
+        return categoryFilters.includes(categoryLabel)
+      })
+    }
+
+    // Apply addedBy filter (by role only)
+    if (addedByFilters.length > 0) {
+      filtered = filtered.filter((expense) => {
+        const role = expense.addedBy?.role || 'Unknown'
+        // Handle "At Sahibi" as value for OWNER role
+        const filterValue = role === 'OWNER' ? 'At Sahibi' : role
+        return addedByFilters.includes(filterValue) || addedByFilters.includes(role)
+      })
+    }
+
+    return filtered
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses])
+
+  const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
+  const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
+
+  // Get unique categories
+  const getUniqueCategories = useMemo(() => {
+    const categorySet = new Set<string>()
+    sortedExpenses.forEach((expense) => {
+      const categoryLabel = getCategoryLabel(expense)
+      if (categoryLabel) {
+        categorySet.add(categoryLabel)
+      }
+    })
+    return Array.from(categorySet).sort()
+  }, [sortedExpenses])
+
+  // Get unique addedBy users (by role only)
+  const getUniqueAddedBy = useMemo(() => {
+    const roleMap: Record<string, string> = {
+      OWNER: 'At Sahibi',
+      TRAINER: 'Trainer',
+      GROOM: 'Groom',
+      ADMIN: 'Admin',
+    }
+    const roleSet = new Set<string>()
+    sortedExpenses.forEach((expense) => {
+      if (expense.addedBy && expense.addedBy.role) {
+        roleSet.add(expense.addedBy.role)
+      }
+    })
+    const roles = Array.from(roleSet)
+    return roles.map((role) => ({
+      value: role === 'OWNER' ? 'At Sahibi' : role,
+      label: roleMap[role] || role,
+    }))
+  }, [sortedExpenses])
+
+  // Toggle functions
+  const toggleCategoryFilter = (category: string) => {
+    setCategoryFilters((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category]
+    )
+  }
+
+  const toggleAddedByFilter = (addedBy: string) => {
+    setAddedByFilters((prev) =>
+      prev.includes(addedBy)
+        ? prev.filter((a) => a !== addedBy)
+        : [...prev, addedBy]
+    )
   }
 
   const clearFilters = () => {
-    setFilterCategory('')
-    setFilterStartDate('')
-    setFilterEndDate('')
-    setFilterHorseId('')
+    setSelectedRange(null)
+    setCategoryFilters([])
+    setAddedByFilters([])
   }
 
-  const getCategoryLabel = (category: string) => {
-    const found = EXPENSE_CATEGORIES.find((c) => c.value === category)
-    return found ? found.label : category
+  const hasActiveFilters = !!selectedRange || categoryFilters.length > 0 || addedByFilters.length > 0
+
+  const formatAddedBy = (expense: Expense) => {
+    if (!expense.addedBy) return '-'
+    const roleMap: Record<string, string> = {
+      OWNER: 'At Sahibi',
+    }
+    const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
+    return roleLabel
+      ? `${roleLabel}${expense.addedBy.email ? ` (${expense.addedBy.email})` : ''}`
+      : expense.addedBy.email || '-'
   }
 
-  const getAddedByName = (expense: Expense) => {
-    if (expense.addedBy.ownerProfile) {
-      return expense.addedBy.ownerProfile.officialName
-    }
-    if (expense.addedBy.trainerProfile) {
-      return expense.addedBy.trainerProfile.fullName
-    }
-    return expense.addedBy.email
-  }
-
-  // Group expenses by date
-  const groupedExpenses = expenses.reduce((groups, expense) => {
-    const date = new Date(expense.date).toLocaleDateString('tr-TR')
-    if (!groups[date]) {
-      groups[date] = []
-    }
-    groups[date].push(expense)
-    return groups
-  }, {} as Record<string, Expense[]>)
+  const hasExpenses = (expenses?.length || 0) > 0
+  const isEditModalVisible = isEditModalOpen && !!editingExpense
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">{TR.expenses.title}</h1>
-          <p className="text-gray-600 mt-1">
-            Toplam {expenses.length} gider kaydı
-          </p>
-        </div>
-        <Button onClick={() => router.push('/app/expenses/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          {TR.expenses.addExpense}
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">{TR.common.filters}</CardTitle>
-            <div className="flex gap-2">
-              {(filterCategory || filterStartDate || filterEndDate || filterHorseId) && (
+    <div className="space-y-4">
+      {/* Filter and Add buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
                 <Button
                   variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Filtreleri Temizle
-                </Button>
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filtrele
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length}
+                </span>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-1" />
-                {showFilters ? 'Gizle' : 'Göster'}
-              </Button>
+            </Button>
+
+            {showFilterDropdown && (
+              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    onClick={() => setShowFilterDropdown(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map(option => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
             </div>
           </div>
-        </CardHeader>
-        {showFilters && (
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="filterCategory">{TR.expenses.category}</Label>
-                <select
-                  id="filterCategory"
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">Tümü</option>
-                  {EXPENSE_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="filterStartDate">Başlangıç Tarihi</Label>
-                <Input
-                  id="filterStartDate"
-                  type="date"
-                  value={filterStartDate}
-                  onChange={(e) => setFilterStartDate(e.target.value)}
-                />
+                {/* Category Filter */}
+                {getUniqueCategories.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueCategories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => toggleCategoryFilter(category)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            categoryFilters.includes(category)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
               </div>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="filterEndDate">Bitiş Tarihi</Label>
-                <Input
-                  id="filterEndDate"
-                  type="date"
-                  value={filterEndDate}
-                  onChange={(e) => setFilterEndDate(e.target.value)}
-                />
+                {/* Added By Filter */}
+                {getUniqueAddedBy.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueAddedBy.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => toggleAddedByFilter(option.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            addedByFilters.includes(option.value)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
               </div>
+                )}
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={() => {
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+            <p className="text-lg font-semibold text-indigo-600">
+              {formatCurrency(totalAmount, defaultCurrency)}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Gider Ekle
+          </Button>
             </div>
-          </CardContent>
-        )}
+              </div>
+
+      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+        <CardContent className={hasExpenses ? 'p-0' : 'py-16 text-center'}>
+          {!hasExpenses ? (
+            <p className="text-gray-500">{TR.expenses.noExpenses}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      At
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Kategori
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tutar
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Detay
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Ekleyen
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      İşlem
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                        Seçilen filtrelerde gider bulunamadı
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredExpenses.map((expense, index) => {
+                      const isStriped = index % 2 === 1
+                      const attachments = getAttachments(expense.photoUrl)
+                      return (
+                        <tr
+                          key={expense.id}
+                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatDateShort(expense.date)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {expense.horse?.name || '-'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                              {getCategoryLabel(expense)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-rose-600">
+                              {formatCurrency(getAmountValue(expense.amount), expense.currency)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {expense.note ? (
+                              <p className="text-sm text-gray-700">{expense.note}</p>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-start gap-2">
+                              {attachments.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachmentViewer(attachments)}
+                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  title={`${attachments.length} ek görüntüle`}
+                                >
+                                  <Paperclip className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(expense)}
+                                className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                title="Düzenle"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(expense)}
+                                className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+                          </div>
+          )}
+        </CardContent>
       </Card>
 
-      {/* Expenses List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">{TR.common.loading}</p>
-          </div>
-        </div>
-      ) : expenses.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center text-gray-500">
-              <TurkishLira className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg">Henüz gider kaydı bulunmuyor</p>
-              <p className="text-sm mt-2">İlk giderinizi eklemek için yukarıdaki butonu kullanın</p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedExpenses).map(([date, dateExpenses]) => (
-            <div key={date}>
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-gray-500" />
-                <h2 className="text-lg font-semibold">{date}</h2>
-                <span className="text-sm text-gray-500">
-                  ({dateExpenses.length} gider)
-                </span>
-              </div>
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          setIsAddModalOpen(false)
+          fetchExpenses()
+        }}
+      />
 
-              <div className="space-y-3">
-                {dateExpenses.map((expense) => (
-                  <Card key={expense.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-4">
-                            {expense.photoUrl && (
-                              <div className="flex gap-2 flex-wrap">
-                                {(() => {
-                                  const photoUrls = typeof expense.photoUrl === 'string' 
-                                    ? (expense.photoUrl.startsWith('[') ? JSON.parse(expense.photoUrl) : [expense.photoUrl])
-                                    : expense.photoUrl
-                                  return photoUrls.map((url: string, idx: number) => (
-                                    <img
-                                      key={idx}
-                                      src={url}
-                                      alt={`Gider fotoğrafı ${idx + 1}`}
-                                      className="w-20 h-20 object-cover rounded border"
-                                    />
-                                  ))
-                                })()}
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold">{expense.horse.name}</h3>
-                                <span className="text-sm px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                  {getCategoryLabel(expense.category)}
-                                </span>
-                              </div>
-                              <p className="text-2xl font-bold text-indigo-600 mb-2">
-                                {formatCurrency(expense.amount)}
-                              </p>
-                              {expense.notes && (
-                                <p className="text-sm text-gray-600 mb-2">{expense.notes}</p>
-                              )}
-                              <p className="text-xs text-gray-500">
-                                Ekleyen: {getAddedByName(expense)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+      {/* Edit Expense Modal */}
+      <AddExpenseModal
+        open={isEditModalVisible}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setEditingExpense(null)
+        }}
+        preselectedHorseId={editingExpense?.horse?.id}
+        preselectedHorseName={editingExpense?.horse?.name}
+        onSuccess={() => {
+          setIsEditModalOpen(false)
+          setEditingExpense(null)
+          fetchExpenses()
+        }}
+        mode="edit"
+        expenseId={editingExpense?.id}
+        initialExpense={
+          editingExpense
+            ? {
+                date: editingExpense.date,
+                category: editingExpense.category,
+                amount: editingExpense.amount,
+                currency: editingExpense.currency,
+                note: editingExpense.note,
+                customName: editingExpense.customName,
+                photoUrl: editingExpense.photoUrl,
+              }
+            : undefined
+        }
+        submitLabel="Gider Kaydet"
+      />
 
+      {/* Delete Dialog */}
+      <Dialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(value) => {
+          setIsDeleteDialogOpen(value)
+          if (!value) {
+            setExpenseToDelete(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white/95 backdrop-blur border border-rose-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">Gideri Sil</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Bu gideri silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteDialogOpen(false)
+                setExpenseToDelete(null)
+              }}
+              className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+              disabled={isDeleting}
+            >
+              İptal
+            </Button>
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(expense.id)}
-                          disabled={isDeleting === expense.id}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
+              onClick={handleDeleteExpense}
+              disabled={isDeleting}
+              className="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md hover:from-rose-600 hover:to-rose-700"
+            >
+              {isDeleting ? TR.common.loading : 'Sil'}
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+        </DialogContent>
+      </Dialog>
+
+      {/* Attachment Viewer */}
+      <Dialog open={attachmentViewer.open} onOpenChange={(value) => !value && closeAttachmentViewer()}>
+        <DialogContent className="max-w-3xl bg-white/95 backdrop-blur border border-gray-200 shadow-2xl">
+          {attachmentViewer.attachments.length > 0 && (
+            <div className="space-y-6">
+              <div className="w-full h-[60vh] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+                <img
+                  src={attachmentViewer.attachments[attachmentViewer.currentIndex]}
+                  alt={`Ek ${attachmentViewer.currentIndex + 1}`}
+                  className="max-h-full max-w-full object-contain"
+                />
               </div>
+              {attachmentViewer.attachments.length > 1 && (
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={showPrevAttachment}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Önceki
+                  </Button>
+                  <span className="text-sm font-medium text-gray-600">
+                    {attachmentViewer.currentIndex + 1} / {attachmentViewer.attachments.length}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={showNextAttachment}
+                    className="flex items-center gap-2"
+                  >
+                    Sonraki
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
             </div>
-          ))}
+              )}
         </div>
       )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-
-

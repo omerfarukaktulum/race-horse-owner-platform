@@ -132,7 +132,7 @@ export function HorseMetadataCard({ horse }: Props) {
 
                 {daysSinceExpense !== null && (
                   <div className="font-medium">
-                    • Son gider {daysSinceExpense} gün önce
+                    • Son gider {daysSinceExpense === 0 ? 'Bugün' : `${daysSinceExpense} gün önce`}
                   </div>
                 )}
               </div>

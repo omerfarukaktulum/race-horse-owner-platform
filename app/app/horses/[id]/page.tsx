@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { ArrowLeft, FileText, MapPin, Filter, Plus } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, Filter, Plus, Search, X } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
@@ -147,8 +147,14 @@ export default function HorseDetailPage() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('info')
+  const [showExpensesFilter, setShowExpensesFilter] = useState(false)
+  const [showNotesFilter, setShowNotesFilter] = useState(false)
+  const [isExpensesSearchOpen, setIsExpensesSearchOpen] = useState(false)
+  const [expensesSearchQuery, setExpensesSearchQuery] = useState('')
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
+  const expensesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const notesFilterButtonRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (horseId) {
@@ -338,16 +344,59 @@ export default function HorseDetailPage() {
           </TabsList>
           {activeTab === 'expenses' && (
             <div className="flex items-center gap-2 ml-auto">
-              <Button 
-                onClick={() => {
-                  filterTriggerRef.current?.()
-                }}
-                variant="outline"
-                className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrele
-              </Button>
+              <div ref={expensesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    filterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                </Button>
+              </div>
+              {/* Search Button */}
+              {!isExpensesSearchOpen ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsExpensesSearchOpen(true)}
+                  className="h-[42px] w-[42px] p-0 border-2 border-gray-300 hover:bg-gray-50"
+                >
+                  <Search className="h-4 w-4 text-gray-600" />
+                </Button>
+              ) : (
+                <div className="relative w-36">
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="At, kategori, detay..."
+                    value={expensesSearchQuery}
+                    onChange={(e) => setExpensesSearchQuery(e.target.value)}
+                    className="flex h-[42px] w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-md shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                    autoFocus
+                    style={{ boxShadow: 'none' }}
+                    onFocus={(e) => {
+                      e.target.style.boxShadow = 'none'
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.boxShadow = 'none'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExpensesSearchOpen(false)
+                      setExpensesSearchQuery('')
+                    }}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
               <Button 
                 onClick={() => setIsExpenseModalOpen(true)}
                 className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
@@ -359,16 +408,18 @@ export default function HorseDetailPage() {
           )}
           {activeTab === 'notes' && (
             <div className="flex items-center gap-2 ml-auto">
-              <Button 
-                onClick={() => {
-                  notesFilterTriggerRef.current?.()
-                }}
-                variant="outline"
-                className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrele
-              </Button>
+              <div ref={notesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    notesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                </Button>
+              </div>
               <Button 
                 onClick={() => setIsNoteModalOpen(true)}
                 className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
@@ -414,6 +465,10 @@ export default function HorseDetailPage() {
             onFilterTriggerReady={(trigger) => {
               filterTriggerRef.current = trigger
             }}
+            showFilterDropdown={showExpensesFilter}
+            onFilterDropdownChange={setShowExpensesFilter}
+            filterDropdownContainerRef={expensesFilterButtonRef}
+            searchQuery={expensesSearchQuery}
           />
         </TabsContent>
 
@@ -427,6 +482,9 @@ export default function HorseDetailPage() {
             onFilterTriggerReady={(trigger) => {
               notesFilterTriggerRef.current = trigger
             }}
+            showFilterDropdown={showNotesFilter}
+            onFilterDropdownChange={setShowNotesFilter}
+            filterDropdownContainerRef={notesFilterButtonRef}
           />
         </TabsContent>
       </Tabs>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
@@ -27,10 +28,13 @@ interface Props {
   onRefresh?: () => void
   hideButtons?: boolean
   onFilterTriggerReady?: (trigger: () => void) => void
+  showFilterDropdown?: boolean
+  onFilterDropdownChange?: (show: boolean) => void
+  filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
 }
 
 const ROLE_MAP: Record<string, string> = {
-  OWNER: 'Horse Owner',
+  OWNER: 'At Sahibi',
   TRAINER: 'Trainer',
   GROOM: 'Groom',
 }
@@ -66,10 +70,21 @@ function formatAddedBy(note: HorseNote) {
     : note.addedBy.email || '-'
 }
 
-export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady }: Props) {
+export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [addedByFilters, setAddedByFilters] = useState<string[]>([])
+  const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownContentRef = useRef<HTMLDivElement>(null)
+  
+  // Use external control when hideButtons is true, otherwise use internal state
+  const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
+  const setShowFilterDropdown = hideButtons 
+    ? (value: boolean | ((prev: boolean) => boolean)) => {
+        const newValue = typeof value === 'function' ? value(showFilterDropdown) : value
+        onFilterDropdownChange?.(newValue)
+      }
+    : setInternalShowFilterDropdown
   
   // Expose filter trigger to parent
   useEffect(() => {
@@ -78,7 +93,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
         setShowFilterDropdown(prev => !prev)
       })
     }
-  }, [onFilterTriggerReady])
+  }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
   const [editingNote, setEditingNote] = useState<HorseNote | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [noteToDelete, setNoteToDelete] = useState<HorseNote | null>(null)
@@ -99,16 +114,30 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   useEffect(() => {
     if (!showFilterDropdown) return
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node
+      
+      // Check if click is inside the dropdown content itself
+      const isInsideDropdownContent = dropdownContentRef.current?.contains(target)
+      
+      // Check if click is inside the dropdown container (when not using portal)
+      const isInsideDropdown = filterDropdownRef.current?.contains(target)
+      
+      // Check if click is inside the portal container (when using portal)
+      const isInsidePortal = filterDropdownContainerRef?.current?.contains(target)
+      
+      // Check if click is on the filter button itself
+      const clickedElement = event.target as HTMLElement
+      const isFilterButton = clickedElement?.closest('button')?.textContent?.includes('Filtrele') || 
+                            clickedElement?.closest('[class*="Filtrele"]')
+      
+      // Only close if click is outside all dropdown areas and not on the button
+      if (!isInsideDropdownContent && !isInsideDropdown && !isInsidePortal && !isFilterButton) {
         setShowFilterDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown])
+  }, [showFilterDropdown, filterDropdownContainerRef])
 
   const sortedNotes = useMemo(() => {
     return [...(notes || [])].sort(
@@ -117,38 +146,89 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   }, [notes])
 
   const filteredNotes = useMemo(() => {
-    if (!selectedRange) return sortedNotes
+    let filtered = sortedNotes
 
-    const now = new Date()
-    let startDate: Date | null = null
+    // Apply date range filter
+    if (selectedRange) {
+      const now = new Date()
+      let startDate: Date | null = null
 
-    switch (selectedRange) {
-      case 'lastWeek':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case 'lastMonth':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 1)
-        break
-      case 'last3Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 3)
-        break
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      default:
-        startDate = null
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter((note) => {
+          const noteDate = new Date(note.date)
+          return noteDate >= startDate!
+        })
+      }
     }
 
-    if (!startDate) return sortedNotes
+    // Apply addedBy filter
+    if (addedByFilters.length > 0) {
+      filtered = filtered.filter((note) => {
+        const role = note.addedBy?.role || 'Unknown'
+        return addedByFilters.includes(role)
+      })
+    }
 
-    return sortedNotes.filter((note) => {
-      const noteDate = new Date(note.date)
-      return noteDate >= startDate
+    return filtered
+  }, [selectedRange, addedByFilters, sortedNotes])
+
+  // Get unique addedBy users
+  const getUniqueAddedBy = useMemo(() => {
+    const roleMap: Record<string, string> = {
+      OWNER: 'At Sahibi',
+      TRAINER: 'Trainer',
+      GROOM: 'Groom',
+    }
+    const addedByMap = new Map<string, string>()
+    sortedNotes.forEach((note) => {
+      if (note.addedBy?.role) {
+        const role = note.addedBy.role
+        if (!addedByMap.has(role)) {
+          addedByMap.set(role, roleMap[role] || role)
+        }
+      }
     })
-  }, [selectedRange, sortedNotes])
+    return Array.from(addedByMap.entries()).map(([value, label]) => ({
+      value,
+      label,
+    }))
+  }, [sortedNotes])
+
+  // Toggle functions
+  const toggleAddedByFilter = (addedBy: string) => {
+    setAddedByFilters((prev) =>
+      prev.includes(addedBy)
+        ? prev.filter((a) => a !== addedBy)
+        : [...prev, addedBy]
+    )
+  }
+
+  const clearFilters = () => {
+    setSelectedRange(null)
+    setAddedByFilters([])
+  }
+
+  const hasActiveFilters = !!selectedRange || addedByFilters.length > 0
 
   const handleEditClick = (note: HorseNote) => {
     setEditingNote(note)
@@ -239,69 +319,116 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
             className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              !!selectedRange
+              hasActiveFilters
                 ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                 : 'border-gray-300 text-gray-700 hover:border-gray-400'
             }`}
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtrele
-            {selectedRange && (
+            {hasActiveFilters && (
               <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                1
+                {(selectedRange ? 1 : 0) + addedByFilters.length}
               </span>
             )}
           </Button>
         )}
 
-        {showFilterDropdown && (
-          <div className={`absolute ${hideButtons ? 'fixed' : ''} left-0 top-full mt-2 w-fit min-w-[200px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50`}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 text-sm">Filtreler</h3>
-              <button
-                onClick={() => setShowFilterDropdown(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+        {showFilterDropdown && (() => {
+          const dropdownContent = (
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-            <div className="space-y-2">
-              {RANGE_OPTIONS.map((option) => {
-                const isActive = selectedRange === option.value
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      const nextValue = isActive ? null : option.value
-                      setSelectedRange(nextValue)
-                      setShowFilterDropdown(false)
-                    }}
-                    className={`w-[140px] text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-[#6366f1] text-white shadow'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                )
-              })}
-            </div>
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
-            {selectedRange && (
-              <button
-                onClick={() => {
-                  setSelectedRange(null)
-                  setShowFilterDropdown(false)
-                }}
-                className="mt-4 w-full text-sm text-[#6366f1] font-medium hover:underline"
-              >
-                Filtreyi Temizle
-              </button>
-            )}
-          </div>
-        )}
+              {/* Added By Filter */}
+              {getUniqueAddedBy.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueAddedBy.map((option) => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleAddedByFilter(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          addedByFilters.includes(option.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )
+
+          // Render in parent's container if hideButtons is true and ref is provided
+          if (hideButtons && filterDropdownContainerRef?.current) {
+            return createPortal(dropdownContent, filterDropdownContainerRef.current)
+          }
+
+          return dropdownContent
+        })()}
       </div>
 
         <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">

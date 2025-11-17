@@ -142,13 +142,14 @@ export async function POST(request: Request) {
           },
           include: {
             horse: true,
-            addedBy: {
-              select: {
-                email: true,
-                ownerProfile: { select: { officialName: true } },
-                trainerProfile: { select: { fullName: true } },
-              },
-            },
+        addedBy: {
+          select: {
+            email: true,
+            role: true,
+            ownerProfile: { select: { officialName: true } },
+            trainerProfile: { select: { fullName: true } },
+          },
+        },
           },
         })
       )
@@ -251,6 +252,7 @@ export async function GET(request: Request) {
         addedBy: {
           select: {
             email: true,
+            role: true,
             ownerProfile: { select: { officialName: true } },
             trainerProfile: { select: { fullName: true } },
           },

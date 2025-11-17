@@ -113,14 +113,14 @@ export function AddExpenseModal({
         setPhotoPreviews(initialPhotos as string[])
         setPhotos([])
       } else {
-        setDate(new Date().toISOString().split('T')[0])
-        setCategory('')
-        setCustomCategory('')
-        setAmount('')
-        setNotes('')
-        setPhotos([])
-        setPhotoPreviews([])
-      }
+      setDate(new Date().toISOString().split('T')[0])
+      setCategory('')
+      setCustomCategory('')
+      setAmount('')
+      setNotes('')
+      setPhotos([])
+      setPhotoPreviews([])
+    }
     }
   }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode, mode, initialExpense])
 
@@ -264,35 +264,35 @@ export function AddExpenseModal({
           return
         }
 
-        const formData = new FormData()
-        formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
-        formData.append('date', date)
-        formData.append('category', category)
-        if (category === 'OZEL' && customCategory) {
-          formData.append('customName', customCategory)
-        }
-        formData.append('amount', amount)
-        formData.append('currency', 'TRY')
-        formData.append('notes', notes)
-        photos.forEach((photo) => {
-          formData.append('photos', photo)
-        })
+      const formData = new FormData()
+      formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
+      formData.append('date', date)
+      formData.append('category', category)
+      if (category === 'OZEL' && customCategory) {
+        formData.append('customName', customCategory)
+      }
+      formData.append('amount', amount)
+      formData.append('currency', 'TRY')
+      formData.append('notes', notes)
+      photos.forEach((photo) => {
+        formData.append('photos', photo)
+      })
 
-        const response = await fetch('/api/expenses', {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        })
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
 
-        const data = await response.json()
+      const data = await response.json()
 
-        if (!response.ok) {
-          throw new Error(data.error || 'Gider eklenemedi')
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Gider eklenemedi')
+      }
 
-        toast.success('Gider başarıyla eklendi')
-        onSuccess?.()
-        onClose()
+      toast.success('Gider başarıyla eklendi')
+      onSuccess?.()
+      onClose()
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
