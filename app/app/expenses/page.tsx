@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatCurrency, formatDateShort } from '@/lib/utils/format'
@@ -70,6 +70,8 @@ export default function ExpensesPage() {
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -290,8 +292,29 @@ export default function ExpensesPage() {
       })
     }
 
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter((expense) => {
+        // Search in horse name (At)
+        if (expense.horse?.name && expense.horse.name.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in category (Kategori)
+        const categoryLabel = getCategoryLabel(expense)
+        if (categoryLabel.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in detail (Detay/note)
+        if (expense.note && expense.note.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
+    }
+
     return filtered
-  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses])
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, searchQuery])
 
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
@@ -489,6 +512,49 @@ export default function ExpensesPage() {
               </div>
             )}
           </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+            <div className="relative w-52">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="At, kategori, detay ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 ml-auto">

@@ -39,7 +39,6 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
-  searchQuery?: string
 }
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -70,17 +69,13 @@ const getAttachments = (input?: string | string[] | null) => {
   return []
 }
 
-export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, searchQuery: externalSearchQuery }: Props) {
+export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
-  const [internalSearchQuery, setInternalSearchQuery] = useState('')
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
-  
-  // Use external search query when hideButtons is true, otherwise use internal state
-  const searchQuery = hideButtons ? (externalSearchQuery || '') : internalSearchQuery
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -300,29 +295,8 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
       })
     }
 
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim()
-      filtered = filtered.filter((expense) => {
-        // Search in horse name
-        if (horseName.toLowerCase().includes(query)) {
-          return true
-        }
-        // Search in category
-        const categoryLabel = getCategoryLabel(expense)
-        if (categoryLabel.toLowerCase().includes(query)) {
-          return true
-        }
-        // Search in detail (note)
-        if (expense.note && expense.note.toLowerCase().includes(query)) {
-          return true
-        }
-        return false
-      })
-    }
-
     return filtered
-  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, searchQuery, horseName])
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel])
 
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'

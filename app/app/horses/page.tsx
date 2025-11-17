@@ -11,6 +11,7 @@ import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
+import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
 
 interface HorseData {
   id: string
@@ -46,6 +47,7 @@ export default function HorsesPage() {
   const [selectedHorseForLocation, setSelectedHorseForLocation] = useState<HorseData | null>(null)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [selectedHorseForNote, setSelectedHorseForNote] = useState<HorseData | null>(null)
+  const [addHorseModalOpen, setAddHorseModalOpen] = useState(false)
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
@@ -844,12 +846,13 @@ export default function HorsesPage() {
           </div>
           </div>
         
-        <Link href="/app/horses/new">
-          <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-            <Plus className="h-4 w-4 mr-2" />
-            {TR.horses.addHorse}
-          </Button>
-        </Link>
+        <Button 
+          onClick={() => setAddHorseModalOpen(true)}
+          className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          {TR.horses.addHorse}
+        </Button>
       </div>
 
       {/* Horses Display */}
@@ -920,6 +923,14 @@ export default function HorsesPage() {
           }}
         />
       )}
+
+      <AddHorseModal
+        open={addHorseModalOpen}
+        onClose={() => setAddHorseModalOpen(false)}
+        onSuccess={() => {
+          fetchHorses()
+        }}
+      />
     </div>
   )
 }
