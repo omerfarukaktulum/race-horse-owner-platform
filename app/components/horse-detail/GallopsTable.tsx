@@ -1,7 +1,11 @@
 'use client'
 
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Card, CardContent } from '@/app/components/ui/card'
+import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
+import { Filter, X } from 'lucide-react'
 
 interface Gallop {
   id: string
@@ -13,11 +17,121 @@ interface Gallop {
   distances: any // JSON object with distances
 }
 
+type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'thisYear'
+
+const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
+  { value: 'lastWeek', label: 'Son 1 Hafta' },
+  { value: 'lastMonth', label: 'Son 1 Ay' },
+  { value: 'last3Months', label: 'Son 3 Ay' },
+  { value: 'thisYear', label: 'Bu Yıl' },
+]
+
 interface Props {
   gallops: Gallop[]
+  hideButtons?: boolean
+  onFilterTriggerReady?: (trigger: () => void) => void
+  showFilterDropdown?: boolean
+  onFilterDropdownChange?: (show: boolean) => void
+  filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
 }
 
-export function GallopsTable({ gallops }: Props) {
+export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+  const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
+  const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
+  const filterDropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownContentRef = useRef<HTMLDivElement>(null)
+  
+  // Use external control when hideButtons is true, otherwise use internal state
+  const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
+  const setShowFilterDropdown = hideButtons 
+    ? (value: boolean | ((prev: boolean) => boolean)) => {
+        const newValue = typeof value === 'function' ? value(showFilterDropdown) : value
+        onFilterDropdownChange?.(newValue)
+      }
+    : setInternalShowFilterDropdown
+  
+  // Expose filter trigger to parent
+  useEffect(() => {
+    if (onFilterTriggerReady) {
+      onFilterTriggerReady(() => {
+        setShowFilterDropdown(prev => !prev)
+      })
+    }
+  }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (
+        showFilterDropdown &&
+        filterDropdownRef.current &&
+        !filterDropdownRef.current.contains(target) &&
+        dropdownContentRef.current &&
+        !dropdownContentRef.current.contains(target) &&
+        filterDropdownContainerRef?.current &&
+        !filterDropdownContainerRef.current.contains(target)
+      ) {
+        setShowFilterDropdown(false)
+      }
+    }
+
+    if (showFilterDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
+
+  // Sort gallops by date (most recent first)
+  const sortedGallops = useMemo(() => {
+    return [...gallops].sort((a, b) => {
+      return new Date(b.gallopDate).getTime() - new Date(a.gallopDate).getTime()
+    })
+  }, [gallops])
+
+  // Filter gallops based on selected date range
+  const filteredGallops = useMemo(() => {
+    if (!selectedRange) return sortedGallops
+    
+    const now = new Date()
+    let startDate: Date | null = null
+
+    switch (selectedRange) {
+      case 'lastWeek':
+        startDate = new Date(now)
+        startDate.setDate(startDate.getDate() - 7)
+        break
+      case 'lastMonth':
+        startDate = new Date(now)
+        startDate.setMonth(startDate.getMonth() - 1)
+        break
+      case 'last3Months':
+        startDate = new Date(now)
+        startDate.setMonth(startDate.getMonth() - 3)
+        break
+      case 'thisYear':
+        startDate = new Date(now.getFullYear(), 0, 1)
+        break
+      default:
+        startDate = null
+    }
+
+    if (startDate) {
+      return sortedGallops.filter(gallop => {
+        const gallopDate = new Date(gallop.gallopDate)
+        return gallopDate >= startDate!
+      })
+    }
+    
+    return sortedGallops
+  }, [sortedGallops, selectedRange])
+
+  const clearFilters = useCallback(() => {
+    setSelectedRange(null)
+  }, [])
+
+  const hasActiveFilters = !!selectedRange
+
   if (gallops.length === 0) {
     return (
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
@@ -27,11 +141,6 @@ export function GallopsTable({ gallops }: Props) {
       </Card>
     )
   }
-  
-  // Sort gallops by date (most recent first)
-  const sortedGallops = [...gallops].sort((a, b) => {
-    return new Date(b.gallopDate).getTime() - new Date(a.gallopDate).getTime()
-  })
   
   // Get surface color
   const getSurfaceColor = (surface?: string) => {
@@ -55,6 +164,104 @@ export function GallopsTable({ gallops }: Props) {
   }
   
   return (
+    <>
+      {/* Filter dropdown container - always rendered for dropdown positioning */}
+      <div 
+        className="relative filter-dropdown-container"
+        ref={filterDropdownRef}
+        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+      >
+        {!hideButtons && (
+          <Button
+            variant="outline"
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+              hasActiveFilters
+                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filtrele
+            {hasActiveFilters && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                1
+              </span>
+            )}
+          </Button>
+        )}
+
+        {showFilterDropdown && (() => {
+          const dropdownContent = (
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )
+
+          // Render dropdown in portal if hideButtons is true, otherwise inline
+          if (hideButtons && filterDropdownContainerRef?.current) {
+            return createPortal(dropdownContent, filterDropdownContainerRef.current)
+          }
+          
+          return dropdownContent
+        })()}
+      </div>
+
     <div>
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className="p-0">
@@ -101,7 +308,14 @@ export function GallopsTable({ gallops }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {sortedGallops.map((gallop, index) => {
+                {filteredGallops.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="px-4 py-6 text-center text-sm text-gray-500">
+                      Seçilen filtrelerde idman bulunamadı
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGallops.map((gallop, index) => {
                   const isStriped = index % 2 === 1
                   const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
                   
@@ -161,13 +375,15 @@ export function GallopsTable({ gallops }: Props) {
                       </td>
                     </tr>
                   )
-                })}
+                })
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
     </div>
+    </>
   )
 }
 

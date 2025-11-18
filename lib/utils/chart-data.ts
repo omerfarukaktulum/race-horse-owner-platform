@@ -8,6 +8,7 @@ interface RaceHistory {
   position?: number
   jockeyName?: string
   prizeMoney?: string
+  raceType?: string
 }
 
 interface ChartDataPoint {
@@ -128,6 +129,53 @@ export function getSurfaceDistribution(races: RaceHistory[]): ChartDataPoint[] {
       color: surfaceColors[surface] || '#6366f1',
     }))
     .sort((a, b) => b.value - a.value)
+}
+
+/**
+ * Abbreviate race type names for display
+ */
+export function abbreviateRaceType(raceType: string): string {
+  if (raceType.includes('Kısa Vade')) {
+    return raceType.replace(/Kısa Vade/g, 'KV')
+  }
+  return raceType
+}
+
+/**
+ * Get distribution of race types (Kosu Turu)
+ */
+export function getRaceTypeDistribution(races: RaceHistory[], topN: number = 5): ChartDataPoint[] {
+  const raceTypeCount: Record<string, number> = {}
+  
+  races.forEach((race) => {
+    if (race.raceType) {
+      raceTypeCount[race.raceType] = (raceTypeCount[race.raceType] || 0) + 1
+    }
+  })
+  
+  // Sort by count
+  const sorted = Object.entries(raceTypeCount)
+    .sort(([, a], [, b]) => b - a)
+  
+  // Take top N race types
+  const topRaceTypes = sorted.slice(0, topN)
+  const others = sorted.slice(topN)
+  
+  const result: ChartDataPoint[] = topRaceTypes.map(([raceType, count]) => ({
+    name: abbreviateRaceType(raceType),
+    value: count,
+  }))
+  
+  // Add "Diğer" if there are more race types
+  if (others.length > 0) {
+    const othersCount = others.reduce((sum, [, count]) => sum + count, 0)
+    result.push({
+      name: 'Diğer',
+      value: othersCount,
+    })
+  }
+  
+  return result
 }
 
 /**
@@ -261,5 +309,224 @@ export function getExpensesTrend(expenses: ExpenseData[]): ExpenseTrendPoint[] {
   }
   
   return result
+}
+
+/**
+ * Get surface performance data grouped by surface and position groups
+ * Returns data formatted for grouped bar chart
+ */
+export function getSurfacePerformanceData(races: RaceHistory[]): {
+  surface: string
+  'İlk 3 sıra': number
+  'Tabela sonu': number
+  'Tabela dışı': number
+}[] {
+  // Group races by surface and position
+  const performanceData: Record<string, { top3: number; fourthFifth: number; outOfTop5: number }> = {}
+  
+  races.forEach((race) => {
+    if (race.surface && race.position) {
+      // Normalize surface name
+      let surfaceType = race.surface
+      if (surfaceType.startsWith('Ç:') || surfaceType === 'Ç') {
+        surfaceType = 'Çim'
+      } else if (surfaceType.startsWith('K:') || surfaceType === 'K') {
+        surfaceType = 'Kum'
+      } else if (surfaceType.startsWith('S:') || surfaceType === 'S') {
+        surfaceType = 'Sentetik'
+      }
+      
+      if (!performanceData[surfaceType]) {
+        performanceData[surfaceType] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
+      }
+      
+      const position = race.position
+      if (position >= 1 && position <= 3) {
+        performanceData[surfaceType].top3++
+      } else if (position >= 4 && position <= 5) {
+        performanceData[surfaceType].fourthFifth++
+      } else if (position > 5) {
+        performanceData[surfaceType].outOfTop5++
+      }
+    }
+  })
+  
+  // Convert to array format for chart
+  return Object.entries(performanceData)
+    .map(([surface, data]) => ({
+      surface,
+      'İlk 3 sıra': data.top3,
+      'Tabela sonu': data.fourthFifth,
+      'Tabela dışı': data.outOfTop5,
+    }))
+    .sort((a, b) => {
+      // Sort by total races (descending)
+      const totalA = a['İlk 3 sıra'] + a['Tabela sonu'] + a['Tabela dışı']
+      const totalB = b['İlk 3 sıra'] + b['Tabela sonu'] + b['Tabela dışı']
+      return totalB - totalA
+    })
+}
+
+/**
+ * Get city performance data grouped by city and position groups
+ * Returns data formatted for grouped bar chart
+ */
+export function getCityPerformanceData(races: RaceHistory[], selectedCity?: string): {
+  city: string
+  'İlk 3 sıra': number
+  'Tabela sonu': number
+  'Tabela dışı': number
+}[] {
+  // Group races by city and position
+  const performanceData: Record<string, { top3: number; fourthFifth: number; outOfTop5: number }> = {}
+  
+  races.forEach((race) => {
+    if (race.city && race.position) {
+      // Filter by selected city if provided
+      if (selectedCity && race.city !== selectedCity) {
+        return
+      }
+      
+      if (!performanceData[race.city]) {
+        performanceData[race.city] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
+      }
+      
+      const position = race.position
+      if (position >= 1 && position <= 3) {
+        performanceData[race.city].top3++
+      } else if (position >= 4 && position <= 5) {
+        performanceData[race.city].fourthFifth++
+      } else if (position > 5) {
+        performanceData[race.city].outOfTop5++
+      }
+    }
+  })
+  
+  // Convert to array format for chart
+  return Object.entries(performanceData)
+    .map(([city, data]) => ({
+      city,
+      'İlk 3 sıra': data.top3,
+      'Tabela sonu': data.fourthFifth,
+      'Tabela dışı': data.outOfTop5,
+    }))
+    .sort((a, b) => {
+      // Sort by total races (descending)
+      const totalA = a['İlk 3 sıra'] + a['Tabela sonu'] + a['Tabela dışı']
+      const totalB = b['İlk 3 sıra'] + b['Tabela sonu'] + b['Tabela dışı']
+      return totalB - totalA
+    })
+}
+
+/**
+ * Get jockey performance data grouped by jockey and position groups
+ * Returns data formatted for pie charts
+ */
+export function getJockeyPerformanceData(races: RaceHistory[], selectedJockey?: string): {
+  jockey: string
+  'İlk 3 sıra': number
+  'Tabela sonu': number
+  'Tabela dışı': number
+}[] {
+  // Group races by jockey and position
+  const performanceData: Record<string, { top3: number; fourthFifth: number; outOfTop5: number }> = {}
+  
+  races.forEach((race) => {
+    if (race.jockeyName && race.position) {
+      // Filter by selected jockey if provided
+      if (selectedJockey && race.jockeyName !== selectedJockey) {
+        return
+      }
+      
+      if (!performanceData[race.jockeyName]) {
+        performanceData[race.jockeyName] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
+      }
+      
+      const position = race.position
+      if (position >= 1 && position <= 3) {
+        performanceData[race.jockeyName].top3++
+      } else if (position >= 4 && position <= 5) {
+        performanceData[race.jockeyName].fourthFifth++
+      } else if (position > 5) {
+        performanceData[race.jockeyName].outOfTop5++
+      }
+    }
+  })
+  
+  // Convert to array format for chart
+  return Object.entries(performanceData)
+    .map(([jockey, data]) => ({
+      jockey,
+      'İlk 3 sıra': data.top3,
+      'Tabela sonu': data.fourthFifth,
+      'Tabela dışı': data.outOfTop5,
+    }))
+    .sort((a, b) => {
+      // Sort by total races (descending)
+      const totalA = a['İlk 3 sıra'] + a['Tabela sonu'] + a['Tabela dışı']
+      const totalB = b['İlk 3 sıra'] + b['Tabela sonu'] + b['Tabela dışı']
+      return totalB - totalA
+    })
+}
+
+/**
+ * Get distance category from distance value
+ */
+function getDistanceCategory(distance: number): 'Kısa Mesafe' | 'Orta Mesafe' | 'Uzun Mesafe' | null {
+  if (distance >= 800 && distance <= 1400) {
+    return 'Kısa Mesafe'
+  } else if (distance > 1400 && distance <= 1900) {
+    return 'Orta Mesafe'
+  } else if (distance > 1900) {
+    return 'Uzun Mesafe'
+  }
+  return null
+}
+
+/**
+ * Get distance performance data grouped by distance category and position groups
+ * Returns data formatted for pie charts
+ */
+export function getDistancePerformanceData(races: RaceHistory[]): {
+  distance: string
+  'İlk 3 sıra': number
+  'Tabela sonu': number
+  'Tabela dışı': number
+}[] {
+  // Group races by distance category and position
+  const performanceData: Record<string, { top3: number; fourthFifth: number; outOfTop5: number }> = {}
+  
+  races.forEach((race) => {
+    if (race.distance && race.position) {
+      const distanceCategory = getDistanceCategory(race.distance)
+      if (!distanceCategory) {
+        return
+      }
+      
+      if (!performanceData[distanceCategory]) {
+        performanceData[distanceCategory] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
+      }
+      
+      const position = race.position
+      if (position >= 1 && position <= 3) {
+        performanceData[distanceCategory].top3++
+      } else if (position >= 4 && position <= 5) {
+        performanceData[distanceCategory].fourthFifth++
+      } else if (position > 5) {
+        performanceData[distanceCategory].outOfTop5++
+      }
+    }
+  })
+  
+  // Convert to array format for chart, ordered: Kısa, Orta, Uzun
+  const order = ['Kısa Mesafe', 'Orta Mesafe', 'Uzun Mesafe']
+  return order
+    .filter(category => performanceData[category])
+    .map((category) => ({
+      distance: category,
+      'İlk 3 sıra': performanceData[category].top3,
+      'Tabela sonu': performanceData[category].fourthFifth,
+      'Tabela dışı': performanceData[category].outOfTop5,
+    }))
 }
 

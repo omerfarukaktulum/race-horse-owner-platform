@@ -20,6 +20,7 @@ interface Horse {
   sire?: string
   dam?: string
   selected: boolean
+  isImported?: boolean
 }
 
 export default function ImportHorsesPage() {
@@ -91,17 +92,43 @@ export default function ImportHorsesPage() {
         throw new Error(data.error || 'Atlar yüklenemedi')
       }
 
+      // Fetch existing horses to check which ones are already imported
+      const existingHorsesResponse = await fetch('/api/horses', {
+        credentials: 'include',
+      })
+      const existingHorsesData = await existingHorsesResponse.json()
+      const existingHorses = existingHorsesData.horses || []
+      const existingExternalRefs = new Set(
+        existingHorses
+          .map((h: any) => h.externalRef)
+          .filter((ref: any) => ref)
+      )
+
       // Map to our format (dead horses are already filtered out in the API)
       const horses = (data.horses || []).map((horse: any) => ({
         ...horse,
         selected: false,
+        isImported: horse.externalRef ? existingExternalRefs.has(horse.externalRef) : false,
       }))
 
-      console.log('Step 11: Mapped horses:', horses.length, 'horses (dead horses filtered out)')
-      console.log('Horses data:', JSON.stringify(horses, null, 2))
+      // Sort: imported horses first (prioritized), then alphabetically within each group
+      const sortedHorses = [...horses].sort((a, b) => {
+        // Priority 1: Imported horses always come first
+        if (a.isImported && !b.isImported) {
+          return -1 // a comes before b
+        }
+        if (!a.isImported && b.isImported) {
+          return 1 // b comes before a
+        }
+        // Priority 2: Within the same group (both imported or both not imported), sort alphabetically
+        return a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      })
+
+      console.log('Step 11: Mapped horses:', sortedHorses.length, 'horses (dead horses filtered out)')
+      console.log('Horses data:', JSON.stringify(sortedHorses, null, 2))
       
-      setAllHorses(horses)
-      setHorses(horses)
+      setAllHorses(sortedHorses)
+      setHorses(sortedHorses)
 
       if (horses.length === 0) {
         console.log('Step 12: No horses found')
@@ -129,7 +156,19 @@ export default function ImportHorsesPage() {
       const filtered = allHorses.filter((horse) =>
         horse.name.toLowerCase().includes(query)
       )
-      setHorses(filtered)
+      // Maintain sort order: imported first (prioritized), then alphabetically within each group
+      const sorted = [...filtered].sort((a, b) => {
+        // Priority 1: Imported horses always come first
+        if (a.isImported && !b.isImported) {
+          return -1 // a comes before b
+        }
+        if (!a.isImported && b.isImported) {
+          return 1 // b comes before a
+        }
+        // Priority 2: Within the same group (both imported or both not imported), sort alphabetically
+        return a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      })
+      setHorses(sorted)
     }
   }, [searchQuery, allHorses])
 
@@ -436,6 +475,8 @@ export default function ImportHorsesPage() {
                       className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
                         horse.selected 
                           ? 'border-[#6366f1] bg-indigo-50/50' 
+                          : horse.isImported
+                          ? 'border-green-200 bg-green-50/50'
                           : 'border-gray-200 hover:border-gray-300 bg-white'
                       }`}
                       onClick={() => toggleHorse(index)}
@@ -464,7 +505,14 @@ export default function ImportHorsesPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                          {horse.isImported && (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                              Eklenmiş
+                            </span>
+                          )}
+                        </div>
                         <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
                           {horse.yob && (
                             <span>

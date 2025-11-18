@@ -44,6 +44,7 @@ export const TR = {
     home: 'Ana Sayfa',
     horses: 'Atlar',
     expenses: 'Giderler',
+    notes: 'Notlar',
     statistics: 'İstatistikler',
     stablemate: 'Eküri',
     billing: 'Faturalandırma',

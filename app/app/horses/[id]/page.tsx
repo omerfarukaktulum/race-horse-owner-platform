@@ -149,10 +149,19 @@ export default function HorseDetailPage() {
   const [activeTab, setActiveTab] = useState('info')
   const [showExpensesFilter, setShowExpensesFilter] = useState(false)
   const [showNotesFilter, setShowNotesFilter] = useState(false)
+  const [showStatisticsFilter, setShowStatisticsFilter] = useState(false)
+  const [showRacesFilter, setShowRacesFilter] = useState(false)
+  const [showGallopsFilter, setShowGallopsFilter] = useState(false)
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
+  const statisticsFilterTriggerRef = useRef<(() => void) | null>(null)
+  const racesFilterTriggerRef = useRef<(() => void) | null>(null)
+  const gallopsFilterTriggerRef = useRef<(() => void) | null>(null)
   const expensesFilterButtonRef = useRef<HTMLDivElement>(null)
   const notesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const statisticsFilterButtonRef = useRef<HTMLDivElement>(null)
+  const racesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (horseId) {
@@ -296,40 +305,40 @@ export default function HorseDetailPage() {
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-1.5">
+          <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0">
             <TabsTrigger 
               value="info"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               At Bilgisi
             </TabsTrigger>
             <TabsTrigger 
               value="pedigree"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               Pedigri
             </TabsTrigger>
             <TabsTrigger 
               value="races"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
-              Koşu Geçmişi
+              Koşular
             </TabsTrigger>
             <TabsTrigger 
               value="gallops"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               İdmanlar
             </TabsTrigger>
             <TabsTrigger 
               value="statistics"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               İstatistikler
             </TabsTrigger>
             <TabsTrigger 
               value="expenses"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               Giderler
             </TabsTrigger>
@@ -352,7 +361,7 @@ export default function HorseDetailPage() {
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
-                </Button>
+            </Button>
               </div>
               <Button 
                 onClick={() => setIsExpenseModalOpen(true)}
@@ -361,6 +370,54 @@ export default function HorseDetailPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Gider Ekle
               </Button>
+                  </div>
+                )}
+          {activeTab === 'races' && (
+            <div className="flex items-center gap-2 ml-auto">
+              <div ref={racesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    racesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                </Button>
+              </div>
+            </div>
+          )}
+          {activeTab === 'gallops' && (
+            <div className="flex items-center gap-2 ml-auto">
+              <div ref={gallopsFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    gallopsFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                </Button>
+              </div>
+            </div>
+          )}
+          {activeTab === 'statistics' && (
+            <div className="flex items-center gap-2 ml-auto">
+              <div ref={statisticsFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    statisticsFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                </Button>
+              </div>
             </div>
           )}
           {activeTab === 'notes' && (
@@ -397,17 +454,42 @@ export default function HorseDetailPage() {
         </TabsContent>
 
         <TabsContent value="races" className="mt-6">
-          <RaceHistoryTable races={horse.raceHistory || []} />
+          <RaceHistoryTable 
+            races={horse.raceHistory || []}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              racesFilterTriggerRef.current = trigger
+            }}
+            showFilterDropdown={showRacesFilter}
+            onFilterDropdownChange={setShowRacesFilter}
+            filterDropdownContainerRef={racesFilterButtonRef}
+          />
         </TabsContent>
 
         <TabsContent value="gallops" className="mt-6">
-          <GallopsTable gallops={horse.gallops || []} />
+          <GallopsTable 
+            gallops={horse.gallops || []}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              gallopsFilterTriggerRef.current = trigger
+            }}
+            showFilterDropdown={showGallopsFilter}
+            onFilterDropdownChange={setShowGallopsFilter}
+            filterDropdownContainerRef={gallopsFilterButtonRef}
+          />
         </TabsContent>
 
         <TabsContent value="statistics" className="mt-6">
           <StatisticsCharts 
             races={horse.raceHistory || []} 
             expenses={expensesData}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              statisticsFilterTriggerRef.current = trigger
+            }}
+            showFilterDropdown={showStatisticsFilter}
+            onFilterDropdownChange={setShowStatisticsFilter}
+            filterDropdownContainerRef={statisticsFilterButtonRef}
           />
         </TabsContent>
 

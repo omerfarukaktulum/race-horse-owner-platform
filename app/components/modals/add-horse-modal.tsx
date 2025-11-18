@@ -125,11 +125,17 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
         isImported: existingRefs.has(horse.externalRef || ''),
       }))
 
-      // Sort: unimported first, then imported
+      // Sort: imported horses first (prioritized), then alphabetically within each group
       const sortedHorses = [...fetchedHorses].sort((a, b) => {
-        if (a.isImported && !b.isImported) return 1
-        if (!a.isImported && b.isImported) return -1
-        return 0
+        // Priority 1: Imported horses always come first
+        if (a.isImported && !b.isImported) {
+          return -1 // a comes before b
+        }
+        if (!a.isImported && b.isImported) {
+          return 1 // b comes before a
+        }
+        // Priority 2: Within the same group (both imported or both not imported), sort alphabetically
+        return a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
       })
 
       setAllHorses(sortedHorses)
@@ -155,7 +161,19 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
       const filtered = allHorses.filter((horse) =>
         horse.name.toLowerCase().includes(query)
       )
-      setHorses(filtered)
+      // Maintain sort order: imported first (prioritized), then alphabetically within each group
+      const sorted = [...filtered].sort((a, b) => {
+        // Priority 1: Imported horses always come first
+        if (a.isImported && !b.isImported) {
+          return -1 // a comes before b
+        }
+        if (!a.isImported && b.isImported) {
+          return 1 // b comes before a
+        }
+        // Priority 2: Within the same group (both imported or both not imported), sort alphabetically
+        return a.name.localeCompare(b.name, 'tr', { sensitivity: 'base' })
+      })
+      setHorses(sorted)
     }
   }, [searchQuery, allHorses])
 
@@ -271,7 +289,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+      <DialogContent className="max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
         <Card className="border-0 shadow-none flex flex-col h-full max-h-[90vh]">
           <CardHeader className="space-y-4 flex-shrink-0">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
@@ -374,7 +392,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                         key={horse.externalRef || horse.name || index}
                         className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 ${
                           horse.isImported
-                            ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                            ? 'border-green-200 bg-green-50/50 cursor-not-allowed'
                             : horse.selected
                             ? 'border-[#6366f1] bg-indigo-50/50 hover:shadow-md cursor-pointer'
                             : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md cursor-pointer'
