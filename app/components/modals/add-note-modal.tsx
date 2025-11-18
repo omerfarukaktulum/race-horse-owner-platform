@@ -74,11 +74,11 @@ export function AddNoteModal({
         setPhotoPreviews(initialPhotos as string[])
         setPhotos([])
       } else {
-        setDate(new Date().toISOString().split('T')[0])
-        setNote('')
-        setPhotos([])
-        setPhotoPreviews([])
-      }
+      setDate(new Date().toISOString().split('T')[0])
+      setNote('')
+      setPhotos([])
+      setPhotoPreviews([])
+    }
     }
   }, [open, isEditMode, initialNote])
 
@@ -149,10 +149,10 @@ export function AddNoteModal({
         })
       } else {
         response = await fetch(`/api/horses/${horseId}/notes`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        })
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
       }
 
       const data = await response.json()
@@ -283,7 +283,7 @@ export function AddNoteModal({
                 >
                   {isSubmitting
                     ? 'Kaydediliyor...'
-                    : submitLabel || (isEditMode ? 'Notu Kaydet' : 'Not Ekle')}
+                    : submitLabel || (isEditMode ? 'Kaydet' : 'Not Ekle')}
                 </Button>
               </div>
             </div>

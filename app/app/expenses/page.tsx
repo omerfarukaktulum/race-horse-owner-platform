@@ -733,7 +733,7 @@ export default function ExpensesPage() {
               }
             : undefined
         }
-        submitLabel="Gider Kaydet"
+        submitLabel="Kaydet"
       />
 
       {/* Delete Dialog */}

@@ -525,7 +525,7 @@ export function AddExpenseModal({
                 >
                   {isSubmitting
                     ? TR.common.loading
-                    : submitLabel || (isEditMode ? 'Gider Kaydet' : TR.expenses.addExpense)}
+                    : submitLabel || (isEditMode ? 'Kaydet' : TR.expenses.addExpense)}
                 </Button>
               </div>
             </div>

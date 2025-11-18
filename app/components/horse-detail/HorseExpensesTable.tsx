@@ -687,7 +687,7 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
               }
             : undefined
         }
-        submitLabel="Gider Kaydet"
+        submitLabel="Kaydet"
       />
 
       <Dialog

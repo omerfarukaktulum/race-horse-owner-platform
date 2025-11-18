@@ -551,7 +551,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
               }
             : undefined
         }
-        submitLabel="Notu Kaydet"
+        submitLabel="Kaydet"
       />
 
       <Dialog

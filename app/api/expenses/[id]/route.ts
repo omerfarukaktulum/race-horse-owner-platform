@@ -25,12 +25,12 @@ async function getTrainerId(userId: string) {
 }
 
 async function getAuthenticatedUser() {
-  const cookieStore = cookies()
-  const token = cookieStore.get('auth-token')
+    const cookieStore = cookies()
+    const token = cookieStore.get('auth-token')
 
-  if (!token) {
+    if (!token) {
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
-  }
+    }
 
   try {
     const decoded = verify(token.value, process.env.NEXTAUTH_SECRET!) as DecodedToken
@@ -61,14 +61,14 @@ async function getAuthenticatedUser() {
 async function getExpenseWithRelations(expenseId: string) {
   return prisma.expense.findUnique({
     where: { id: expenseId },
-    include: {
-      horse: {
-        include: {
-          stablemate: true,
+      include: {
+        horse: {
+          include: {
+            stablemate: true,
+          },
         },
       },
-    },
-  })
+    })
 }
 
 function canModifyExpense(decoded: DecodedToken, expense: any) {
@@ -105,7 +105,7 @@ export async function DELETE(
     }
 
     if (!canModifyExpense(decoded, expense)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     await prisma.expense.delete({
