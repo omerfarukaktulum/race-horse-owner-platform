@@ -583,7 +583,7 @@ export default function HorsesPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className={`border-2 font-medium px-4 h-9 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
                   hasActiveFilters
                     ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
@@ -722,7 +722,7 @@ export default function HorsesPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
-                className={`border-2 font-medium px-4 h-9 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
                   sortBy
                     ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
@@ -811,7 +811,7 @@ export default function HorsesPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setIsSearchOpen(true)}
-                className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50"
+                className="h-10 w-10 p-0 border-gray-300 hover:bg-gray-50"
               >
                 <Search className="h-4 w-4 text-gray-600" />
               </Button>
@@ -823,7 +823,7 @@ export default function HorsesPage() {
                   placeholder="At, origin ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex h-9 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                  className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
                   autoFocus
                   style={{ boxShadow: 'none' }}
                   onFocus={(e) => {
