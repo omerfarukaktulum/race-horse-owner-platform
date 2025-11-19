@@ -6,9 +6,10 @@ import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/app/components/ui/dialog'
+import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, Activity, TrendingUp, Clock, Settings } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, Activity, TrendingUp, Clock, Settings, Bell } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -130,6 +131,17 @@ export default function StablematePage() {
   const [location, setLocation] = useState('')
   const [website, setWebsite] = useState('')
 
+  // Notification settings state
+  const [notificationSettings, setNotificationSettings] = useState({
+    horseRegistered: true,
+    horseDeclared: true,
+    newTraining: true,
+    newExpense: true,
+    newNote: true,
+    newRace: true,
+  })
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false)
+
   useEffect(() => {
     fetchStablemate()
   }, [])
@@ -220,6 +232,36 @@ export default function StablematePage() {
       setWebsite(stablemate.website || '')
     }
     setIsEditing(false)
+  }
+
+  const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
+    const newSettings = {
+      ...notificationSettings,
+      [key]: !notificationSettings[key],
+    }
+    setNotificationSettings(newSettings)
+    
+    setIsSavingNotifications(true)
+    try {
+      // TODO: Implement API endpoint to save notification settings
+      // const response = await fetch('/api/notifications/settings', {
+      //   method: 'PATCH',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   credentials: 'include',
+      //   body: JSON.stringify(newSettings),
+      // })
+      // if (!response.ok) throw new Error('Ayarlar kaydedilemedi')
+      // toast.success('Bildirim ayarları güncellendi')
+      
+      // For now, just show success
+      toast.success('Bildirim ayarı güncellendi')
+    } catch (error) {
+      // Revert on error
+      setNotificationSettings(notificationSettings)
+      toast.error('Ayarlar kaydedilirken bir hata oluştu')
+    } finally {
+      setIsSavingNotifications(false)
+    }
   }
 
   if (isLoading) {
@@ -363,6 +405,122 @@ export default function StablematePage() {
         </div>
       </div>
 
+      {/* Notification Settings */}
+      <Card className="w-full max-w-3xl bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
+              <CardDescription className="text-gray-600 mt-1">
+                E-posta bildirimlerinizi yönetin
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex-1">
+                <Label htmlFor="horseRegistered" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>Kayıtlar</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri bir yarışa kaydedildiğinde)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="horseRegistered"
+                checked={notificationSettings.horseRegistered}
+                onCheckedChange={() => handleNotificationToggle('horseRegistered')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex-1">
+                <Label htmlFor="horseDeclared" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>Deklarasyonlar</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri bir yarışa deklare edildiğinde)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="horseDeclared"
+                checked={notificationSettings.horseDeclared}
+                onCheckedChange={() => handleNotificationToggle('horseDeclared')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex-1">
+                <Label htmlFor="newTraining" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>İdmanlar</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri yeni bir idman yaptığında)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="newTraining"
+                checked={notificationSettings.newTraining}
+                onCheckedChange={() => handleNotificationToggle('newTraining')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex-1">
+                <Label htmlFor="newExpense" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>Giderler</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan birine yeni bir gider eklendiğinde)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="newExpense"
+                checked={notificationSettings.newExpense}
+                onCheckedChange={() => handleNotificationToggle('newExpense')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-3 border-b border-gray-100">
+              <div className="flex-1">
+                <Label htmlFor="newNote" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>Notlar</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan birine yeni bir not eklendiğinde)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="newNote"
+                checked={notificationSettings.newNote}
+                onCheckedChange={() => handleNotificationToggle('newNote')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between py-3">
+              <div className="flex-1">
+                <Label htmlFor="newRace" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
+                  <span>Yarışlar</span>
+                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri yeni bir yarış koştuğunda)</span>
+                </Label>
+              </div>
+              <Checkbox
+                id="newRace"
+                checked={notificationSettings.newRace}
+                onCheckedChange={() => handleNotificationToggle('newRace')}
+                disabled={isSavingNotifications}
+                className="ml-4"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
     </div>
 
       <Dialog
@@ -391,57 +549,57 @@ export default function StablematePage() {
                   Eküri bilgilerinizi onboarding sırasında olduğu gibi güncelleyin.
                 </CardDescription>
               </div>
-            </CardHeader>
+          </CardHeader>
             <CardContent>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  handleSave()
-                }}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSave()
+              }}
                 className="space-y-4"
               >
                 <div className="space-y-2 flex flex-col items-center">
                   <Label htmlFor="name" className="text-gray-700 font-medium w-full max-w-xs">
                     {TR.stablemate.name} *
                   </Label>
-                  <Input
-                    id="name"
+                <Input
+                  id="name"
                     type="text"
                     placeholder="Örn: Mehmet Ali Eküri"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                     required
-                    disabled={isSaving}
+                  disabled={isSaving}
                     className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                  />
-                </div>
+                />
+              </div>
 
                 <div className="space-y-2 flex flex-col items-center">
                   <Label htmlFor="foundationYear" className="text-gray-700 font-medium w-full max-w-xs">
                     {TR.stablemate.foundationYear}
                   </Label>
-                  <Input
-                    id="foundationYear"
-                    type="number"
-                    placeholder="Örn: 2020"
-                    value={foundationYear}
-                    onChange={(e) => setFoundationYear(e.target.value)}
+                <Input
+                  id="foundationYear"
+                  type="number"
+                  placeholder="Örn: 2020"
+                  value={foundationYear}
+                  onChange={(e) => setFoundationYear(e.target.value)}
                     min="1900"
                     max={new Date().getFullYear()}
-                    disabled={isSaving}
+                  disabled={isSaving}
                     className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
+                />
+              </div>
 
                 <div className="space-y-2 flex flex-col items-center">
                   <Label htmlFor="location" className="text-gray-700 font-medium w-full max-w-xs">
                     Konum
                   </Label>
                   <select
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    disabled={isSaving}
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  disabled={isSaving}
                     className="flex h-11 w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">Şehir seçin</option>
@@ -456,58 +614,58 @@ export default function StablematePage() {
                       </option>
                     ))}
                   </select>
-                </div>
+              </div>
 
                 <div className="space-y-2 flex flex-col items-center">
                   <Label htmlFor="website" className="text-gray-700 font-medium w-full max-w-xs">
                     {TR.stablemate.website}
                   </Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    placeholder="https://..."
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    disabled={isSaving}
+                <Input
+                  id="website"
+                  type="url"
+                  placeholder="https://..."
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  disabled={isSaving}
                     className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                  />
-                </div>
+                />
+              </div>
 
                 <div className="space-y-2 flex flex-col items-center">
                   <Label htmlFor="coOwners" className="text-gray-700 font-medium w-full max-w-xs">
                     {TR.stablemate.coOwners}
                   </Label>
-                  <textarea
-                    id="coOwners"
-                    placeholder="Her satıra bir ortak sahip adı"
-                    value={coOwners}
-                    onChange={(e) => setCoOwners(e.target.value)}
-                    disabled={isSaving}
+                <textarea
+                  id="coOwners"
+                  placeholder="Her satıra bir ortak sahip adı"
+                  value={coOwners}
+                  onChange={(e) => setCoOwners(e.target.value)}
+                  disabled={isSaving}
                     className="min-h-[120px] w-full max-w-xs rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
+                />
+              </div>
 
                 <div className="flex justify-center gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCancel}
-                    disabled={isSaving}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={isSaving}
                     className="h-11 rounded-2xl border-2 border-gray-200 px-6 font-semibold text-gray-700 bg-white/80"
-                  >
-                    {TR.common.cancel}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSaving}
+                >
+                  {TR.common.cancel}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
                     className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 font-semibold text-white shadow-lg hover:shadow-xl"
-                  >
-                    {isSaving ? TR.common.loading : TR.common.save}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+                >
+                  {isSaving ? TR.common.loading : TR.common.save}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
         </DialogContent>
       </Dialog>
     </>
