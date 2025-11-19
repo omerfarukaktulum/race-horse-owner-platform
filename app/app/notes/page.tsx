@@ -23,6 +23,9 @@ interface Note {
   addedBy: {
     email: string
     role: string
+    ownerProfile?: { officialName: string }
+    trainerProfile?: { fullName: string }
+    name?: string
   }
 }
 
@@ -349,7 +352,7 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {/* Filter and Add buttons */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -504,106 +507,108 @@ export default function NotesPage() {
         </div>
       </div>
 
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasNotes ? 'p-0' : 'py-16 text-center'}>
-          {!hasNotes ? (
-            <p className="text-gray-500">Henüz not eklenmemiş</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
+        <CardContent className="p-0 w-full min-w-0">
+          <div className="overflow-x-auto w-full min-w-0">
+            <table className="w-full min-w-full">
+              <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Tarih
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    At
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Not
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Ekleyen
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    İşlem
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {!hasNotes ? (
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      At
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Not
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Ekleyen
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      İşlem
-                    </th>
+                    <td colSpan={5} className="px-4 py-16 text-center text-sm text-gray-500">
+                      Henüz not eklenmemiş
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredNotes.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
-                        Seçilen filtrelerde not bulunamadı
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredNotes.map((note, index) => {
-                      const isStriped = index % 2 === 1
-                      const attachments = getPhotoList(note.photoUrl)
-                      return (
-                        <tr
-                          key={note.id}
-                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {formatDateShort(note.date)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {note.horse?.name || '-'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {note.note ? (
-                              <p className="text-sm text-gray-700">{note.note}</p>
-                            ) : (
-                              <span className="text-sm text-gray-400">-</span>
+                ) : filteredNotes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
+                      Seçilen filtrelerde not bulunamadı
+                    </td>
+                  </tr>
+                ) : (
+                  filteredNotes.map((note, index) => {
+                    const isStriped = index % 2 === 1
+                    const attachments = getPhotoList(note.photoUrl)
+                    return (
+                      <tr
+                        key={note.id}
+                        className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatDateShort(note.date)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {note.horse?.name || '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {note.note ? (
+                            <p className="text-sm text-gray-700">{note.note}</p>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-start gap-2">
+                            {attachments.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => openAttachmentViewer(attachments)}
+                                className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                title={`${attachments.length} ek görüntüle`}
+                              >
+                                <Paperclip className="h-4 w-4" />
+                              </button>
                             )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-start gap-2">
-                              {attachments.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => openAttachmentViewer(attachments)}
-                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                  title={`${attachments.length} ek görüntüle`}
-                                >
-                                  <Paperclip className="h-4 w-4" />
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(note)}
-                                className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                title="Düzenle"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteClick(note)}
-                                className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                title="Sil"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(note)}
+                              className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                              title="Düzenle"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(note)}
+                              className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                              title="Sil"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
