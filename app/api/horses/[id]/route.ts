@@ -254,10 +254,8 @@ export async function DELETE(
       }
     }
 
-    // Soft delete by marking as RETIRED
-    await prisma.horse.update({
+    await prisma.horse.delete({
       where: { id: params.id },
-      data: { status: 'RETIRED' },
     })
 
     return NextResponse.json({ success: true })

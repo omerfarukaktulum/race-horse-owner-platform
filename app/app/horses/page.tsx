@@ -992,7 +992,7 @@ export default function HorsesPage() {
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-gray-900">{TR.horses.removeHorse}</DialogTitle>
             <DialogDescription className="text-sm text-gray-600">
-              Seçilen at listeden kaldırılacak ve durumu &ldquo;Emekli&rdquo; olarak işaretlenecek. Devam etmek istediğinize emin misiniz?
+              Seçilen at listeden kaldırılacak. Devam etmek istediğinize emin misiniz?
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
