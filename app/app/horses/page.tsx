@@ -27,6 +27,7 @@ interface HorseData {
   trainer?: { fullName: string }
   groomName?: string
   handicapPoints?: number
+  prizeMoney?: number | string | null
   sireName?: string
   damName?: string
   currentLocationType?: 'racecourse' | 'farm'
@@ -61,7 +62,7 @@ export default function HorsesPage() {
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
-  const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'name-asc' | 'name-desc' | null>(null)
+  const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'name-asc' | 'name-desc' | 'ikramiye-desc' | null>(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -309,6 +310,12 @@ export default function HorsesPage() {
         filtered = filtered.sort((a, b) => a.name.localeCompare(b.name, 'tr'))
       } else if (sortBy === 'name-desc') {
         filtered = filtered.sort((a, b) => b.name.localeCompare(a.name, 'tr'))
+      } else if (sortBy === 'ikramiye-desc') {
+        filtered = filtered.sort((a, b) => {
+          const prizeA = a.prizeMoney ? (typeof a.prizeMoney === 'string' ? parseFloat(a.prizeMoney) : a.prizeMoney) : 0
+          const prizeB = b.prizeMoney ? (typeof b.prizeMoney === 'string' ? parseFloat(b.prizeMoney) : b.prizeMoney) : 0
+          return prizeB - prizeA // Descending order
+        })
       }
     } else {
       // Default sort: by age ascending (youngest first), then alphabetically by name
@@ -895,6 +902,23 @@ export default function HorsesPage() {
                       }`}
                     >
                       <span>İsim</span>
+                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
+                    </button>
+                  </div>
+                  
+                  {/* İkramiye Desc */}
+                  <div className="mb-2">
+                    <button
+                      onClick={() => {
+                        setSortBy(sortBy === 'ikramiye-desc' ? null : 'ikramiye-desc')
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        sortBy === 'ikramiye-desc'
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span>İkramiye</span>
                       <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
                   </div>
