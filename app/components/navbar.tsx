@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from './ui/button'
@@ -13,6 +13,32 @@ export function Navbar() {
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, isLoading, isInitialized } = useAuth()
+  const [stablemateName, setStablemateName] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchStablemateName = async () => {
+      if (!user || user.role !== 'OWNER') return
+      
+      try {
+        const response = await fetch('/api/onboarding/stablemate', {
+          credentials: 'include',
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.stablemate?.name) {
+            setStablemateName(data.stablemate.name)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching stablemate name:', error)
+      }
+    }
+
+    if (isInitialized && user) {
+      fetchStablemateName()
+    }
+  }, [user, isInitialized])
 
   const getNavigationItems = () => {
     if (!isInitialized || !user) {
@@ -51,9 +77,15 @@ export function Navbar() {
           <div className="flex-shrink-0">
             <Link href={user ? '/app/home' : '/'} className="flex items-center gap-2">
               <Activity className="h-6 w-6 text-[#6366f1]" />
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                At Sahibi Platform
-              </span>
+              {stablemateName ? (
+                <p className="text-xs uppercase tracking-[0.3em] text-indigo-500 whitespace-nowrap">
+                  {stablemateName} Ekürisi
+                </p>
+              ) : (
+                <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  At Sahibi Platform
+                </span>
+              )}
             </Link>
           </div>
 
