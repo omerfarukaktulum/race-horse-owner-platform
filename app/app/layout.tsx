@@ -240,11 +240,16 @@ function AppNavbar() {
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-col">
       <AppNavbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
         {children}
       </main>
+      <footer className="border-t border-gray-200 bg-white/80 backdrop-blur-sm mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-600">
+          <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
+        </div>
+      </footer>
     </div>
   )
 }

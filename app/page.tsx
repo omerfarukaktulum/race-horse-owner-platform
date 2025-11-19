@@ -181,7 +181,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t bg-white/80 backdrop-blur-sm mt-16">
         <div className="container mx-auto px-4 py-8 text-center text-gray-600">
-          <p>&copy; 2024 EKÜRİM. Tüm hakları saklıdır.</p>
+          <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
         </div>
       </footer>
     </div>
