@@ -82,6 +82,14 @@ export async function GET(request: Request) {
           lt: new Date(),
         },
       },
+      include: {
+        horse: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: {
         raceDate: 'desc',
       },
@@ -92,6 +100,14 @@ export async function GET(request: Request) {
       where: {
         horseId: {
           in: horseIds,
+        },
+      },
+      include: {
+        horse: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
       orderBy: {
@@ -110,12 +126,17 @@ export async function GET(request: Request) {
       prizeMoney: race.prizeMoney ? race.prizeMoney.toString() : undefined,
       raceType: race.raceType || undefined,
       position: race.position || undefined,
+      horseId: race.horseId,
+      horseName: race.horse?.name,
     }))
 
     // Format expenses
     const formattedExpenses = expenses.map((expense) => ({
       date: expense.date.toISOString().split('T')[0],
       amount: expense.amount.toString(),
+      horseId: expense.horseId || undefined,
+      horseName: expense.horse?.name,
+      category: expense.category || undefined,
     }))
 
     return NextResponse.json({

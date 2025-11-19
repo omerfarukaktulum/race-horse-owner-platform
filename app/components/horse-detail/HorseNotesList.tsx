@@ -31,6 +31,7 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  onActiveFiltersChange?: (count: number) => void
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -65,12 +66,19 @@ function getPhotoList(photoUrl?: string | string[]) {
 function formatAddedBy(note: HorseNote) {
   if (!note.addedBy) return '-'
   const roleLabel = ROLE_MAP[note.addedBy.role] || note.addedBy.role || ''
-  return roleLabel
-    ? `${roleLabel}${note.addedBy.email ? ` (${note.addedBy.email})` : ''}`
-    : note.addedBy.email || '-'
+  const profileName =
+    note.addedBy.ownerProfile?.officialName ||
+    note.addedBy.trainerProfile?.fullName ||
+    note.addedBy.name
+
+  if (roleLabel && profileName) {
+    return `${roleLabel} (${profileName})`
+  }
+
+  return roleLabel || profileName || 'Bilinmiyor'
 }
 
-export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
@@ -228,7 +236,12 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
     setAddedByFilters([])
   }
 
-  const hasActiveFilters = !!selectedRange || addedByFilters.length > 0
+  const activeFilterCount = (selectedRange ? 1 : 0) + addedByFilters.length
+  const hasActiveFilters = activeFilterCount > 0
+
+  useEffect(() => {
+    onActiveFiltersChange?.(activeFilterCount)
+  }, [activeFilterCount, onActiveFiltersChange])
 
   const handleEditClick = (note: HorseNote) => {
     setEditingNote(note)

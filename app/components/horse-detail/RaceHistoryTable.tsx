@@ -45,10 +45,35 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  onActiveFiltersChange?: (count: number) => void
 }
 
-export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+const DISTANCE_GROUPS = [
+  { value: 'short', label: 'Kısa Mesafe', description: '800-1400m' },
+  { value: 'medium', label: 'Orta Mesafe', description: '1401-1900m' },
+  { value: 'long', label: 'Uzun Mesafe', description: '1900m+' },
+]
+
+const normalizeSurface = (surface?: string) => {
+  if (!surface) return undefined
+  if (surface.startsWith('Ç')) return 'Çim'
+  if (surface.startsWith('K')) return 'Kum'
+  if (surface.startsWith('S')) return 'Sentetik'
+  return surface
+}
+
+const getDistanceGroup = (distance?: number) => {
+  if (!distance) return undefined
+  if (distance >= 800 && distance <= 1400) return 'short'
+  if (distance > 1400 && distance <= 1900) return 'medium'
+  if (distance > 1900) return 'long'
+  return undefined
+}
+
+export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
+  const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([])
+  const [selectedDistanceGroups, setSelectedDistanceGroups] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
@@ -73,25 +98,21 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
 
   // Click outside handler
   useEffect(() => {
+    if (!showFilterDropdown) return
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (
-        showFilterDropdown &&
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(target) &&
-        dropdownContentRef.current &&
-        !dropdownContentRef.current.contains(target) &&
-        filterDropdownContainerRef?.current &&
-        !filterDropdownContainerRef.current.contains(target)
-      ) {
+      const isInsideTrigger = filterDropdownRef.current?.contains(target)
+      const isInsideDropdown = dropdownContentRef.current?.contains(target)
+      const isInsidePortalContainer = filterDropdownContainerRef?.current?.contains(target)
+
+      if (!isInsideTrigger && !isInsideDropdown && !isInsidePortalContainer) {
         setShowFilterDropdown(false)
       }
     }
 
-    if (showFilterDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
 
   // Sort races by date (most recent first)
@@ -101,10 +122,20 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
     })
   }, [races])
 
-  // Filter races based on selected date range
+  const surfaceOptions = useMemo(() => {
+    const surfaces = new Set<string>()
+    sortedRaces.forEach((race) => {
+      const normalized = normalizeSurface(race.surface)
+      if (normalized) surfaces.add(normalized)
+    })
+    return Array.from(surfaces)
+  }, [sortedRaces])
+
+  // Filter races based on selected filters
   const filteredRaces = useMemo(() => {
-    if (!selectedRange) return sortedRaces
-    
+    let filtered = sortedRaces
+
+    if (selectedRange) {
     const now = new Date()
     let startDate: Date | null = null
 
@@ -128,21 +159,56 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
         startDate = null
     }
 
-    if (startDate) {
-      return sortedRaces.filter(race => {
+      if (startDate) {
+        filtered = filtered.filter(race => {
         const raceDate = new Date(race.raceDate)
         return raceDate >= startDate!
       })
     }
-    
-    return sortedRaces
-  }, [sortedRaces, selectedRange])
+    }
+
+    if (selectedSurfaces.length > 0) {
+      filtered = filtered.filter((race) => {
+        const normalized = normalizeSurface(race.surface)
+        return normalized ? selectedSurfaces.includes(normalized) : false
+      })
+    }
+
+    if (selectedDistanceGroups.length > 0) {
+      filtered = filtered.filter((race) => {
+        const group = getDistanceGroup(race.distance)
+        return group ? selectedDistanceGroups.includes(group) : false
+      })
+    }
+
+    return filtered
+  }, [sortedRaces, selectedRange, selectedSurfaces, selectedDistanceGroups])
 
   const clearFilters = useCallback(() => {
     setSelectedRange(null)
+    setSelectedSurfaces([])
+    setSelectedDistanceGroups([])
   }, [])
 
-  const hasActiveFilters = !!selectedRange
+  const activeFilterCount =
+    (selectedRange ? 1 : 0) + selectedSurfaces.length + selectedDistanceGroups.length
+  const hasActiveFilters = activeFilterCount > 0
+
+  useEffect(() => {
+    onActiveFiltersChange?.(activeFilterCount)
+  }, [activeFilterCount, onActiveFiltersChange])
+
+  const toggleSurface = (surface: string) => {
+    setSelectedSurfaces((prev) =>
+      prev.includes(surface) ? prev.filter((s) => s !== surface) : [...prev, surface]
+    )
+  }
+
+  const toggleDistanceGroup = (group: string) => {
+    setSelectedDistanceGroups((prev) =>
+      prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
+    )
+  }
 
   if (races.length === 0) {
     return (
@@ -287,6 +353,61 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
                         }`}
                       >
                         {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {surfaceOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Pist Türü</label>
+                  <div className="flex flex-wrap gap-2">
+                    {surfaceOptions.map((surface) => {
+                      const isActive = selectedSurfaces.includes(surface)
+                      return (
+                        <button
+                          key={surface}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleSurface(surface)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {surface}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+                <div className="flex flex-wrap gap-2">
+                  {DISTANCE_GROUPS.map((group) => {
+                    const isActive = selectedDistanceGroups.includes(group.value)
+                    return (
+                      <button
+                        key={group.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleDistanceGroup(group.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                        title={group.description}
+                      >
+                        {group.label}
                       </button>
                     )
                   })}

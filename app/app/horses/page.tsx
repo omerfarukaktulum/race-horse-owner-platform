@@ -454,7 +454,7 @@ export default function HorsesPage() {
           <div className="flex-1 min-w-0">
             <div className="mb-2">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">
-                {horse.name}
+                  {horse.name}
               </h3>
             </div>
             
@@ -554,7 +554,7 @@ export default function HorsesPage() {
               Konum Değiştir
             </Button>
           </div>
-        </Card>
+      </Card>
       </Link>
     )
   }
@@ -596,7 +596,7 @@ export default function HorsesPage() {
                     {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length}
             </span>
                 )}
-              </Button>
+          </Button>
           
           {/* Filter Dropdown */}
           {showFilters && (
@@ -609,8 +609,8 @@ export default function HorsesPage() {
                   >
                     <X className="h-4 w-4" />
                   </button>
-                </div>
-                
+      </div>
+
                 {/* Category Filter (Tabs) */}
                 <div className="mb-4">
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
@@ -654,8 +654,8 @@ export default function HorsesPage() {
                         >
                           {option.label}
                         </button>
-                      ))}
-                    </div>
+              ))}
+            </div>
                   </div>
                 )}
                 
@@ -800,8 +800,8 @@ export default function HorsesPage() {
                       <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
                   </div>
-                </div>
-              )}
+            </div>
+          )}
             </div>
             
             {/* Search Button */}
@@ -841,8 +841,8 @@ export default function HorsesPage() {
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
-              </div>
-            )}
+            </div>
+          )}
           </div>
           </div>
         

@@ -39,6 +39,7 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  onActiveFiltersChange?: (count: number) => void
 }
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -69,7 +70,7 @@ const getAttachments = (input?: string | string[] | null) => {
   return []
 }
 
-export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
@@ -358,17 +359,31 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
     setAddedByFilters([])
   }
 
-  const hasActiveFilters = !!selectedRange || categoryFilters.length > 0 || addedByFilters.length > 0
+  const activeFilterCount =
+    (selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length
+  const hasActiveFilters = activeFilterCount > 0
+
+  useEffect(() => {
+    onActiveFiltersChange?.(activeFilterCount)
+  }, [activeFilterCount, onActiveFiltersChange])
 
   const formatAddedBy = (expense: Expense) => {
     if (!expense.addedBy) return '-'
     const roleMap: Record<string, string> = {
-      OWNER: 'At Sahibi',
+    OWNER: 'At Sahibi',
+    TRAINER: 'Antrenör',
     }
     const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
-    return roleLabel
-      ? `${roleLabel}${expense.addedBy.email ? ` (${expense.addedBy.email})` : ''}`
-      : expense.addedBy.email || '-'
+  const profileName =
+    expense.addedBy.ownerProfile?.officialName ||
+    expense.addedBy.trainerProfile?.fullName ||
+    expense.addedBy.name
+
+  if (roleLabel && profileName) {
+    return `${roleLabel} (${profileName})`
+  }
+
+  return roleLabel || profileName || 'Bilinmiyor'
   }
 
   const isEditModalVisible = isEditModalOpen && !!editingExpense

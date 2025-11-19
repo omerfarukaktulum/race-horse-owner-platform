@@ -238,7 +238,7 @@ export async function searchTJKHorsesPlaywright(
           const ageMatch = ageText.match(/(\d+)\s*y/)
           const currentYear = new Date().getFullYear()
           const yob = ageMatch ? currentYear - parseInt(ageMatch[1]) : undefined
-          
+
           console.log(`[TJK API] Horse: ${name}, Final gender after gelding check: "${gender}"`)
 
           let sire = ''

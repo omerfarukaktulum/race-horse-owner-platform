@@ -233,9 +233,14 @@ export default function NotesPage() {
   const formatAddedBy = (note: Note) => {
     if (!note.addedBy) return '-'
     const roleLabel = ROLE_MAP[note.addedBy.role] || note.addedBy.role || ''
-    return roleLabel
-      ? `${roleLabel}${note.addedBy.email ? ` (${note.addedBy.email})` : ''}`
-      : note.addedBy.email || '-'
+    const profileName =
+      note.addedBy.ownerProfile?.officialName || note.addedBy.trainerProfile?.fullName || note.addedBy.name
+
+    if (roleLabel && profileName) {
+      return `${roleLabel} (${profileName})`
+    }
+
+    return roleLabel || profileName || 'Bilinmiyor'
   }
 
   const handleEditClick = (note: Note) => {

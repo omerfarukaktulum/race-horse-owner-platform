@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Activity } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { formatGallopStatus } from '@/lib/utils/gallops'
 
 interface GallopData {
   date: string
@@ -49,24 +50,6 @@ export function GallopsCard() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Format status abbreviations to full Turkish words
-  const formatStatus = (status?: string): string => {
-    if (!status) return ''
-    
-    // Replace abbreviations with full Turkish words
-    if (status.trim() === 'R') {
-      return 'Rahat'
-    } else if (status.trim() === 'ÇR') {
-      return 'Çok Rahat'
-    } else if (status.trim() === 'Ç') {
-      return 'Çalışarak'
-    } else if (status.trim() === 'HÇ') {
-      return 'Hafif Çalışarak'
-    }
-    
-    return status
   }
 
   // Format jockey name to camel case
@@ -159,7 +142,7 @@ export function GallopsCard() {
                     </div>
                     {gallop.status && (
                       <div className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200 leading-tight flex items-center">
-                        {formatStatus(gallop.status)}
+                        {formatGallopStatus(gallop.status)}
                       </div>
                     )}
                   </div>

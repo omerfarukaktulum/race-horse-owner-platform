@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
+import { formatGallopStatus } from '@/lib/utils/gallops'
 import { Filter, X } from 'lucide-react'
 
 interface Gallop {
@@ -33,10 +34,23 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  onActiveFiltersChange?: (count: number) => void
 }
 
-export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+const normalizeRacecourse = (racecourse?: string) => {
+  if (!racecourse) return undefined
+  return racecourse.trim()
+}
+
+const normalizeStatus = (status?: string) => {
+  if (!status) return undefined
+  return status.trim()
+}
+
+export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
+  const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
@@ -61,25 +75,21 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
 
   // Click outside handler
   useEffect(() => {
+    if (!showFilterDropdown) return
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (
-        showFilterDropdown &&
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(target) &&
-        dropdownContentRef.current &&
-        !dropdownContentRef.current.contains(target) &&
-        filterDropdownContainerRef?.current &&
-        !filterDropdownContainerRef.current.contains(target)
-      ) {
+      const isInsideTrigger = filterDropdownRef.current?.contains(target)
+      const isInsideDropdown = dropdownContentRef.current?.contains(target)
+      const isInsidePortalContainer = filterDropdownContainerRef?.current?.contains(target)
+
+      if (!isInsideTrigger && !isInsideDropdown && !isInsidePortalContainer) {
         setShowFilterDropdown(false)
       }
     }
 
-    if (showFilterDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
 
   // Sort gallops by date (most recent first)
@@ -89,48 +99,102 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
     })
   }, [gallops])
 
-  // Filter gallops based on selected date range
-  const filteredGallops = useMemo(() => {
-    if (!selectedRange) return sortedGallops
-    
-    const now = new Date()
-    let startDate: Date | null = null
+  const racecourseOptions = useMemo(() => {
+    const racecourses = new Set<string>()
+    sortedGallops.forEach((gallop) => {
+      const normalized = normalizeRacecourse(gallop.racecourse)
+      if (normalized) racecourses.add(normalized)
+    })
+    return Array.from(racecourses)
+  }, [sortedGallops])
 
-    switch (selectedRange) {
-      case 'lastWeek':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case 'lastMonth':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 1)
-        break
-      case 'last3Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 3)
-        break
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      default:
-        startDate = null
+  const statusOptions = useMemo(() => {
+    const statuses = new Set<string>()
+    sortedGallops.forEach((gallop) => {
+      const normalized = normalizeStatus(gallop.status)
+      if (normalized) statuses.add(normalized)
+    })
+    return Array.from(statuses)
+  }, [sortedGallops])
+
+  // Filter gallops based on selected filters
+  const filteredGallops = useMemo(() => {
+    let filtered = sortedGallops
+
+    if (selectedRange) {
+    const now = new Date()
+      let startDate: Date | null = null
+
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(gallop => {
+          const gallopDate = new Date(gallop.gallopDate)
+          return gallopDate >= startDate!
+        })
+      }
     }
 
-    if (startDate) {
-      return sortedGallops.filter(gallop => {
-        const gallopDate = new Date(gallop.gallopDate)
-        return gallopDate >= startDate!
+    if (selectedRacecourses.length > 0) {
+      filtered = filtered.filter((gallop) => {
+        const normalized = normalizeRacecourse(gallop.racecourse)
+        return normalized ? selectedRacecourses.includes(normalized) : false
       })
     }
-    
-    return sortedGallops
-  }, [sortedGallops, selectedRange])
+
+    if (selectedStatuses.length > 0) {
+      filtered = filtered.filter((gallop) => {
+        const normalized = normalizeStatus(gallop.status)
+        return normalized ? selectedStatuses.includes(normalized) : false
+      })
+    }
+
+    return filtered
+  }, [sortedGallops, selectedRange, selectedRacecourses, selectedStatuses])
 
   const clearFilters = useCallback(() => {
     setSelectedRange(null)
+    setSelectedRacecourses([])
+    setSelectedStatuses([])
   }, [])
 
-  const hasActiveFilters = !!selectedRange
+  const activeFilterCount =
+    (selectedRange ? 1 : 0) + selectedRacecourses.length + selectedStatuses.length
+  const hasActiveFilters = activeFilterCount > 0
+  const toggleRacecourse = (racecourse: string) => {
+    setSelectedRacecourses((prev) =>
+      prev.includes(racecourse) ? prev.filter((r) => r !== racecourse) : [...prev, racecourse]
+    )
+  }
+
+  const toggleStatus = (status: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+    )
+  }
+
+
+  useEffect(() => {
+    onActiveFiltersChange?.(activeFilterCount)
+  }, [activeFilterCount, onActiveFiltersChange])
 
   if (gallops.length === 0) {
     return (
@@ -236,6 +300,62 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 </div>
               </div>
 
+              {racecourseOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                  <div className="flex flex-wrap gap-2">
+                    {racecourseOptions.map((racecourse) => {
+                      const isActive = selectedRacecourses.includes(racecourse)
+                      return (
+                        <button
+                          key={racecourse}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleRacecourse(racecourse)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {racecourse}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {statusOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Durum</label>
+                  <div className="flex flex-wrap gap-2">
+                    {statusOptions.map((status) => {
+                      const isActive = selectedStatuses.includes(status)
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleStatus(status)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {formatGallopStatus(status)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <button
@@ -332,6 +452,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                     return timeStr
                   }
                   
+                  const statusLabel = formatGallopStatus(gallop.status)
                   return (
                     <tr
                       key={gallop.id}
@@ -371,7 +492,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                       
                       {/* Status */}
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-700">{gallop.status || '-'}</span>
+                        <span className="text-sm text-gray-700">{statusLabel || '-'}</span>
                       </td>
                     </tr>
                   )

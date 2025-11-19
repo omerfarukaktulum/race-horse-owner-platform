@@ -5,7 +5,7 @@ import { StatisticsCharts } from '@/app/components/horse-detail/StatisticsCharts
 import { toast } from 'sonner'
 
 interface RaceHistory {
-    id: string
+  id: string
   raceDate: string
   city?: string
   distance?: number
@@ -14,11 +14,16 @@ interface RaceHistory {
   prizeMoney?: string
   raceType?: string
   position?: number
+  horseId?: string
+  horseName?: string
 }
 
 interface ExpenseData {
   date: string
   amount: string
+  horseId?: string
+  horseName?: string
+  category?: string
 }
 
 export default function StatsPage() {
@@ -63,7 +68,5 @@ export default function StatsPage() {
     )
   }
 
-  return (
-    <StatisticsCharts races={races} expenses={expenses} />
-  )
+  return <StatisticsCharts races={races} expenses={expenses} isGlobalStats />
 }

@@ -41,6 +41,7 @@ const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
   { value: 'thisYear', label: 'Bu Yıl' },
 ]
 
+
 const getAttachments = (input?: string | string[] | null) => {
   if (!input) return []
   if (Array.isArray(input)) return input.filter(Boolean)
@@ -352,6 +353,7 @@ export default function ExpensesPage() {
     }))
   }, [sortedExpenses])
 
+
   // Toggle functions
   const toggleCategoryFilter = (category: string) => {
     setCategoryFilters((prev) =>
@@ -381,11 +383,17 @@ export default function ExpensesPage() {
     if (!expense.addedBy) return '-'
     const roleMap: Record<string, string> = {
       OWNER: 'At Sahibi',
+      TRAINER: 'Antrenör',
     }
     const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
-    return roleLabel
-      ? `${roleLabel}${expense.addedBy.email ? ` (${expense.addedBy.email})` : ''}`
-      : expense.addedBy.email || '-'
+    const profileName =
+      expense.addedBy.ownerProfile?.officialName || expense.addedBy.trainerProfile?.fullName
+
+    if (roleLabel && profileName) {
+      return `${roleLabel} (${profileName})`
+    }
+
+    return roleLabel || profileName || 'Bilinmiyor'
   }
 
   const hasExpenses = (expenses?.length || 0) > 0

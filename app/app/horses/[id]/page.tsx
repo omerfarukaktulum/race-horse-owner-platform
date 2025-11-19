@@ -152,6 +152,11 @@ export default function HorseDetailPage() {
   const [showStatisticsFilter, setShowStatisticsFilter] = useState(false)
   const [showRacesFilter, setShowRacesFilter] = useState(false)
   const [showGallopsFilter, setShowGallopsFilter] = useState(false)
+  const [racesFilterCount, setRacesFilterCount] = useState(0)
+  const [gallopsFilterCount, setGallopsFilterCount] = useState(0)
+  const [statisticsFilterCount, setStatisticsFilterCount] = useState(0)
+  const [expensesFilterCount, setExpensesFilterCount] = useState(0)
+  const [notesFilterCount, setNotesFilterCount] = useState(0)
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
   const statisticsFilterTriggerRef = useRef<(() => void) | null>(null)
@@ -162,6 +167,20 @@ export default function HorseDetailPage() {
   const statisticsFilterButtonRef = useRef<HTMLDivElement>(null)
   const racesFilterButtonRef = useRef<HTMLDivElement>(null)
   const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
+
+  const getFilterButtonClass = (hasActive: boolean) =>
+    `h-[42px] px-4 text-sm font-medium rounded-md border-2 shadow-md hover:shadow-lg transition-all duration-300 ${
+      hasActive
+        ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+    }`
+
+  const renderFilterBadge = (count: number) =>
+    count > 0 ? (
+      <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+        {count}
+      </span>
+    ) : null
 
   useEffect(() => {
     if (horseId) {
@@ -357,18 +376,18 @@ export default function HorseDetailPage() {
                     filterTriggerRef.current?.()
                   }}
                   variant="outline"
-                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                  className={getFilterButtonClass(expensesFilterCount > 0)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
-            </Button>
+                  {renderFilterBadge(expensesFilterCount)}
+                </Button>
               </div>
               <Button 
                 onClick={() => setIsExpenseModalOpen(true)}
-                className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Gider Ekle
+                + Yeni
               </Button>
                   </div>
                 )}
@@ -380,10 +399,11 @@ export default function HorseDetailPage() {
                     racesFilterTriggerRef.current?.()
                   }}
                   variant="outline"
-                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                  className={getFilterButtonClass(racesFilterCount > 0)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
+                  {renderFilterBadge(racesFilterCount)}
                 </Button>
               </div>
             </div>
@@ -396,10 +416,11 @@ export default function HorseDetailPage() {
                     gallopsFilterTriggerRef.current?.()
                   }}
                   variant="outline"
-                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                  className={getFilterButtonClass(gallopsFilterCount > 0)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
+                  {renderFilterBadge(gallopsFilterCount)}
                 </Button>
               </div>
             </div>
@@ -412,10 +433,11 @@ export default function HorseDetailPage() {
                     statisticsFilterTriggerRef.current?.()
                   }}
                   variant="outline"
-                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                  className={getFilterButtonClass(statisticsFilterCount > 0)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
+                  {renderFilterBadge(statisticsFilterCount)}
                 </Button>
               </div>
             </div>
@@ -428,18 +450,18 @@ export default function HorseDetailPage() {
                     notesFilterTriggerRef.current?.()
                   }}
                   variant="outline"
-                  className="h-[42px] px-6 text-sm font-medium rounded-md border-2 border-gray-300 text-gray-700 hover:border-gray-400 shadow-md hover:shadow-lg transition-all duration-300"
+                  className={getFilterButtonClass(notesFilterCount > 0)}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filtrele
+                  {renderFilterBadge(notesFilterCount)}
                 </Button>
               </div>
               <Button 
                 onClick={() => setIsNoteModalOpen(true)}
-                className="h-[42px] px-6 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <FileText className="h-4 w-4 mr-2" />
-                Not Ekle
+                + Yeni
               </Button>
             </div>
           )}
@@ -463,6 +485,7 @@ export default function HorseDetailPage() {
             showFilterDropdown={showRacesFilter}
             onFilterDropdownChange={setShowRacesFilter}
             filterDropdownContainerRef={racesFilterButtonRef}
+            onActiveFiltersChange={setRacesFilterCount}
           />
         </TabsContent>
 
@@ -476,6 +499,7 @@ export default function HorseDetailPage() {
             showFilterDropdown={showGallopsFilter}
             onFilterDropdownChange={setShowGallopsFilter}
             filterDropdownContainerRef={gallopsFilterButtonRef}
+            onActiveFiltersChange={setGallopsFilterCount}
           />
         </TabsContent>
 
@@ -490,6 +514,7 @@ export default function HorseDetailPage() {
             showFilterDropdown={showStatisticsFilter}
             onFilterDropdownChange={setShowStatisticsFilter}
             filterDropdownContainerRef={statisticsFilterButtonRef}
+            onActiveFiltersChange={setStatisticsFilterCount}
           />
         </TabsContent>
 
@@ -507,6 +532,7 @@ export default function HorseDetailPage() {
             showFilterDropdown={showExpensesFilter}
             onFilterDropdownChange={setShowExpensesFilter}
             filterDropdownContainerRef={expensesFilterButtonRef}
+            onActiveFiltersChange={setExpensesFilterCount}
           />
         </TabsContent>
 
@@ -523,6 +549,7 @@ export default function HorseDetailPage() {
             showFilterDropdown={showNotesFilter}
             onFilterDropdownChange={setShowNotesFilter}
             filterDropdownContainerRef={notesFilterButtonRef}
+            onActiveFiltersChange={setNotesFilterCount}
           />
         </TabsContent>
       </Tabs>

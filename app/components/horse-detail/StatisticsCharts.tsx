@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
-import { MapPin, Ruler, Layers, Users, TurkishLira, Flag, Filter, X, Trophy, ChevronDown, BarChart3 } from 'lucide-react'
+import { MapPin, Ruler, Layers, Users, TurkishLira, Flag, Filter, X, Trophy, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
+import { TR } from '@/lib/constants/tr'
 import {
   getCityDistribution,
-  getDistanceDistribution,
   getSurfaceDistribution,
   getRaceTypeDistribution,
   getJockeyDistribution,
@@ -29,11 +30,16 @@ interface RaceHistory {
   prizeMoney?: string
   raceType?: string
   position?: number
+  horseId?: string
+  horseName?: string
 }
 
 interface ExpenseData {
   date: string
   amount: string
+  horseId?: string
+  horseName?: string
+  category?: string
 }
 
 type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'last6Months' | 'thisYear'
@@ -54,6 +60,8 @@ interface Props {
   showFilterDropdown?: boolean
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
+  isGlobalStats?: boolean
+  onActiveFiltersChange?: (count: number) => void
 }
 
 // Distinct color palette for charts (vibrant colors)
@@ -69,6 +77,28 @@ const COLORS = [
   '#f97316', // Orange
   '#06b6d4', // Cyan
 ]
+const MAX_CATEGORY_CHARTS = 6
+
+const formatCurrencyNumber = (value: number) =>
+  new Intl.NumberFormat('tr-TR', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(value))
+
+const DISTANCE_GROUP_DEFS = [
+  { id: 'short', label: 'Kısa Mesafe', min: 800, max: 1400 },
+  { id: 'medium', label: 'Orta Mesafe', min: 1401, max: 1900 },
+  { id: 'long', label: 'Uzun Mesafe', min: 1901, max: Number.POSITIVE_INFINITY },
+] as const
+
+const getDistanceGroupId = (distance?: number) => {
+  if (!distance) return undefined
+  if (distance >= 800 && distance <= 1400) return 'short'
+  if (distance > 1400 && distance <= 1900) return 'medium'
+  if (distance > 1900) return 'long'
+  return undefined
+}
+
+const getNormalizedString = (value?: string) => value?.toUpperCase().trim() || ''
 
 // Custom Legend Component
 interface LegendItem {
@@ -78,7 +108,21 @@ interface LegendItem {
   percent: number
 }
 
-const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) => {
+interface CustomLegendProps {
+  data: LegendItem[]
+  total: number
+  valueIcon?: ReactNode
+  valueFormatter?: (value: number) => string
+  iconPosition?: 'before' | 'after'
+}
+
+const CustomLegend = ({
+  data,
+  total,
+  valueIcon,
+  valueFormatter,
+  iconPosition = 'after',
+}: CustomLegendProps) => {
   // Sort by value descending
   const sortedData = [...data].sort((a, b) => b.value - a.value)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -145,7 +189,9 @@ const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) =>
         ref={scrollRef}
         className="max-h-[7rem] overflow-y-auto space-y-2 pr-1 chart-legend-scroll"
       >
-      {sortedData.map((item, index) => (
+        {sortedData.map((item, index) => {
+          const formattedValue = valueFormatter ? valueFormatter(item.value) : item.value.toLocaleString('tr-TR')
+          return (
         <div key={index} className="flex items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-2 flex-1">
             <div
@@ -155,11 +201,20 @@ const CustomLegend = ({ data, total }: { data: LegendItem[]; total: number }) =>
             <span className="text-gray-700 truncate">{item.name}</span>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="font-semibold text-gray-900">{item.value}</span>
+                <div className="flex items-center gap-1 font-semibold text-gray-900">
+                  {valueIcon && iconPosition === 'before' ? (
+                    <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
+                  ) : null}
+                  <span>{formattedValue}</span>
+                  {valueIcon && iconPosition === 'after' ? (
+                    <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
+                  ) : null}
+                </div>
             <span className="text-gray-500 w-12 text-right">{item.percent.toFixed(0)}%</span>
           </div>
         </div>
-      ))}
+          )
+        })}
       </div>
       
       {/* Bottom fade gradient and scroll indicator */}
@@ -199,7 +254,17 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null
 }
 
-export function StatisticsCharts({ races, expenses, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef }: Props) {
+export function StatisticsCharts({
+  races,
+  expenses,
+  hideButtons = false,
+  onFilterTriggerReady,
+  showFilterDropdown: externalShowFilterDropdown,
+  onFilterDropdownChange,
+  filterDropdownContainerRef,
+  isGlobalStats = false,
+  onActiveFiltersChange,
+}: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
@@ -305,15 +370,67 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
   }, [expenses, selectedRange])
 
   const cityData = getCityDistribution(filteredRaces)
-  const distanceData = getDistanceDistribution(filteredRaces)
+  const distanceGroupData = useMemo(() => {
+    const totals = DISTANCE_GROUP_DEFS.map((group, index) => ({
+      id: group.id,
+      name: group.label,
+      value: 0,
+      color: COLORS[index % COLORS.length],
+    }))
+    const totalsMap = new Map(totals.map((entry) => [entry.id, entry]))
+
+    filteredRaces.forEach((race) => {
+      const groupId = getDistanceGroupId(race.distance)
+      if (!groupId) return
+      const entry = totalsMap.get(groupId)
+      if (!entry) return
+      entry.value += 1
+    })
+
+    return totals.filter((entry) => entry.value > 0)
+  }, [filteredRaces])
   const surfaceData = getSurfaceDistribution(filteredRaces)
-  const raceTypeData = getRaceTypeDistribution(filteredRaces)
+  const raceTypeData = getRaceTypeDistribution(filteredRaces, filteredRaces.length || 1)
+  const getRaceTypeDisplayName = useCallback((raceType?: string) => {
+    const normalized = getNormalizedString(raceType)
+    if (normalized.startsWith('KISA VADE HANDIKAP')) return 'KV Handikap Koşu'
+    if (normalized.startsWith('KV-')) return 'Kısa Vade Koşu'
+    if (normalized.startsWith('ŞARTLI')) return 'Şartlı Koşu'
+    if (normalized.startsWith('HANDIKAP')) return 'Handikap Koşu'
+    if (normalized.startsWith('KISA VADE')) return 'Kısa Vade Koşu'
+    if (normalized.startsWith('MAIDEN')) return 'Maiden Koşu'
+    if (/^G\d*/.test(normalized) || normalized.startsWith('G ')) return 'Grup Koşu'
+    return raceType || 'Diğer'
+  }, [])
+  const raceTypeChartData = useMemo(() => {
+    const grouped = new Map<
+      string,
+      {
+        name: string
+        value: number
+        color: string
+      }
+    >()
+
+    raceTypeData.forEach((item, index) => {
+      const displayName = getRaceTypeDisplayName(item.name)
+      const existing = grouped.get(displayName) || {
+        name: displayName,
+        value: 0,
+        color: COLORS[index % COLORS.length],
+      }
+      existing.value += item.value
+      grouped.set(displayName, existing)
+    })
+
+    return Array.from(grouped.values())
+  }, [raceTypeData, getRaceTypeDisplayName])
   const jockeyData = getJockeyDistribution(filteredRaces)
   const surfacePerformanceData = getSurfacePerformanceData(filteredRaces)
   const distancePerformanceData = getDistancePerformanceData(filteredRaces)
   
   // Statistics category navigation state
-  const [selectedCategory, setSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'gelir-gider'>('genel')
+  const [selectedCategory, setSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'gelir' | 'gider'>('genel')
   
   // City performance data - show all cities
   const cityPerformanceData = useMemo(() => {
@@ -327,32 +444,33 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
   
   // Click outside handler
   useEffect(() => {
+    if (!showFilterDropdown) return
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (
-        showFilterDropdown &&
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(target) &&
-        dropdownContentRef.current &&
-        !dropdownContentRef.current.contains(target) &&
-        filterDropdownContainerRef?.current &&
-        !filterDropdownContainerRef.current.contains(target)
-      ) {
+      const isInsideTrigger = filterDropdownRef.current?.contains(target)
+      const isInsideDropdown = dropdownContentRef.current?.contains(target)
+      const isInsidePortal = filterDropdownContainerRef?.current?.contains(target)
+
+      if (!isInsideTrigger && !isInsideDropdown && !isInsidePortal) {
         setShowFilterDropdown(false)
       }
     }
 
-    if (showFilterDropdown) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
   }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
 
   const clearFilters = useCallback(() => {
     setSelectedRange(null)
   }, [])
 
-  const hasActiveFilters = !!selectedRange
+  const activeFilterCount = selectedRange ? 1 : 0
+  const hasActiveFilters = activeFilterCount > 0
+
+  useEffect(() => {
+    onActiveFiltersChange?.(activeFilterCount)
+  }, [activeFilterCount, onActiveFiltersChange])
 
   // Dynamic earnings chart data based on selected range
   const getEarningsChartData = useMemo(() => {
@@ -365,37 +483,37 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
       // Default: last 12 months
       startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
       grouping = 'monthly'
-      title = 'Kazanç'
+      title = 'Toplam Kazanç'
     } else {
       switch (selectedRange) {
         case 'lastWeek':
           startDate = new Date(now)
           startDate.setDate(startDate.getDate() - 7)
           grouping = 'daily'
-          title = 'Kazanç'
+          title = 'Toplam Kazanç'
           break
         case 'lastMonth':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 1)
           grouping = 'weekly'
-          title = 'Kazanç'
+          title = 'Toplam Kazanç'
           break
         case 'last3Months':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 3)
           grouping = 'weekly'
-          title = 'Kazanç'
+          title = 'Toplam Kazanç'
           break
         case 'last6Months':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 6)
           grouping = 'monthly'
-          title = 'Kazanç'
+          title = 'Toplam Kazanç'
           break
         case 'thisYear':
           startDate = new Date(now.getFullYear(), 0, 1)
           grouping = 'monthly'
-          title = 'Kazanç'
+          title = 'Toplam Kazanç'
           break
         default:
           startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
@@ -509,37 +627,37 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
       // Default: last 12 months
       startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
       grouping = 'monthly'
-      title = 'Gider'
+      title = 'Toplam Gider'
     } else {
       switch (selectedRange) {
         case 'lastWeek':
           startDate = new Date(now)
           startDate.setDate(startDate.getDate() - 7)
           grouping = 'daily'
-          title = 'Gider'
+          title = 'Toplam Gider'
           break
         case 'lastMonth':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 1)
           grouping = 'weekly'
-          title = 'Gider'
+          title = 'Toplam Gider'
           break
         case 'last3Months':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 3)
           grouping = 'weekly'
-          title = 'Gider'
+          title = 'Toplam Gider'
           break
         case 'last6Months':
           startDate = new Date(now)
           startDate.setMonth(startDate.getMonth() - 6)
           grouping = 'monthly'
-          title = 'Gider'
+          title = 'Toplam Gider'
           break
         case 'thisYear':
           startDate = new Date(now.getFullYear(), 0, 1)
           grouping = 'monthly'
-          title = 'Gider'
+          title = 'Toplam Gider'
           break
         default:
           startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
@@ -630,6 +748,118 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
   // Check if we have data
   const hasRaceData = filteredRaces.length > 0
   const hasExpenseData = filteredExpenses.length > 0
+
+  const topEarningHorses = useMemo(() => {
+    if (!isGlobalStats) return []
+    const totals = new Map<string, { horseName: string; total: number; raceCount: number }>()
+    filteredRaces.forEach((race) => {
+      if (!race.prizeMoney) return
+      const amount = Number(race.prizeMoney)
+      if (!amount || Number.isNaN(amount)) return
+      const key = race.horseId || race.horseName
+      if (!key) return
+      const entry = totals.get(key) || { horseName: race.horseName || 'Belirsiz', total: 0, raceCount: 0 }
+      entry.total += amount
+      entry.raceCount += 1
+      totals.set(key, entry)
+    })
+    return Array.from(totals.values()).sort((a, b) => b.total - a.total)
+  }, [isGlobalStats, filteredRaces])
+
+  const topSpendingHorses = useMemo(() => {
+    if (!isGlobalStats) return []
+    const totals = new Map<string, { horseName: string; total: number; expenseCount: number }>()
+    filteredExpenses.forEach((expense) => {
+      if (!expense.amount) return
+      const amount = Number(expense.amount)
+      if (!amount || Number.isNaN(amount)) return
+      const key = expense.horseId || expense.horseName
+      if (!key) return
+      const entry = totals.get(key) || { horseName: expense.horseName || 'Belirsiz', total: 0, expenseCount: 0 }
+      entry.total += amount
+      entry.expenseCount += 1
+      totals.set(key, entry)
+    })
+    return Array.from(totals.values()).sort((a, b) => b.total - a.total)
+  }, [isGlobalStats, filteredExpenses])
+
+  const topEarningPieData = useMemo((): { name: string; value: number; color: string }[] => {
+    return topEarningHorses.slice(0, 5).map((horse, index) => ({
+      name: horse.horseName,
+      value: horse.total,
+      color: COLORS[index % COLORS.length],
+    }))
+  }, [topEarningHorses])
+
+  const topSpendingPieData = useMemo((): { name: string; value: number; color: string }[] => {
+    return topSpendingHorses.slice(0, 5).map((horse, index) => ({
+      name: horse.horseName,
+      value: horse.total,
+      color: COLORS[index % COLORS.length],
+    }))
+  }, [topSpendingHorses])
+
+  const topEarningTotal = useMemo(
+    () => topEarningPieData.reduce((sum, entry) => sum + entry.value, 0),
+    [topEarningPieData],
+  )
+  const topSpendingTotal = useMemo(
+    () => topSpendingPieData.reduce((sum, entry) => sum + entry.value, 0),
+    [topSpendingPieData],
+  )
+
+  const expenseCategoryDistribution = useMemo(() => {
+    if (!isGlobalStats) return []
+    const totals = new Map<string, number>()
+    filteredExpenses.forEach((expense) => {
+      if (!expense.amount) return
+      const amount = Number(expense.amount)
+      if (!amount || Number.isNaN(amount)) return
+      const category = expense.category || 'Diğer'
+      totals.set(category, (totals.get(category) || 0) + amount)
+    })
+    return Array.from(totals.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+  }, [isGlobalStats, filteredExpenses])
+
+  const getCategoryDisplayName = useCallback((category?: string) => {
+    if (!category) return 'Diğer'
+    const translation = (TR.expenseCategories as Record<string, string> | undefined)?.[category]
+    if (translation) return translation
+    return category.replace(/_/g, ' ')
+  }, [])
+
+  const categoryHorseDistributions = useMemo(() => {
+    if (!isGlobalStats) return []
+    const categoryMap: Record<string, { total: number; horses: Record<string, number> }> = {}
+
+    filteredExpenses.forEach((expense) => {
+      if (!expense.amount) return
+      const amount = Number(expense.amount)
+      if (!amount || Number.isNaN(amount)) return
+      const category = expense.category || 'Diğer'
+      const horseName = expense.horseName || 'Belirsiz At'
+
+      if (!categoryMap[category]) {
+        categoryMap[category] = { total: 0, horses: {} }
+      }
+
+      categoryMap[category].total += amount
+      categoryMap[category].horses[horseName] =
+        (categoryMap[category].horses[horseName] || 0) + amount
+    })
+
+    return Object.entries(categoryMap)
+      .map(([category, data]) => ({
+        category: getCategoryDisplayName(category),
+        total: data.total,
+        horses: Object.entries(data.horses)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a, b) => b.value - a.value),
+      }))
+      .sort((a, b) => b.total - a.total)
+  }, [getCategoryDisplayName, isGlobalStats, filteredExpenses])
   
   // Helper to prepare legend data
   const prepareLegendData = (data: any[]): LegendItem[] => {
@@ -748,7 +978,8 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                 { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
                 { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
                 { id: 'jokey' as const, label: 'Jokey', icon: Users },
-                { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
+                { id: 'gelir' as const, label: 'Gelir', icon: TurkishLira },
+                { id: 'gider' as const, label: 'Gider', icon: TurkishLira },
               ].map(({ id, label, icon: Icon }) => {
                 const isActive = selectedCategory === id
                 return (
@@ -816,7 +1047,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
           )}
           
           {/* Distance Distribution */}
-          {distanceData.length > 0 && (
+          {distanceGroupData.length > 0 && (
             <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
@@ -828,7 +1059,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={prepareLegendData(distanceData)}
+                      data={prepareLegendData(distanceGroupData)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -836,16 +1067,16 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {distanceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {distanceGroupData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
                 <CustomLegend
-                  data={prepareLegendData(distanceData)}
-                  total={distanceData.reduce((sum, item) => sum + item.value, 0)}
+                  data={prepareLegendData(distanceGroupData)}
+                  total={distanceGroupData.reduce((sum, item) => sum + item.value, 0)}
                 />
               </CardContent>
             </Card>
@@ -888,7 +1119,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
           )}
           
           {/* Race Type Distribution */}
-          {raceTypeData.length > 0 && (
+          {raceTypeChartData.length > 0 && (
             <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
@@ -900,7 +1131,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie
-                      data={prepareLegendData(raceTypeData)}
+                      data={prepareLegendData(raceTypeChartData)}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -908,16 +1139,16 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {raceTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {raceTypeChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
                 <CustomLegend
-                  data={prepareLegendData(raceTypeData)}
-                  total={raceTypeData.reduce((sum, item) => sum + item.value, 0)}
+                  data={prepareLegendData(raceTypeChartData)}
+                  total={raceTypeChartData.reduce((sum, item) => sum + item.value, 0)}
                 />
               </CardContent>
             </Card>
@@ -1217,20 +1448,20 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
               </>
             )}
 
-            {/* Gelir-Gider Category: Dynamic Time-based Charts (Earnings + Expenses) */}
-            {selectedCategory === 'gelir-gider' && (
+            {/* Gelir Category: Dynamic earnings-focused charts */}
+            {selectedCategory === 'gelir' && (
               <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {/* Earnings Chart */}
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-              {getEarningsChartData.title}
+                        {getEarningsChartData.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
-            {getEarningsChartData.data.length > 0 ? (
+                      {getEarningsChartData.data.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={getEarningsChartData.data}>
                   <defs>
@@ -1287,18 +1518,95 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
             </CardContent>
           </Card>
         
-        {/* Expenses Chart */}
+      </div>
+      
+                {isGlobalStats && topEarningHorses.length > 0 && (
+        <div className="grid grid-cols-1 gap-4">
+                    {topEarningHorses.length > 0 && (
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                            <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                            En Fazla Kazanan Atlar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+                  {topEarningPieData.length > 0 ? (
+                    <>
+                      <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                            data={topEarningPieData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                            outerRadius={90}
+                            fill="#10b981"
+                            dataKey="value"
+                          >
+                            {topEarningPieData.map((entry, index) => (
+                              <Cell key={`top-earning-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload
+                                return (
+                                  <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                                    <p className="font-semibold text-gray-900">{data.name}</p>
+                                    <p className="text-sm text-emerald-600 font-semibold">
+                                      {formatCurrencyNumber(data.value)}
+                                    </p>
+                          </div>
+                                )
+                              }
+                              return null
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <CustomLegend
+                        data={topEarningPieData.map((item) => ({
+                          name: item.name,
+                          value: item.value,
+                          color: item.color,
+                          percent: topEarningTotal > 0 ? (item.value / topEarningTotal) * 100 : 0,
+                        }))}
+                        total={topEarningTotal}
+                        valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                        iconPosition="before"
+                        valueFormatter={formatCurrencyNumber}
+                      />
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center h-[260px]">
+                      <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                    </div>
+                  )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Gider Category: Expense-focused charts */}
+            {selectedCategory === 'gider' && (
+              <>
+        <div className="grid grid-cols-1 gap-4">
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-              {getExpensesChartData.title}
+                {getExpensesChartData.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
-            {getExpensesChartData.data.length > 0 ? (
+              {getExpensesChartData.data.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={getExpensesChartData.data}>
+                  <LineChart data={getExpensesChartData.data}>
                   <defs>
                     <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -1307,7 +1615,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
-                    dataKey="period"
+                      dataKey="period"
                     stroke="#6b7280"
                     style={{ fontSize: '11px' }}
                     angle={-45}
@@ -1324,7 +1632,7 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                            <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
                             <p className="text-sm text-red-600 font-semibold">
                               ₺{payload[0].value?.toLocaleString('tr-TR')}
                             </p>
@@ -1345,14 +1653,236 @@ export function StatisticsCharts({ races, expenses, hideButtons = false, onFilte
                   />
                 </LineChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[250px]">
-                <p className="text-gray-500 text-sm">Veri bulunamadı</p>
-      </div>
-            )}
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
             </CardContent>
           </Card>
+      </div>
+      
+        {isGlobalStats && topSpendingHorses.length > 0 && (
+          <div className="grid grid-cols-1 gap-4">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
+                  En Fazla Gideri Olan Atlar
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {topSpendingPieData.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                          data={topSpendingPieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={90}
+                          fill="#ef4444"
+                          dataKey="value"
+                        >
+                          {topSpendingPieData.map((entry, index) => (
+                            <Cell key={`top-spending-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload
+                              return (
+                                <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                                  <p className="font-semibold text-gray-900">{data.name}</p>
+                                  <p className="text-sm text-rose-600 font-semibold">
+                                    {formatCurrencyNumber(data.value)}
+                                  </p>
+                                </div>
+                              )
+                            }
+                            return null
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <CustomLegend
+                      data={topSpendingPieData.map((item) => ({
+                        name: item.name,
+                        value: item.value,
+                        color: item.color,
+                        percent: topSpendingTotal > 0 ? (item.value / topSpendingTotal) * 100 : 0,
+                      }))}
+                      total={topSpendingTotal}
+                      valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                      iconPosition="before"
+                      valueFormatter={formatCurrencyNumber}
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-[260px]">
+                    <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {isGlobalStats && (expenseCategoryDistribution.length > 0 || categoryHorseDistributions.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {expenseCategoryDistribution.length > 0 && (
+              <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    Gider Kategorileri Dağılımı
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={expenseCategoryDistribution.map((item, idx) => ({
+                          ...item,
+                          name: getCategoryDisplayName(item.name),
+                          color: COLORS[idx % COLORS.length],
+                        }))}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                        {expenseCategoryDistribution.map((_, idx) => (
+                          <Cell key={`expense-category-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <CustomLegend
+                    data={expenseCategoryDistribution.map((item, idx) =>({
+                      name: getCategoryDisplayName(item.name),
+                      value: item.value,
+                      color: COLORS[idx % COLORS.length],
+                      percent:
+                        (item.value /
+                          expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)) *
+                        100,
+                    }))}
+                    total={expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+              />
+            </CardContent>
+          </Card>
+              const total = categoryData.total
+              const topEntries = categoryData.horses.slice(0, 5)
+              const remainingEntries = categoryData.horses.slice(5)
+              const otherTotal = remainingEntries.reduce((sum, entry) => sum + entry.value, 0)
+              const pieData = [...topEntries]
+              if (otherTotal > 0) {
+                pieData.push({ name: 'Diğer', value: otherTotal })
+              }
+              const colorsForCategory = pieData.map(
+                (_, idx) => COLORS[(categoryIndex + idx) % COLORS.length],
+              )
+
+              return (
+                <Card
+                  key={categoryData.category}
+                  className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg"
+                >
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                      {categoryData.category}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {total > 0 ? (
+                      <>
+                        <ResponsiveContainer width="100%" height={220}>
+                          <PieChart>
+                            <Pie
+                              data={pieData}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              outerRadius={80}
+                              dataKey="value"
+                            >
+                              {pieData.map((_, idx) => (
+                                <Cell
+                                  key={`${categoryData.category}-${idx}`}
+                                  fill={colorsForCategory[idx]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload as { name: string; value: number }
+                                  return (
+                                    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                                      <p className="font-semibold text-gray-900">{data.name}</p>
+                                      <p className="text-sm text-indigo-600 font-semibold">
+                                        {formatCurrencyNumber(data.value)}
+                                      </p>
+                                      {total > 0 && (
+                                        <p className="text-xs text-gray-500">
+                                          {((data.value / total) * 100).toFixed(1)}%
+                                        </p>
+                                      )}
+                                    </div>
+                                  )
+                                }
+                                return null
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="mt-4 space-y-2 text-sm">
+                          {pieData.map((entry, idx) => {
+                            const percent = total > 0 ? (entry.value / total) * 100 : 0
+                            return (
+                              <div
+                                key={`${categoryData.category}-${entry.name}-${idx}`}
+                                className="flex items-center gap-3"
+                              >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span
+                                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                                    style={{ backgroundColor: colorsForCategory[idx] }}
+                                  />
+                                  <span className="text-gray-800 font-medium truncate">{entry.name}</span>
+                                </div>
+                                <div className="w-24 text-right font-semibold text-gray-900">
+                                  {formatCurrencyNumber(entry.value)}
+                                </div>
+                                <div className="w-12 text-right text-xs font-semibold text-gray-500">
+                                  {percent >= 10 ? Math.round(percent) : percent.toFixed(1)}%
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center h-[220px]">
+                        <p className="text-sm text-gray-500">Veri bulunamadı</p>
         </div>
+      )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+    </div>
+        )}
               </>
       )}
     </div>
