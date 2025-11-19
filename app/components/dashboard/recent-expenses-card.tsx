@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { TurkishLira } from 'lucide-react'
+import { TurkishLira, ChevronDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 
 interface ExpenseData {
@@ -25,10 +25,49 @@ export function RecentExpensesCard() {
   const [expenses, setExpenses] = useState<ExpenseData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showBottomFade, setShowBottomFade] = useState(false)
 
   useEffect(() => {
     fetchExpenses()
   }, [])
+
+  useEffect(() => {
+    const checkScrollability = () => {
+      if (scrollRef.current) {
+        const { scrollHeight, clientHeight, scrollTop } = scrollRef.current
+        const canScroll = scrollHeight > clientHeight
+        setShowBottomFade(canScroll && scrollTop + clientHeight < scrollHeight - 5)
+      }
+    }
+    
+    checkScrollability()
+    
+    const handleScroll = () => {
+      if (scrollRef.current) {
+        const { scrollHeight, clientHeight, scrollTop } = scrollRef.current
+        setShowBottomFade(scrollTop + clientHeight < scrollHeight - 5)
+      }
+    }
+    
+    const scrollElement = scrollRef.current
+    if (scrollElement) {
+      scrollElement.addEventListener('scroll', handleScroll)
+      
+      const resizeObserver = new ResizeObserver(() => {
+        checkScrollability()
+      })
+      resizeObserver.observe(scrollElement)
+      
+      const timeout = setTimeout(checkScrollability, 100)
+      
+      return () => {
+        scrollElement.removeEventListener('scroll', handleScroll)
+        resizeObserver.disconnect()
+        clearTimeout(timeout)
+      }
+    }
+  }, [expenses.length])
 
   const fetchExpenses = async () => {
     try {
@@ -116,8 +155,13 @@ export function RecentExpensesCard() {
             {TR.dashboard.noData}
           </div>
         ) : (
-          <div className="overflow-y-auto space-y-3 -mx-6 px-6" style={{ maxHeight: '300px' }}>
-            {expenses.map((expense) => (
+          <div className="relative">
+            <div 
+              ref={scrollRef}
+              className="overflow-y-auto space-y-3 -mx-6 px-6" 
+              style={{ maxHeight: '600px' }}
+            >
+              {expenses.map((expense) => (
               <div
                 key={expense.id}
                 role="button"
@@ -154,6 +198,16 @@ export function RecentExpensesCard() {
                 </p>
               </div>
             ))}
+            </div>
+            {/* Bottom fade gradient and scroll indicator */}
+            {showBottomFade && (
+              <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none z-10">
+                <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/70 to-transparent" />
+                <div className="relative flex items-center justify-center gap-1.5 pt-2">
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-400 animate-bounce" />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </CardContent>
