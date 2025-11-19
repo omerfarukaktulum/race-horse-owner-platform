@@ -175,14 +175,19 @@ export default function HorseDetailPage() {
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
-    if (isHorseTab(tabParam) && tabParam !== activeTab) {
+    if (isHorseTab(tabParam)) {
       setActiveTab(tabParam)
     }
-  }, [searchParams, activeTab])
+  }, [searchParams])
 
   const handleTabChange = (value: string) => {
     if (isHorseTab(value)) {
-      setActiveTab(value)
+      // Update URL to reflect tab change, but preserve highlight parameters
+      const params = new URLSearchParams(searchParams?.toString() || '')
+      params.set('tab', value)
+      // Keep highlight parameters if they exist
+      router.replace(`/app/horses/${horseId}?${params.toString()}`, { scroll: false })
+      // The useEffect will update activeTab when the URL changes
     }
   }
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
