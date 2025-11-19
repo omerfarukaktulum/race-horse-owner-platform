@@ -62,6 +62,7 @@ export const TR = {
     retired: 'Emekli',
     dead: 'Öldü',
     addHorse: 'At Ekle',
+    removeHorse: 'At Kaldır',
     horseName: 'At Adı',
     status: 'Durum',
     age: 'Yaş',

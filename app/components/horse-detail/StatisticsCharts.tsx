@@ -62,6 +62,7 @@ interface Props {
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   isGlobalStats?: boolean
   onActiveFiltersChange?: (count: number) => void
+  showExpenseCategoryDistribution?: boolean
 }
 
 // Distinct color palette for charts (vibrant colors)
@@ -114,6 +115,22 @@ interface LegendItem {
   value: number
   color: string
   percent: number
+}
+
+type LegendDataInput = {
+  name: string
+  value: number
+  color?: string
+}
+
+const prepareLegendData = (data: LegendDataInput[]): LegendItem[] => {
+  const total = data.reduce((sum, item) => sum + item.value, 0)
+  return data.map((item, index) => ({
+    name: item.name,
+    value: item.value,
+    color: item.color || COLORS[index % COLORS.length],
+    percent: total > 0 ? (item.value / total) * 100 : 0,
+  }))
 }
 
 interface CustomLegendProps {
@@ -200,26 +217,27 @@ const CustomLegend = ({
         {sortedData.map((item, index) => {
           const formattedValue = valueFormatter ? valueFormatter(item.value) : item.value.toLocaleString('tr-TR')
           return (
-        <div key={index} className="flex items-center justify-between gap-3 text-sm">
-          <div className="flex items-center gap-2 flex-1">
-            <div
-              className="w-4 h-4 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: item.color }}
-            />
-            <span className="text-gray-700 truncate">{item.name}</span>
+        <div
+          key={index}
+          className="grid grid-cols-[auto,minmax(0,1fr),auto,auto] items-center gap-3 text-sm"
+        >
+          <div
+            className="w-4 h-4 rounded-sm"
+            style={{ backgroundColor: item.color }}
+          />
+          <span className="text-gray-700 truncate">{item.name}</span>
+          <div className="flex items-center gap-1 font-semibold text-gray-900 justify-self-end tabular-nums">
+            {valueIcon && iconPosition === 'before' ? (
+              <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
+            ) : null}
+            <span>{formattedValue}</span>
+            {valueIcon && iconPosition === 'after' ? (
+              <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
+            ) : null}
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="flex items-center gap-1 font-semibold text-gray-900">
-                  {valueIcon && iconPosition === 'before' ? (
-                    <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
-                  ) : null}
-                  <span>{formattedValue}</span>
-                  {valueIcon && iconPosition === 'after' ? (
-                    <span className="inline-flex items-center text-gray-400">{valueIcon}</span>
-                  ) : null}
-                </div>
-            <span className="text-gray-500 w-12 text-right">{item.percent.toFixed(0)}%</span>
-          </div>
+          <span className="text-gray-500 text-right w-[3.5rem] tabular-nums">
+            {item.percent.toFixed(0)}%
+          </span>
         </div>
           )
         })}
@@ -276,11 +294,13 @@ export function StatisticsCharts({
   filterDropdownContainerRef,
   isGlobalStats = false,
   onActiveFiltersChange,
+  showExpenseCategoryDistribution = false,
 }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
+  const enableExpenseCategoryDistribution = isGlobalStats || showExpenseCategoryDistribution
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -866,7 +886,7 @@ export function StatisticsCharts({
   )
 
   const expenseCategoryDistribution = useMemo(() => {
-    if (!isGlobalStats) return []
+    if (!enableExpenseCategoryDistribution) return []
     const totals = new Map<string, number>()
     filteredExpenses.forEach((expense) => {
       if (!expense.amount) return
@@ -878,7 +898,7 @@ export function StatisticsCharts({
     return Array.from(totals.entries())
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
-  }, [isGlobalStats, filteredExpenses])
+  }, [enableExpenseCategoryDistribution, filteredExpenses])
 
   const getCategoryDisplayName = useCallback((category?: string) => {
     if (!category) return 'Diğer'
@@ -918,16 +938,9 @@ export function StatisticsCharts({
       .sort((a, b) => b.total - a.total)
   }, [getCategoryDisplayName, isGlobalStats, filteredExpenses]);
   
-  // Helper to prepare legend data
-  const prepareLegendData = (data: any[]): LegendItem[] => {
-    const total = data.reduce((sum, item) => sum + item.value, 0)
-    return data.map((item, index) => ({
-      name: item.name,
-      value: item.value,
-      color: item.color || COLORS[index % COLORS.length],
-      percent: (item.value / total) * 100,
-    }))
-  };
+  const shouldShowCategoryGrid =
+    (enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0) ||
+    (isGlobalStats && categoryHorseDistributions.length > 0)
   
   return (
     <>
@@ -1800,9 +1813,9 @@ export function StatisticsCharts({
                   </div>
                 )}
 
-        {isGlobalStats && (expenseCategoryDistribution.length > 0 || categoryHorseDistributions.length > 0) && (
+        {shouldShowCategoryGrid && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {expenseCategoryDistribution.length > 0 && (() => {
+            {enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0 && (() => {
               const totalExpenses = expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)
               const expenseCategoryPieData = addPercentages(
                 expenseCategoryDistribution.map((item, idx) => ({
@@ -1851,7 +1864,7 @@ export function StatisticsCharts({
               )
             })()}
 
-            {categoryHorseDistributions.slice(0, MAX_CATEGORY_CHARTS).map((categoryData, categoryIndex) => {
+            {isGlobalStats && categoryHorseDistributions.slice(0, MAX_CATEGORY_CHARTS).map((categoryData, categoryIndex) => {
               const total = categoryData.total
               const topEntries = categoryData.horses.slice(0, 5)
               const remainingEntries = categoryData.horses.slice(5)

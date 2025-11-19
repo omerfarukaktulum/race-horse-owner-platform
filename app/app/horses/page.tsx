@@ -12,6 +12,7 @@ import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/app/components/ui/dialog'
 
 interface HorseData {
   id: string
@@ -48,6 +49,9 @@ export default function HorsesPage() {
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [selectedHorseForNote, setSelectedHorseForNote] = useState<HorseData | null>(null)
   const [addHorseModalOpen, setAddHorseModalOpen] = useState(false)
+  const [removeHorseDialogOpen, setRemoveHorseDialogOpen] = useState(false)
+  const [selectedHorseToRemove, setSelectedHorseToRemove] = useState<string | null>(null)
+  const [isRemovingHorse, setIsRemovingHorse] = useState(false)
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
@@ -101,6 +105,29 @@ export default function HorsesPage() {
       toast.error('Atlar yüklenirken bir hata oluştu')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleRemoveHorse = async () => {
+    if (!selectedHorseToRemove) return
+    setIsRemovingHorse(true)
+    try {
+      const response = await fetch(`/api/horses/${selectedHorseToRemove}`, {
+        method: 'DELETE',
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.error || 'At kaldırılamadı')
+      }
+      toast.success('At başarıyla kaldırıldı')
+      setRemoveHorseDialogOpen(false)
+      setSelectedHorseToRemove(null)
+      fetchHorses()
+    } catch (error) {
+      console.error('Remove horse error:', error)
+      toast.error(error instanceof Error ? error.message : 'At kaldırılırken bir hata oluştu')
+    } finally {
+      setIsRemovingHorse(false)
     }
   }
 
@@ -844,15 +871,33 @@ export default function HorsesPage() {
             </div>
           )}
           </div>
-          </div>
+      </div>
         
-        <Button 
-          onClick={() => setAddHorseModalOpen(true)}
-          className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          {TR.horses.addHorse}
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setAddHorseModalOpen(true)}
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {TR.horses.addHorse}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={horses.length === 0}
+            onClick={() => {
+              if (horses.length === 0) {
+                toast.error('Kaldırılacak at bulunamadı')
+                return
+              }
+              setSelectedHorseToRemove(horses[0]?.id || null)
+              setRemoveHorseDialogOpen(true)
+            }}
+            className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {TR.horses.removeHorse}
+          </Button>
+        </div>
       </div>
 
       {/* Horses Display */}
@@ -931,6 +976,72 @@ export default function HorsesPage() {
           fetchHorses()
         }}
       />
+
+      <Dialog
+        open={removeHorseDialogOpen}
+        onOpenChange={(open) => {
+          setRemoveHorseDialogOpen(open)
+          if (!open) {
+            setSelectedHorseToRemove(null)
+          } else if (!selectedHorseToRemove && horses.length > 0) {
+            setSelectedHorseToRemove(horses[0].id)
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white/95 backdrop-blur border border-rose-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">{TR.horses.removeHorse}</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Seçilen at listeden kaldırılacak ve durumu &ldquo;Emekli&rdquo; olarak işaretlenecek. Devam etmek istediğinize emin misiniz?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">At Seçin</label>
+              <select
+                value={selectedHorseToRemove || ''}
+                onChange={(e) => setSelectedHorseToRemove(e.target.value || null)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white"
+              >
+                {horses.length === 0 && <option value="">Kaldırılacak at yok</option>}
+                {horses.length > 0 && (
+                  <>
+                    <option value="" disabled>
+                      Bir at seçin
+                    </option>
+                    {horses.map((horseOption) => (
+                      <option key={horseOption.id} value={horseOption.id}>
+                        {horseOption.name}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </select>
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRemoveHorseDialogOpen(false)
+                  setSelectedHorseToRemove(null)
+                }}
+                className="border-gray-200 text-gray-600"
+              >
+                İptal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRemoveHorse}
+                disabled={!selectedHorseToRemove || isRemovingHorse}
+                className="bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white min-w-[130px]"
+              >
+                {isRemovingHorse ? 'Kaldırılıyor...' : 'Atı Kaldır'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

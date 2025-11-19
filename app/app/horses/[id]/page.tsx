@@ -305,6 +305,9 @@ export default function HorseDetailPage() {
   const expensesData = (horse.expenses || []).map(e => ({
     date: e.date,
     amount: e.amount.toString(),
+    category: e.category,
+    horseId: horse.id,
+    horseName: horse.name,
   }))
 
   return (
@@ -508,6 +511,7 @@ export default function HorseDetailPage() {
             races={horse.raceHistory || []} 
             expenses={expensesData}
             hideButtons={true}
+            showExpenseCategoryDistribution
             onFilterTriggerReady={(trigger) => {
               statisticsFilterTriggerRef.current = trigger
             }}
