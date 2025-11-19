@@ -28,6 +28,7 @@ interface HorseData {
   groomName?: string
   handicapPoints?: number
   prizeMoney?: number | string | null
+  totalEarnings?: number | string | null
   sireName?: string
   damName?: string
   currentLocationType?: 'racecourse' | 'farm'
@@ -62,7 +63,7 @@ export default function HorsesPage() {
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
-  const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'name-asc' | 'name-desc' | 'ikramiye-desc' | null>(null)
+  const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'ikramiye-desc' | null>(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -144,8 +145,8 @@ export default function HorsesPage() {
       // Delete all selected horses
       const deletePromises = selectedHorsesToRemove.map((horseId) =>
         fetch(`/api/horses/${horseId}`, {
-          method: 'DELETE',
-        })
+        method: 'DELETE',
+      })
       )
       
       const results = await Promise.allSettled(deletePromises)
@@ -306,15 +307,21 @@ export default function HorsesPage() {
           const ageB = b.yob ? currentYear - b.yob : 999
           return ageB - ageA
         })
-      } else if (sortBy === 'name-asc') {
-        filtered = filtered.sort((a, b) => a.name.localeCompare(b.name, 'tr'))
-      } else if (sortBy === 'name-desc') {
-        filtered = filtered.sort((a, b) => b.name.localeCompare(a.name, 'tr'))
       } else if (sortBy === 'ikramiye-desc') {
         filtered = filtered.sort((a, b) => {
-          const prizeA = a.prizeMoney ? (typeof a.prizeMoney === 'string' ? parseFloat(a.prizeMoney) : a.prizeMoney) : 0
-          const prizeB = b.prizeMoney ? (typeof b.prizeMoney === 'string' ? parseFloat(b.prizeMoney) : b.prizeMoney) : 0
-          return prizeB - prizeA // Descending order
+          // Use totalEarnings (Toplam Kazanç) for "Kazanç" sorting, fallback to prizeMoney if not available
+          const getEarnings = (horse: HorseData): number => {
+            if (horse.totalEarnings) {
+              return typeof horse.totalEarnings === 'string' ? parseFloat(horse.totalEarnings) || 0 : (horse.totalEarnings as number) || 0
+            }
+            if (horse.prizeMoney) {
+              return typeof horse.prizeMoney === 'string' ? parseFloat(horse.prizeMoney) || 0 : (horse.prizeMoney as number) || 0
+            }
+            return 0
+          }
+          const earningsA = getEarnings(a)
+          const earningsB = getEarnings(b)
+          return earningsB - earningsA // Descending order (highest first)
         })
       }
     } else {
@@ -878,36 +885,10 @@ export default function HorsesPage() {
                       <span>Yaş</span>
                       <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
-                    <button
-                      onClick={() => {
-                        setSortBy(sortBy === 'name-asc' ? null : 'name-asc')
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'name-asc'
-                          ? 'bg-[#6366f1] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span>İsim</span>
-                      <ArrowUp className="h-4 w-4 flex-shrink-0" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortBy(sortBy === 'name-desc' ? null : 'name-desc')
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'name-desc'
-                          ? 'bg-[#6366f1] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span>İsim</span>
-                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
-                    </button>
                   </div>
                   
-                  {/* İkramiye Desc */}
-                  <div className="mb-2">
+                  {/* Kazanç Desc */}
+                  <div className="mt-2 mb-2">
                     <button
                       onClick={() => {
                         setSortBy(sortBy === 'ikramiye-desc' ? null : 'ikramiye-desc')
@@ -918,7 +899,7 @@ export default function HorsesPage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      <span>İkramiye</span>
+                      <span>Kazanç</span>
                       <ArrowDown className="h-4 w-4 flex-shrink-0" />
                     </button>
                   </div>
@@ -1157,7 +1138,7 @@ export default function HorsesPage() {
               )}
             </CardHeader>
             <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
-              {horses.length === 0 ? (
+                {horses.length === 0 ? (
                 <div className="text-center py-12 flex-shrink-0">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Trash2 className="h-10 w-10 text-gray-400" />
@@ -1172,8 +1153,8 @@ export default function HorsesPage() {
                   <p className="text-gray-700 font-medium mb-2">Arama sonucu bulunamadı.</p>
                   <p className="text-sm text-gray-500">Farklı bir arama terimi deneyin.</p>
                 </div>
-              ) : (
-                <>
+                ) : (
+                  <>
                   <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                     <div className="overflow-y-auto space-y-2">
                       {getFilteredHorsesForRemove().map((horse) => (
@@ -1230,33 +1211,33 @@ export default function HorsesPage() {
                       ))}
                     </div>
                   </div>
-                </>
-              )}
+                  </>
+                )}
               <div className="flex justify-end pt-4 border-t border-gray-200 mt-auto flex-shrink-0 gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setRemoveHorseDialogOpen(false)
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRemoveHorseDialogOpen(false)
                     setSelectedHorsesToRemove([])
                     setRemoveModalSearchQuery('')
                     setIsRemoveModalSearchOpen(false)
-                  }}
+                }}
                   className="border-gray-200 text-gray-600 hover:bg-gray-50"
-                >
-                  İptal
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleRemoveHorse}
+              >
+                İptal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleRemoveHorse}
                   disabled={selectedHorsesToRemove.length === 0 || isRemovingHorse}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[130px]"
-                >
+              >
                   {isRemovingHorse 
                     ? 'Kaldırılıyor...' 
                     : `Atları Kaldır (${selectedHorsesToRemove.length})`}
-                </Button>
-              </div>
+              </Button>
+            </div>
             </CardContent>
           </Card>
         </DialogContent>
