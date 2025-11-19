@@ -4,12 +4,101 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { Building2, Calendar, MapPin, Globe, Users, Activity, TrendingUp, Clock, Settings } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
+
+const RACECOURSE_CITIES = [
+  'İstanbul',
+  'Ankara',
+  'İzmir',
+  'Bursa',
+  'Şanlıurfa',
+  'Diyarbakır',
+  'Kocaeli',
+  'Adana',
+  'Elazığ',
+  'Antalya',
+  'Gaziantep',
+  'Konya',
+  'Samsun',
+]
+
+const OTHER_CITIES = [
+  'Adıyaman',
+  'Afyonkarahisar',
+  'Ağrı',
+  'Amasya',
+  'Artvin',
+  'Aydın',
+  'Balıkesir',
+  'Bilecik',
+  'Bingöl',
+  'Bitlis',
+  'Bolu',
+  'Burdur',
+  'Çanakkale',
+  'Çankırı',
+  'Çorum',
+  'Denizli',
+  'Edirne',
+  'Erzincan',
+  'Erzurum',
+  'Eskişehir',
+  'Giresun',
+  'Gümüşhane',
+  'Hakkari',
+  'Hatay',
+  'Isparta',
+  'İçel',
+  'Kars',
+  'Kastamonu',
+  'Kayseri',
+  'Kırklareli',
+  'Kırşehir',
+  'Kütahya',
+  'Malatya',
+  'Manisa',
+  'Kahramanmaraş',
+  'Mardin',
+  'Muğla',
+  'Muş',
+  'Nevşehir',
+  'Niğde',
+  'Ordu',
+  'Rize',
+  'Sakarya',
+  'Siirt',
+  'Sinop',
+  'Sivas',
+  'Tekirdağ',
+  'Tokat',
+  'Trabzon',
+  'Tunceli',
+  'Uşak',
+  'Van',
+  'Yozgat',
+  'Zonguldak',
+  'Aksaray',
+  'Bayburt',
+  'Karaman',
+  'Kırıkkale',
+  'Batman',
+  'Şırnak',
+  'Bartın',
+  'Ardahan',
+  'Iğdır',
+  'Yalova',
+  'Karabük',
+  'Kilis',
+  'Osmaniye',
+  'Düzce',
+]
+
+const ALL_CITIES = [...RACECOURSE_CITIES, ...OTHER_CITIES]
 
 interface StablemateData {
   id: string
@@ -148,11 +237,48 @@ export default function StablematePage() {
   const activeHorses = stablemate?.horses?.filter((h) => h.status === 'RACING').length || 0
   const retiredHorses = stablemate?.horses?.filter((h) => h.status === 'RETIRED').length || 0
   const broodmares = stablemate?.horses?.filter((h) => h.status === 'MARE').length || 0
+  const createdAtFormatted = stablemate ? formatDate(new Date(stablemate.createdAt)) : '-'
+  const foundationYearFormatted = stablemate?.foundationYear ? stablemate.foundationYear.toString() : '—'
+  const locationFormatted = stablemate?.location || '—'
+  const coOwnerCount = stablemate?.coOwners?.length || 0
 
-const heroMeta = [
-  stablemate?.location && { label: TR.stablemate.location, value: stablemate.location },
-  stablemate?.website && { label: TR.stablemate.website, value: stablemate.website },
-].filter(Boolean) as Array<{ label: string; value: string | number }>
+  const summaryCards = [
+    {
+      label: 'Toplam At',
+      value: totalHorses,
+      icon: Activity,
+      accent: 'bg-indigo-100 text-indigo-600',
+    },
+    {
+      label: 'Aktif At',
+      value: activeHorses,
+      icon: TrendingUp,
+      accent: 'bg-emerald-100 text-emerald-600',
+    },
+    {
+      label: 'Emekli / Damızlık',
+      value: retiredHorses + broodmares,
+      icon: Clock,
+      accent: 'bg-amber-100 text-amber-600',
+    },
+    {
+      label: 'Ortak Sahip',
+      value: coOwnerCount,
+      icon: Users,
+      accent: 'bg-purple-100 text-purple-600',
+    },
+  ]
+
+  const detailCards = [
+    { label: 'Kuruluş Yılı', value: foundationYearFormatted },
+    { label: 'Hesap Açılış Tarihi', value: createdAtFormatted },
+    { label: 'Konum', value: locationFormatted },
+    {
+      label: 'Web Sitesi',
+      value: stablemate?.website || '—',
+      href: stablemate?.website,
+    },
+  ]
 
   if (!stablemate && !isLoading) {
     return (
@@ -177,19 +303,41 @@ const heroMeta = [
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-indigo-500">Eküri Profili</p>
             <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
-
-            <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
-              {stablemate?.foundationYear && (
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm">
-                  Kuruluş Yılı: <span className="text-gray-900">{stablemate.foundationYear}</span>
+            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {summaryCards.map(({ label, value, icon: Icon, accent }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4 shadow-sm flex items-center gap-3"
+                >
+                  <div className={`rounded-2xl p-2 ${accent}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
+                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                  </div>
                 </div>
-              )}
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm">
-                Hesap Açılış Tarihi: <span className="text-gray-900">{formatDate(new Date(stablemate?.createdAt || new Date()))}</span>
-              </div>
-              {heroMeta.map((item) => (
-                <div key={item.value} className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-medium text-gray-700 shadow-sm">
-                  {item.label}: <span className="text-gray-900">{item.value}</span>
+              ))}
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {detailCards.map(({ label, value, href }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4 shadow-sm"
+                >
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{label}</p>
+                  {href && href !== '—' ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-base font-semibold text-indigo-600 underline-offset-4 hover:underline"
+                    >
+                      {value}
+                    </a>
+                  ) : (
+                    <p className="text-base font-semibold text-gray-900 mt-1">{value}</p>
+                  )}
                 </div>
               ))}
             </div>
@@ -215,131 +363,6 @@ const heroMeta = [
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-4 md:grid-cols-2">
-        <Card className="border-0 bg-white/90 backdrop-blur">
-          <CardContent className="flex items-center gap-4 py-5">
-            <div className="rounded-2xl bg-indigo-100 p-3 text-indigo-600">
-              <Activity className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Toplam At</p>
-              <p className="text-3xl font-semibold text-gray-900">{totalHorses}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-white/90 backdrop-blur">
-          <CardContent className="flex items-center gap-4 py-5">
-            <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-600">
-              <TrendingUp className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Aktif At</p>
-              <p className="text-3xl font-semibold text-gray-900">{activeHorses}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-white/90 backdrop-blur">
-          <CardContent className="flex items-center gap-4 py-5">
-            <div className="rounded-2xl bg-amber-100 p-3 text-amber-600">
-              <Clock className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Emekli / Damızlık</p>
-              <p className="text-3xl font-semibold text-gray-900">{retiredHorses + broodmares}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0 bg-white/90 backdrop-blur">
-          <CardContent className="flex items-center gap-4 py-5">
-            <div className="rounded-2xl bg-purple-100 p-3 text-purple-600">
-              <Users className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Ortak Sahip</p>
-              <p className="text-3xl font-semibold text-gray-900">{stablemate?.coOwners?.length || 0}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-0 bg-white/90 backdrop-blur shadow-lg lg:col-span-2">
-          <CardContent className="grid gap-6 py-6 md:grid-cols-2">
-            {stablemate?.foundationYear && (
-              <div className="flex items-start gap-3 rounded-2xl border border-gray-100 p-4">
-                <Calendar className="mt-1 h-5 w-5 text-indigo-500" />
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-gray-500">Kuruluş Yılı</p>
-                  <p className="text-lg font-semibold text-gray-900">{stablemate.foundationYear}</p>
-                  <p className="text-xs text-gray-500 mt-1">Hesap Açılış Tarihi</p>
-                </div>
-              </div>
-            )}
-
-            {stablemate?.location && (
-              <div className="flex items-start gap-3 rounded-2xl border border-gray-100 p-4">
-                <MapPin className="mt-1 h-5 w-5 text-rose-500" />
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-gray-500">{TR.stablemate.location}</p>
-                  <p className="text-lg font-semibold text-gray-900">{stablemate.location}</p>
-                </div>
-              </div>
-            )}
-
-            {stablemate?.website && (
-              <div className="flex items-start gap-3 rounded-2xl border border-gray-100 p-4">
-                <Globe className="mt-1 h-5 w-5 text-emerald-500" />
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-gray-500">{TR.stablemate.website}</p>
-                  <a
-                    href={stablemate.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-lg font-semibold text-indigo-600 underline-offset-4 hover:underline"
-                  >
-                    {stablemate.website}
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {stablemate?.createdAt && (
-              <div className="flex items-start gap-3 rounded-2xl border border-gray-100 p-4">
-                <Clock className="mt-1 h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-gray-500">Oluşturulma Tarihi</p>
-                  <p className="text-lg font-semibold text-gray-900">{formatDate(new Date(stablemate.createdAt))}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-0 bg-white/90 backdrop-blur shadow-lg">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg font-semibold text-gray-900">
-              Ortak Sahipler
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 py-6">
-            {stablemate?.coOwners && stablemate.coOwners.length > 0 ? (
-              <div className="flex flex-wrap gap-3">
-                {stablemate.coOwners.map((owner, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm"
-                  >
-                    <Users className="mr-2 h-4 w-4 text-gray-400" />
-                    {owner}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">Henüz ortak sahibi bulunmuyor.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
 
       <Dialog
@@ -352,119 +375,139 @@ const heroMeta = [
           }
         }}
       >
-        <DialogContent className="max-w-2xl border-none bg-transparent shadow-none p-0">
-          <div className="bg-gradient-to-br from-indigo-50 via-white to-indigo-50 rounded-3xl border border-indigo-100/60 shadow-2xl p-6">
-            <DialogHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
-                  <Settings className="h-8 w-8 text-white" />
+        <DialogContent className="max-w-md bg-transparent border-none shadow-none p-0">
+          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-2xl border border-gray-200/50 overflow-hidden">
+            <CardHeader className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-14 h-14 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+                  <Settings className="h-7 w-7 text-white" />
                 </div>
               </div>
-              <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                Eküri Bilgilerini Güncelle
-              </DialogTitle>
-              <DialogDescription className="text-gray-600">
-                Eküri bilgilerinizi onboarding sırasında olduğu gibi güncelleyin.
-              </DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                handleSave()
-              }}
-              className="mt-6 space-y-4"
-            >
-              <div className="space-y-2 flex flex-col items-center">
-                <Label htmlFor="name" className="text-gray-700 font-medium w-full max-w-md">
-                  {TR.stablemate.name} *
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={isSaving}
-                  className="h-11 w-full max-w-md border-gray-300 rounded-2xl bg-white/90 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
+              <div>
+                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  Eküri Bilgilerini Güncelle
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-2">
+                  Eküri bilgilerinizi onboarding sırasında olduğu gibi güncelleyin.
+                </CardDescription>
               </div>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  handleSave()
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-2 flex flex-col items-center">
+                  <Label htmlFor="name" className="text-gray-700 font-medium w-full max-w-xs">
+                    {TR.stablemate.name} *
+                  </Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="Örn: Mehmet Ali Eküri"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    disabled={isSaving}
+                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                  />
+                </div>
 
-              <div className="space-y-2 flex flex-col items-center">
-                <Label htmlFor="foundationYear" className="text-gray-700 font-medium w-full max-w-md">
-                  {TR.stablemate.foundationYear}
-                </Label>
-                <Input
-                  id="foundationYear"
-                  type="number"
-                  placeholder="Örn: 2020"
-                  value={foundationYear}
-                  onChange={(e) => setFoundationYear(e.target.value)}
-                  disabled={isSaving}
-                  className="h-11 w-full max-w-md border-gray-300 rounded-2xl bg-white/90 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <Label htmlFor="foundationYear" className="text-gray-700 font-medium w-full max-w-xs">
+                    {TR.stablemate.foundationYear}
+                  </Label>
+                  <Input
+                    id="foundationYear"
+                    type="number"
+                    placeholder="Örn: 2020"
+                    value={foundationYear}
+                    onChange={(e) => setFoundationYear(e.target.value)}
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    disabled={isSaving}
+                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
 
-              <div className="space-y-2 flex flex-col items-center">
-                <Label htmlFor="location" className="text-gray-700 font-medium w-full max-w-md">
-                  {TR.stablemate.location}
-                </Label>
-                <Input
-                  id="location"
-                  placeholder="Örn: İstanbul"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  disabled={isSaving}
-                  className="h-11 w-full max-w-md border-gray-300 rounded-2xl bg-white/90 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <Label htmlFor="location" className="text-gray-700 font-medium w-full max-w-xs">
+                    Konum
+                  </Label>
+                  <select
+                    id="location"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    disabled={isSaving}
+                    className="flex h-11 w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">Şehir seçin</option>
+                    {RACECOURSE_CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                    {OTHER_CITIES.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="space-y-2 flex flex-col items-center">
-                <Label htmlFor="website" className="text-gray-700 font-medium w-full max-w-md">
-                  {TR.stablemate.website}
-                </Label>
-                <Input
-                  id="website"
-                  type="url"
-                  placeholder="https://..."
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  disabled={isSaving}
-                  className="h-11 w-full max-w-md border-gray-300 rounded-2xl bg-white/90 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <Label htmlFor="website" className="text-gray-700 font-medium w-full max-w-xs">
+                    {TR.stablemate.website}
+                  </Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    placeholder="https://..."
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    disabled={isSaving}
+                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                  />
+                </div>
 
-              <div className="space-y-2 flex flex-col items-center">
-                <Label htmlFor="coOwners" className="text-gray-700 font-medium w-full max-w-md">
-                  {TR.stablemate.coOwners}
-                </Label>
-                <textarea
-                  id="coOwners"
-                  placeholder="Her satıra bir ortak sahip adı"
-                  value={coOwners}
-                  onChange={(e) => setCoOwners(e.target.value)}
-                  disabled={isSaving}
-                  className="w-full max-w-md min-h-[120px] rounded-2xl border border-gray-300 bg-white/90 px-4 py-3 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
+                <div className="space-y-2 flex flex-col items-center">
+                  <Label htmlFor="coOwners" className="text-gray-700 font-medium w-full max-w-xs">
+                    {TR.stablemate.coOwners}
+                  </Label>
+                  <textarea
+                    id="coOwners"
+                    placeholder="Her satıra bir ortak sahip adı"
+                    value={coOwners}
+                    onChange={(e) => setCoOwners(e.target.value)}
+                    disabled={isSaving}
+                    className="min-h-[120px] w-full max-w-xs rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
 
-              <div className="flex justify-center gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="h-11 rounded-2xl border-2 border-gray-200 px-6 font-semibold text-gray-700 bg-white/80"
-                >
-                  {TR.common.cancel}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 font-semibold text-white shadow-lg hover:shadow-xl"
-                >
-                  {isSaving ? TR.common.loading : TR.common.save}
-                </Button>
-              </div>
-            </form>
-          </div>
+                <div className="flex justify-center gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                    className="h-11 rounded-2xl border-2 border-gray-200 px-6 font-semibold text-gray-700 bg-white/80"
+                  >
+                    {TR.common.cancel}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
+                    className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 font-semibold text-white shadow-lg hover:shadow-xl"
+                  >
+                    {isSaving ? TR.common.loading : TR.common.save}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
         </DialogContent>
       </Dialog>
     </>
