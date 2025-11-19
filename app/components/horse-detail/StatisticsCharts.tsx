@@ -84,6 +84,14 @@ const formatCurrencyNumber = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Math.round(value))
 
+const addPercentages = <T extends { value: number }>(data: T[]): Array<T & { percent: number }> => {
+  const total = data.reduce((sum, item) => sum + (item.value || 0), 0)
+  return data.map((item) => ({
+    ...item,
+    percent: total > 0 ? (item.value / total) * 100 : 0,
+  }))
+}
+
 const DISTANCE_GROUP_DEFS = [
   { id: 'short', label: 'Kısa Mesafe', min: 800, max: 1400 },
   { id: 'medium', label: 'Orta Mesafe', min: 1401, max: 1900 },
@@ -237,16 +245,20 @@ const CustomLegend = ({
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
-    // Calculate percent from the payload data
-    const data = payload[0].payload
+    const slice = payload[0]
+    const data = slice.payload || {}
     const value = data.value || 0
-    const percent = data.percent ? data.percent.toFixed(0) : '0'
+    const totalValue = payload.reduce((sum: number, entry: any) => {
+      return sum + (entry?.payload?.value || 0)
+    }, 0)
+    const percentValue =
+      totalValue > 0 ? ((value / totalValue) * 100).toFixed(0) : '0'
     
     return (
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
         <p className="font-semibold text-gray-900">{data.name}</p>
         <p className="text-sm text-gray-600">
-          {value} koşu ({percent}%)
+          {value} koşu ({percentValue}%)
         </p>
       </div>
     )
@@ -426,11 +438,54 @@ export function StatisticsCharts({
     return Array.from(grouped.values())
   }, [raceTypeData, getRaceTypeDisplayName])
   const jockeyData = getJockeyDistribution(filteredRaces)
+  const raceTypePerformanceData = useMemo(() => {
+    const colorMap = new Map(raceTypeChartData.map((item) => [item.name, item.color]))
+    const performance = new Map<
+      string,
+      {
+        name: string
+        'İlk 3 sıra': number
+        'Tabela sonu': number
+        'Tabela dışı': number
+        color: string
+      }
+    >()
+
+    filteredRaces.forEach((race, index) => {
+      if (!race.raceType || !race.position) return
+      const label = getRaceTypeDisplayName(race.raceType)
+      const entry =
+        performance.get(label) ||
+        {
+          name: label,
+          'İlk 3 sıra': 0,
+          'Tabela sonu': 0,
+          'Tabela dışı': 0,
+          color: colorMap.get(label) || COLORS[index % COLORS.length],
+        }
+
+      if (race.position >= 1 && race.position <= 3) {
+        entry['İlk 3 sıra'] += 1
+      } else if (race.position >= 4 && race.position <= 5) {
+        entry['Tabela sonu'] += 1
+      } else if (race.position > 5) {
+        entry['Tabela dışı'] += 1
+      }
+
+      performance.set(label, entry)
+    })
+
+    return Array.from(performance.values()).sort((a, b) => {
+      const totalA = a['İlk 3 sıra'] + a['Tabela sonu'] + a['Tabela dışı']
+      const totalB = b['İlk 3 sıra'] + b['Tabela sonu'] + b['Tabela dışı']
+      return totalB - totalA
+    })
+  }, [filteredRaces, getRaceTypeDisplayName, raceTypeChartData])
   const surfacePerformanceData = getSurfacePerformanceData(filteredRaces)
   const distancePerformanceData = getDistancePerformanceData(filteredRaces)
   
   // Statistics category navigation state
-  const [selectedCategory, setSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'gelir' | 'gider'>('genel')
+  const [selectedCategory, setSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider'>('genel')
   
   // City performance data - show all cities
   const cityPerformanceData = useMemo(() => {
@@ -783,20 +838,22 @@ export function StatisticsCharts({
     return Array.from(totals.values()).sort((a, b) => b.total - a.total)
   }, [isGlobalStats, filteredExpenses])
 
-  const topEarningPieData = useMemo((): { name: string; value: number; color: string }[] => {
-    return topEarningHorses.slice(0, 5).map((horse, index) => ({
+  const topEarningPieData = useMemo<LegendItem[]>(() => {
+    const baseData = topEarningHorses.slice(0, 5).map((horse, index) => ({
       name: horse.horseName,
       value: horse.total,
       color: COLORS[index % COLORS.length],
     }))
+    return prepareLegendData(baseData)
   }, [topEarningHorses])
 
-  const topSpendingPieData = useMemo((): { name: string; value: number; color: string }[] => {
-    return topSpendingHorses.slice(0, 5).map((horse, index) => ({
+  const topSpendingPieData = useMemo<LegendItem[]>(() => {
+    const baseData = topSpendingHorses.slice(0, 5).map((horse, index) => ({
       name: horse.horseName,
       value: horse.total,
       color: COLORS[index % COLORS.length],
     }))
+    return prepareLegendData(baseData)
   }, [topSpendingHorses])
 
   const topEarningTotal = useMemo(
@@ -859,7 +916,7 @@ export function StatisticsCharts({
           .sort((a, b) => b.value - a.value),
       }))
       .sort((a, b) => b.total - a.total)
-  }, [getCategoryDisplayName, isGlobalStats, filteredExpenses])
+  }, [getCategoryDisplayName, isGlobalStats, filteredExpenses]);
   
   // Helper to prepare legend data
   const prepareLegendData = (data: any[]): LegendItem[] => {
@@ -870,7 +927,7 @@ export function StatisticsCharts({
       color: item.color || COLORS[index % COLORS.length],
       percent: (item.value / total) * 100,
     }))
-  }
+  };
   
   return (
     <>
@@ -978,8 +1035,8 @@ export function StatisticsCharts({
                 { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
                 { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
                 { id: 'jokey' as const, label: 'Jokey', icon: Users },
-                { id: 'gelir' as const, label: 'Gelir', icon: TurkishLira },
-                { id: 'gider' as const, label: 'Gider', icon: TurkishLira },
+                { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
+                { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
               ].map(({ id, label, icon: Icon }) => {
                 const isActive = selectedCategory === id
                 return (
@@ -1448,15 +1505,79 @@ export function StatisticsCharts({
               </>
             )}
 
-            {/* Gelir Category: Dynamic earnings-focused charts */}
-            {selectedCategory === 'gelir' && (
+            {/* Koşu Türü Category: Race type performance pies */}
+            {selectedCategory === 'kosu-turu' && (
               <>
-      <div className="grid grid-cols-1 gap-4">
-        {/* Earnings Chart */}
+                {raceTypePerformanceData.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {raceTypePerformanceData.map((typeData, index) => {
+                      const total =
+                        typeData['İlk 3 sıra'] + typeData['Tabela sonu'] + typeData['Tabela dışı']
+                      const pieData = [
+                        { name: 'İlk 3 sıra', value: typeData['İlk 3 sıra'], color: '#10b981' },
+                        { name: 'Tabela sonu', value: typeData['Tabela sonu'], color: '#f59e0b' },
+                        { name: 'Tabela dışı', value: typeData['Tabela dışı'], color: '#9ca3af' },
+                      ].filter((item) => item.value > 0)
+
+                      return (
+                        <Card key={typeData.name} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                              <Flag className="h-4 w-4 mr-2 text-indigo-600" />
+                              {typeData.name}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={220}>
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={80}
+                                  dataKey="value"
+                                >
+                                  {pieData.map((entry, idx) => (
+                                    <Cell key={`${typeData.name}-${idx}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <CustomLegend
+                              data={pieData.map((item) => ({
+                                name: item.name,
+                                value: item.value,
+                                color: item.color,
+                                percent: total > 0 ? (item.value / total) * 100 : 0,
+                              }))}
+                              total={total}
+                            />
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                    <CardContent className="py-16 text-center text-sm text-gray-500">
+                      Koşu türü verisi bulunamadı
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+
+
+            {/* Gelir-Gider Category: Earnings and Expenses */}
+            {selectedCategory === 'gelir-gider' && (
+              <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
                         {getEarningsChartData.title}
               </CardTitle>
             </CardHeader>
@@ -1490,7 +1611,7 @@ export function StatisticsCharts({
                         return (
                           <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
                             <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
-                            <p className="text-sm text-green-600 font-semibold">
+                              <p className="text-sm text-emerald-600 font-semibold">
                               ₺{payload[0].value?.toLocaleString('tr-TR')}
                             </p>
                           </div>
@@ -1518,95 +1639,17 @@ export function StatisticsCharts({
             </CardContent>
           </Card>
         
-      </div>
-      
-                {isGlobalStats && topEarningHorses.length > 0 && (
-        <div className="grid grid-cols-1 gap-4">
-                    {topEarningHorses.length > 0 && (
-          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                            <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
-                            En Fazla Kazanan Atlar
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-                  {topEarningPieData.length > 0 ? (
-                    <>
-                      <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                            data={topEarningPieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                            outerRadius={90}
-                            fill="#10b981"
-                            dataKey="value"
-                          >
-                            {topEarningPieData.map((entry, index) => (
-                              <Cell key={`top-earning-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload
-                                return (
-                                  <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                                    <p className="font-semibold text-gray-900">{data.name}</p>
-                                    <p className="text-sm text-emerald-600 font-semibold">
-                                      {formatCurrencyNumber(data.value)}
-                                    </p>
-                          </div>
-                                )
-                              }
-                              return null
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <CustomLegend
-                        data={topEarningPieData.map((item) => ({
-                          name: item.name,
-                          value: item.value,
-                          color: item.color,
-                          percent: topEarningTotal > 0 ? (item.value / topEarningTotal) * 100 : 0,
-                        }))}
-                        total={topEarningTotal}
-                        valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
-                        iconPosition="before"
-                        valueFormatter={formatCurrencyNumber}
-                      />
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-[260px]">
-                      <p className="text-gray-500 text-sm">Veri bulunamadı</p>
-                    </div>
-                  )}
-                        </CardContent>
-                      </Card>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Gider Category: Expense-focused charts */}
-            {selectedCategory === 'gider' && (
-              <>
-        <div className="grid grid-cols-1 gap-4">
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-                {getExpensesChartData.title}
+                        {getExpensesChartData.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {getExpensesChartData.data.length > 0 ? (
+                      {getExpensesChartData.data.length > 0 ? (
               <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={getExpensesChartData.data}>
+                <LineChart data={getExpensesChartData.data}>
                   <defs>
                     <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
@@ -1615,7 +1658,7 @@ export function StatisticsCharts({
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
-                      dataKey="period"
+                    dataKey="period"
                     stroke="#6b7280"
                     style={{ fontSize: '11px' }}
                     angle={-45}
@@ -1632,7 +1675,7 @@ export function StatisticsCharts({
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                            <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
                             <p className="text-sm text-red-600 font-semibold">
                               ₺{payload[0].value?.toLocaleString('tr-TR')}
                             </p>
@@ -1653,27 +1696,64 @@ export function StatisticsCharts({
                   />
                 </LineChart>
               </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[250px]">
-                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
-                </div>
-              )}
+            ) : (
+              <div className="flex items-center justify-center h-[250px]">
+                <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+      </div>
+            )}
             </CardContent>
           </Card>
       </div>
       
-        {isGlobalStats && topSpendingHorses.length > 0 && (
-          <div className="grid grid-cols-1 gap-4">
+        {isGlobalStats && (topEarningPieData.length > 0 || topSpendingPieData.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {topEarningPieData.length > 0 && (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                  <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
-                  En Fazla Gideri Olan Atlar
+                            <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                            En Fazla Kazanan Atlar
               </CardTitle>
             </CardHeader>
             <CardContent>
-                {topSpendingPieData.length > 0 ? (
-                  <>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={topEarningPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#10b981"
+                        dataKey="value"
+                      >
+                        {topEarningPieData.map((entry, index) => (
+                          <Cell key={`top-earning-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={topEarningPieData}
+                    total={topEarningTotal}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                        </CardContent>
+                      </Card>
+                    )}
+
+            {topSpendingPieData.length > 0 && (
+                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                            <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
+                            En Fazla Gideri Olan Atlar
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
                     <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -1699,7 +1779,7 @@ export function StatisticsCharts({
                                   <p className="text-sm text-rose-600 font-semibold">
                                     {formatCurrencyNumber(data.value)}
                                   </p>
-                                </div>
+                          </div>
                               )
                             }
                             return null
@@ -1708,78 +1788,70 @@ export function StatisticsCharts({
                       </PieChart>
                     </ResponsiveContainer>
                     <CustomLegend
-                      data={topSpendingPieData.map((item) => ({
-                        name: item.name,
-                        value: item.value,
-                        color: item.color,
-                        percent: topSpendingTotal > 0 ? (item.value / topSpendingTotal) * 100 : 0,
-                      }))}
+                      data={topSpendingPieData}
                       total={topSpendingTotal}
                       valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
                       iconPosition="before"
                       valueFormatter={formatCurrencyNumber}
                     />
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-[260px]">
-                    <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {isGlobalStats && (expenseCategoryDistribution.length > 0 || categoryHorseDistributions.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {expenseCategoryDistribution.length > 0 && (
-              <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
-                    Gider Kategorileri Dağılımı
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={expenseCategoryDistribution.map((item, idx) => ({
-                          ...item,
-                          name: getCategoryDisplayName(item.name),
-                          color: COLORS[idx % COLORS.length],
-                        }))}
+            {expenseCategoryDistribution.length > 0 && (() => {
+              const totalExpenses = expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)
+              const expenseCategoryPieData = addPercentages(
+                expenseCategoryDistribution.map((item, idx) => ({
+                  ...item,
+                  name: getCategoryDisplayName(item.name),
+                  color: COLORS[idx % COLORS.length],
+                })),
+              )
+
+              return (
+                  <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                    <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                      <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                        Gider Kategorileri Dağılımı
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                    <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                          data={expenseCategoryPieData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={80}
+                          outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                        {expenseCategoryDistribution.map((_, idx) => (
-                          <Cell key={`expense-category-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                          {expenseCategoryPieData.map((entry, idx) => (
+                            <Cell key={`expense-category-${idx}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
               <CustomLegend
-                    data={expenseCategoryDistribution.map((item, idx) =>({
-                      name: getCategoryDisplayName(item.name),
-                      value: item.value,
-                      color: COLORS[idx % COLORS.length],
-                      percent:
-                        (item.value /
-                          expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)) *
-                        100,
-                    }))}
-                    total={expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)}
-                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
-                    iconPosition="before"
-                    valueFormatter={formatCurrencyNumber}
+                      data={expenseCategoryPieData}
+                      total={totalExpenses}
+                        valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                        iconPosition="before"
+                        valueFormatter={formatCurrencyNumber}
               />
             </CardContent>
           </Card>
+              )
+            })()}
+
+            {categoryHorseDistributions.slice(0, MAX_CATEGORY_CHARTS).map((categoryData, categoryIndex) => {
               const total = categoryData.total
               const topEntries = categoryData.horses.slice(0, 5)
               const remainingEntries = categoryData.horses.slice(5)
@@ -1790,6 +1862,12 @@ export function StatisticsCharts({
               }
               const colorsForCategory = pieData.map(
                 (_, idx) => COLORS[(categoryIndex + idx) % COLORS.length],
+              )
+              const pieDataWithPercent = addPercentages(
+                pieData.map((entry, idx) => ({
+                  ...entry,
+                  color: colorsForCategory[idx],
+                })),
               )
 
               return (
@@ -1809,74 +1887,51 @@ export function StatisticsCharts({
                         <ResponsiveContainer width="100%" height={220}>
                           <PieChart>
                             <Pie
-                              data={pieData}
+                              data={pieDataWithPercent}
                               cx="50%"
                               cy="50%"
                               labelLine={false}
                               outerRadius={80}
                               dataKey="value"
                             >
-                              {pieData.map((_, idx) => (
+                              {pieDataWithPercent.map((entry, idx) => (
                                 <Cell
                                   key={`${categoryData.category}-${idx}`}
-                                  fill={colorsForCategory[idx]}
+                                  fill={entry.color}
                                 />
                               ))}
                             </Pie>
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const data = payload[0].payload as { name: string; value: number }
-                                  return (
-                                    <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                                      <p className="font-semibold text-gray-900">{data.name}</p>
-                                      <p className="text-sm text-indigo-600 font-semibold">
-                                        {formatCurrencyNumber(data.value)}
-                                      </p>
-                                      {total > 0 && (
-                                        <p className="text-xs text-gray-500">
-                                          {((data.value / total) * 100).toFixed(1)}%
-                                        </p>
-                                      )}
-                                    </div>
-                                  )
-                                }
-                                return null
-                              }}
-                            />
+                            <Tooltip content={<CustomTooltip />} />
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="mt-4 space-y-2 text-sm">
-                          {pieData.map((entry, idx) => {
-                            const percent = total > 0 ? (entry.value / total) * 100 : 0
-                            return (
-                              <div
-                                key={`${categoryData.category}-${entry.name}-${idx}`}
-                                className="flex items-center gap-3"
-                              >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span
-                                    className="w-3 h-3 rounded-sm flex-shrink-0"
-                                    style={{ backgroundColor: colorsForCategory[idx] }}
-                                  />
-                                  <span className="text-gray-800 font-medium truncate">{entry.name}</span>
-                                </div>
-                                <div className="w-24 text-right font-semibold text-gray-900">
-                                  {formatCurrencyNumber(entry.value)}
-                                </div>
-                                <div className="w-12 text-right text-xs font-semibold text-gray-500">
-                                  {percent >= 10 ? Math.round(percent) : percent.toFixed(1)}%
-                                </div>
+                          {pieDataWithPercent.map((entry, idx) => (
+                            <div
+                              key={`${categoryData.category}-${entry.name}-${idx}`}
+                              className="flex items-center gap-3"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <span
+                                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="text-gray-800 font-medium truncate">{entry.name}</span>
                               </div>
-                            )
-                          })}
+                              <div className="w-24 text-right font-semibold text-gray-900">
+                                {formatCurrencyNumber(entry.value)}
+                              </div>
+                              <div className="w-12 text-right text-xs font-semibold text-gray-500">
+                                {entry.percent >= 10 ? Math.round(entry.percent) : entry.percent.toFixed(1)}%
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </>
                     ) : (
                       <div className="flex items-center justify-center h-[220px]">
                         <p className="text-sm text-gray-500">Veri bulunamadı</p>
-        </div>
-      )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )
