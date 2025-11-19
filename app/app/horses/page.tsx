@@ -983,8 +983,6 @@ export default function HorsesPage() {
           setRemoveHorseDialogOpen(open)
           if (!open) {
             setSelectedHorseToRemove(null)
-          } else if (!selectedHorseToRemove && horses.length > 0) {
-            setSelectedHorseToRemove(horses[0].id)
           }
         }}
       >
@@ -1003,8 +1001,9 @@ export default function HorsesPage() {
                 onChange={(e) => setSelectedHorseToRemove(e.target.value || null)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white"
               >
-                {horses.length === 0 && <option value="">Kaldırılacak at yok</option>}
-                {horses.length > 0 && (
+                {horses.length === 0 ? (
+                  <option value="">Kaldırılacak at yok</option>
+                ) : (
                   <>
                     <option value="" disabled>
                       Bir at seçin
