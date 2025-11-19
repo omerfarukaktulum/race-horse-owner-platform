@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Checkbox } from '@/app/components/ui/checkbox'
+import { Input } from '@/app/components/ui/input'
+import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, UserPlus } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
@@ -50,8 +52,11 @@ export default function HorsesPage() {
   const [selectedHorseForNote, setSelectedHorseForNote] = useState<HorseData | null>(null)
   const [addHorseModalOpen, setAddHorseModalOpen] = useState(false)
   const [removeHorseDialogOpen, setRemoveHorseDialogOpen] = useState(false)
-  const [selectedHorseToRemove, setSelectedHorseToRemove] = useState<string | null>(null)
+  const [selectedHorsesToRemove, setSelectedHorsesToRemove] = useState<string[]>([])
   const [isRemovingHorse, setIsRemovingHorse] = useState(false)
+  const [removeModalSearchQuery, setRemoveModalSearchQuery] = useState('')
+  const [isRemoveModalSearchOpen, setIsRemoveModalSearchOpen] = useState(false)
+  const [ownerRef, setOwnerRef] = useState<string | null>(null)
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
@@ -64,6 +69,29 @@ export default function HorsesPage() {
   useEffect(() => {
     fetchHorses()
   }, [])
+
+  // Fetch ownerRef when remove modal opens
+  useEffect(() => {
+    if (removeHorseDialogOpen) {
+      const fetchOwnerRef = async () => {
+        try {
+          const userResponse = await fetch('/api/auth/me', {
+            credentials: 'include',
+          })
+          const userData = await userResponse.json()
+          
+          if (userResponse.ok && userData.user?.ownerProfile?.officialRef) {
+            setOwnerRef(userData.user.ownerProfile.officialRef)
+          }
+        } catch (error) {
+          console.error('Error fetching owner ref:', error)
+        }
+      }
+      fetchOwnerRef()
+    } else {
+      setOwnerRef(null)
+    }
+  }, [removeHorseDialogOpen])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -109,25 +137,68 @@ export default function HorsesPage() {
   }
 
   const handleRemoveHorse = async () => {
-    if (!selectedHorseToRemove) return
+    if (selectedHorsesToRemove.length === 0) return
     setIsRemovingHorse(true)
     try {
-      const response = await fetch(`/api/horses/${selectedHorseToRemove}`, {
-        method: 'DELETE',
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        throw new Error(data.error || 'At kaldırılamadı')
+      // Delete all selected horses
+      const deletePromises = selectedHorsesToRemove.map((horseId) =>
+        fetch(`/api/horses/${horseId}`, {
+          method: 'DELETE',
+        })
+      )
+      
+      const results = await Promise.allSettled(deletePromises)
+      const successful = results.filter((r) => r.status === 'fulfilled' && r.value.ok).length
+      const failed = results.length - successful
+      
+      if (successful > 0) {
+        toast.success(`${successful} at başarıyla kaldırıldı${failed > 0 ? `, ${failed} at kaldırılamadı` : ''}`)
+      } else {
+        throw new Error('Atlar kaldırılamadı')
       }
-      toast.success('At başarıyla kaldırıldı')
+      
       setRemoveHorseDialogOpen(false)
-      setSelectedHorseToRemove(null)
+      setSelectedHorsesToRemove([])
+      setRemoveModalSearchQuery('')
       fetchHorses()
     } catch (error) {
       console.error('Remove horse error:', error)
-      toast.error(error instanceof Error ? error.message : 'At kaldırılırken bir hata oluştu')
+      toast.error(error instanceof Error ? error.message : 'Atlar kaldırılırken bir hata oluştu')
     } finally {
       setIsRemovingHorse(false)
+    }
+  }
+
+  // Filter horses for remove modal
+  const getFilteredHorsesForRemove = () => {
+    if (!removeModalSearchQuery.trim()) {
+      return horses
+    }
+    const query = removeModalSearchQuery.toLowerCase().trim()
+    return horses.filter((horse) => {
+      if (horse.name.toLowerCase().includes(query)) return true
+      if (horse.sireName && horse.sireName.toLowerCase().includes(query)) return true
+      if (horse.damName && horse.damName.toLowerCase().includes(query)) return true
+      return false
+    })
+  }
+
+  const toggleHorseForRemove = (horseId: string) => {
+    setSelectedHorsesToRemove((prev) =>
+      prev.includes(horseId) ? prev.filter((id) => id !== horseId) : [...prev, horseId]
+    )
+  }
+
+  const selectAllHorsesForRemove = () => {
+    const filtered = getFilteredHorsesForRemove()
+    const allSelected = filtered.length > 0 && filtered.every((h) => selectedHorsesToRemove.includes(h.id))
+    if (allSelected) {
+      // Deselect all filtered horses
+      setSelectedHorsesToRemove((prev) => prev.filter((id) => !filtered.some((h) => h.id === id)))
+    } else {
+      // Select all filtered horses
+      const newSelected = [...new Set([...selectedHorsesToRemove, ...filtered.map((h) => h.id)])]
+      setSelectedHorsesToRemove(newSelected)
     }
   }
 
@@ -488,7 +559,7 @@ export default function HorsesPage() {
             {/* Origin Information - Separate Line */}
             {(horse.sireName || horse.damName) && (
               <div className="mb-3">
-                <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
+                <p className="text-[10px] sm:text-xs text-gray-600 line-clamp-1">
                   {horse.sireName && horse.damName 
                     ? `${horse.sireName} - ${horse.damName}`
                     : horse.sireName || horse.damName}
@@ -876,24 +947,25 @@ export default function HorsesPage() {
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setAddHorseModalOpen(true)}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
           >
-            
+            <Plus className="h-4 w-4 mr-2" />
             {TR.horses.addHorse}
           </Button>
           <Button
             type="button"
-            variant="outline"
             disabled={horses.length === 0}
             onClick={() => {
               if (horses.length === 0) {
                 toast.error('Kaldırılacak at bulunamadı')
                 return
               }
-              setSelectedHorseToRemove(horses[0]?.id || null)
+              setSelectedHorsesToRemove([])
+              setRemoveModalSearchQuery('')
+              setIsRemoveModalSearchOpen(false)
               setRemoveHorseDialogOpen(true)
             }}
-            className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 font-medium px-2 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {TR.horses.removeHorse}
           </Button>
@@ -982,63 +1054,187 @@ export default function HorsesPage() {
         onOpenChange={(open) => {
           setRemoveHorseDialogOpen(open)
           if (!open) {
-            setSelectedHorseToRemove(null)
+            setSelectedHorsesToRemove([])
+            setRemoveModalSearchQuery('')
+            setIsRemoveModalSearchOpen(false)
           }
         }}
       >
-        <DialogContent className="max-w-sm bg-white/95 backdrop-blur border border-rose-100 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-gray-900">{TR.horses.removeHorse}</DialogTitle>
-            <DialogDescription className="text-sm text-gray-600">
-              Seçilen at listeden kaldırılacak. Devam etmek istediğinize emin misiniz?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">At Seçin</label>
-              <select
-                value={selectedHorseToRemove || ''}
-                onChange={(e) => setSelectedHorseToRemove(e.target.value || null)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-200 bg-white"
-              >
-                {horses.length === 0 ? (
-                  <option value="">Kaldırılacak at yok</option>
-                ) : (
-                  <>
-                    <option value="" disabled>
-                      Bir at seçin
-                    </option>
-                    {horses.map((horseOption) => (
-                      <option key={horseOption.id} value={horseOption.id}>
-                        {horseOption.name}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
-            </div>
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setRemoveHorseDialogOpen(false)
-                  setSelectedHorseToRemove(null)
-                }}
-                className="border-gray-200 text-gray-600"
-              >
-                İptal
-              </Button>
-              <Button
-                type="button"
-                onClick={handleRemoveHorse}
-                disabled={!selectedHorseToRemove || isRemovingHorse}
-                className="bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white min-w-[130px]"
-              >
-                {isRemovingHorse ? 'Kaldırılıyor...' : 'Atı Kaldır'}
-              </Button>
-            </div>
-          </div>
+        <DialogContent className="max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+          <Card className="border-0 shadow-none flex flex-col h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
+                <Trash2 className="h-8 w-8 text-white" />
+              </div>
+              <div className="text-center">
+                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  {TR.horses.removeHorse}
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-2">
+                  Seçilen atlar listeden kaldırılacak. Devam etmek istediğinize emin misiniz?
+                </CardDescription>
+              </div>
+              {horses.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="px-2.5 py-1.5 h-9 rounded-lg text-xs bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white whitespace-nowrap min-w-[100px] text-center flex items-center justify-center">
+                      {removeModalSearchQuery.trim() 
+                        ? `${getFilteredHorsesForRemove().length} / ${horses.length} at bulundu` 
+                        : `${horses.length} at bulundu`}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {!isRemoveModalSearchOpen ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsRemoveModalSearchOpen(true)}
+                          className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50"
+                        >
+                          <Search className="h-4 w-4 text-gray-600" />
+                        </Button>
+                      ) : (
+                        <div className="relative w-36">
+                          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                          <Input
+                            type="text"
+                            placeholder="At ara..."
+                            value={removeModalSearchQuery}
+                            onChange={(e) => setRemoveModalSearchQuery(e.target.value)}
+                            className="pl-8 pr-8 h-9 text-sm border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsRemoveModalSearchOpen(false)
+                              setRemoveModalSearchQuery('')
+                            }}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllHorsesForRemove}
+                        className="border-[#6366f1] text-[#6366f1] hover:bg-indigo-50 whitespace-nowrap h-9"
+                      >
+                        {getFilteredHorsesForRemove().length > 0 && 
+                         getFilteredHorsesForRemove().every((h) => selectedHorsesToRemove.includes(h.id))
+                          ? 'Seçimi Temizle'
+                          : TR.common.selectAll}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+              {horses.length === 0 ? (
+                <div className="text-center py-12 flex-shrink-0">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Trash2 className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <p className="text-gray-700 font-medium mb-2">Kaldırılacak at bulunamadı.</p>
+                </div>
+              ) : getFilteredHorsesForRemove().length === 0 ? (
+                <div className="text-center py-12 flex-shrink-0">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <p className="text-gray-700 font-medium mb-2">Arama sonucu bulunamadı.</p>
+                  <p className="text-sm text-gray-500">Farklı bir arama terimi deneyin.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+                    <div className="overflow-y-auto space-y-2">
+                      {getFilteredHorsesForRemove().map((horse) => (
+                        <div
+                          key={horse.id}
+                          className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                            selectedHorsesToRemove.includes(horse.id)
+                              ? 'border-[#6366f1] bg-indigo-50/50 hover:shadow-md'
+                              : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
+                          }`}
+                          onClick={() => toggleHorseForRemove(horse.id)}
+                        >
+                          <Checkbox
+                            checked={selectedHorsesToRemove.includes(horse.id)}
+                            onCheckedChange={() => toggleHorseForRemove(horse.id)}
+                            className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1] flex-shrink-0"
+                          />
+                          {ownerRef && (
+                            <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
+                              <img
+                                src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                                alt="Eküri Forması"
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                  const container = e.currentTarget.parentElement
+                                  if (container) {
+                                    const icon = container.querySelector('.fallback-icon') as HTMLElement
+                                    if (icon) icon.style.display = 'block'
+                                  }
+                                }}
+                              />
+                              <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                            </div>
+                            <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
+                              {horse.yob && (
+                                <span>
+                                  <span className="font-medium">Doğum Tarihi:</span> {horse.yob}
+                                </span>
+                              )}
+                              {(horse.sireName || horse.damName) && (
+                                <span className="truncate min-w-0">
+                                  <span className="font-medium">Orijin:</span> {horse.sireName || ''} {horse.sireName && horse.damName ? ' - ' : ''} {horse.damName || ''}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-end pt-4 border-t border-gray-200 mt-auto flex-shrink-0 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRemoveHorseDialogOpen(false)
+                    setSelectedHorsesToRemove([])
+                    setRemoveModalSearchQuery('')
+                    setIsRemoveModalSearchOpen(false)
+                  }}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                >
+                  İptal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleRemoveHorse}
+                  disabled={selectedHorsesToRemove.length === 0 || isRemovingHorse}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 min-w-[130px]"
+                >
+                  {isRemovingHorse 
+                    ? 'Kaldırılıyor...' 
+                    : `Atları Kaldır (${selectedHorsesToRemove.length})`}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </DialogContent>
       </Dialog>
     </div>

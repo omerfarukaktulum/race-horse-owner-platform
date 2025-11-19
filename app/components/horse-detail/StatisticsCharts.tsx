@@ -85,11 +85,12 @@ const formatCurrencyNumber = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Math.round(value))
 
-const addPercentages = <T extends { value: number }>(data: T[]): Array<T & { percent: number }> => {
+const addPercentages = <T extends { value: number }>(data: T[]): Array<T & { percent: number; total: number }> => {
   const total = data.reduce((sum, item) => sum + (item.value || 0), 0)
   return data.map((item) => ({
     ...item,
     percent: total > 0 ? (item.value / total) * 100 : 0,
+    total: total, // Add total for tooltip calculation
   }))
 }
 
@@ -115,12 +116,15 @@ interface LegendItem {
   value: number
   color: string
   percent: number
+  total?: number // Total for tooltip calculation
+  valueType?: 'currency' | 'races' | 'expenses' // Type of value for tooltip formatting
 }
 
 type LegendDataInput = {
   name: string
   value: number
   color?: string
+  valueType?: 'currency' | 'races' | 'expenses'
 }
 
 const prepareLegendData = (data: LegendDataInput[]): LegendItem[] => {
@@ -130,6 +134,8 @@ const prepareLegendData = (data: LegendDataInput[]): LegendItem[] => {
     value: item.value,
     color: item.color || COLORS[index % COLORS.length],
     percent: total > 0 ? (item.value / total) * 100 : 0,
+    total: total, // Add total to each item for tooltip calculation
+    valueType: item.valueType, // Preserve valueType for tooltip formatting
   }))
 }
 
@@ -266,17 +272,34 @@ const CustomTooltip = ({ active, payload }: any) => {
     const slice = payload[0]
     const data = slice.payload || {}
     const value = data.value || 0
-    const totalValue = payload.reduce((sum: number, entry: any) => {
+    // Use total from data if available, otherwise calculate from all payload entries
+    const totalValue = data.total || payload.reduce((sum: number, entry: any) => {
       return sum + (entry?.payload?.value || 0)
     }, 0)
     const percentValue =
       totalValue > 0 ? ((value / totalValue) * 100).toFixed(0) : '0'
     
+    // Format value based on valueType - match the table format exactly
+    let valueLabel: React.ReactNode
+    
+    if (data.valueType === 'currency' || data.valueType === 'expenses') {
+      const formattedValue = formatCurrencyNumber(value)
+      valueLabel = (
+        <span className="flex items-center gap-1">
+          <TurkishLira className="h-3 w-3 text-gray-400" />
+          {formattedValue}
+        </span>
+      )
+    } else {
+      // Default to races
+      valueLabel = `${value} koşu`
+    }
+    
     return (
       <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
         <p className="font-semibold text-gray-900">{data.name}</p>
-        <p className="text-sm text-gray-600">
-          {value} koşu ({percentValue}%)
+        <p className="text-sm text-gray-600 flex items-center gap-1">
+          {valueLabel} ({percentValue}%)
         </p>
       </div>
     )
@@ -863,6 +886,7 @@ export function StatisticsCharts({
       name: horse.horseName,
       value: horse.total,
       color: COLORS[index % COLORS.length],
+      valueType: 'currency' as const,
     }))
     return prepareLegendData(baseData)
   }, [topEarningHorses])
@@ -872,6 +896,7 @@ export function StatisticsCharts({
       name: horse.horseName,
       value: horse.total,
       color: COLORS[index % COLORS.length],
+      valueType: 'expenses' as const,
     }))
     return prepareLegendData(baseData)
   }, [topSpendingHorses])
@@ -1273,9 +1298,9 @@ export function StatisticsCharts({
             {surfacePerformanceData.map((surfaceData) => {
             const total = surfaceData['İlk 3 sıra'] + surfaceData['Tabela sonu'] + surfaceData['Tabela dışı']
             const pieData = [
-              { name: 'İlk 3 sıra', value: surfaceData['İlk 3 sıra'], color: '#10b981' },
-              { name: 'Tabela sonu', value: surfaceData['Tabela sonu'], color: '#f59e0b' },
-              { name: 'Tabela dışı', value: surfaceData['Tabela dışı'], color: '#6b7280' },
+              { name: 'İlk 3 sıra', value: surfaceData['İlk 3 sıra'], color: '#10b981', total },
+              { name: 'Tabela sonu', value: surfaceData['Tabela sonu'], color: '#f59e0b', total },
+              { name: 'Tabela dışı', value: surfaceData['Tabela dışı'], color: '#6b7280', total },
             ].filter(item => item.value > 0)
             
             const surfaceColors: Record<string, string> = {
@@ -1340,9 +1365,9 @@ export function StatisticsCharts({
             {distancePerformanceData.map((distanceData) => {
               const total = distanceData['İlk 3 sıra'] + distanceData['Tabela sonu'] + distanceData['Tabela dışı']
               const pieData = [
-                { name: 'İlk 3 sıra', value: distanceData['İlk 3 sıra'], color: '#10b981' },
-                { name: 'Tabela sonu', value: distanceData['Tabela sonu'], color: '#f59e0b' },
-                { name: 'Tabela dışı', value: distanceData['Tabela dışı'], color: '#6b7280' },
+                { name: 'İlk 3 sıra', value: distanceData['İlk 3 sıra'], color: '#10b981', total },
+                { name: 'Tabela sonu', value: distanceData['Tabela sonu'], color: '#f59e0b', total },
+                { name: 'Tabela dışı', value: distanceData['Tabela dışı'], color: '#6b7280', total },
               ].filter(item => item.value > 0)
               
               const distanceColors: Record<string, string> = {
@@ -1407,9 +1432,9 @@ export function StatisticsCharts({
               {cityPerformanceData.map((cityData) => {
                 const total = cityData['İlk 3 sıra'] + cityData['Tabela sonu'] + cityData['Tabela dışı']
                 const pieData = [
-                  { name: 'İlk 3 sıra', value: cityData['İlk 3 sıra'], color: '#10b981' },
-                  { name: 'Tabela sonu', value: cityData['Tabela sonu'], color: '#f59e0b' },
-                  { name: 'Tabela dışı', value: cityData['Tabela dışı'], color: '#6b7280' },
+                  { name: 'İlk 3 sıra', value: cityData['İlk 3 sıra'], color: '#10b981', total },
+                  { name: 'Tabela sonu', value: cityData['Tabela sonu'], color: '#f59e0b', total },
+                  { name: 'Tabela dışı', value: cityData['Tabela dışı'], color: '#6b7280', total },
                 ].filter(item => item.value > 0)
                 
                 return (
@@ -1467,9 +1492,9 @@ export function StatisticsCharts({
                       {jockeyPerformanceData.map((jockeyData) => {
                         const total = jockeyData['İlk 3 sıra'] + jockeyData['Tabela sonu'] + jockeyData['Tabela dışı']
                         const pieData = [
-                          { name: 'İlk 3 sıra', value: jockeyData['İlk 3 sıra'], color: '#10b981' },
-                          { name: 'Tabela sonu', value: jockeyData['Tabela sonu'], color: '#f59e0b' },
-                          { name: 'Tabela dışı', value: jockeyData['Tabela dışı'], color: '#6b7280' },
+                          { name: 'İlk 3 sıra', value: jockeyData['İlk 3 sıra'], color: '#10b981', total },
+                          { name: 'Tabela sonu', value: jockeyData['Tabela sonu'], color: '#f59e0b', total },
+                          { name: 'Tabela dışı', value: jockeyData['Tabela dışı'], color: '#6b7280', total },
                         ].filter(item => item.value > 0)
                         
                         return (
@@ -1527,9 +1552,9 @@ export function StatisticsCharts({
                       const total =
                         typeData['İlk 3 sıra'] + typeData['Tabela sonu'] + typeData['Tabela dışı']
                       const pieData = [
-                        { name: 'İlk 3 sıra', value: typeData['İlk 3 sıra'], color: '#10b981' },
-                        { name: 'Tabela sonu', value: typeData['Tabela sonu'], color: '#f59e0b' },
-                        { name: 'Tabela dışı', value: typeData['Tabela dışı'], color: '#9ca3af' },
+                        { name: 'İlk 3 sıra', value: typeData['İlk 3 sıra'], color: '#10b981', total },
+                        { name: 'Tabela sonu', value: typeData['Tabela sonu'], color: '#f59e0b', total },
+                        { name: 'Tabela dışı', value: typeData['Tabela dışı'], color: '#9ca3af', total },
                       ].filter((item) => item.value > 0)
 
                       return (
@@ -1591,7 +1616,7 @@ export function StatisticsCharts({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
-                        {getEarningsChartData.title}
+                        {getEarningsChartData.title}{!selectedRange && <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1656,7 +1681,7 @@ export function StatisticsCharts({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-                        {getExpensesChartData.title}
+                        {getExpensesChartData.title}{!selectedRange && <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1880,6 +1905,7 @@ export function StatisticsCharts({
                 pieData.map((entry, idx) => ({
                   ...entry,
                   color: colorsForCategory[idx],
+                  total: total, // Add total for tooltip calculation
                 })),
               )
 

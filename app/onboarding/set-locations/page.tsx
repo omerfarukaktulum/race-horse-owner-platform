@@ -11,36 +11,6 @@ import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
-// Racecourse cities (specific cities for racecourses)
-const RACECOURSE_CITIES = [
-  'İstanbul Veliefendi',
-  'Adana Yeşiloba',
-  'Ankara 75. Yıl',
-  'Bursa Osmangazi',
-  'Diyarbakır',
-  'Elazığ',
-  'İzmir Şirinyer',
-  'Kocaeli Kartepe',
-  'Şanlıurfa',
-  'Antalya',
-]
-
-// Common Turkish cities (for farms)
-const TURKISH_CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya',
-  'Artvin', 'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu',
-  'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır',
-  'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun',
-  'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'İçel', 'İstanbul', 'İzmir',
-  'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya',
-  'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla', 'Muş',
-  'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop',
-  'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak',
-  'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale',
-  'Batman', 'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis',
-  'Osmaniye', 'Düzce',
-]
-
 interface Horse {
   id: string
   name: string
@@ -52,7 +22,6 @@ interface Horse {
 
 interface HorseLocation {
   locationType: 'racecourse' | 'farm'
-  city: string
 }
 
 export default function SetLocationsPage() {
@@ -114,11 +83,23 @@ export default function SetLocationsPage() {
       setOwnerRef(data.ownerRef || null)
       
       // Initialize location data for all horses
+      const currentYear = new Date().getFullYear()
       const initialLocations: Record<string, HorseLocation> = {}
       fetchedHorses.forEach((horse: Horse) => {
+        // Check if horse name ends with "Tayı"
+        const nameEndsWithTayi = horse.name.trim().endsWith('Tayı')
+        
+        // Check if horse is older than 8 years (9+ years old)
+        // Convert yob to number if it's a string
+        const yobNumber = horse.yob ? (typeof horse.yob === 'string' ? parseInt(horse.yob, 10) : horse.yob) : null
+        const age = yobNumber ? currentYear - yobNumber : null
+        const isOlderThan8 = age !== null && age > 8
+        
+        // Set default to 'farm' if name ends with "Tayı" or horse is older than 8 years
+        const defaultLocationType = (nameEndsWithTayi || isOlderThan8) ? 'farm' : 'racecourse'
+        
         initialLocations[horse.id] = {
-          locationType: 'racecourse',
-          city: '',
+          locationType: defaultLocationType,
         }
       })
       setHorseLocations(initialLocations)
@@ -131,23 +112,12 @@ export default function SetLocationsPage() {
   }
 
 
-  const updateHorseLocation = (horseId: string, field: keyof HorseLocation, value: string) => {
-    setHorseLocations((prev) => ({
-      ...prev,
-      [horseId]: {
-        ...prev[horseId],
-        [field]: value,
-      },
-    }))
-  }
-
   const updateLocationType = (horseId: string, locationType: 'racecourse' | 'farm') => {
     setHorseLocations((prev) => ({
       ...prev,
       [horseId]: {
         ...prev[horseId],
         locationType,
-        city: '', // Clear city when location type changes
       },
     }))
   }
@@ -156,7 +126,7 @@ export default function SetLocationsPage() {
     // Save all horses with locations before navigating
     const horsesWithLocations = horses.filter((horse) => {
       const location = horseLocations[horse.id]
-      return location && location.city
+      return location && location.locationType
     })
 
     if (horsesWithLocations.length === 0) {
@@ -171,7 +141,7 @@ export default function SetLocationsPage() {
       // Save all locations in parallel
       const promises = horsesWithLocations.map(async (horse) => {
         const location = horseLocations[horse.id]
-        if (!location || !location.city) return
+        if (!location || !location.locationType) return
 
         const response = await fetch(`/api/horses/${horse.id}/location`, {
           method: 'POST',
@@ -181,7 +151,7 @@ export default function SetLocationsPage() {
           credentials: 'include',
           body: JSON.stringify({
             locationType: location.locationType,
-            city: location.city,
+            city: '',
             startDate: new Date().toISOString().split('T')[0],
             notes: '',
           }),
@@ -204,8 +174,6 @@ export default function SetLocationsPage() {
     }
   }
 
-  const availableCities = (locationType: 'racecourse' | 'farm') => 
-    locationType === 'racecourse' ? RACECOURSE_CITIES : TURKISH_CITIES
 
   if (isLoading) {
     return (
@@ -259,9 +227,7 @@ export default function SetLocationsPage() {
                 {horses.map((horse) => {
                   const location = horseLocations[horse.id] || {
                     locationType: 'racecourse' as const,
-                    city: '',
                   }
-                  const hasLocation = !!(location && location.city)
 
                   return (
                     <div key={horse.id} className="flex items-start gap-3 w-full">
@@ -270,11 +236,7 @@ export default function SetLocationsPage() {
                         ref={(el) => {
                           horseCardRefs.current[horse.id] = el
                         }}
-                        className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 h-[60px] flex-shrink-0 ${
-                          hasLocation
-                            ? 'border-green-200 bg-green-50/50'
-                            : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
-                        }`}
+                        className="flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 h-[60px] flex-shrink-0 border-gray-200 hover:border-gray-300 bg-white hover:shadow-md"
                         style={horseCardWidth ? { width: `${horseCardWidth}px` } : undefined}
                       >
                         {ownerRef && (
@@ -306,67 +268,40 @@ export default function SetLocationsPage() {
                       </div>
 
                       {/* Location Controls Container - styled similar to horse card */}
-                      <div className={`flex flex-col gap-3 py-3.5 px-4 border-2 rounded-lg transition-all duration-200 h-[60px] justify-center flex-shrink-0 w-fit ${hasLocation ? 'border-green-200 bg-green-50/50' : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'}`}>
-                        {/* First row: Location Type Radio Buttons */}
-                        <div className="flex gap-4">
-                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`location-type-${horse.id}`}
-                              value="racecourse"
-                              checked={location.locationType === 'racecourse'}
-                              onChange={(e) => {
-                                if (e.target.checked && !isSubmitting) {
-                                  updateLocationType(horse.id, 'racecourse')
-                                }
-                              }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                              disabled={isSubmitting}
-                            />
-                            <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
-                          </label>
-                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`location-type-${horse.id}`}
-                              value="farm"
-                              checked={location.locationType === 'farm'}
-                              onChange={(e) => {
-                                if (e.target.checked && !isSubmitting) {
-                                  updateLocationType(horse.id, 'farm')
-                                }
-                              }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                              disabled={isSubmitting}
-                            />
-                            <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
-                          </label>
-                        </div>
-
-                        {/* Second row: City Dropdown - beautified and smaller */}
-                        <div className="relative">
-                          <select
-                            value={location.city}
+                      <div className="flex items-center gap-4 py-3.5 px-4 border-2 rounded-lg transition-all duration-200 h-[60px] justify-center flex-shrink-0 w-fit border-gray-200 hover:border-gray-300 bg-white hover:shadow-md">
+                        {/* Location Type Radio Buttons */}
+                        <label className="flex items-center space-x-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`location-type-${horse.id}`}
+                            value="racecourse"
+                            checked={location.locationType === 'racecourse'}
                             onChange={(e) => {
-                              updateHorseLocation(horse.id, 'city', e.target.value)
+                              if (e.target.checked && !isSubmitting) {
+                                updateLocationType(horse.id, 'racecourse')
+                              }
                             }}
+                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
                             disabled={isSubmitting}
-                            className="w-32 h-6 rounded-md border-2 border-gray-300 bg-white px-2 py-0.5 pr-6 text-xs text-gray-700 font-medium shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-gray-300 appearance-none cursor-pointer"
-                            style={{
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                              backgroundRepeat: 'no-repeat',
-                              backgroundPosition: 'right 0.3rem center',
-                              backgroundSize: '0.875em 0.875em',
+                          />
+                          <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
+                        </label>
+                        <label className="flex items-center space-x-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`location-type-${horse.id}`}
+                            value="farm"
+                            checked={location.locationType === 'farm'}
+                            onChange={(e) => {
+                              if (e.target.checked && !isSubmitting) {
+                                updateLocationType(horse.id, 'farm')
+                              }
                             }}
-                          >
-                            <option value="" className="text-gray-500">Şehir Seçin</option>
-                            {availableCities(location.locationType).map((cityName) => (
-                              <option key={cityName} value={cityName} className="text-gray-900">
-                                {cityName}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                            disabled={isSubmitting}
+                          />
+                          <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
+                        </label>
                       </div>
                     </div>
                   )

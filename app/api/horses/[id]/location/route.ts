@@ -25,9 +25,9 @@ export async function POST(
     const body = await request.json()
     const { locationType, city, startDate } = body
 
-    if (!locationType || !city) {
+    if (!locationType) {
       return NextResponse.json(
-        { error: 'Location type and city are required' },
+        { error: 'Location type is required' },
         { status: 400 }
       )
     }
@@ -105,31 +105,33 @@ export async function POST(
     let racecourseId: string | null = null
     let farmId: string | null = null
 
-    if (locationType === 'racecourse') {
-      // Try to find racecourse by name matching the city
-      const racecourse = await prisma.racecourse.findFirst({
-        where: {
-          name: {
-            contains: city,
-            mode: 'insensitive',
+    if (city && city.trim()) {
+      if (locationType === 'racecourse') {
+        // Try to find racecourse by name matching the city
+        const racecourse = await prisma.racecourse.findFirst({
+          where: {
+            name: {
+              contains: city,
+              mode: 'insensitive',
+            },
           },
-        },
-      })
-      if (racecourse) {
-        racecourseId = racecourse.id
-      }
-    } else if (locationType === 'farm') {
-      // Try to find farm by city
-      const farm = await prisma.farm.findFirst({
-        where: {
-          city: {
-            equals: city,
-            mode: 'insensitive',
+        })
+        if (racecourse) {
+          racecourseId = racecourse.id
+        }
+      } else if (locationType === 'farm') {
+        // Try to find farm by city
+        const farm = await prisma.farm.findFirst({
+          where: {
+            city: {
+              equals: city,
+              mode: 'insensitive',
+            },
           },
-        },
-      })
-      if (farm) {
-        farmId = farm.id
+        })
+        if (farm) {
+          farmId = farm.id
+        }
       }
     }
 
@@ -138,7 +140,7 @@ export async function POST(
       data: {
         horseId: params.id,
         locationType,
-        city,
+        city: city || '',
         racecourseId,
         farmId,
         startDate: new Date(startDate),
