@@ -35,6 +35,7 @@ interface Props {
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
+  highlightGallopId?: string
 }
 
 const normalizeRacecourse = (racecourse?: string) => {
@@ -47,13 +48,14 @@ const normalizeStatus = (status?: string) => {
   return status.trim()
 }
 
-export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
+export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
+  const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -195,6 +197,12 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   useEffect(() => {
     onActiveFiltersChange?.(activeFilterCount)
   }, [activeFilterCount, onActiveFiltersChange])
+
+  useEffect(() => {
+    if (highlightGallopId && highlightedRowRef.current) {
+      highlightedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlightGallopId, filteredGallops.length])
 
   if (gallops.length === 0) {
     return (
@@ -437,6 +445,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 ) : (
                   filteredGallops.map((gallop, index) => {
                   const isStriped = index % 2 === 1
+                  const isHighlighted = highlightGallopId === gallop.id
                   const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
                   
                   // Get specific distance times
@@ -456,11 +465,16 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   return (
                     <tr
                       key={gallop.id}
-                      className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                      ref={isHighlighted ? (el) => (highlightedRowRef.current = el) : undefined}
+                      className={`relative transition-colors ${
+                        isHighlighted
+                          ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'
+                          : `${isStriped ? 'bg-gray-50/30' : 'bg-white'} hover:bg-indigo-50/50`
+                      }`}
                     >
                       {/* Date */}
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
+                      <td className={`px-4 py-3 whitespace-nowrap ${isHighlighted ? 'border-l-4 border-indigo-400 pl-[0.85rem]' : ''}`}>
+                        <span className={`text-sm font-medium ${isHighlighted ? 'text-indigo-900' : 'text-gray-900'}`}>
                           {formatDateShort(gallop.gallopDate)}
                         </span>
                       </td>

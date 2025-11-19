@@ -135,6 +135,7 @@ export async function GET(request: Request) {
       }
       
       return {
+        horseId: race.horseId,
         date: formattedDate,
         horseName: race.horse.name,
         city: race.city || '',

@@ -876,9 +876,9 @@ export default function HorsesPage() {
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setAddHorseModalOpen(true)}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            
             {TR.horses.addHorse}
           </Button>
           <Button
@@ -893,7 +893,7 @@ export default function HorsesPage() {
               setSelectedHorseToRemove(horses[0]?.id || null)
               setRemoveHorseDialogOpen(true)
             }}
-            className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 font-medium px-6 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="border-2 border-rose-200 text-rose-600 hover:bg-rose-50 font-medium px-2 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {TR.horses.removeHorse}
           </Button>

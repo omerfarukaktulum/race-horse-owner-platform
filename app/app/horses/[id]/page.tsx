@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { ArrowLeft, FileText, MapPin, Filter, Plus } from 'lucide-react'
@@ -45,6 +45,13 @@ interface RaceHistory {
   prizeMoney?: string
   videoUrl?: string
   photoUrl?: string
+}
+
+const HORSE_TABS = ['info', 'pedigree', 'races', 'gallops', 'statistics', 'expenses', 'notes'] as const
+type HorseTab = (typeof HORSE_TABS)[number]
+
+const isHorseTab = (value: string | null): value is HorseTab => {
+  return !!value && HORSE_TABS.includes(value as HorseTab)
 }
 
 interface HorseDetail {
@@ -139,6 +146,7 @@ interface HorseDetail {
 export default function HorseDetailPage() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const horseId = params?.id as string
 
   const [horse, setHorse] = useState<HorseDetail | null>(null)
@@ -146,7 +154,10 @@ export default function HorseDetailPage() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState('info')
+  const [activeTab, setActiveTab] = useState<HorseTab>(() => {
+    const tabParam = searchParams?.get('tab')
+    return isHorseTab(tabParam) ? tabParam : 'info'
+  })
   const [showExpensesFilter, setShowExpensesFilter] = useState(false)
   const [showNotesFilter, setShowNotesFilter] = useState(false)
   const [showStatisticsFilter, setShowStatisticsFilter] = useState(false)
@@ -158,6 +169,20 @@ export default function HorseDetailPage() {
   const [expensesFilterCount, setExpensesFilterCount] = useState(0)
   const [notesFilterCount, setNotesFilterCount] = useState(0)
   const filterTriggerRef = useRef<(() => void) | null>(null)
+  const highlightGallopId = searchParams?.get('highlightGallop') || undefined
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab')
+    if (isHorseTab(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams, activeTab])
+
+  const handleTabChange = (value: string) => {
+    if (isHorseTab(value)) {
+      setActiveTab(value)
+    }
+  }
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
   const statisticsFilterTriggerRef = useRef<(() => void) | null>(null)
   const racesFilterTriggerRef = useRef<(() => void) | null>(null)
@@ -325,7 +350,7 @@ export default function HorseDetailPage() {
       </div>
 
       {/* Tabbed Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0">
             <TabsTrigger 
@@ -503,6 +528,7 @@ export default function HorseDetailPage() {
             onFilterDropdownChange={setShowGallopsFilter}
             filterDropdownContainerRef={gallopsFilterButtonRef}
             onActiveFiltersChange={setGallopsFilterCount}
+            highlightGallopId={highlightGallopId}
           />
         </TabsContent>
 

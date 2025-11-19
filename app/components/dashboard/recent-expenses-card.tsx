@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { TurkishLira } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
@@ -20,6 +21,7 @@ interface ExpenseData {
 }
 
 export function RecentExpensesCard() {
+  const router = useRouter()
   const [expenses, setExpenses] = useState<ExpenseData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +120,18 @@ export function RecentExpensesCard() {
             {expenses.map((expense) => (
               <div
                 key={expense.id}
-                className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  router.push(`/app/horses/${expense.horseId}?tab=expenses`)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    router.push(`/app/horses/${expense.horseId}?tab=expenses`)
+                  }
+                }}
+                className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer"
               >
                 {/* 1st line: Horse name */}
                 <p className="font-semibold text-gray-900 text-sm mb-1">

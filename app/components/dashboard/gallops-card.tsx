@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Activity } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { formatGallopStatus } from '@/lib/utils/gallops'
 
 interface GallopData {
+  id: string
   date: string
   distances: { [distance: number]: string }  // All distances with times
   status?: string
@@ -18,7 +20,9 @@ interface GallopData {
 }
 
 export function GallopsCard() {
+  const router = useRouter()
   const [gallops, setGallops] = useState<GallopData[]>([])
+  const [visitedGallops, setVisitedGallops] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -130,9 +134,33 @@ export function GallopsCard() {
               
               return (
                 <div
-                  key={`${gallop.horseId}-${gallop.date}-${index}`}
-                  className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+                  key={`${gallop.id}-${index}`}
+                  role="button"
+                  tabIndex={0}
+                onClick={() => {
+                    setVisitedGallops((prev) =>
+                      prev.includes(gallop.id) ? prev : [...prev, gallop.id]
+                    )
+                    router.push(`/app/horses/${gallop.horseId}?tab=gallops&highlightGallop=${gallop.id}`)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setVisitedGallops((prev) =>
+                        prev.includes(gallop.id) ? prev : [...prev, gallop.id]
+                      )
+                      router.push(`/app/horses/${gallop.horseId}?tab=gallops&highlightGallop=${gallop.id}`)
+                    }
+                  }}
+                  className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer relative ${
+                    visitedGallops.includes(gallop.id)
+                      ? 'bg-gradient-to-r from-indigo-50 via-white to-white border-indigo-400 shadow-lg ring-2 ring-indigo-100'
+                      : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-md'
+                  }`}
                 >
+                  {visitedGallops.includes(gallop.id) && (
+                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 h-10 w-1.5 rounded-full bg-indigo-400 shadow-md" />
+                  )}
                   {/* Design with text and emojis */}
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex-1">

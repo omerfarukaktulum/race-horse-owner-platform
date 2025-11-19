@@ -111,6 +111,7 @@ export async function GET(request: Request) {
       
       return {
         id: gallop.id,
+        horseId: gallop.horseId,
         horseName: gallop.horse.name,
         date: formattedDate,
         distances: gallop.distances || {},

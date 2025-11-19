@@ -9,6 +9,26 @@ export const dynamic = 'force-dynamic'
  * Get registrations and declarations for all horses in the user's stablemate
  * Queries the database - no TJK fetching needed
  */
+const formatDateForTjk = (date: Date) => {
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+}
+
+const buildTjkUrl = (date: Date, type: string) => {
+  const baseUrl =
+    type.toLowerCase() === 'deklare'
+      ? 'https://www.tjk.org/TR/YarisSever/Info/Data/Deklareler'
+      : 'https://www.tjk.org/TR/YarisSever/Info/Data/Kayitlar'
+
+  const query = new URLSearchParams({
+    QueryParameter_Tarih: formatDateForTjk(date),
+    Era: 'today',
+    Sort: '',
+    'X-Requested-With': 'XMLHttpRequest',
+  })
+
+  return `${baseUrl}?${query.toString()}`
+}
+
 export async function GET(request: Request) {
   try {
     console.log('[Registrations API] Starting request')
@@ -127,8 +147,9 @@ export async function GET(request: Request) {
         distance: reg.distance || undefined,
         surface: surface || undefined,
         raceType: reg.raceType || undefined,
-        type: reg.type === 'Deklare' ? 'DEKLARE' as const : 'KAYIT' as const,
+        type: reg.type === 'Deklare' ? ('DEKLARE' as const) : ('KAYIT' as const),
         jockeyName: reg.jockeyName || undefined,
+        tjkUrl: buildTjkUrl(date, reg.type),
       }
     })
 

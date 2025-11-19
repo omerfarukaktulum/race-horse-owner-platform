@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Trophy } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 
 interface RaceData {
+  horseId?: string
   date: string          // Race date (DD.MM.YYYY)
   horseName: string     // Horse name
   city: string          // City
@@ -18,6 +20,7 @@ interface RaceData {
 }
 
 export function RecentRacesCard() {
+  const router = useRouter()
   const [races, setRaces] = useState<RaceData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -144,7 +147,23 @@ export function RecentRacesCard() {
             {races.map((race, index) => (
               <div
                 key={`${race.horseName}-${race.date}-${index}`}
-                className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+                role={race.horseId ? 'button' : undefined}
+                tabIndex={race.horseId ? 0 : -1}
+                onClick={() => {
+                  if (race.horseId) {
+                    router.push(`/app/horses/${race.horseId}?tab=races`)
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!race.horseId) return
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    router.push(`/app/horses/${race.horseId}?tab=races`)
+                  }
+                }}
+                className={`p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200 ${
+                  race.horseId ? 'hover:border-indigo-300 hover:shadow-md cursor-pointer' : ''
+                }`}
               >
                 {/* Design with text and emojis */}
                 <div className="flex items-start justify-between mb-1">

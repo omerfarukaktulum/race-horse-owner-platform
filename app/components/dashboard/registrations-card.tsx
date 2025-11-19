@@ -16,6 +16,7 @@ interface RegistrationItem {
   raceType?: string
   type: 'KAYIT' | 'DEKLARE'
   jockeyName?: string   // Jockey name for declarations
+  tjkUrl?: string
 }
 
 export function RegistrationsCard() {
@@ -146,7 +147,23 @@ export function RegistrationsCard() {
             {registrations.map((registration) => (
               <div
                 key={registration.id}
-                className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200"
+                role={registration.tjkUrl ? 'button' : undefined}
+                tabIndex={registration.tjkUrl ? 0 : -1}
+                onClick={() => {
+                  if (registration.tjkUrl) {
+                    window.open(registration.tjkUrl, '_blank', 'noopener')
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (!registration.tjkUrl) return
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    window.open(registration.tjkUrl, '_blank', 'noopener')
+                  }
+                }}
+                className={`p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200 ${
+                  registration.tjkUrl ? 'hover:border-indigo-300 hover:shadow-md cursor-pointer' : ''
+                }`}
               >
                 {/* Design with text and emojis */}
                 <div className="flex items-start justify-between mb-1">
