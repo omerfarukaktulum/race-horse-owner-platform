@@ -386,14 +386,9 @@ export default function ExpensesPage() {
       TRAINER: 'Antrenör',
     }
     const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
-    const profileName =
-      expense.addedBy.ownerProfile?.officialName || expense.addedBy.trainerProfile?.fullName
+    if (roleLabel) return roleLabel
 
-    if (roleLabel && profileName) {
-      return `${roleLabel} (${profileName})`
-    }
-
-    return roleLabel || profileName || 'Bilinmiyor'
+    return 'Bilinmiyor'
   }
 
   const hasExpenses = (expenses?.length || 0) > 0
