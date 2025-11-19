@@ -40,6 +40,7 @@ interface Props {
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
+  highlightExpenseId?: string
 }
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -70,13 +71,14 @@ const getAttachments = (input?: string | string[] | null) => {
   return []
 }
 
-export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
+export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightExpenseId }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
+  const highlightedExpenseRowRef = useRef<HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -388,6 +390,12 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
 
   const isEditModalVisible = isEditModalOpen && !!editingExpense
 
+  useEffect(() => {
+    if (highlightExpenseId && highlightedExpenseRowRef.current) {
+      highlightedExpenseRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlightExpenseId, filteredExpenses.length])
+
   return (
     <>
       <div className="space-y-4">
@@ -602,11 +610,17 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
                   ) : (
                     filteredExpenses.map((expense, index) => {
                       const isStriped = index % 2 === 1
+                      const isHighlighted = highlightExpenseId === expense.id
                       const attachments = getAttachments(expense.photoUrl)
                       return (
                         <tr
                           key={expense.id}
-                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                          ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
+                          className={`transition-colors ${
+                            isHighlighted
+                              ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'
+                              : `${isStriped ? 'bg-gray-50/30' : 'bg-white'} hover:bg-indigo-50/50`
+                          }`}
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-900">

@@ -130,7 +130,7 @@ export function GallopsCard() {
             {gallops.map((gallop, index) => {
               const distanceEntries = Object.entries(gallop.distances || {})
                 .map(([dist, time]) => ({ distance: parseInt(dist), time }))
-                .sort((a, b) => b.distance - a.distance) // Sort by distance descending
+                .sort((a, b) => a.distance - b.distance) // Sort by distance ascending
               
               return (
                 <div

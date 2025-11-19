@@ -441,7 +441,7 @@ export default function StablematePage() {
             <div className="flex items-center justify-between py-3 border-b border-gray-100">
               <div className="flex-1">
                 <Label htmlFor="horseDeclared" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Deklarasyonlar</span>
+                  <span>Deklareler</span>
                   <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri bir yarışa deklare edildiğinde)</span>
                 </Label>
               </div>

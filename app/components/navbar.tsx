@@ -75,12 +75,12 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href={user ? '/app/home' : '/'} className="flex items-center gap-2">
-              <Activity className="h-6 w-6 text-[#6366f1]" />
+            <Link href={user ? '/app/home' : '/'} className="flex items-center gap-2 no-underline">
+              <Activity className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
               {stablemateName ? (
-                <p className="text-xs uppercase tracking-[0.3em] text-indigo-500 whitespace-nowrap">
+                <span className="text-xs !uppercase !tracking-[0.3em] !text-indigo-500 whitespace-nowrap font-normal">
                   {stablemateName} Ekürisi
-                </p>
+                </span>
               ) : (
                 <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
                   At Sahibi Platform

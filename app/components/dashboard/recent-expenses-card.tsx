@@ -123,12 +123,12 @@ export function RecentExpensesCard() {
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  router.push(`/app/horses/${expense.horseId}?tab=expenses`)
+                  router.push(`/app/horses/${expense.horseId}?tab=expenses&highlightExpense=${expense.id}`)
                 }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    router.push(`/app/horses/${expense.horseId}?tab=expenses`)
+                    router.push(`/app/horses/${expense.horseId}?tab=expenses&highlightExpense=${expense.id}`)
                   }
                 }}
                 className="p-3 bg-white rounded-lg border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all duration-200 cursor-pointer"

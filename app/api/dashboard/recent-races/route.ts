@@ -135,6 +135,7 @@ export async function GET(request: Request) {
       }
       
       return {
+        raceId: race.id,
         horseId: race.horseId,
         date: formattedDate,
         horseName: race.horse.name,

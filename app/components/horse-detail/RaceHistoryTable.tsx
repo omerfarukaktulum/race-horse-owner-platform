@@ -46,6 +46,7 @@ interface Props {
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
+  highlightRaceId?: string
 }
 
 const DISTANCE_GROUPS = [
@@ -70,13 +71,14 @@ const getDistanceGroup = (distance?: number) => {
   return undefined
 }
 
-export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
+export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightRaceId }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([])
   const [selectedDistanceGroups, setSelectedDistanceGroups] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
+  const highlightedRaceRowRef = useRef<HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -209,6 +211,12 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
       prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
     )
   }
+
+  useEffect(() => {
+    if (highlightRaceId && highlightedRaceRowRef.current) {
+      highlightedRaceRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [highlightRaceId, filteredRaces.length])
 
   if (races.length === 0) {
     return (
@@ -490,11 +498,17 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
                   filteredRaces.map((race, index) => {
                   const medal = getPositionMedal(race.position)
                   const isStriped = index % 2 === 1
+                  const isHighlighted = highlightRaceId === race.id
                   
                   return (
                     <tr
                       key={race.id}
-                      className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                      ref={isHighlighted ? (el) => (highlightedRaceRowRef.current = el) : undefined}
+                      className={`transition-colors ${
+                        isHighlighted
+                          ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'
+                          : `${isStriped ? 'bg-gray-50/30' : 'bg-white'} hover:bg-indigo-50/50`
+                      }`}
                     >
                       {/* Date */}
                       <td className="px-4 py-3 whitespace-nowrap">

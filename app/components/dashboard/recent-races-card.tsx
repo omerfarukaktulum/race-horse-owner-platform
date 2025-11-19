@@ -7,6 +7,7 @@ import { Trophy } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 
 interface RaceData {
+  raceId?: string
   horseId?: string
   date: string          // Race date (DD.MM.YYYY)
   horseName: string     // Horse name
@@ -151,14 +152,16 @@ export function RecentRacesCard() {
                 tabIndex={race.horseId ? 0 : -1}
                 onClick={() => {
                   if (race.horseId) {
-                    router.push(`/app/horses/${race.horseId}?tab=races`)
+                    const highlight = race.raceId ? `&highlightRace=${race.raceId}` : ''
+                    router.push(`/app/horses/${race.horseId}?tab=races${highlight}`)
                   }
                 }}
                 onKeyDown={(event) => {
                   if (!race.horseId) return
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault()
-                    router.push(`/app/horses/${race.horseId}?tab=races`)
+                    const highlight = race.raceId ? `&highlightRace=${race.raceId}` : ''
+                    router.push(`/app/horses/${race.horseId}?tab=races${highlight}`)
                   }
                 }}
                 className={`p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200 ${

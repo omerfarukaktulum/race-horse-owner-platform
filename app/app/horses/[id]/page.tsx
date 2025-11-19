@@ -170,6 +170,8 @@ export default function HorseDetailPage() {
   const [notesFilterCount, setNotesFilterCount] = useState(0)
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
+  const highlightRaceId = searchParams?.get('highlightRace') || undefined
+  const highlightExpenseId = searchParams?.get('highlightExpense') || undefined
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
@@ -514,6 +516,7 @@ export default function HorseDetailPage() {
             onFilterDropdownChange={setShowRacesFilter}
             filterDropdownContainerRef={racesFilterButtonRef}
             onActiveFiltersChange={setRacesFilterCount}
+            highlightRaceId={highlightRaceId}
           />
         </TabsContent>
 
@@ -563,6 +566,7 @@ export default function HorseDetailPage() {
             onFilterDropdownChange={setShowExpensesFilter}
             filterDropdownContainerRef={expensesFilterButtonRef}
             onActiveFiltersChange={setExpensesFilterCount}
+            highlightExpenseId={highlightExpenseId}
           />
         </TabsContent>
 
