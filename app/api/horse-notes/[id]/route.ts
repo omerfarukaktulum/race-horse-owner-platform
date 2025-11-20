@@ -195,9 +195,16 @@ export async function PATCH(
           select: {
             email: true,
             role: true,
-            ownerProfile: { select: { officialName: true } },
-            trainerProfile: { select: { fullName: true } },
-            name: true,
+            ownerProfile: {
+              select: {
+                officialName: true,
+              },
+            },
+            trainerProfile: {
+              select: {
+                fullName: true,
+              },
+            },
           },
         },
       },

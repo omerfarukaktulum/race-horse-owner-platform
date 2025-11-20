@@ -125,9 +125,16 @@ export async function POST(
           select: {
             email: true,
             role: true,
-            ownerProfile: { select: { officialName: true } },
-            trainerProfile: { select: { fullName: true } },
-            name: true,
+            ownerProfile: {
+              select: {
+                officialName: true,
+              },
+            },
+            trainerProfile: {
+              select: {
+                fullName: true,
+              },
+            },
           },
         },
       },
@@ -218,9 +225,16 @@ export async function GET(
           select: {
             email: true,
             role: true,
-            ownerProfile: { select: { officialName: true } },
-            trainerProfile: { select: { fullName: true } },
-            name: true,
+            ownerProfile: {
+              select: {
+                officialName: true,
+              },
+            },
+            trainerProfile: {
+              select: {
+                fullName: true,
+              },
+            },
           },
         },
       },
