@@ -80,7 +80,7 @@ export default function NotesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [selectedHorseForAdd, setSelectedHorseForAdd] = useState<{ id: string; name: string } | null>(null)
+  const [availableHorsesForAdd, setAvailableHorsesForAdd] = useState<{ id: string; name: string }[]>([])
   const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
   const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
   const [attachmentViewer, setAttachmentViewer] = useState<{
@@ -380,9 +380,11 @@ export default function NotesPage() {
       })
       const data = await response.json()
       if (response.ok && data.horses && data.horses.length > 0) {
-        // For now, use the first horse. In the future, we could show a selection dialog
-        const firstHorse = data.horses[0]
-        setSelectedHorseForAdd({ id: firstHorse.id, name: firstHorse.name })
+        const formattedHorses = data.horses.map((horse: any) => ({
+          id: horse.id,
+          name: horse.name,
+        }))
+        setAvailableHorsesForAdd(formattedHorses)
         setIsAddModalOpen(true)
       } else {
         toast.error('Not eklemek için önce bir at eklemeniz gerekiyor')
@@ -391,6 +393,11 @@ export default function NotesPage() {
       console.error('Fetch horses error:', error)
       toast.error('Atlar yüklenirken bir hata oluştu')
     }
+  }
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false)
+    setAvailableHorsesForAdd([])
   }
 
   const hasNotes = (notes?.length || 0) > 0
@@ -715,18 +722,15 @@ export default function NotesPage() {
       </Card>
 
       {/* Add Note Modal */}
-      {selectedHorseForAdd && (
+      {isAddModalOpen && availableHorsesForAdd.length > 0 && (
         <AddNoteModal
           open={isAddModalOpen}
           onClose={() => {
-            setIsAddModalOpen(false)
-            setSelectedHorseForAdd(null)
+            closeAddModal()
           }}
-          horseId={selectedHorseForAdd.id}
-          horseName={selectedHorseForAdd.name}
+          horses={availableHorsesForAdd}
           onSuccess={() => {
-            setIsAddModalOpen(false)
-            setSelectedHorseForAdd(null)
+            closeAddModal()
             fetchNotes()
           }}
         />

@@ -559,6 +559,17 @@ export default function HorsesPage() {
 
     const genderLabel = getGenderLabel()
 
+    const locationLabel = (() => {
+      if (!horse.currentLocationType) return null
+      if (horse.currentLocationType === 'racecourse') {
+        return { text: 'Hipodrom', color: 'bg-sky-100 text-sky-700 border-sky-200' }
+      }
+      if (horse.currentLocationType === 'farm') {
+        return { text: 'Çiftlik', color: 'bg-amber-100 text-amber-700 border-amber-200' }
+      }
+      return null
+    })()
+
     return (
       <Link href={`/app/horses/${horse.id}`}>
         <Card className={`p-4 sm:p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg cursor-pointer ${cardGradient}`}>
@@ -591,6 +602,12 @@ export default function HorsesPage() {
               {genderLabel && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${genderLabel.color}`}>
                   {genderLabel.text}
+                </span>
+              )}
+              {locationLabel && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${locationLabel.color}`}>
+                  <MapPin className="h-3 w-3" />
+                  {locationLabel.text}
                 </span>
               )}
               {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 
