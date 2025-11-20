@@ -102,6 +102,12 @@ model Stablemate {
   coOwners       String[]
   location       String?
   website        String?
+  notifyHorseRegistered Boolean @default(true)
+  notifyHorseDeclared   Boolean @default(true)
+  notifyNewTraining     Boolean @default(true)
+  notifyNewExpense      Boolean @default(true)
+  notifyNewNote         Boolean @default(true)
+  notifyNewRace         Boolean @default(true)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

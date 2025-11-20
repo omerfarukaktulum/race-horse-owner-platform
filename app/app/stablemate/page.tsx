@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, Activity, TrendingUp, Clock, Settings, Bell } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, Info } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -116,6 +116,12 @@ interface StablemateData {
     status: string
     yob?: number
   }>
+  notifyHorseRegistered?: boolean
+  notifyHorseDeclared?: boolean
+  notifyNewTraining?: boolean
+  notifyNewExpense?: boolean
+  notifyNewNote?: boolean
+  notifyNewRace?: boolean
 }
 
 export default function StablematePage() {
@@ -123,6 +129,8 @@ export default function StablematePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [ownerRef, setOwnerRef] = useState<string | null>(null)
+  const [formaAvailable, setFormaAvailable] = useState(true)
 
   // Form state
   const [name, setName] = useState('')
@@ -141,10 +149,27 @@ export default function StablematePage() {
     newRace: true,
   })
   const [isSavingNotifications, setIsSavingNotifications] = useState(false)
+  const [activeNotificationInfo, setActiveNotificationInfo] = useState<keyof typeof notificationSettings | null>(null)
 
   useEffect(() => {
     fetchStablemate()
+    const fetchOwnerReference = async () => {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include' })
+        if (!response.ok) return
+        const data = await response.json()
+        setOwnerRef(data.user?.ownerProfile?.officialRef || null)
+      } catch (error) {
+        console.error('Owner ref fetch error:', error)
+        setOwnerRef(null)
+      }
+    }
+    fetchOwnerReference()
   }, [])
+
+  useEffect(() => {
+    setFormaAvailable(true)
+  }, [ownerRef])
 
   const fetchStablemate = async () => {
     try {
@@ -173,6 +198,14 @@ export default function StablematePage() {
       setCoOwners(data.stablemate.coOwners?.join('\n') || '')
       setLocation(data.stablemate.location || '')
       setWebsite(data.stablemate.website || '')
+      setNotificationSettings({
+        horseRegistered: data.stablemate.notifyHorseRegistered ?? true,
+        horseDeclared: data.stablemate.notifyHorseDeclared ?? true,
+        newTraining: data.stablemate.notifyNewTraining ?? true,
+        newExpense: data.stablemate.notifyNewExpense ?? true,
+        newNote: data.stablemate.notifyNewNote ?? true,
+        newRace: data.stablemate.notifyNewRace ?? true,
+      })
     } catch (error) {
       console.error('Fetch stablemate error:', error)
       toast.error('Eküri yüklenirken bir hata oluştu')
@@ -235,30 +268,38 @@ export default function StablematePage() {
   }
 
   const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
-    const newSettings = {
-      ...notificationSettings,
-      [key]: !notificationSettings[key],
-    }
-    setNotificationSettings(newSettings)
-    
+    const newValue = !notificationSettings[key]
+    setNotificationSettings((prev) => ({
+      ...prev,
+      [key]: newValue,
+    }))
+
     setIsSavingNotifications(true)
     try {
-      // TODO: Implement API endpoint to save notification settings
-      // const response = await fetch('/api/notifications/settings', {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   credentials: 'include',
-      //   body: JSON.stringify(newSettings),
-      // })
-      // if (!response.ok) throw new Error('Ayarlar kaydedilemedi')
-      // toast.success('Bildirim ayarları güncellendi')
-      
-      // For now, just show success
+      const response = await fetch('/api/onboarding/stablemate/notifications', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ key, value: newValue }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Ayarlar kaydedilemedi')
+      }
+      if (data.notificationSettings) {
+        setNotificationSettings(data.notificationSettings)
+      }
       toast.success('Bildirim ayarı güncellendi')
     } catch (error) {
-      // Revert on error
-      setNotificationSettings(notificationSettings)
-      toast.error('Ayarlar kaydedilirken bir hata oluştu')
+      setNotificationSettings((prev) => ({
+        ...prev,
+        [key]: !newValue,
+      }))
+      toast.error(
+        error instanceof Error ? error.message : 'Ayarlar kaydedilirken bir hata oluştu',
+      )
     } finally {
       setIsSavingNotifications(false)
     }
@@ -282,32 +323,10 @@ export default function StablematePage() {
   const createdAtFormatted = stablemate ? formatDate(new Date(stablemate.createdAt)) : '-'
   const foundationYearFormatted = stablemate?.foundationYear ? stablemate.foundationYear.toString() : '—'
   const locationFormatted = stablemate?.location || '—'
-  const coOwnerCount = stablemate?.coOwners?.length || 0
-
   const summaryCards = [
     {
       label: 'Toplam At',
       value: totalHorses,
-      icon: Activity,
-      accent: 'bg-indigo-100 text-indigo-600',
-    },
-    {
-      label: 'Aktif At',
-      value: activeHorses,
-      icon: TrendingUp,
-      accent: 'bg-emerald-100 text-emerald-600',
-    },
-    {
-      label: 'Emekli / Damızlık',
-      value: retiredHorses + broodmares,
-      icon: Clock,
-      accent: 'bg-amber-100 text-amber-600',
-    },
-    {
-      label: 'Ortak Sahip',
-      value: coOwnerCount,
-      icon: Users,
-      accent: 'bg-purple-100 text-purple-600',
     },
   ]
 
@@ -319,6 +338,43 @@ export default function StablematePage() {
       label: 'Web Sitesi',
       value: stablemate?.website || '—',
       href: stablemate?.website,
+    },
+  ]
+
+  const notificationOptions: Array<{
+    key: keyof typeof notificationSettings
+    title: string
+    description: string
+  }> = [
+    {
+      key: 'horseRegistered',
+      title: 'Kayıtlar',
+      description: 'Atlarımdan biri bir yarışa kaydedildiğinde bildirim al.',
+    },
+    {
+      key: 'horseDeclared',
+      title: 'Deklarasyonlar',
+      description: 'Atlarımdan biri bir yarışa deklare edildiğinde bilgi ver.',
+    },
+    {
+      key: 'newTraining',
+      title: 'İdmanlar',
+      description: 'Atlarımdan biri yeni bir idman yaptığında haber ver.',
+    },
+    {
+      key: 'newExpense',
+      title: 'Giderler',
+      description: 'Atlarımdan birine yeni bir gider eklendiğinde bilgi al.',
+    },
+    {
+      key: 'newNote',
+      title: 'Notlar',
+      description: 'Atlarımdan birine yeni bir not girildiğinde bildirim al.',
+    },
+    {
+      key: 'newRace',
+      title: 'Yarış Sonuçları',
+      description: 'Atlarımdan biri bir yarışı tamamladığında sonuçları bildir.',
     },
   ]
 
@@ -340,40 +396,59 @@ export default function StablematePage() {
   return (
     <>
     <div className="space-y-8 pb-10">
-      <div className="rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-purple-50 p-6 shadow-lg">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-indigo-500">Eküri Profili</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
-            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {summaryCards.map(({ label, value, icon: Icon, accent }) => (
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
+        <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
+          <CardContent className="p-6">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+                {ownerRef && formaAvailable ? (
+                  <img
+                    src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                    alt="Eküri Forması"
+                    className="w-full h-full object-contain"
+                    onError={() => {
+                      setFormaAvailable(false)
+                    }}
+                  />
+                ) : (
+                  <div className="text-xs text-gray-400 text-center px-2">Forma yok</div>
+                )}
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-indigo-500">Eküri Profili</p>
+                <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {summaryCards.map(({ label, value }) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4 shadow-sm flex items-center gap-3"
+                  className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm"
                 >
-                  <div className={`rounded-2xl p-2 ${accent}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
                   <div>
                     <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{value}</p>
+                    <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                      {value}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid gap-2 sm:grid-cols-2">
               {detailCards.map(({ label, value, href }) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-white/80 bg-white/80 px-4 py-4 shadow-sm"
+                  className="rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-sm"
                 >
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{label}</p>
+                  <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
                   {href && href !== '—' ? (
                     <a
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-base font-semibold text-indigo-600 underline-offset-4 hover:underline"
+                      className="text-sm font-semibold text-indigo-600 underline-offset-4 hover:underline mt-1 inline-flex items-center gap-1"
                     >
                       {value}
                     </a>
@@ -385,28 +460,22 @@ export default function StablematePage() {
             </div>
           </div>
 
-          {!isEditing && (
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="h-11 rounded-xl border-2 border-gray-200 bg-white/70 px-6 text-sm font-semibold text-gray-700 hover:border-gray-300"
-                onClick={() => fetchStablemate()}
-              >
-                Yenile
-              </Button>
-              <Button
-                className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
-                onClick={() => setIsEditing(true)}
-              >
-                {TR.stablemate.editStablemate}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+            {!isEditing && (
+              <div className="flex gap-3">
+                <Button
+                  className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Düzenle
+                </Button>
+              </div>
+            )}
+          </div>
+          </CardContent>
+        </Card>
 
       {/* Notification Settings */}
-      <Card className="w-full max-w-3xl bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+      <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -421,105 +490,58 @@ export default function StablematePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <Label htmlFor="horseRegistered" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Kayıtlar</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri bir yarışa kaydedildiğinde)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="horseRegistered"
-                checked={notificationSettings.horseRegistered}
-                onCheckedChange={() => handleNotificationToggle('horseRegistered')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <Label htmlFor="horseDeclared" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Deklareler</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri bir yarışa deklare edildiğinde)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="horseDeclared"
-                checked={notificationSettings.horseDeclared}
-                onCheckedChange={() => handleNotificationToggle('horseDeclared')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <Label htmlFor="newTraining" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>İdmanlar</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri yeni bir idman yaptığında)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="newTraining"
-                checked={notificationSettings.newTraining}
-                onCheckedChange={() => handleNotificationToggle('newTraining')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <Label htmlFor="newExpense" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Giderler</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan birine yeni bir gider eklendiğinde)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="newExpense"
-                checked={notificationSettings.newExpense}
-                onCheckedChange={() => handleNotificationToggle('newExpense')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <Label htmlFor="newNote" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Notlar</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan birine yeni bir not eklendiğinde)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="newNote"
-                checked={notificationSettings.newNote}
-                onCheckedChange={() => handleNotificationToggle('newNote')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
-
-            <div className="flex items-center justify-between py-3">
-              <div className="flex-1">
-                <Label htmlFor="newRace" className="text-base font-medium text-gray-900 cursor-pointer flex flex-col sm:flex-row sm:items-center gap-1">
-                  <span>Yarışlar</span>
-                  <span className="text-sm font-normal text-gray-500 sm:ml-2">(Atlarımdan biri yeni bir yarış koştuğunda)</span>
-                </Label>
-              </div>
-              <Checkbox
-                id="newRace"
-                checked={notificationSettings.newRace}
-                onCheckedChange={() => handleNotificationToggle('newRace')}
-                disabled={isSavingNotifications}
-                className="ml-4"
-              />
-            </div>
+          <div className="space-y-2">
+            {notificationOptions.map((item, index) => {
+              const enabled = notificationSettings[item.key]
+              return (
+                <div key={item.key} className="border border-gray-100 rounded-2xl p-3 bg-white">
+                  <div className="grid grid-cols-[minmax(0,1fr),auto,auto] gap-3 items-center">
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-900">{item.title}</Label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveNotificationInfo((prev) => (prev === item.key ? null : item.key))
+                      }
+                      className={`p-2 rounded-full transition-colors ${
+                        activeNotificationInfo === item.key
+                          ? 'text-white bg-indigo-500'
+                          : 'text-indigo-600 hover:bg-indigo-50'
+                      }`}
+                      aria-label={`${item.title} hakkında bilgi`}
+                    >
+                      <Info className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={enabled}
+                      disabled={isSavingNotifications}
+                      onClick={() => handleNotificationToggle(item.key)}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
+                      } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                          enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  {activeNotificationInfo === item.key && (
+                    <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-2 text-sm text-indigo-900">
+                      {item.description}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
+    </div>
 
     </div>
 

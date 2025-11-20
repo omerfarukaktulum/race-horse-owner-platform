@@ -32,6 +32,12 @@ export const stablemateSchema = z.object({
   coOwners: z.array(z.string()).optional(),
   location: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
+  notifyHorseRegistered: z.boolean().optional(),
+  notifyHorseDeclared: z.boolean().optional(),
+  notifyNewTraining: z.boolean().optional(),
+  notifyNewExpense: z.boolean().optional(),
+  notifyNewNote: z.boolean().optional(),
+  notifyNewRace: z.boolean().optional(),
 })
 
 // Horse schemas
