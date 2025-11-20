@@ -9,6 +9,7 @@ import { formatDateShort } from '@/lib/utils/format'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/context/auth-context'
 
 type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim'
 const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']
@@ -19,6 +20,7 @@ interface HorseNote {
   note: string
   category?: NoteCategory
   photoUrl?: string | string[]
+  addedById: string
   addedBy: {
     email: string
     role: string
@@ -86,6 +88,7 @@ function formatAddedBy(note: HorseNote) {
 }
 
 export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
+  const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [categoryFilters, setCategoryFilters] = useState<NoteCategory[]>([])
@@ -583,22 +586,26 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                     <Paperclip className="h-4 w-4" />
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditClick(note)}
-                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                  title="Düzenle"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteClick(note)}
-                                  className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                  title="Sil"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
+                                {user && note.addedById === user.id && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditClick(note)}
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                      title="Düzenle"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteClick(note)}
+                                      className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                      title="Sil"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>

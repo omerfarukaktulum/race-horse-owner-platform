@@ -10,6 +10,7 @@ import { TR } from '@/lib/constants/tr'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface Expense {
   id: string
@@ -20,6 +21,7 @@ interface Expense {
   currency: string
   note?: string
   photoUrl?: string | string[] | null
+  addedById: string
   addedBy: {
     email: string
     role: string
@@ -87,6 +89,7 @@ export function HorseExpensesTable({
   highlightExpenseId,
   onVisibleTotalChange,
 }: Props) {
+  const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
@@ -680,22 +683,26 @@ export function HorseExpensesTable({
                                   <Paperclip className="h-4 w-4" />
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(expense)}
-                                className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                title="Düzenle"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteClick(expense)}
-                                className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                title="Sil"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {user && expense.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(expense)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(expense)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

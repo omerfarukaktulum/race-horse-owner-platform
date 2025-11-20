@@ -55,7 +55,7 @@ export function RecentExpensesCard() {
       (addedBy.role === 'OWNER'
         ? 'At Sahibi'
         : addedBy.role === 'TRAINER'
-          ? 'Trainer'
+          ? 'Antrenör'
           : addedBy.role === 'GROOM'
             ? 'Groom'
             : addedBy.role) || ''

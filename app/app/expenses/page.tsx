@@ -10,6 +10,7 @@ import { TR } from '@/lib/constants/tr'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface Expense {
   id: string
@@ -20,9 +21,14 @@ interface Expense {
   currency: string
   note?: string
   photoUrl?: string | string[] | null
+  addedById: string
   horse: {
     id: string
     name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
   }
   addedBy: {
     email: string
@@ -64,12 +70,14 @@ const getAttachments = (input?: string | string[] | null) => {
 }
 
 export default function ExpensesPage() {
+  const { user } = useAuth()
   const router = useRouter()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
+  const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -312,6 +320,14 @@ export default function ExpensesPage() {
       })
     }
 
+    // Apply stablemate filter (for trainers)
+    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+      filtered = filtered.filter((expense) => {
+        const stablemateName = expense.horse?.stablemate?.name
+        return stablemateName && stablemateFilters.includes(stablemateName)
+      })
+    }
+
     // Apply search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
@@ -334,7 +350,7 @@ export default function ExpensesPage() {
     }
 
     return filtered
-  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, searchQuery])
+  }, [selectedRange, categoryFilters, addedByFilters, stablemateFilters, sortedExpenses, searchQuery, user?.role])
 
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
@@ -355,7 +371,7 @@ export default function ExpensesPage() {
   const getUniqueAddedBy = useMemo(() => {
     const roleMap: Record<string, string> = {
       OWNER: 'At Sahibi',
-      TRAINER: 'Trainer',
+      TRAINER: 'Antrenör',
       GROOM: 'Groom',
       ADMIN: 'Admin',
     }
@@ -372,6 +388,17 @@ export default function ExpensesPage() {
     }))
   }, [sortedExpenses])
 
+  // Get unique stablemates (for trainers)
+  const getUniqueStablemates = useMemo(() => {
+    if (user?.role !== 'TRAINER') return []
+    const stablemateSet = new Set<string>()
+    sortedExpenses.forEach((expense) => {
+      if (expense.horse?.stablemate?.name) {
+        stablemateSet.add(expense.horse.stablemate.name)
+      }
+    })
+    return Array.from(stablemateSet).sort()
+  }, [sortedExpenses, user?.role])
 
   // Toggle functions
   const toggleCategoryFilter = (category: string) => {
@@ -390,13 +417,22 @@ export default function ExpensesPage() {
     )
   }
 
+  const toggleStablemateFilter = (stablemate: string) => {
+    setStablemateFilters((prev) =>
+      prev.includes(stablemate)
+        ? prev.filter((s) => s !== stablemate)
+        : [...prev, stablemate]
+    )
+  }
+
   const clearFilters = () => {
     setSelectedRange(null)
     setCategoryFilters([])
     setAddedByFilters([])
+    setStablemateFilters([])
   }
 
-  const hasActiveFilters = !!selectedRange || categoryFilters.length > 0 || addedByFilters.length > 0
+  const hasActiveFilters = !!selectedRange || categoryFilters.length > 0 || addedByFilters.length > 0 || stablemateFilters.length > 0
 
   const formatAddedBy = (expense: Expense) => {
     if (!expense.addedBy) return '-'
@@ -404,10 +440,18 @@ export default function ExpensesPage() {
       OWNER: 'At Sahibi',
       TRAINER: 'Antrenör',
     }
-    const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role
-    if (roleLabel) return roleLabel
+    const roleLabel = roleMap[expense.addedBy.role] || expense.addedBy.role || ''
+    const profileName =
+      expense.addedBy.ownerProfile?.officialName ||
+      expense.addedBy.trainerProfile?.fullName ||
+      ''
 
-    return 'Bilinmiyor'
+    // Always show role label, and name in parentheses if available
+    if (profileName) {
+      return `${roleLabel} (${profileName})`
+    }
+
+    return roleLabel || 'Bilinmiyor'
   }
 
   const hasExpenses = (expenses?.length || 0) > 0
@@ -432,7 +476,7 @@ export default function ExpensesPage() {
               Filtrele
               {hasActiveFilters && (
                 <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                  {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length}
+                  {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
                 </span>
               )}
             </Button>
@@ -517,6 +561,28 @@ export default function ExpensesPage() {
                       ))}
                     </div>
               </div>
+                )}
+
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          key={stablemate}
+                          onClick={() => toggleStablemateFilter(stablemate)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 {/* Clear Filters */}
@@ -612,6 +678,11 @@ export default function ExpensesPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       At
                     </th>
+                    {user?.role === 'TRAINER' && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Eküri
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Kategori
                     </th>
@@ -629,10 +700,10 @@ export default function ExpensesPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                      <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
                         Seçilen filtrelerde gider bulunamadı
                       </td>
                     </tr>
@@ -643,7 +714,7 @@ export default function ExpensesPage() {
                       return (
                         <tr
                           key={expense.id}
-                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
+                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50' : ''}`}
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-900">
@@ -655,6 +726,13 @@ export default function ExpensesPage() {
                               {expense.horse?.name || '-'}
                             </span>
                           </td>
+                          {user?.role === 'TRAINER' && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm text-gray-700">
+                                {expense.horse?.stablemate?.name || '-'}
+                              </span>
+                            </td>
+                          )}
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
                               {getCategoryLabel(expense)}
@@ -687,22 +765,26 @@ export default function ExpensesPage() {
                                   <Paperclip className="h-4 w-4" />
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(expense)}
-                                className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                title="Düzenle"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteClick(expense)}
-                                className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                title="Sil"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {user && expense.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(expense)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(expense)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

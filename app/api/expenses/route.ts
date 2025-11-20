@@ -247,8 +247,30 @@ export async function GET(request: Request) {
     // Fetch expenses
     const expenses = await prisma.expense.findMany({
       where,
-      include: {
-        horse: true,
+      select: {
+        id: true,
+        date: true,
+        category: true,
+        customName: true,
+        amount: true,
+        currency: true,
+        note: true,
+        photoUrl: true,
+        addedById: true,
+        horse: {
+          select: {
+            id: true,
+            name: true,
+            ...(decoded.role === 'TRAINER' ? {
+              stablemate: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            } : {}),
+          },
+        },
         addedBy: {
           select: {
             email: true,

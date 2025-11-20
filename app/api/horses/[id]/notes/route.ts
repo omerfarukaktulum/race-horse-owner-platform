@@ -220,7 +220,13 @@ export async function GET(
     const notes = await prisma.horseNote.findMany({
       where: { horseId },
       orderBy: { date: 'desc' },
-      include: {
+      select: {
+        id: true,
+        date: true,
+        note: true,
+        category: true,
+        photoUrl: true,
+        addedById: true,
         addedBy: {
           select: {
             email: true,

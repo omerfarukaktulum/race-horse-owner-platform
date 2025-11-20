@@ -77,13 +77,8 @@ async function getHorseNote(noteId: string) {
 
 function canModifyNote(decoded: DecodedToken, note: any) {
   if (decoded.role === 'ADMIN') return true
-  if (decoded.role === 'OWNER') {
-    return note.horse.stablemate.ownerId === decoded.ownerId
-  }
-  if (decoded.role === 'TRAINER') {
-    return note.horse.trainerId === decoded.trainerId
-  }
-  return false
+  // Only the creator can modify the note
+  return note.addedById === decoded.id
 }
 
 export async function DELETE(

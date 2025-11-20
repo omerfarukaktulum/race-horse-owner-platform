@@ -10,6 +10,7 @@ import { TR } from '@/lib/constants/tr'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/context/auth-context'
 
 type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim'
 const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']
@@ -20,9 +21,14 @@ interface Note {
   note: string
   category?: NoteCategory
   photoUrl?: string | string[] | null
+  addedById: string
   horse: {
     id: string
     name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
   }
   addedBy: {
     email: string
@@ -63,6 +69,7 @@ function getPhotoList(photoUrl?: string | string[] | null) {
 }
 
 export default function NotesPage() {
+  const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [notes, setNotes] = useState<Note[]>([])
@@ -70,6 +77,7 @@ export default function NotesPage() {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [categoryFilters, setCategoryFilters] = useState<NoteCategory[]>([])
+  const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -205,6 +213,14 @@ export default function NotesPage() {
       filtered = filtered.filter((note) => note.category && categoryFilters.includes(note.category))
     }
 
+    // Apply stablemate filter (for trainers)
+    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+      filtered = filtered.filter((note) => {
+        const stablemateName = note.horse?.stablemate?.name
+        return stablemateName && stablemateFilters.includes(stablemateName)
+      })
+    }
+
     // Apply search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
@@ -222,7 +238,7 @@ export default function NotesPage() {
     }
 
     return filtered
-  }, [selectedRange, addedByFilters, categoryFilters, sortedNotes, searchQuery])
+  }, [selectedRange, addedByFilters, categoryFilters, stablemateFilters, sortedNotes, searchQuery, user?.role])
 
   // Get unique addedBy users (by role only)
   const getUniqueAddedBy = useMemo(() => {
@@ -255,6 +271,18 @@ export default function NotesPage() {
     return NOTE_CATEGORIES.filter((category) => available.has(category))
   }, [sortedNotes])
 
+  // Get unique stablemates (for trainers)
+  const getUniqueStablemates = useMemo(() => {
+    if (user?.role !== 'TRAINER') return []
+    const stablemateSet = new Set<string>()
+    sortedNotes.forEach((note) => {
+      if (note.horse?.stablemate?.name) {
+        stablemateSet.add(note.horse.stablemate.name)
+      }
+    })
+    return Array.from(stablemateSet).sort()
+  }, [sortedNotes, user?.role])
+
   useEffect(() => {
     if (highlightedNoteId && highlightedRowRef.current) {
       highlightedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -277,14 +305,23 @@ export default function NotesPage() {
     )
   }
 
+  const toggleStablemateFilter = (stablemate: string) => {
+    setStablemateFilters((prev) =>
+      prev.includes(stablemate)
+        ? prev.filter((s) => s !== stablemate)
+        : [...prev, stablemate]
+    )
+  }
+
   const clearFilters = () => {
     setSelectedRange(null)
     setAddedByFilters([])
     setCategoryFilters([])
+    setStablemateFilters([])
   }
 
   const hasActiveFilters =
-    !!selectedRange || addedByFilters.length > 0 || categoryFilters.length > 0
+    !!selectedRange || addedByFilters.length > 0 || categoryFilters.length > 0 || stablemateFilters.length > 0
 
   const formatAddedBy = (note: Note) => {
     if (!note.addedBy) return '-'
@@ -434,7 +471,7 @@ export default function NotesPage() {
               Filtrele
               {hasActiveFilters && (
                 <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                  {(selectedRange ? 1 : 0) + addedByFilters.length + categoryFilters.length}
+                  {(selectedRange ? 1 : 0) + addedByFilters.length + categoryFilters.length + stablemateFilters.length}
                 </span>
               )}
             </Button>
@@ -524,6 +561,28 @@ export default function NotesPage() {
                   </div>
                 )}
 
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          key={stablemate}
+                          onClick={() => toggleStablemateFilter(stablemate)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Clear Filters */}
                 {hasActiveFilters && (
                   <button
@@ -608,6 +667,11 @@ export default function NotesPage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       At
                     </th>
+                    {user?.role === 'TRAINER' && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Eküri
+                      </th>
+                    )}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Kategori
                   </th>
@@ -622,16 +686,16 @@ export default function NotesPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-200">
                 {!hasNotes ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-16 text-center text-sm text-gray-500">
+                    <td colSpan={user?.role === 'TRAINER' ? 7 : 6} className="px-4 py-16 text-center text-sm text-gray-500">
                       Henüz not eklenmemiş
                     </td>
                   </tr>
                 ) : filteredNotes.length === 0 ? (
                     <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={user?.role === 'TRAINER' ? 7 : 6} className="px-4 py-6 text-center text-sm text-gray-500">
                         Seçilen filtrelerde not bulunamadı
                       </td>
                     </tr>
@@ -653,7 +717,7 @@ export default function NotesPage() {
                         className={`transition-colors ${
                           isHighlighted
                             ? 'bg-indigo-50 text-indigo-900 ring-2 ring-indigo-200 animate-pulse-once'
-                            : `${isStriped ? 'bg-gray-50/30' : ''} hover:bg-indigo-50/50`
+                            : `${isStriped ? 'bg-gray-50' : ''} hover:bg-indigo-50/50`
                         }`}
                       >
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -666,6 +730,13 @@ export default function NotesPage() {
                               {note.horse?.name || '-'}
                             </span>
                           </td>
+                          {user?.role === 'TRAINER' && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm text-gray-700">
+                                {note.horse?.stablemate?.name || '-'}
+                              </span>
+                            </td>
+                          )}
                         <td className="px-4 py-3 whitespace-nowrap">
                           {note.category ? (
                             <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
@@ -697,22 +768,26 @@ export default function NotesPage() {
                                   <Paperclip className="h-4 w-4" />
                                 </button>
                               )}
-                              <button
-                                type="button"
-                                onClick={() => handleEditClick(note)}
-                                className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                title="Düzenle"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteClick(note)}
-                                className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                title="Sil"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                              {user && note.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(note)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(note)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

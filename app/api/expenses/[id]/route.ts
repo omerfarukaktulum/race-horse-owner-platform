@@ -73,13 +73,8 @@ async function getExpenseWithRelations(expenseId: string) {
 
 function canModifyExpense(decoded: DecodedToken, expense: any) {
   if (decoded.role === 'ADMIN') return true
-  if (decoded.role === 'OWNER') {
-    return expense.horse.stablemate.ownerId === decoded.ownerId
-  }
-  if (decoded.role === 'TRAINER') {
-    return expense.horse.trainerId === decoded.trainerId
-  }
-  return false
+  // Only the creator can modify the expense
+  return expense.addedById === decoded.id
 }
 
 function parsePhotoUrls(input?: string | string[] | null) {

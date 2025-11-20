@@ -82,11 +82,25 @@ export async function GET(request: Request) {
     // Fetch notes
     const notes = await prisma.horseNote.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        date: true,
+        note: true,
+        category: true,
+        photoUrl: true,
+        addedById: true,
         horse: {
           select: {
             id: true,
             name: true,
+            ...(decoded.role === 'TRAINER' ? {
+              stablemate: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            } : {}),
           },
         },
         addedBy: {
