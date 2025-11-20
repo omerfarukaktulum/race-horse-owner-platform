@@ -15,6 +15,7 @@ import { ChangeLocationModal } from '@/app/components/modals/change-location-mod
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/app/components/ui/dialog'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface HorseData {
   id: string
@@ -33,6 +34,13 @@ interface HorseData {
   damName?: string
   currentLocationType?: 'racecourse' | 'farm'
   currentCity?: string
+  stablemate?: {
+    id: string
+    name: string
+    owner?: {
+      officialName: string
+    }
+  } | null
   expenses: Array<{
     date: Date
     amount: number
@@ -42,6 +50,7 @@ interface HorseData {
 }
 
 export default function HorsesPage() {
+  const { user } = useAuth()
   const [horses, setHorses] = useState<HorseData[]>([])
   const [allHorses, setAllHorses] = useState<HorseData[]>([]) // Store all horses for filtering
   const [isLoading, setIsLoading] = useState(true)
@@ -62,6 +71,7 @@ export default function HorsesPage() {
   const [ageFilters, setAgeFilters] = useState<number[]>([])
   const [genderFilters, setGenderFilters] = useState<string[]>([])
   const [locationFilters, setLocationFilters] = useState<string[]>([])
+  const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [sortBy, setSortBy] = useState<'age-asc' | 'age-desc' | 'ikramiye-desc' | null>(null)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
@@ -293,6 +303,14 @@ export default function HorsesPage() {
       })
     }
     
+    // Apply stablemate filter (for trainers)
+    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+      filtered = filtered.filter((horse) => {
+        const stablemateName = horse.stablemate?.name
+        return stablemateName && stablemateFilters.includes(stablemateName)
+      })
+    }
+    
     // Apply sorting
     if (sortBy) {
       if (sortBy === 'age-asc') {
@@ -368,7 +386,7 @@ export default function HorsesPage() {
     } else {
       setHorses(filtered)
     }
-  }, [categoryFilters, ageFilters, genderFilters, locationFilters, sortBy, allHorses, searchQuery])
+  }, [categoryFilters, ageFilters, genderFilters, locationFilters, stablemateFilters, sortBy, allHorses, searchQuery, user?.role])
   
   // Get unique genders from user's horses
   const getUniqueGenders = () => {
@@ -434,6 +452,18 @@ export default function HorsesPage() {
     return ordered
   }
 
+  // Get unique stablemates (for trainers)
+  const getUniqueStablemates = () => {
+    if (user?.role !== 'TRAINER') return []
+    const stablemateSet = new Set<string>()
+    allHorses.forEach((horse) => {
+      if (horse.stablemate?.name) {
+        stablemateSet.add(horse.stablemate.name)
+      }
+    })
+    return Array.from(stablemateSet).sort()
+  }
+
   // Get unique ages from filtered horses
   const getUniqueAges = () => {
     const currentYear = new Date().getFullYear()
@@ -485,7 +515,15 @@ export default function HorsesPage() {
         : [...prev, location]
     )
   }
-  
+
+  const toggleStablemateFilter = (stablemate: string) => {
+    setStablemateFilters((prev) =>
+      prev.includes(stablemate)
+        ? prev.filter((s) => s !== stablemate)
+        : [...prev, stablemate]
+    )
+  }
+
   const toggleCategoryFilter = (category: string) => {
     setCategoryFilters((prev) => 
       prev.includes(category)
@@ -493,15 +531,16 @@ export default function HorsesPage() {
         : [...prev, category]
     )
   }
-  
+
   const clearFilters = () => {
     setCategoryFilters([])
     setAgeFilters([])
     setGenderFilters([])
     setLocationFilters([])
+    setStablemateFilters([])
   }
-  
-  const hasActiveFilters = categoryFilters.length > 0 || ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0
+
+  const hasActiveFilters = categoryFilters.length > 0 || ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0 || stablemateFilters.length > 0
 
   const HorseCard = ({ horse }: { horse: HorseData }) => {
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
@@ -604,12 +643,6 @@ export default function HorsesPage() {
                   {genderLabel.text}
                 </span>
               )}
-              {locationLabel && (
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${locationLabel.color}`}>
-                  <MapPin className="h-3 w-3" />
-                  {locationLabel.text}
-                </span>
-              )}
               {horse.handicapPoints !== null && horse.handicapPoints !== undefined && 
                horse.status !== 'MARE' && 
                !(horse.gender?.includes('Dişi') || horse.gender?.includes('DİŞİ') || 
@@ -618,14 +651,15 @@ export default function HorsesPage() {
                   HP: {horse.handicapPoints}
                 </span>
               )}
+              {locationLabel && (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border ${locationLabel.color}`}>
+                  <MapPin className="h-3 w-3" />
+                  {locationLabel.text}
+                </span>
+              )}
               {horse.status === 'RACING' && horse.racecourse && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200">
                   🏇 {horse.racecourse.name}
-                </span>
-              )}
-              {horse.trainer && (
-                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
-                  👤 {horse.trainer.fullName}
                 </span>
               )}
               {horse.groomName && (
@@ -639,6 +673,21 @@ export default function HorsesPage() {
                 </span>
               )}
             </div>
+            
+            {/* Trainer/Owner Name - Separate Line */}
+            {(user?.role === 'TRAINER' && horse.stablemate?.owner?.officialName) || (user?.role !== 'TRAINER' && horse.trainer) ? (
+              <div className="mb-3">
+                {user?.role === 'TRAINER' && horse.stablemate?.owner?.officialName ? (
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
+                    👤 At Sahibi: {horse.stablemate.owner.officialName}
+                  </span>
+                ) : horse.trainer && (
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
+                    👤 Antrenör: {horse.trainer.fullName}
+                  </span>
+                )}
+              </div>
+            ) : null}
           </div>
 
           {/* Action Buttons - Minimal Design */}
@@ -722,7 +771,7 @@ export default function HorsesPage() {
                 Filtrele
                 {hasActiveFilters && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length}
+                    {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
             </span>
                 )}
           </Button>
@@ -827,6 +876,28 @@ export default function HorsesPage() {
                           }`}
                         >
                           {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates().length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates().map((stablemate) => (
+                        <button
+                          key={stablemate}
+                          onClick={() => toggleStablemateFilter(stablemate)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
                         </button>
                       ))}
                     </div>

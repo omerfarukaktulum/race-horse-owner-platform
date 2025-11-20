@@ -5,7 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, UserPlus, User, FileText } from 'lucide-react'
+import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, UserPlus, User, FileText, ChessKnight } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
@@ -77,7 +77,7 @@ function AppNavbar() {
 
   const navItems = [
     { href: '/app/home', label: TR.nav.home, icon: Home },
-    { href: '/app/horses', label: TR.nav.horses, icon: LayoutGrid },
+    { href: '/app/horses', label: TR.nav.horses, icon: ChessKnight },
     { href: '/app/stats', label: TR.nav.statistics, icon: BarChart3 },
     { href: '/app/expenses', label: TR.nav.expenses, icon: TurkishLira },
     { href: '/app/notes', label: TR.nav.notes, icon: FileText },

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button'
 import { MapPin, Ruler, Layers, Users, TurkishLira, Flag, Filter, X, Trophy, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { useAuth } from '@/lib/context/auth-context'
 import {
   getCityDistribution,
   getSurfaceDistribution,
@@ -32,6 +33,14 @@ interface RaceHistory {
   position?: number
   horseId?: string
   horseName?: string
+  horse?: {
+    id: string
+    name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
+  }
 }
 
 interface ExpenseData {
@@ -40,6 +49,14 @@ interface ExpenseData {
   horseId?: string
   horseName?: string
   category?: string
+  horse?: {
+    id: string
+    name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
+  }
 }
 
 type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'last6Months' | 'thisYear'
@@ -319,7 +336,9 @@ export function StatisticsCharts({
   onActiveFiltersChange,
   showExpenseCategoryDistribution = false,
 }: Props) {
+  const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
+  const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
@@ -343,86 +362,108 @@ export function StatisticsCharts({
     }
   }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
 
-  // Filter races and expenses based on selected date range
+  // Filter races and expenses based on selected date range and stablemate
   const filteredRaces = useMemo(() => {
-    if (!selectedRange) return races
+    let filtered = races
     
-    const now = new Date()
-    let startDate: Date | null = null
+    // Apply date range filter
+    if (selectedRange) {
+      const now = new Date()
+      let startDate: Date | null = null
 
-    switch (selectedRange) {
-      case 'lastWeek':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case 'lastMonth':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 1)
-        break
-      case 'last3Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 3)
-        break
-      case 'last6Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 6)
-        break
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      default:
-        startDate = null
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'last6Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 6)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(race => {
+          const raceDate = new Date(race.raceDate)
+          return raceDate >= startDate!
+        })
+      }
     }
 
-    if (startDate) {
-      return races.filter(race => {
-        const raceDate = new Date(race.raceDate)
-        return raceDate >= startDate!
+    // Apply stablemate filter (for trainers)
+    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+      filtered = filtered.filter((race) => {
+        const stablemateName = race.horse?.stablemate?.name
+        return stablemateName && stablemateFilters.includes(stablemateName)
       })
     }
     
-    return races
-  }, [races, selectedRange])
+    return filtered
+  }, [races, selectedRange, stablemateFilters, user?.role])
 
   const filteredExpenses = useMemo(() => {
-    if (!selectedRange) return expenses
+    let filtered = expenses
     
-    const now = new Date()
-    let startDate: Date | null = null
+    // Apply date range filter
+    if (selectedRange) {
+      const now = new Date()
+      let startDate: Date | null = null
 
-    switch (selectedRange) {
-      case 'lastWeek':
-        startDate = new Date(now)
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case 'lastMonth':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 1)
-        break
-      case 'last3Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 3)
-        break
-      case 'last6Months':
-        startDate = new Date(now)
-        startDate.setMonth(startDate.getMonth() - 6)
-        break
-      case 'thisYear':
-        startDate = new Date(now.getFullYear(), 0, 1)
-        break
-      default:
-        startDate = null
+      switch (selectedRange) {
+        case 'lastWeek':
+          startDate = new Date(now)
+          startDate.setDate(startDate.getDate() - 7)
+          break
+        case 'lastMonth':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 1)
+          break
+        case 'last3Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 3)
+          break
+        case 'last6Months':
+          startDate = new Date(now)
+          startDate.setMonth(startDate.getMonth() - 6)
+          break
+        case 'thisYear':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+
+      if (startDate) {
+        filtered = filtered.filter(expense => {
+          const expenseDate = new Date(expense.date)
+          return expenseDate >= startDate!
+        })
+      }
     }
 
-    if (startDate) {
-      return expenses.filter(expense => {
-        const expenseDate = new Date(expense.date)
-        return expenseDate >= startDate!
+    // Apply stablemate filter (for trainers)
+    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+      filtered = filtered.filter((expense) => {
+        const stablemateName = expense.horse?.stablemate?.name
+        return stablemateName && stablemateFilters.includes(stablemateName)
       })
     }
     
-    return expenses
-  }, [expenses, selectedRange])
+    return filtered
+  }, [expenses, selectedRange, stablemateFilters, user?.role])
 
   const cityData = getCityDistribution(filteredRaces)
   const distanceGroupData = useMemo(() => {
@@ -559,11 +600,37 @@ export function StatisticsCharts({
       return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
 
-  const clearFilters = useCallback(() => {
-    setSelectedRange(null)
+  // Get unique stablemates (for trainers)
+  const getUniqueStablemates = useMemo(() => {
+    if (user?.role !== 'TRAINER') return []
+    const stablemateSet = new Set<string>()
+    races.forEach((race) => {
+      if (race.horse?.stablemate?.name) {
+        stablemateSet.add(race.horse.stablemate.name)
+      }
+    })
+    expenses.forEach((expense) => {
+      if (expense.horse?.stablemate?.name) {
+        stablemateSet.add(expense.horse.stablemate.name)
+      }
+    })
+    return Array.from(stablemateSet).sort()
+  }, [races, expenses, user?.role])
+
+  const toggleStablemateFilter = useCallback((stablemate: string) => {
+    setStablemateFilters((prev) =>
+      prev.includes(stablemate)
+        ? prev.filter((s) => s !== stablemate)
+        : [...prev, stablemate]
+    )
   }, [])
 
-  const activeFilterCount = selectedRange ? 1 : 0
+  const clearFilters = useCallback(() => {
+    setSelectedRange(null)
+    setStablemateFilters([])
+  }, [])
+
+  const activeFilterCount = (selectedRange ? 1 : 0) + stablemateFilters.length
   const hasActiveFilters = activeFilterCount > 0
 
   useEffect(() => {
@@ -987,6 +1054,11 @@ export function StatisticsCharts({
           >
             <Filter className="h-4 w-4 mr-2" />
             Filtrele
+            {hasActiveFilters && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
           </Button>
         )}
 
@@ -1034,6 +1106,32 @@ export function StatisticsCharts({
                   })}
                 </div>
               </div>
+
+              {/* Stablemate Filter (for trainers) */}
+              {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueStablemates.map((stablemate) => (
+                      <button
+                        type="button"
+                        key={stablemate}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleStablemateFilter(stablemate)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          stablemateFilters.includes(stablemate)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {stablemate}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Clear Filters */}
               {hasActiveFilters && (

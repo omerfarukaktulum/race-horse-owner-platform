@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, Info, UserPlus, UserCircle, Trash2, Search, Check, UserSearch } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -170,7 +170,6 @@ export default function StablematePage() {
     newRace: true,
   })
   const [isSavingNotifications, setIsSavingNotifications] = useState(false)
-  const [activeNotificationInfo, setActiveNotificationInfo] = useState<keyof typeof notificationSettings | null>(null)
   const [isTrainerModalOpen, setIsTrainerModalOpen] = useState(false)
   const [trainerSearchTerm, setTrainerSearchTerm] = useState('')
   const [trainerSearchResults, setTrainerSearchResults] = useState<Array<{ id: string; name: string }>>([])
@@ -676,11 +675,11 @@ export default function StablematePage() {
                   </div>
                 ))}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex flex-wrap gap-2">
                 {detailCards.map(({ label, value, href }) => (
                   <div
                     key={label}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                    className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col"
                   >
                     <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
                     {href && href !== '—' ? (
@@ -693,7 +692,7 @@ export default function StablematePage() {
                         {value}
                       </a>
                     ) : (
-                      <p className="text-base font-semibold text-gray-900 mt-1">{value}</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{value}</p>
                     )}
                   </div>
                 ))}
@@ -821,52 +820,35 @@ export default function StablematePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {notificationOptions.map((item, index) => {
               const enabled = notificationSettings[item.key]
               return (
-                <div key={item.key} className="border border-gray-100 rounded-2xl p-3 bg-white">
-                  <div className="grid grid-cols-[minmax(0,1fr),auto,auto] gap-3 items-center">
-                    <div>
-                      <Label className="text-sm font-semibold text-gray-900">{item.title}</Label>
-              </div>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setActiveNotificationInfo((prev) => (prev === item.key ? null : item.key))
-                      }
-                      className={`p-2 rounded-full transition-colors ${
-                        activeNotificationInfo === item.key
-                          ? 'text-white bg-indigo-500'
-                          : 'text-indigo-600 hover:bg-indigo-50'
+                <div
+                  key={item.key}
+                  className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center justify-between gap-4"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enabled}
+                    disabled={isSavingNotifications}
+                    onClick={() => handleNotificationToggle(item.key)}
+                    className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                      enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
+                    } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                        enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
-                      aria-label={`${item.title} hakkında bilgi`}
-                    >
-                      <Info className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={enabled}
-                disabled={isSavingNotifications}
-                      onClick={() => handleNotificationToggle(item.key)}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
-                      } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                          enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-              />
-                    </button>
-            </div>
-                  {activeNotificationInfo === item.key && (
-                    <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-2 text-sm text-indigo-900">
-                      {item.description}
-              </div>
-                  )}
-            </div>
+                    />
+                  </button>
+                </div>
               )
             })}
           </div>

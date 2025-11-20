@@ -16,6 +16,14 @@ interface RaceHistory {
   position?: number
   horseId?: string
   horseName?: string
+  horse?: {
+    id: string
+    name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
+  }
 }
 
 interface ExpenseData {
@@ -24,6 +32,14 @@ interface ExpenseData {
   horseId?: string
   horseName?: string
   category?: string
+  horse?: {
+    id: string
+    name: string
+    stablemate?: {
+      id: string
+      name: string
+    } | null
+  }
 }
 
 export default function StatsPage() {

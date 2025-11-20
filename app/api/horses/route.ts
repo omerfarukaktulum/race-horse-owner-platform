@@ -96,6 +96,11 @@ export async function GET(request: Request) {
             select: {
               id: true,
               name: true,
+              owner: {
+                select: {
+                  officialName: true,
+                },
+              },
             },
           },
         } : {}),
