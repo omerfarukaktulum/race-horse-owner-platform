@@ -875,9 +875,11 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
 
           // Only add if we have at least a date
           if (dateText && dateText.match(/\d{2}\.\d{2}\.\d{4}/)) {
-            // Check row text for cancellation status ("Kayıt Koşmaz" or "Deklare Koşmaz")
             const rowText = row.textContent || ''
-            const isCancelled = rowText.includes('Kayıt Koşmaz') || rowText.includes('Deklare Koşmaz')
+            const isCancelled =
+              rowText.includes('Kayıt Koşmaz') ||
+              rowText.includes('Deklare Koşmaz') ||
+              rowText.includes('Koşmaz')
             
             console.log(`[Browser] Processing row with date: ${dateText}, row text preview: ${rowText.substring(0, 150)}`)
             
