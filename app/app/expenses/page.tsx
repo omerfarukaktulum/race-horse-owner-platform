@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
@@ -171,7 +171,7 @@ export default function ExpensesPage() {
     })
   }
 
-  const showPrevAttachment = () => {
+  const showPrevAttachment = useCallback(() => {
     setAttachmentViewer((prev) => {
       const total = prev.attachments.length
       if (!total) return prev
@@ -180,9 +180,9 @@ export default function ExpensesPage() {
         currentIndex: (prev.currentIndex - 1 + total) % total,
       }
     })
-  }
+  }, [])
 
-  const showNextAttachment = () => {
+  const showNextAttachment = useCallback(() => {
     setAttachmentViewer((prev) => {
       const total = prev.attachments.length
       if (!total) return prev
@@ -191,7 +191,26 @@ export default function ExpensesPage() {
         currentIndex: (prev.currentIndex + 1) % total,
       }
     })
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!attachmentViewer.open || attachmentViewer.attachments.length < 2) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        showPrevAttachment()
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        showNextAttachment()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [attachmentViewer.open, attachmentViewer.attachments.length, showPrevAttachment, showNextAttachment])
 
   useEffect(() => {
     if (!showFilterDropdown) return
@@ -784,12 +803,32 @@ export default function ExpensesPage() {
         <DialogContent className="max-w-3xl bg-white/95 backdrop-blur border border-gray-200 shadow-2xl">
           {attachmentViewer.attachments.length > 0 && (
             <div className="space-y-6">
-              <div className="w-full h-[60vh] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
+              <div className="relative w-full h-[60vh] flex items-center justify-center bg-gray-50 rounded-xl border border-gray-200 overflow-hidden">
                 <img
                   src={attachmentViewer.attachments[attachmentViewer.currentIndex]}
                   alt={`Ek ${attachmentViewer.currentIndex + 1}`}
                   className="max-h-full max-w-full object-contain"
                 />
+                {attachmentViewer.attachments.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={showPrevAttachment}
+                      aria-label="Önceki ek"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-white/80 text-gray-700 shadow-lg backdrop-blur flex items-center justify-center hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={showNextAttachment}
+                      aria-label="Sonraki ek"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 h-11 w-11 rounded-full bg-white/80 text-gray-700 shadow-lg backdrop-blur flex items-center justify-center hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </>
+                )}
               </div>
               {attachmentViewer.attachments.length > 1 && (
                 <div className="flex items-center justify-between">

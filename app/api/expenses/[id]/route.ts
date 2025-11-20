@@ -82,6 +82,26 @@ function canModifyExpense(decoded: DecodedToken, expense: any) {
   return false
 }
 
+function parsePhotoUrls(input?: string | string[] | null) {
+  if (!input) return []
+  if (Array.isArray(input)) {
+    return input.filter((item): item is string => typeof item === 'string' && !!item.trim())
+  }
+  const trimmed = input.trim()
+  if (!trimmed) return []
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === 'string' && !!item.trim())
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return [trimmed]
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -190,19 +210,23 @@ export async function PATCH(
       updateData.note = note || null
     }
 
-    const photos = formData.getAll('photos') as File[]
-    if (photos && photos.length > 0) {
-      const photoUrls: string[] = []
+    const photos = formData
+      .getAll('photos')
+      .filter((item): item is File => item instanceof File && item.size > 0)
+    if (photos.length > 0) {
+      const newPhotoUrls: string[] = []
       for (const photo of photos) {
-        if (photo && photo.size > 0) {
-          const bytes = await photo.arrayBuffer()
-          const buffer = Buffer.from(bytes)
-          const base64 = buffer.toString('base64')
-          photoUrls.push(`data:${photo.type};base64,${base64}`)
-        }
+        const bytes = await photo.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+        const base64 = buffer.toString('base64')
+        newPhotoUrls.push(`data:${photo.type};base64,${base64}`)
       }
-      if (photoUrls.length > 0) {
-        updateData.photoUrl = JSON.stringify(photoUrls)
+
+      const existingPhotoUrls = parsePhotoUrls(expense.photoUrl)
+      const mergedPhotoUrls = [...existingPhotoUrls, ...newPhotoUrls]
+
+      if (mergedPhotoUrls.length > 0) {
+        updateData.photoUrl = JSON.stringify(mergedPhotoUrls)
       }
     }
 
