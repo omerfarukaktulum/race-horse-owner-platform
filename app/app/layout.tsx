@@ -18,7 +18,6 @@ function AppNavbar() {
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
-  const [trainerPrimaryStablemate, setTrainerPrimaryStablemate] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -67,7 +66,6 @@ function AppNavbar() {
         if (response.ok) {
           const data = await response.json()
           setTrainerName(data.trainer?.fullName ?? null)
-          setTrainerPrimaryStablemate(data.stablemates?.[0]?.name ?? null)
         }
       } catch (error) {
         console.error('Error fetching trainer account data:', error)
@@ -118,9 +116,7 @@ function AppNavbar() {
                   ? `${stablemateName} EKÜRİSİ`
                   : 'EKÜRİM'
                 : isTrainer
-                ? trainerPrimaryStablemate
-                  ? `${trainerPrimaryStablemate} • Antrenör`
-                  : trainerName || 'Antrenör Paneli'
+                ? trainerName || 'Antrenör Paneli'
                 : 'EKÜRİM'}
             </span>
           </Link>

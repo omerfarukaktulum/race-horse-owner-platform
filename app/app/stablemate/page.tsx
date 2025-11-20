@@ -178,6 +178,8 @@ export default function StablematePage() {
   const [isSearchingTrainer, setIsSearchingTrainer] = useState(false)
   const [isSavingTrainer, setIsSavingTrainer] = useState(false)
   const [removingTrainerId, setRemovingTrainerId] = useState<string | null>(null)
+  const [isDeleteTrainerDialogOpen, setIsDeleteTrainerDialogOpen] = useState(false)
+  const [trainerToDelete, setTrainerToDelete] = useState<string | null>(null)
   const [isTrainerAssignmentOpen, setIsTrainerAssignmentOpen] = useState(false)
   const [trainerAssignments, setTrainerAssignments] = useState<Record<string, string | null>>({})
   const [isSavingAssignments, setIsSavingAssignments] = useState(false)
@@ -335,13 +337,17 @@ export default function StablematePage() {
     }
   }
 
-  const handleRemoveTrainer = async (trainerId: string) => {
-    const confirmed = window.confirm('Bu antrenörü ekürinizden kaldırmak istediğinize emin misiniz?')
-    if (!confirmed) return
+  const handleRemoveTrainer = (trainerId: string) => {
+    setTrainerToDelete(trainerId)
+    setIsDeleteTrainerDialogOpen(true)
+  }
 
-    setRemovingTrainerId(trainerId)
+  const confirmDeleteTrainer = async () => {
+    if (!trainerToDelete) return
+
+    setRemovingTrainerId(trainerToDelete)
     try {
-      const response = await fetch(`/api/stablemate/trainers/${trainerId}`, {
+      const response = await fetch(`/api/stablemate/trainers/${trainerToDelete}`, {
         method: 'DELETE',
       })
 
@@ -353,6 +359,8 @@ export default function StablematePage() {
 
       toast.success('Antrenör kaldırıldı')
       await fetchStablemate()
+      setIsDeleteTrainerDialogOpen(false)
+      setTrainerToDelete(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Antrenör silinemedi'
       toast.error(message)
@@ -625,12 +633,21 @@ export default function StablematePage() {
     <div className="space-y-8 pb-10">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
         <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
-          <CardContent className="p-6">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
-                {ownerRef && formaAvailable ? (
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    {stablemate?.name}
+                  </CardDescription>
+                </div>
+              </div>
+              {ownerRef && formaAvailable && (
+                <div className="w-16 h-16 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                   <img
                     src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                     alt="Eküri Forması"
@@ -639,160 +656,155 @@ export default function StablematePage() {
                       setFormaAvailable(false)
                     }}
                   />
-                ) : (
-                  <div className="text-xs text-gray-400 text-center px-2">Forma yok</div>
-                )}
-              </div>
-          <div>
-                <p className="text-xs uppercase tracking-wider text-indigo-500">Eküri Profili</p>
-            <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
-              </div>
-            </div>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {summaryCards.map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-sm"
-                >
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                    <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                      {value}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 grid gap-2 sm:grid-cols-2">
-              {detailCards.map(({ label, value, href }) => (
-                <div
-                  key={label}
-                  className="rounded-xl border border-gray-100 bg-white px-3 py-2 shadow-sm"
-                >
-                  <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                  {href && href !== '—' ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-indigo-600 underline-offset-4 hover:underline mt-1 inline-flex items-center gap-1"
-                    >
-                      {value}
-                    </a>
-                  ) : (
-                    <p className="text-base font-semibold text-gray-900 mt-1">{value}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Antrenörler</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">
-                    Ekürinize bağlı antrenörleri yönetin
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    className="rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
-                    onClick={() => setIsTrainerModalOpen(true)}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Antrenör Ekle
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
-                    onClick={handleOpenAssignmentModal}
-                    disabled={!hasAssignableTrainers}
-                    title={
-                      hasAssignableTrainers
-                        ? 'Atlarınıza antrenör atayın'
-                        : 'Atama yapabilmek için kayıtlı bir antrenör gerekli'
-                    }
-                  >
-                    <Users className="h-4 w-4" />
-                    Atlara Antrenör Ata
-                  </Button>
-                </div>
-              </div>
-              {stablemateTrainers.length ? (
-                <div className="space-y-3">
-                  {stablemateTrainers.map((trainer) => {
-                    const isLinked = !!trainer.trainerProfileId
-                    const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
-                    const statusClass = isLinked
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                      : 'bg-amber-50 text-amber-700 border border-amber-100'
-                    return (
-                      <div
-                        key={trainer.id}
-                        className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
-                            <UserCircle className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="text-base font-semibold text-gray-900">{trainer.trainerName}</p>
-                            <p className="text-xs text-gray-500">
-                              {trainer.trainerProfile?.fullName
-                                ? `${trainer.trainerProfile.fullName}${
-                                    trainer.trainerProfile.user?.email
-                                      ? ` • ${trainer.trainerProfile.user.email}`
-                                      : ''
-                                  }`
-                                : 'Hesap bağlantısı bekleniyor'}
-                            </p>
-                            {trainer.trainerExternalId && (
-                              <p className="text-[11px] text-gray-400 mt-1">
-                                TJK ID: {trainer.trainerExternalId}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass}`}>
-                            {statusLabel}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-gray-500 hover:text-red-500"
-                            onClick={() => handleRemoveTrainer(trainer.id)}
-                            disabled={removingTrainerId === trainer.id}
-                            aria-label="Antrenörü kaldır"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
-                  Henüz bir antrenör eklenmedi. Başlamak için &ldquo;Antrenör Ekle&rdquo; butonuna tıklayın.
                 </div>
               )}
             </div>
-          </div>
-
-          {!isEditing && (
-            <div className="flex gap-3">
-              <Button
-                className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
-                onClick={() => setIsEditing(true)}
-              >
-                  Düzenle
-              </Button>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {summaryCards.map(({ label, value }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                  >
+                    <div>
+                      <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
+                      <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                        {value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {detailCards.map(({ label, value, href }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                  >
+                    <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
+                    {href && href !== '—' ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-indigo-600 underline-offset-4 hover:underline mt-1 inline-flex items-center gap-1"
+                      >
+                        {value}
+                      </a>
+                    ) : (
+                      <p className="text-base font-semibold text-gray-900 mt-1">{value}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {!isEditing && (
+                <div className="flex justify-end pt-2">
+                  <Button
+                    className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Düzenle
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
           </CardContent>
         </Card>
+
+        {/* Trainer Management */}
+        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-xl font-semibold text-gray-900">Antrenör Yönetimi</CardTitle>
+              <CardDescription className="text-gray-600 mt-1">
+                Ekürinize bağlı antrenörleri yönetin
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-start gap-4">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
+                  onClick={() => setIsTrainerModalOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Yeni Antrenör Ekle
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
+                  onClick={handleOpenAssignmentModal}
+                  disabled={!hasAssignableTrainers}
+                  title={
+                    hasAssignableTrainers
+                      ? 'Atlarınıza antrenör atayın'
+                      : 'Atama yapabilmek için kayıtlı bir antrenör gerekli'
+                  }
+                >
+                  <Users className="h-4 w-4" />
+                  Atlara Antrenör Ata
+                </Button>
+              </div>
+            </div>
+            {stablemateTrainers.length ? (
+              <div className="space-y-3">
+                {stablemateTrainers.map((trainer) => {
+                  const isLinked = !!trainer.trainerProfileId
+                  const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
+                  const statusClass = isLinked
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                    : 'bg-amber-50 text-amber-700 border border-amber-100'
+                  return (
+                    <div
+                      key={trainer.id}
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 flex-shrink-0">
+                          <UserCircle className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-base font-semibold text-gray-900 truncate">{trainer.trainerName}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap ${statusClass}`}>
+                          {statusLabel}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-500 hover:text-red-500 flex-shrink-0"
+                          onClick={() => handleRemoveTrainer(trainer.id)}
+                          disabled={removingTrainerId === trainer.id}
+                          aria-label="Antrenörü kaldır"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
+                Henüz bir antrenör eklenmedi. Başlamak için &ldquo;Antrenör Ekle&rdquo; butonuna tıklayın.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      </div>
 
       {/* Notification Settings */}
       <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
@@ -861,8 +873,6 @@ export default function StablematePage() {
           </div>
         </CardContent>
       </Card>
-    </div>
-
     </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
@@ -1194,6 +1204,46 @@ export default function StablematePage() {
             </form>
           </CardContent>
         </Card>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Trainer Dialog */}
+      <Dialog
+        open={isDeleteTrainerDialogOpen}
+        onOpenChange={(value) => {
+          setIsDeleteTrainerDialogOpen(value)
+          if (!value) {
+            setTrainerToDelete(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white/95 backdrop-blur border border-rose-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">Antrenörü Kaldır</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Bu antrenörü ekürinizden kaldırmak istediğinize emin misiniz? Bu işlem geri alınamaz.
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteTrainerDialogOpen(false)
+                setTrainerToDelete(null)
+              }}
+              className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+              disabled={removingTrainerId !== null}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={confirmDeleteTrainer}
+              disabled={removingTrainerId !== null}
+              className="bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-md hover:from-rose-600 hover:to-rose-700"
+            >
+              {removingTrainerId !== null ? TR.common.loading : 'Kaldır'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

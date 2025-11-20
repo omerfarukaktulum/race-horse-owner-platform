@@ -44,7 +44,7 @@ const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
 
 const ROLE_MAP: Record<string, string> = {
   OWNER: 'At Sahibi',
-  TRAINER: 'Trainer',
+  TRAINER: 'Antrenör',
   GROOM: 'Groom',
 }
 
@@ -228,7 +228,7 @@ export default function NotesPage() {
   const getUniqueAddedBy = useMemo(() => {
     const roleMap: Record<string, string> = {
       OWNER: 'At Sahibi',
-      TRAINER: 'Trainer',
+      TRAINER: 'Antrenör',
       GROOM: 'Groom',
       ADMIN: 'Admin',
     }
@@ -290,13 +290,17 @@ export default function NotesPage() {
     if (!note.addedBy) return '-'
     const roleLabel = ROLE_MAP[note.addedBy.role] || note.addedBy.role || ''
     const profileName =
-      note.addedBy.ownerProfile?.officialName || note.addedBy.trainerProfile?.fullName || note.addedBy.name
+      note.addedBy.ownerProfile?.officialName || 
+      note.addedBy.trainerProfile?.fullName || 
+      note.addedBy.name ||
+      ''
 
-    if (roleLabel && profileName) {
+    // Always show role label, and name in parentheses if available
+    if (profileName) {
       return `${roleLabel} (${profileName})`
     }
 
-    return roleLabel || profileName || 'Bilinmiyor'
+    return roleLabel || 'Bilinmiyor'
   }
 
   const handleEditClick = (note: Note) => {

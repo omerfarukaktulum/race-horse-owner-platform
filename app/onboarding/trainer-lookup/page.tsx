@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Search, Check, User } from 'lucide-react'
+import { Search, Check, User, UserCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 
@@ -153,6 +153,9 @@ export default function TrainerLookupPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                          <UserCircle className="w-8 h-8 text-emerald-500" />
+                        </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900">{result.name}</p>
                           <p className="text-xs text-gray-600 mt-1">
