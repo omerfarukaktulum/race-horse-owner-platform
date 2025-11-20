@@ -172,9 +172,27 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
       const bodyText = document.body.textContent || ''
       
       // Handicap Points - look for "Handikap P. 93" pattern
-      const handicapMatch = bodyText.match(/Handikap\s+P\.?\s*(\d+)/i)
-      if (handicapMatch) {
-        result.handicapPoints = parseInt(handicapMatch[1])
+      // Try multiple patterns to catch different formats
+      let handicapPoints: number | undefined
+      const patterns = [
+        /Handikap\s+P\.?\s*(\d+)/i,
+        /Handikap\s+Puani\s*:?\s*(\d+)/i,
+        /HP\s*:?\s*(\d+)/i,
+        /Handikap\s*:?\s*(\d+)/i,
+      ]
+      
+      for (const pattern of patterns) {
+        const match = bodyText.match(pattern)
+        if (match) {
+          handicapPoints = parseInt(match[1])
+          if (handicapPoints >= 0 && handicapPoints <= 200) {
+            break
+          }
+        }
+      }
+      
+      if (handicapPoints !== undefined) {
+        result.handicapPoints = handicapPoints
       }
 
       // Extract financial data - look for patterns like "İkramiye 757.300t"
@@ -984,6 +1002,29 @@ export async function fetchTJKHorseDetail(horseId: string): Promise<HorseDetailD
             }
           }
         })
+      }
+
+      // If handicap points not found in summary, use the latest race's HP as fallback
+      if (result.handicapPoints === undefined && result.races.length > 0) {
+        // Find the most recent race with HP (past races, sorted by date descending)
+        const pastRaces = result.races.filter(race => race.raceDate && new Date(race.raceDate) <= new Date())
+        if (pastRaces.length > 0) {
+          // Sort by date descending to get the latest race
+          pastRaces.sort((a, b) => {
+            const dateA = a.raceDate ? new Date(a.raceDate).getTime() : 0
+            const dateB = b.raceDate ? new Date(b.raceDate).getTime() : 0
+            return dateB - dateA
+          })
+          
+          // Use HP from the latest race
+          for (const race of pastRaces) {
+            if (race.handicapPoints !== undefined && race.handicapPoints !== null) {
+              result.handicapPoints = race.handicapPoints
+              console.log('[Browser] Using HP from latest race:', race.handicapPoints, 'from race on', race.raceDate)
+              break
+            }
+          }
+        }
       }
 
       return result

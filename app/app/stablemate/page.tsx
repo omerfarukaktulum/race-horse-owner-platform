@@ -660,18 +660,16 @@ export default function StablematePage() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-wrap gap-2">
                 {summaryCards.map(({ label, value }) => (
                   <div
                     key={label}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                    className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col"
                   >
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                      <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                        {value}
-                      </p>
-                    </div>
+                    <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
+                    <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                      {value}
+                    </p>
                   </div>
                 ))}
               </div>
