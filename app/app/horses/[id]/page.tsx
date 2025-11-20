@@ -124,10 +124,14 @@ interface HorseDetail {
     id: string
     date: string
     note: string
+    category?: string
     photoUrl?: string | string[]
     addedBy: {
       email: string
       role: string
+      ownerProfile?: { officialName: string }
+      trainerProfile?: { fullName: string }
+      name?: string
     }
   }>
   locationHistory?: LocationHistory[]

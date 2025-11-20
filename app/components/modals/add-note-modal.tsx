@@ -10,10 +10,14 @@ import { FileText } from 'lucide-react'
 
 type NoteModalMode = 'create' | 'edit'
 
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık'
+const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık']
+
 interface InitialNoteValues {
   date: string
   note: string
   photoUrl?: string | string[] | null
+  category?: NoteCategory
 }
 
 interface AddNoteModalProps {
@@ -42,6 +46,7 @@ export function AddNoteModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
+  const [category, setCategory] = useState<NoteCategory | ''>('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
 
@@ -55,6 +60,7 @@ export function AddNoteModal({
           : new Date().toISOString().split('T')[0]
         setDate(formattedDate)
         setNote(initialNote.note || '')
+        setCategory(initialNote.category || '')
         const initialPhotos =
           typeof initialNote.photoUrl === 'string'
             ? (() => {
@@ -76,6 +82,7 @@ export function AddNoteModal({
       } else {
       setDate(new Date().toISOString().split('T')[0])
       setNote('')
+      setCategory('')
       setPhotos([])
       setPhotoPreviews([])
     }
@@ -122,6 +129,11 @@ export function AddNoteModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    if (!category) {
+      toast.error('Lütfen bir kategori seçin')
+      return
+    }
+
     if (!note.trim()) {
       toast.error('Lütfen bir not girin')
       return
@@ -133,6 +145,7 @@ export function AddNoteModal({
       const formData = new FormData()
       formData.append('date', date)
       formData.append('note', note.trim())
+      formData.append('category', category)
       photos.forEach((photo) => {
         formData.append('photos', photo)
       })
@@ -191,6 +204,25 @@ export function AddNoteModal({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="w-[240px] mx-auto space-y-5">
+            {/* Category */}
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">Kategori *</Label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as NoteCategory | '')}
+                disabled={isSubmitting}
+                required
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Kategori seçin</option>
+                {NOTE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Date */}
             <div className="space-y-2">
               <Label htmlFor="date" className="text-gray-700 font-medium">Tarih *</Label>

@@ -91,6 +91,9 @@ export async function GET(request: Request) {
           select: {
             email: true,
             role: true,
+            ownerProfile: { select: { officialName: true } },
+            trainerProfile: { select: { fullName: true } },
+            name: true,
           },
         },
       },

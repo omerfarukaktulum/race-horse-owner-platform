@@ -11,10 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık'
+
 interface Note {
   id: string
   date: string
   note: string
+  category?: NoteCategory
   photoUrl?: string | string[] | null
   horse: {
     id: string
@@ -520,6 +523,9 @@ export default function NotesPage() {
                     At
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Kategori
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Not
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -533,13 +539,13 @@ export default function NotesPage() {
               <tbody className="divide-y divide-gray-100">
                 {!hasNotes ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-16 text-center text-sm text-gray-500">
+                    <td colSpan={6} className="px-4 py-16 text-center text-sm text-gray-500">
                       Henüz not eklenmemiş
                     </td>
                   </tr>
                 ) : filteredNotes.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
                       Seçilen filtrelerde not bulunamadı
                     </td>
                   </tr>
@@ -561,6 +567,15 @@ export default function NotesPage() {
                           <span className="text-sm font-medium text-gray-900">
                             {note.horse?.name || '-'}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {note.category ? (
+                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                              {note.category}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           {note.note ? (
@@ -651,6 +666,7 @@ export default function NotesPage() {
             date: editingNote.date,
             note: editingNote.note,
             photoUrl: editingNote.photoUrl,
+            category: editingNote.category,
           }}
           submitLabel="Kaydet"
         />

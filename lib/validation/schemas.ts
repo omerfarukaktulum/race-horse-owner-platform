@@ -40,6 +40,14 @@ export const stablemateSchema = z.object({
   notifyNewRace: z.boolean().optional(),
 })
 
+export const noteSchema = z.object({
+  horseId: z.string().min(1, TR.validation.required),
+  date: z.date(),
+  category: z.enum(['Yem Takibi', 'Gezinti', 'Hastalık']),
+  note: z.string().min(1, TR.validation.required),
+  photoUrl: z.string().url().optional(),
+})
+
 // Horse schemas
 export const horseSchema = z.object({
   name: z.string().min(2, TR.validation.required),

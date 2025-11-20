@@ -10,14 +10,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık'
+
 interface HorseNote {
   id: string
   date: string
   note: string
+  category?: NoteCategory
   photoUrl?: string | string[]
   addedBy: {
     email: string
     role: string
+    ownerProfile?: { officialName: string }
+    trainerProfile?: { fullName: string }
+    name?: string
   }
 }
 
@@ -457,6 +463,9 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                         Tarih
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Kategori
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Not
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -470,7 +479,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                   <tbody className="divide-y divide-gray-100">
                     {filteredNotes.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
+                        <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
                           Seçilen tarih aralığında not bulunamadı
                         </td>
                       </tr>
@@ -490,6 +499,15 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                 {formatDateShort(note.date)}
                               </span>
                             </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {note.category ? (
+                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                              {note.category}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
                             <td className="px-4 py-3">
                               <span className="text-sm text-gray-800">
                                 {note.note ? note.note.replace(/\s*\n+\s*/g, ' ').trim() : '-'}
@@ -561,6 +579,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                 date: editingNote.date,
                 note: editingNote.note,
                 photoUrl: editingNote.photoUrl,
+                category: editingNote.category,
               }
             : undefined
         }

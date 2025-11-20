@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
+const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık'] as const
+type NoteCategory = (typeof NOTE_CATEGORIES)[number]
+
 interface DecodedToken {
   id: string
   role: string
@@ -176,6 +179,14 @@ export async function PATCH(
       }
     }
 
+    const category = formData.get('category') as NoteCategory | null
+    if (category !== null) {
+      if (!NOTE_CATEGORIES.includes(category)) {
+        return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+      }
+      updateData.category = category
+    }
+
     const updatedNote = await prisma.horseNote.update({
       where: { id: params.id },
       data: updateData,
@@ -184,6 +195,9 @@ export async function PATCH(
           select: {
             email: true,
             role: true,
+            ownerProfile: { select: { officialName: true } },
+            trainerProfile: { select: { fullName: true } },
+            name: true,
           },
         },
       },
