@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
@@ -64,6 +64,7 @@ function getPhotoList(photoUrl?: string | string[] | null) {
 
 export default function NotesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [notes, setNotes] = useState<Note[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
@@ -80,6 +81,8 @@ export default function NotesPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [selectedHorseForAdd, setSelectedHorseForAdd] = useState<{ id: string; name: string } | null>(null)
+  const [highlightedNoteId, setHighlightedNoteId] = useState<string | null>(null)
+  const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
   const [attachmentViewer, setAttachmentViewer] = useState<{
     open: boolean
     attachments: string[]
@@ -89,6 +92,21 @@ export default function NotesPage() {
     attachments: [],
     currentIndex: 0,
   })
+
+  useEffect(() => {
+    const highlightParam = searchParams?.get('highlightNote')
+    if (highlightParam) {
+      setHighlightedNoteId(highlightParam)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!highlightedNoteId) return
+    const timer = setTimeout(() => {
+      setHighlightedNoteId(null)
+    }, 6000)
+    return () => clearTimeout(timer)
+  }, [highlightedNoteId])
 
   useEffect(() => {
     fetchNotes()
@@ -236,6 +254,13 @@ export default function NotesPage() {
     })
     return NOTE_CATEGORIES.filter((category) => available.has(category))
   }, [sortedNotes])
+
+  useEffect(() => {
+    if (highlightedNoteId && highlightedRowRef.current) {
+      highlightedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      highlightedRowRef.current = null
+    }
+  }, [highlightedNoteId, filteredNotes.length])
 
   // Toggle functions
   const toggleAddedByFilter = (addedBy: string) => {
@@ -600,14 +625,26 @@ export default function NotesPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredNotes.map((note, index) => {
-                      const isStriped = index % 2 === 1
-                      const attachments = getPhotoList(note.photoUrl)
-                      return (
-                        <tr
-                          key={note.id}
-                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50/30' : ''}`}
-                        >
+                  filteredNotes.map((note, index) => {
+                    const isStriped = index % 2 === 1
+                    const isHighlighted = highlightedNoteId === note.id
+                    const attachments = getPhotoList(note.photoUrl)
+                    return (
+                      <tr
+                        key={note.id}
+                        ref={
+                          isHighlighted
+                            ? (el) => {
+                                highlightedRowRef.current = el
+                              }
+                            : undefined
+                        }
+                        className={`transition-colors ${
+                          isHighlighted
+                            ? 'bg-indigo-50 text-indigo-900 ring-2 ring-indigo-200 animate-pulse-once'
+                            : `${isStriped ? 'bg-gray-50/30' : ''} hover:bg-indigo-50/50`
+                        }`}
+                      >
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-900">
                               {formatDateShort(note.date)}

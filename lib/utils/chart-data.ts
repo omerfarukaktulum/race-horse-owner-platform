@@ -325,29 +325,35 @@ export function getSurfacePerformanceData(races: RaceHistory[]): {
   const performanceData: Record<string, { top3: number; fourthFifth: number; outOfTop5: number }> = {}
   
   races.forEach((race) => {
-    if (race.surface && race.position) {
-      // Normalize surface name
-      let surfaceType = race.surface
-      if (surfaceType.startsWith('Ç:') || surfaceType === 'Ç') {
-        surfaceType = 'Çim'
-      } else if (surfaceType.startsWith('K:') || surfaceType === 'K') {
-        surfaceType = 'Kum'
-      } else if (surfaceType.startsWith('S:') || surfaceType === 'S') {
-        surfaceType = 'Sentetik'
-      }
-      
-      if (!performanceData[surfaceType]) {
-        performanceData[surfaceType] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
-      }
-      
-      const position = race.position
-      if (position >= 1 && position <= 3) {
-        performanceData[surfaceType].top3++
-      } else if (position >= 4 && position <= 5) {
-        performanceData[surfaceType].fourthFifth++
-      } else if (position > 5) {
-        performanceData[surfaceType].outOfTop5++
-      }
+    if (!race.surface) return
+
+    // Normalize surface name
+    let surfaceType = race.surface
+    if (surfaceType.startsWith('Ç:') || surfaceType === 'Ç') {
+      surfaceType = 'Çim'
+    } else if (surfaceType.startsWith('K:') || surfaceType === 'K') {
+      surfaceType = 'Kum'
+    } else if (surfaceType.startsWith('S:') || surfaceType === 'S') {
+      surfaceType = 'Sentetik'
+    }
+
+    if (!performanceData[surfaceType]) {
+      performanceData[surfaceType] = { top3: 0, fourthFifth: 0, outOfTop5: 0 }
+    }
+
+    const position = race.position
+    if (position == null) {
+      // If position data is missing, count it under "Tabela dışı" so the surface still appears
+      performanceData[surfaceType].outOfTop5++
+      return
+    }
+
+    if (position >= 1 && position <= 3) {
+      performanceData[surfaceType].top3++
+    } else if (position >= 4 && position <= 5) {
+      performanceData[surfaceType].fourthFifth++
+    } else if (position > 5) {
+      performanceData[surfaceType].outOfTop5++
     }
   })
   

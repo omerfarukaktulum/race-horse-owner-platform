@@ -24,6 +24,8 @@ export async function GET(request: Request) {
     const horseId = searchParams.get('horseId')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const limitParam = searchParams.get('limit')
+    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 0, 1), 25) : null
 
     // Build filter
     const where: any = {}
@@ -107,6 +109,7 @@ export async function GET(request: Request) {
       orderBy: {
         date: 'desc',
       },
+      ...(limit ? { take: limit } : {}),
     })
 
     return NextResponse.json({ notes })
