@@ -232,6 +232,55 @@ export default function HomePage() {
         </div>
       </section>
 
+        {/* Screenshots Section */}
+        <section className="container mx-auto px-4 py-16">
+          <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
+            Platformu Keşfedin
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+              <Image
+                src="/screenshots/dashboard.png"
+                alt="EKÜRİM Dashboard - Son yarışlar, idmanlar ve kayıtlar"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-cover"
+                unoptimized
+              />
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+              <Image
+                src="/screenshots/features.png"
+                alt="EKÜRİM Özellikler - At yönetimi ve detaylı bilgiler"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-cover"
+                unoptimized
+              />
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+              <Image
+                src="/screenshots/analytics.png"
+                alt="EKÜRİM İstatistikler - Detaylı analiz ve raporlar"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-cover"
+                unoptimized
+              />
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+              <Image
+                src="/screenshots/management.png"
+                alt="EKÜRİM Yönetim - Gider takibi ve not yönetimi"
+                width={1200}
+                height={800}
+                className="w-full h-auto object-cover"
+                unoptimized
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Footer */}
         <footer className="border-t bg-white/80 backdrop-blur-sm mt-16">
           <div className="container mx-auto px-4 py-8 text-center text-gray-600">

@@ -27,7 +27,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/register') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon.ico')
+    pathname.startsWith('/favicon.ico') ||
+    pathname.startsWith('/screenshots') ||
+    pathname.startsWith('/logo.png')
   ) {
     return NextResponse.next()
   }
@@ -77,7 +79,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api/webhooks|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/webhooks|_next/static|_next/image|favicon.ico|screenshots|logo.png).*)',
   ],
 }
 

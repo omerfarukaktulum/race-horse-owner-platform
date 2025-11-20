@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
   keywords: 'tjk, yarış atı, at yönetimi, eküri, hipodrom, antrenör',
   authors: [{ name: 'EKÜRİM' }],
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'EKÜRİM',
     description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
