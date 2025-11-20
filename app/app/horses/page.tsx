@@ -565,7 +565,7 @@ export default function HorsesPage() {
         return { text: 'Hipodrom', color: 'bg-sky-100 text-sky-700 border-sky-200' }
       }
       if (horse.currentLocationType === 'farm') {
-        return { text: 'Çiftlik', color: 'bg-amber-100 text-amber-700 border-amber-200' }
+        return { text: 'Çiftlik', color: 'bg-sky-100 text-sky-700 border-sky-200' }
       }
       return null
     })()
