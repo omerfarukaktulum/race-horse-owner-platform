@@ -10,8 +10,8 @@ import { FileText } from 'lucide-react'
 
 type NoteModalMode = 'create' | 'edit'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık']
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim'
+const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']
 
 interface InitialNoteValues {
   date: string

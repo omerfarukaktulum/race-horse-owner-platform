@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık'] as const
+const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim'] as const
 type NoteCategory = (typeof NOTE_CATEGORIES)[number]
 
 interface DecodedToken {

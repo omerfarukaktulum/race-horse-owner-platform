@@ -43,7 +43,7 @@ export const stablemateSchema = z.object({
 export const noteSchema = z.object({
   horseId: z.string().min(1, TR.validation.required),
   date: z.date(),
-  category: z.enum(['Yem Takibi', 'Gezinti', 'Hastalık']),
+  category: z.enum(['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']),
   note: z.string().min(1, TR.validation.required),
   photoUrl: z.string().url().optional(),
 })
