@@ -1,34 +1,57 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers } from 'lucide-react'
-import { Sparkles } from 'lucide-react'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="h-8 w-8 text-[#6366f1]" />
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">EKÜRİM</h1>
+    <div className="relative overflow-hidden min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
+      <div
+        className="pointer-events-none absolute inset-0 flex items-start justify-center pt-16 md:pt-24"
+        aria-hidden="true"
+      >
+        <Image
+          src="/logo.png"
+          alt=""
+          width={1040}
+          height={1040}
+          className="max-w-[80vw] opacity-15 mix-blend-multiply"
+          priority
+        />
+      </div>
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="border-b bg-white/80 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <Image
+                src="/logo.png"
+                alt="StableMate logo"
+                width={64}
+                height={64}
+                className="h-12 w-auto"
+                priority
+              />
+              <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                EKÜRİM
+              </h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/signin">
+                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">Giriş Yap</Button>
+              </Link>
+              <Link href="/register">
+                <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl">
+                  Kayıt Ol
+                </Button>
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/signin">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900">Giriş Yap</Button>
-            </Link>
-            <Link href="/register">
-              <Button className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl">
-                Kayıt Ol
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-20 text-center">
         <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
           Yarış Atlarınızı Profesyonelce Yönetin
         </h2>
@@ -105,8 +128,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Detailed Features Section */}
-      <section className="container mx-auto px-4 py-16">
+        {/* Detailed Features Section */}
+        <section className="container mx-auto px-4 py-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
           Neden EKÜRİM?
         </h2>
@@ -161,8 +184,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-16">
+        {/* CTA Section */}
+        <section className="container mx-auto px-4 py-16">
         <Card className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white border-none">
           <CardContent className="p-12 text-center">
             <h3 className="text-3xl font-bold mb-4">Hazır mısınız?</h3>
@@ -178,12 +201,13 @@ export default function HomePage() {
         </Card>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t bg-white/80 backdrop-blur-sm mt-16">
-        <div className="container mx-auto px-4 py-8 text-center text-gray-600">
-          <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
-        </div>
-      </footer>
+        {/* Footer */}
+        <footer className="border-t bg-white/80 backdrop-blur-sm mt-16">
+          <div className="container mx-auto px-4 py-8 text-center text-gray-600">
+            <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }
