@@ -53,6 +53,19 @@ function AppNavbar() {
     }
 
     fetchUserData()
+
+    // Listen for stablemate name updates
+    const handleStablemateNameUpdate = (event: CustomEvent) => {
+      if (event.detail?.name) {
+        setStablemateName(event.detail.name)
+      }
+    }
+
+    window.addEventListener('stablemateNameUpdated', handleStablemateNameUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('stablemateNameUpdated', handleStablemateNameUpdate as EventListener)
+    }
   }, [isOwner])
 
   useEffect(() => {

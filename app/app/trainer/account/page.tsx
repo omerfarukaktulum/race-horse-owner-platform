@@ -88,7 +88,7 @@ export default function TrainerAccountPage() {
     },
     {
       key: 'notifyHorseDeclared',
-      title: 'Deklarasyonlar',
+      title: 'Deklareler',
       description: 'Deklarasyon açıklandığında haberdar olun.',
     },
     {
@@ -214,25 +214,36 @@ export default function TrainerAccountPage() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-wrap gap-2">
                 {summaryCards.map(({ label, value }) => (
                   <div
                     key={label}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                    className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col"
                   >
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                      <p className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                        {value}
-                      </p>
-                    </div>
+                    <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
+                    <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                      {value}
+                    </p>
                   </div>
                 ))}
               </div>
               {accountData.trainer.phone && (
-                <div className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+                <div className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col">
                   <p className="text-xs uppercase tracking-wider text-gray-500">Telefon</p>
-                  <p className="text-base font-semibold text-gray-900 mt-1">{accountData.trainer.phone}</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{accountData.trainer.phone}</p>
+                </div>
+              )}
+              {accountData.stablemates.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  {accountData.stablemates.map((stablemate) => (
+                    <div
+                      key={stablemate.id}
+                      className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm flex flex-col"
+                    >
+                      <p className="text-xs uppercase tracking-wider text-gray-500">{stablemate.name}</p>
+                      <p className="text-sm font-semibold text-gray-900 mt-1">{stablemate.totalHorses} At</p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

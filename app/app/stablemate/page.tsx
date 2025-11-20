@@ -368,19 +368,16 @@ export default function StablematePage() {
     }
   }
 
-  const handleOpenAssignmentModal = () => {
-    if (!stablemate?.horses?.length) {
-      toast.info('Henüz atanacak at bulunmuyor')
+  const initializeTrainerAssignments = useCallback(() => {
+    if (!stablemate?.horses?.length || !stablemate?.trainers) {
       return
     }
 
-    const linkedEntries = stablemateTrainers.filter((entry) => entry.trainerProfileId)
+    const linkedEntries = stablemate.trainers.filter((entry) => entry.trainerProfileId)
     if (!linkedEntries.length) {
-      toast.error('Önce kayıtlı bir antrenör ekleyin')
       return
     }
 
-    const defaultEntryId = linkedEntries.length === 1 ? linkedEntries[0].id : null
     const selections: Record<string, string | null> = {}
 
     stablemate.horses.forEach((horse) => {
@@ -389,16 +386,36 @@ export default function StablematePage() {
         : null
       if (matchingEntry) {
         selections[horse.id] = matchingEntry.id
-      } else if (!horse.trainerId && defaultEntryId) {
-        selections[horse.id] = defaultEntryId
       } else {
         selections[horse.id] = null
       }
     })
 
     setTrainerAssignments(selections)
+  }, [stablemate?.horses, stablemate?.trainers])
+
+  const handleOpenAssignmentModal = () => {
+    if (!stablemate?.horses?.length) {
+      toast.info('Henüz atanacak at bulunmuyor')
+      return
+    }
+
+    const linkedEntries = (stablemate?.trainers || []).filter((entry) => entry.trainerProfileId)
+    if (!linkedEntries.length) {
+      toast.error('Önce kayıtlı bir antrenör ekleyin')
+      return
+    }
+
+    initializeTrainerAssignments()
     setIsTrainerAssignmentOpen(true)
   }
+
+  // Reinitialize assignments when modal opens or stablemate data changes
+  useEffect(() => {
+    if (isTrainerAssignmentOpen && stablemate?.horses && stablemate?.trainers) {
+      initializeTrainerAssignments()
+    }
+  }, [isTrainerAssignmentOpen, stablemate?.horses, stablemate?.trainers, initializeTrainerAssignments])
 
   const handleAssignmentChange = (horseId: string, trainerEntryId: string | null) => {
     setTrainerAssignments((prev) => ({
@@ -474,8 +491,16 @@ export default function StablematePage() {
       }
 
       toast.success('Eküri başarıyla güncellendi')
-      setStablemate(data.stablemate)
+      // Only update the name and other editable fields, preserve horses and trainers
+      setStablemate((prev) => ({
+        ...prev,
+        ...data.stablemate,
+        horses: prev?.horses || [],
+        trainers: prev?.trainers || [],
+      }))
       setIsEditing(false)
+      // Notify navbar to refresh the stablemate name
+      window.dispatchEvent(new CustomEvent('stablemateNameUpdated', { detail: { name: data.stablemate.name } }))
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bir hata oluştu'
       toast.error(message)
@@ -587,7 +612,7 @@ export default function StablematePage() {
     },
     {
       key: 'horseDeclared',
-      title: 'Deklarasyonlar',
+      title: 'Deklareler',
       description: 'Atlarımdan biri bir yarışa deklare edildiğinde bilgi ver.',
     },
     {
@@ -670,9 +695,9 @@ export default function StablematePage() {
                     <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
                       {value}
                     </p>
-                  </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
               <div className="flex flex-wrap gap-2">
                 {detailCards.map(({ label, value, href }) => (
                   <div
@@ -692,20 +717,20 @@ export default function StablematePage() {
                     ) : (
                       <p className="text-sm font-semibold text-gray-900 mt-1">{value}</p>
                     )}
-                  </div>
+          </div>
                 ))}
-              </div>
-              {!isEditing && (
+          </div>
+          {!isEditing && (
                 <div className="flex justify-end pt-2">
-                  <Button
-                    className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
-                    onClick={() => setIsEditing(true)}
-                  >
+              <Button
+                className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                onClick={() => setIsEditing(true)}
+              >
                     Düzenle
-                  </Button>
-                </div>
-              )}
+              </Button>
             </div>
+          )}
+        </div>
           </CardContent>
         </Card>
 
@@ -728,17 +753,17 @@ export default function StablematePage() {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-start gap-4">
               <div className="flex flex-wrap gap-2">
-                <Button
+              <Button
                   variant="secondary"
-                  className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
+                  className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
                   onClick={() => setIsTrainerModalOpen(true)}
                 >
                   <UserPlus className="h-4 w-4" />
-                  Yeni Antrenör Ekle
+                  Antrenör Ekle
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
+                  className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
                   onClick={handleOpenAssignmentModal}
                   disabled={!hasAssignableTrainers}
                   title={
@@ -748,44 +773,56 @@ export default function StablematePage() {
                   }
                 >
                   <Users className="h-4 w-4" />
-                  Atlara Antrenör Ata
-                </Button>
-              </div>
+                  Antrenör Değiştir
+              </Button>
+            </div>
             </div>
             {stablemateTrainers.length ? (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-2">
                 {stablemateTrainers.map((trainer) => {
                   const isLinked = !!trainer.trainerProfileId
                   const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
                   const statusClass = isLinked
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                     : 'bg-amber-50 text-amber-700 border border-amber-100'
+                  
+                  // Count horses assigned to this trainer
+                  const horseCount = horsesList.filter(
+                    (horse) => horse.trainerId === trainer.trainerProfileId
+                  ).length
+                  
+                  const trainerProfileName = trainer.trainerProfile?.fullName
+                  
                   return (
                     <div
                       key={trainer.id}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                      className="flex flex-col w-full rounded-md border border-gray-100 bg-white px-3 py-3 shadow-sm relative group"
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600 flex-shrink-0">
-                          <UserCircle className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-base font-semibold text-gray-900 truncate">{trainer.trainerName}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-xs font-medium px-3 py-1 rounded-full whitespace-nowrap ${statusClass}`}>
+                      <div className="flex items-center gap-3 flex-wrap w-full">
+                        <UserCircle className="h-8 w-8 text-indigo-600 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{trainer.trainerName}</p>
+                          {trainerProfileName && trainerProfileName.trim() !== trainer.trainerName.trim() && (
+                            <p className="text-xs text-gray-500 truncate">{trainerProfileName}</p>
+          )}
+        </div>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusClass}`}>
                           {statusLabel}
                         </span>
+                        {horseCount > 0 && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                            {horseCount} At
+                          </span>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-gray-500 hover:text-red-500 flex-shrink-0"
+                          className="h-6 w-6 text-red-500 flex-shrink-0"
                           onClick={() => handleRemoveTrainer(trainer.id)}
                           disabled={removingTrainerId === trainer.id}
                           aria-label="Antrenörü kaldır"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
@@ -803,55 +840,55 @@ export default function StablematePage() {
       </div>
 
       {/* Notification Settings */}
-      <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-              <Bell className="h-5 w-5" />
+      <Card className="w-full max-w-2xl bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  E-posta bildirimlerinizi yönetin
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
-              <CardDescription className="text-gray-600 mt-1">
-                E-posta bildirimlerinizi yönetin
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {notificationOptions.map((item, index) => {
-              const enabled = notificationSettings[item.key]
-              return (
-                <div
-                  key={item.key}
-                  className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center justify-between gap-4"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{item.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={enabled}
-                    disabled={isSavingNotifications}
-                    onClick={() => handleNotificationToggle(item.key)}
-                    className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                      enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
-                    } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {notificationOptions.map((item, index) => {
+                const enabled = notificationSettings[item.key]
+                return (
+                  <div
+                    key={item.key}
+                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center gap-2"
                   >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                        enabled ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={enabled}
+                      disabled={isSavingNotifications}
+                      onClick={() => handleNotificationToggle(item.key)}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
+                      } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                          enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
     </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
@@ -865,7 +902,7 @@ export default function StablematePage() {
               </div>
               <div>
                 <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                  Yeni Antrenör Ekle
+                  Antrenör Ekle
                 </CardTitle>
                 <CardDescription className="text-gray-600 mt-2">
                   TJK aramasını kullanarak iş birliği yapmak istediğiniz antrenörleri ekleyin.
@@ -964,7 +1001,7 @@ export default function StablematePage() {
       <Dialog open={isTrainerAssignmentOpen} onOpenChange={setIsTrainerAssignmentOpen}>
         <DialogContent className="max-w-3xl bg-white/95 border border-indigo-100 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Atlara Antrenör Ata</DialogTitle>
+            <DialogTitle>Antrenör Değiştir</DialogTitle>
             <DialogDescription>
               Ekürinize bağlı atlar için hangi antrenörün sorumlu olduğunu belirleyin.
             </DialogDescription>
@@ -1222,10 +1259,10 @@ export default function StablematePage() {
             >
               {removingTrainerId !== null ? TR.common.loading : 'Kaldır'}
             </Button>
-          </div>
+                  </div>
         </DialogContent>
       </Dialog>
-    </>
+        </>
   )
 }
 
