@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/context/auth-context'
 interface Expense {
   id: string
   date: string
+  createdAt: string
   category: string
   customName?: string
   amount: number | string
@@ -238,7 +239,10 @@ export default function ExpensesPage() {
 
   const sortedExpenses = useMemo(() => {
     return [...expenses].sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
+      // Sort by createdAt (most recent first) to ensure latest entries are always on top
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime()
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime()
+      return dateB - dateA
     })
   }, [expenses])
 

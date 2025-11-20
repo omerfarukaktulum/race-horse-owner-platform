@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { FileText } from 'lucide-react'
+import { useAuth } from '@/lib/context/auth-context'
 
 type NoteModalMode = 'create' | 'edit'
 
@@ -25,7 +26,7 @@ interface AddNoteModalProps {
   onClose: () => void
   horseId?: string
   horseName?: string
-  horses?: Array<{ id: string; name: string }>
+  horses?: Array<{ id: string; name: string; stablemate?: { id: string; name: string } | null }>
   onSuccess?: () => void
   mode?: NoteModalMode
   noteId?: string
@@ -45,6 +46,7 @@ export function AddNoteModal({
   initialNote,
   submitLabel,
 }: AddNoteModalProps) {
+  const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
@@ -53,9 +55,69 @@ export function AddNoteModal({
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [selectedHorseId, setSelectedHorseId] = useState(horseId || '')
   const [selectedHorseName, setSelectedHorseName] = useState(horseName || '')
+  const [stablemates, setStablemates] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedStablemateId, setSelectedStablemateId] = useState('')
+  const [allHorses, setAllHorses] = useState<Array<{ id: string; name: string; stablemate?: { id: string; name: string } | null }>>([])
+  const [isLoadingStablemates, setIsLoadingStablemates] = useState(false)
+  const stablemateSelectRef = useRef<HTMLSelectElement>(null)
 
   const isEditMode = mode === 'edit'
   const isSingleHorseMode = !!horseId && !!horseName
+  const isTrainer = user?.role === 'TRAINER'
+
+  // Fetch stablemates for trainers
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
+      setIsLoadingStablemates(true)
+      fetch('/api/trainer/account', { credentials: 'include' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stablemates) {
+            setStablemates(
+              data.stablemates.map((sm: any) => ({
+                id: sm.id,
+                name: sm.name,
+              }))
+            )
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch stablemates:', err)
+        })
+        .finally(() => {
+          setIsLoadingStablemates(false)
+        })
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode])
+
+  // Fetch horses with stablemate info for trainers
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
+      fetch('/api/horses', { credentials: 'include' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.horses) {
+            setAllHorses(
+              data.horses.map((h: any) => ({
+                id: h.id,
+                name: h.name,
+                stablemate: h.stablemate ? { id: h.stablemate.id, name: h.stablemate.name } : null,
+              }))
+            )
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch horses:', err)
+        })
+    } else if (!isTrainer && horses.length > 0) {
+      setAllHorses(horses)
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode, horses])
+
+  // Filter horses by selected stablemate
+  const filteredHorses = isTrainer && selectedStablemateId
+    ? allHorses.filter((h) => h.stablemate?.id === selectedStablemateId)
+    : allHorses
 
   useEffect(() => {
     if (open) {
@@ -90,6 +152,7 @@ export function AddNoteModal({
       setCategory('')
       setPhotos([])
       setPhotoPreviews([])
+      setSelectedStablemateId('')
       if (!isSingleHorseMode) {
         setSelectedHorseId('')
         setSelectedHorseName('')
@@ -100,6 +163,40 @@ export function AddNoteModal({
     }
     }
   }, [open, isEditMode, initialNote, isSingleHorseMode, horseId, horseName])
+
+  // Reset horse selection when stablemate changes
+  useEffect(() => {
+    if (selectedStablemateId) {
+      setSelectedHorseId('')
+      setSelectedHorseName('')
+    }
+  }, [selectedStablemateId])
+
+  // Focus eküri dropdown when modal opens (for trainers)
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
+      // Focus immediately when modal opens
+      const timer = setTimeout(() => {
+        if (stablemateSelectRef.current) {
+          stablemateSelectRef.current.focus()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode])
+
+  // Focus eküri dropdown when it becomes enabled (after stablemates load)
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode && !isLoadingStablemates && stablemates.length > 0) {
+      // Focus when stablemates are loaded and dropdown is enabled
+      const timer = setTimeout(() => {
+        if (stablemateSelectRef.current) {
+          stablemateSelectRef.current.focus()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode, isLoadingStablemates, stablemates.length])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -223,6 +320,28 @@ export function AddNoteModal({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="w-[240px] mx-auto space-y-5">
+            {/* Stablemate Selection (for trainers) */}
+            {!isSingleHorseMode && isTrainer && (
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">Eküri Seçin *</Label>
+                <select
+                  ref={stablemateSelectRef}
+                  value={selectedStablemateId}
+                  onChange={(e) => setSelectedStablemateId(e.target.value)}
+                  required
+                  disabled={isSubmitting || isLoadingStablemates}
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Eküri seçin</option>
+                  {stablemates.map((stablemate) => (
+                    <option key={stablemate.id} value={stablemate.id}>
+                      {stablemate.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Horse Selection */}
             {!isSingleHorseMode && (
               <div className="space-y-2">
@@ -230,16 +349,16 @@ export function AddNoteModal({
                 <select
                   value={selectedHorseId}
                   onChange={(e) => {
-                    const horse = horses.find((h) => h.id === e.target.value)
+                    const horse = filteredHorses.find((h) => h.id === e.target.value)
                     setSelectedHorseId(e.target.value)
                     setSelectedHorseName(horse?.name || '')
                   }}
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
                   className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="">At seçin</option>
-                  {horses.map((horseOption) => (
+                  <option value="">{isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}</option>
+                  {filteredHorses.map((horseOption) => (
                     <option key={horseOption.id} value={horseOption.id}>
                       {horseOption.name}
                     </option>
@@ -256,6 +375,7 @@ export function AddNoteModal({
                 onChange={(e) => setCategory(e.target.value as NoteCategory | '')}
                 disabled={isSubmitting}
                 required
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Kategori seçin</option>
@@ -278,6 +398,7 @@ export function AddNoteModal({
                 max={new Date().toISOString().split('T')[0]}
                 required
                 disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 style={{ width: '100%', maxWidth: '240px' }}
               />
@@ -294,6 +415,7 @@ export function AddNoteModal({
                 required
                 disabled={isSubmitting}
                 rows={4}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>

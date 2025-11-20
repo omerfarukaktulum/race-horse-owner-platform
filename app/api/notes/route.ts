@@ -85,6 +85,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         date: true,
+        createdAt: true,
         note: true,
         category: true,
         photoUrl: true,
@@ -121,7 +122,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        date: 'desc',
+        createdAt: 'desc',
       },
       ...(limit ? { take: limit } : {}),
     })

@@ -250,6 +250,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         date: true,
+        createdAt: true,
         category: true,
         customName: true,
         amount: true,
@@ -281,7 +282,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        date: 'desc',
+        createdAt: 'desc',
       },
     })
 

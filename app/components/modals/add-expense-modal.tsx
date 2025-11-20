@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -9,11 +9,16 @@ import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
 import { TurkishLira } from 'lucide-react'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface Horse {
   id: string
   name: string
   status: string
+  stablemate?: {
+    id: string
+    name: string
+  } | null
 }
 
 type AddExpenseMode = 'create' | 'edit'
@@ -51,12 +56,18 @@ export function AddExpenseModal({
   initialExpense,
   submitLabel,
 }: AddExpenseModalProps) {
+  const { user } = useAuth()
   const [horses, setHorses] = useState<Horse[]>([])
   const [isLoadingHorses, setIsLoadingHorses] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSingleHorseMode = !!preselectedHorseId && !!preselectedHorseName
   const isEditMode = mode === 'edit'
   const [selectedHorseId, setSelectedHorseId] = useState('')
+  const [stablemates, setStablemates] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedStablemateId, setSelectedStablemateId] = useState('')
+  const [isLoadingStablemates, setIsLoadingStablemates] = useState(false)
+  const stablemateSelectRef = useRef<HTMLSelectElement>(null)
+  const isTrainer = user?.role === 'TRAINER'
 
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -66,6 +77,36 @@ export function AddExpenseModal({
   const [notes, setNotes] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
+
+  // Fetch stablemates for trainers
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
+      setIsLoadingStablemates(true)
+      fetch('/api/trainer/account', { credentials: 'include' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.stablemates) {
+            setStablemates(
+              data.stablemates.map((sm: any) => ({
+                id: sm.id,
+                name: sm.name,
+              }))
+            )
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch stablemates:', err)
+        })
+        .finally(() => {
+          setIsLoadingStablemates(false)
+        })
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode])
+
+  // Filter horses by selected stablemate
+  const filteredHorses = isTrainer && selectedStablemateId
+    ? horses.filter((h) => h.stablemate?.id === selectedStablemateId)
+    : horses
 
   useEffect(() => {
     if (open) {
@@ -119,13 +160,47 @@ export function AddExpenseModal({
       setPhotos([])
       setPhotoPreviews([])
       setSelectedHorseId('')
+      setSelectedStablemateId('')
     }
     }
   }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode, mode, initialExpense])
 
+  // Reset horse selection when stablemate changes
+  useEffect(() => {
+    if (selectedStablemateId) {
+      setSelectedHorseId('')
+    }
+  }, [selectedStablemateId])
+
+  // Focus eküri dropdown when modal opens (for trainers)
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
+      // Focus immediately when modal opens
+      const timer = setTimeout(() => {
+        if (stablemateSelectRef.current) {
+          stablemateSelectRef.current.focus()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode])
+
+  // Focus eküri dropdown when it becomes enabled (after stablemates load)
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode && !isLoadingStablemates && stablemates.length > 0) {
+      // Focus when stablemates are loaded and dropdown is enabled
+      const timer = setTimeout(() => {
+        if (stablemateSelectRef.current) {
+          stablemateSelectRef.current.focus()
+        }
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [open, isTrainer, isSingleHorseMode, isEditMode, isLoadingStablemates, stablemates.length])
+
   const fetchHorses = async () => {
     try {
-      const response = await fetch('/api/horses')
+      const response = await fetch('/api/horses', { credentials: 'include' })
       const data = await response.json()
 
       if (!response.ok) {
@@ -137,6 +212,7 @@ export function AddExpenseModal({
           id: horse.id,
           name: horse.name,
           status: horse.status,
+          stablemate: horse.stablemate ? { id: horse.stablemate.id, name: horse.stablemate.name } : null,
         }))
       )
     } catch (error) {
@@ -310,6 +386,28 @@ export function AddExpenseModal({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="w-[240px] mx-auto space-y-5">
+            {/* Stablemate Selection (for trainers) */}
+            {!isSingleHorseMode && isTrainer && (
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">Eküri Seçin *</Label>
+                <select
+                  ref={stablemateSelectRef}
+                  value={selectedStablemateId}
+                  onChange={(e) => setSelectedStablemateId(e.target.value)}
+                  required
+                  disabled={isSubmitting || isLoadingStablemates}
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Eküri seçin</option>
+                  {stablemates.map((stablemate) => (
+                    <option key={stablemate.id} value={stablemate.id}>
+                      {stablemate.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Horse Selection */}
             {!isSingleHorseMode && (
               <div className="space-y-2">
@@ -320,23 +418,23 @@ export function AddExpenseModal({
                   <div className="text-center py-8 text-gray-500">
                     <p>{TR.common.loading}</p>
                   </div>
-                ) : horses.length === 0 ? (
+                ) : filteredHorses.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 border rounded-lg">
-                    <p>Henüz atınız bulunmuyor.</p>
-                    <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>
+                    <p>{isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'Henüz atınız bulunmuyor.'}</p>
+                    {!isTrainer && <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>}
                   </div>
                 ) : (
                   <select
                     value={selectedHorseId}
                     onChange={(e) => setSelectedHorseId(e.target.value)}
                     required
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
                     className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="">
-                      At seçin
+                      {isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}
                     </option>
-                    {horses.map((horse) => (
+                    {filteredHorses.map((horse) => (
                       <option key={horse.id} value={horse.id}>
                         {horse.name}
                       </option>
@@ -355,6 +453,7 @@ export function AddExpenseModal({
                 onChange={(e) => setCategory(e.target.value)}
                 required
                 disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="">Kategori seçin</option>
@@ -377,6 +476,7 @@ export function AddExpenseModal({
                 max={new Date().toISOString().split('T')[0]}
                 required
                 disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 style={{ width: '100%', maxWidth: '240px' }}
               />
@@ -412,6 +512,7 @@ export function AddExpenseModal({
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
@@ -426,6 +527,7 @@ export function AddExpenseModal({
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={isSubmitting}
                 rows={3}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                 className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>

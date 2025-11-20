@@ -91,6 +91,14 @@ export async function GET(request: Request) {
             user: true,
           },
         },
+        ...(decoded.role === 'TRAINER' ? {
+          stablemate: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        } : {}),
         expenses: {
           orderBy: { date: 'desc' },
           take: 1,

@@ -634,20 +634,9 @@ export default function StablematePage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
         <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
           <CardHeader>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                  <Building2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
-                  <CardDescription className="text-gray-600 mt-1">
-                    {stablemate?.name}
-                  </CardDescription>
-                </div>
-              </div>
-              {ownerRef && formaAvailable && (
-                <div className="w-16 h-16 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+            <div className="flex items-center gap-3">
+              {ownerRef && formaAvailable ? (
+                <div className="w-12 h-12 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
                   <img
                     src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                     alt="Eküri Forması"
@@ -657,7 +646,17 @@ export default function StablematePage() {
                     }}
                   />
                 </div>
+              ) : (
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <Building2 className="h-5 w-5" />
+                </div>
               )}
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  {stablemate?.name}
+                </CardDescription>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-6">

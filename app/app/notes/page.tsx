@@ -18,6 +18,7 @@ const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', '
 interface Note {
   id: string
   date: string
+  createdAt: string
   note: string
   category?: NoteCategory
   photoUrl?: string | string[] | null
@@ -158,7 +159,10 @@ export default function NotesPage() {
 
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime()
+      // Sort by createdAt (most recent first) to ensure latest entries are always on top
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime()
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime()
+      return dateB - dateA
     })
   }, [notes])
 
