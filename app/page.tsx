@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers } from 'lucide-react'
+import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers, Trophy, Calendar } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -56,8 +56,8 @@ export default function HomePage() {
           Yarış Atlarınızı Profesyonelce Yönetin
         </h2>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          EKÜRİM ile atlarınızı takip edin, giderlerinizi yönetin ve
-          antrenörlerinizle işbirliği yapın.
+          EKÜRİM ile atlarınızı takip edin, giderlerinizi yönetin, yarış ve idman verilerini 
+          otomatik senkronize edin, notlar tutun ve antrenörlerinizle işbirliği yapın.
         </p>
 
         {/* Feature Highlights - Matching driving-license style */}
@@ -76,19 +76,19 @@ export default function HomePage() {
             </div>
 
             {/* Gider Takibi */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-indigo-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-emerald-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
               <div className="text-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-3">
                   <TurkishLira className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-emerald-600 mb-1">Kategorize</div>
-                <div className="text-sm font-bold text-emerald-600">Gider Takibi</div>
+                <div className="text-sm font-bold text-emerald-600">Gider ve Not Takibi</div>
                 <div className="text-xs text-gray-700 font-bold mt-1">detaylı takip</div>
               </div>
             </div>
 
             {/* İstatistikler */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-indigo-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-amber-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
               <div className="text-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
                   <BarChart3 className="h-6 w-6 text-white" />
@@ -100,14 +100,14 @@ export default function HomePage() {
             </div>
 
             {/* TJK Entegrasyonu */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-indigo-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
+            <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 border border-rose-100/50 hover:shadow-lg transition-all duration-300 hover:scale-105">
               <div className="text-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Database className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-rose-600 mb-1">Otomatik</div>
                 <div className="text-sm font-bold text-rose-600">TJK Senkronizasyon</div>
-                <div className="text-xs text-gray-700 font-bold mt-1">gerçek zamanlı veri</div>
+                <div className="text-xs text-gray-700 font-bold mt-1">yarış, idman, kayıt</div>
               </div>
             </div>
           </div>
@@ -141,7 +141,7 @@ export default function HomePage() {
               </div>
               <CardTitle className="text-indigo-600">At Yönetimi</CardTitle>
               <CardDescription>
-                Aktif, aygır ve kısraklarınızı tek platformda yönetin
+                Aktif, aygır ve kısraklarınızı tek platformda yönetin, detaylı profiller oluşturun
               </CardDescription>
             </CardHeader>
           </Card>
@@ -153,7 +153,7 @@ export default function HomePage() {
               </div>
               <CardTitle className="text-emerald-600">Gider Takibi</CardTitle>
               <CardDescription>
-                Tüm giderlerinizi kategorilere ayırarak kolayca takip edin
+                Tüm giderlerinizi kategorilere ayırarak kolayca takip edin, fotoğraflarla belgelendirin
               </CardDescription>
             </CardHeader>
           </Card>
@@ -161,11 +161,11 @@ export default function HomePage() {
           <Card className="bg-white/80 backdrop-blur-sm border border-amber-100/50 hover:shadow-lg transition-all duration-300">
             <CardHeader>
               <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full flex items-center justify-center mb-3">
-                <TrendingUp className="h-6 w-6 text-white" />
+                <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <CardTitle className="text-amber-600">İstatistikler</CardTitle>
               <CardDescription>
-                Detaylı istatistikler ve raporlarla mali durumunuzu görün
+                Detaylı istatistikler, grafikler ve CSV raporlarla mali durumunuzu görün
               </CardDescription>
             </CardHeader>
           </Card>
@@ -173,32 +173,63 @@ export default function HomePage() {
           <Card className="bg-white/80 backdrop-blur-sm border border-rose-100/50 hover:shadow-lg transition-all duration-300">
             <CardHeader>
               <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full flex items-center justify-center mb-3">
+                <Database className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-rose-600">TJK Entegrasyonu</CardTitle>
+              <CardDescription>
+                Yarış sonuçları, idmanlar ve kayıtlar otomatik senkronize edilir
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-blue-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-full flex items-center justify-center mb-3">
+                <ClipboardList className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-blue-600">Not Yönetimi</CardTitle>
+              <CardDescription>
+                Atlarınız için kategorize edilmiş notlar tutun, fotoğraflarla zenginleştirin
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full flex items-center justify-center mb-3">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-purple-600">Aktif Dashboard</CardTitle>
+              <CardDescription>
+                Son yarışlar, idmanlar, kayıtlar ve giderler tek bakışta
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-teal-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-green-600 rounded-full flex items-center justify-center mb-3">
                 <Users className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-rose-600">Antrenör İşbirliği</CardTitle>
+              <CardTitle className="text-teal-600">Eküri Yönetimi</CardTitle>
               <CardDescription>
-                Antrenörlerinizle kolayca iletişim kurun ve işbirliği yapın
+                Antrenörlerinizi yönetin, ortak sahipler ekleyin, bildirim ayarlarını yapın
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-orange-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mb-3">
+                <FolderOpen className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-orange-600">Abonelik Yönetimi</CardTitle>
+              <CardDescription>
+                Esnek abonelik planları ile Premium özelliklere erişin
               </CardDescription>
             </CardHeader>
           </Card>
         </div>
-      </section>
-
-        {/* CTA Section */}
-        <section className="container mx-auto px-4 py-16">
-        <Card className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white border-none">
-          <CardContent className="p-12 text-center">
-            <h3 className="text-3xl font-bold mb-4">Hazır mısınız?</h3>
-            <p className="text-lg mb-8 opacity-90">
-              EKÜRİM ile atlarınızı yönetmeye bugün başlayın
-            </p>
-            <Link href="/register">
-              <Button size="lg" className="text-lg px-8 bg-white text-[#6366f1] hover:bg-indigo-50 hover:text-[#4f46e5] shadow-lg hover:shadow-xl">
-                Ücretsiz Deneyin
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
       </section>
 
         {/* Footer */}
