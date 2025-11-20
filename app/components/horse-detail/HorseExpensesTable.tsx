@@ -41,6 +41,7 @@ interface Props {
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
   highlightExpenseId?: string
+  onVisibleTotalChange?: (total: number, currency: string) => void
 }
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -71,7 +72,21 @@ const getAttachments = (input?: string | string[] | null) => {
   return []
 }
 
-export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightExpenseId }: Props) {
+export function HorseExpensesTable({
+  expenses,
+  onAddExpense,
+  horseId,
+  horseName,
+  onRefresh,
+  hideButtons = false,
+  onFilterTriggerReady,
+  showFilterDropdown: externalShowFilterDropdown,
+  onFilterDropdownChange,
+  filterDropdownContainerRef,
+  onActiveFiltersChange,
+  highlightExpenseId,
+  onVisibleTotalChange,
+}: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
@@ -303,6 +318,12 @@ export function HorseExpensesTable({ expenses, onAddExpense, horseId, horseName,
 
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
+
+  useEffect(() => {
+    if (onVisibleTotalChange) {
+      onVisibleTotalChange(totalAmount, defaultCurrency)
+    }
+  }, [totalAmount, defaultCurrency, onVisibleTotalChange])
 
   // Get unique categories
   const getUniqueCategories = useMemo(() => {

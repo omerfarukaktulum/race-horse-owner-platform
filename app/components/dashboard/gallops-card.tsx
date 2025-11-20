@@ -142,7 +142,7 @@ export function GallopsCard() {
   }
 
   return (
-    <Card className="h-full flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-white shadow-lg border border-blue-100">
+    <Card className="h-full flex flex-col bg-gradient-to-br from-indigo-50 via-blue-50 to-white shadow-lg border border-indigo-100">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -171,7 +171,7 @@ export function GallopsCard() {
               className="overflow-y-auto space-y-3 -mx-6 px-6" 
               style={{ maxHeight: '600px' }}
             >
-              {gallops.map((gallop, index) => {
+            {gallops.map((gallop, index) => {
               const distanceEntries = Object.entries(gallop.distances || {})
                 .map(([dist, time]) => ({ distance: parseInt(dist), time }))
                 .sort((a, b) => a.distance - b.distance) // Sort by distance ascending

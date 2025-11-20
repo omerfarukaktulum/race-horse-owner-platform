@@ -79,15 +79,25 @@ model TrainerProfile {
   userId   String @unique
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  tjkTrainerId String?
   fullName String
   phone    String?
+  
+  notifyHorseRegistered Boolean @default(true)
+  notifyHorseDeclared   Boolean @default(true)
+  notifyNewTraining     Boolean @default(true)
+  notifyNewExpense      Boolean @default(true)
+  notifyNewNote         Boolean @default(true)
+  notifyNewRace         Boolean @default(true)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   horses Horse[]
+  stablemateLinks StablemateTrainer[]
 
   @@index([userId])
+  @@index([tjkTrainerId])
   @@index([fullName])
   @@map("trainer_profiles")
 }
@@ -113,9 +123,33 @@ model Stablemate {
   updatedAt DateTime @updatedAt
   
   horses Horse[]
+  trainers StablemateTrainer[]
 
   @@index([ownerId])
   @@map("stablemates")
+}
+
+model StablemateTrainer {
+  id             String   @id @default(cuid())
+  stablemateId   String
+  stablemate     Stablemate @relation(fields: [stablemateId], references: [id], onDelete: Cascade)
+  
+  trainerProfileId String?
+  trainerProfile   TrainerProfile? @relation(fields: [trainerProfileId], references: [id])
+  
+  trainerName     String
+  trainerExternalId String?
+  trainerPhone    String?
+  notes           String?
+  isActive        Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stablemateId])
+  @@index([trainerProfileId])
+  @@index([trainerExternalId])
+  @@map("stablemate_trainers")
 }
 
 model Racecourse {

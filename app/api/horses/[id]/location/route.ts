@@ -106,31 +106,31 @@ export async function POST(
     let farmId: string | null = null
 
     if (city && city.trim()) {
-      if (locationType === 'racecourse') {
-        // Try to find racecourse by name matching the city
-        const racecourse = await prisma.racecourse.findFirst({
-          where: {
-            name: {
-              contains: city,
-              mode: 'insensitive',
-            },
+    if (locationType === 'racecourse') {
+      // Try to find racecourse by name matching the city
+      const racecourse = await prisma.racecourse.findFirst({
+        where: {
+          name: {
+            contains: city,
+            mode: 'insensitive',
           },
-        })
-        if (racecourse) {
-          racecourseId = racecourse.id
-        }
-      } else if (locationType === 'farm') {
-        // Try to find farm by city
-        const farm = await prisma.farm.findFirst({
-          where: {
-            city: {
-              equals: city,
-              mode: 'insensitive',
-            },
+        },
+      })
+      if (racecourse) {
+        racecourseId = racecourse.id
+      }
+    } else if (locationType === 'farm') {
+      // Try to find farm by city
+      const farm = await prisma.farm.findFirst({
+        where: {
+          city: {
+            equals: city,
+            mode: 'insensitive',
           },
-        })
-        if (farm) {
-          farmId = farm.id
+        },
+      })
+      if (farm) {
+        farmId = farm.id
         }
       }
     }

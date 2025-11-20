@@ -17,6 +17,7 @@ import { RaceHistoryTable } from '@/app/components/horse-detail/RaceHistoryTable
 import { GallopsTable } from '@/app/components/horse-detail/GallopsTable'
 import { HorseExpensesTable } from '@/app/components/horse-detail/HorseExpensesTable'
 import { HorseNotesList } from '@/app/components/horse-detail/HorseNotesList'
+import { formatCurrency } from '@/lib/utils/format'
 
 interface LocationHistory {
   id: string
@@ -172,6 +173,8 @@ export default function HorseDetailPage() {
   const [statisticsFilterCount, setStatisticsFilterCount] = useState(0)
   const [expensesFilterCount, setExpensesFilterCount] = useState(0)
   const [notesFilterCount, setNotesFilterCount] = useState(0)
+  const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
+  const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
@@ -223,6 +226,18 @@ export default function HorseDetailPage() {
       fetchHorse()
     }
   }, [horseId])
+
+useEffect(() => {
+  if (horse?.expenses && horse.expenses.length > 0) {
+    const total = horse.expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0)
+    const currency = horse.expenses[0]?.currency || 'TRY'
+    setVisibleExpenseTotal(total)
+    setVisibleExpenseCurrency(currency)
+  } else {
+    setVisibleExpenseTotal(0)
+    setVisibleExpenseCurrency('TRY')
+  }
+}, [horse?.expenses])
 
   const fetchHorse = async () => {
     try {
@@ -345,7 +360,6 @@ export default function HorseDetailPage() {
     horseId: horse.id,
     horseName: horse.name,
   }))
-
   return (
     <div className="space-y-8 pb-8">
       {/* Header with Back Button and Action Buttons */}
@@ -408,7 +422,13 @@ export default function HorseDetailPage() {
             </TabsTrigger>
           </TabsList>
           {activeTab === 'expenses' && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-4 ml-auto">
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+                <p className="text-lg font-semibold text-indigo-600">
+                  {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
+                </p>
+              </div>
               <div ref={expensesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -428,8 +448,8 @@ export default function HorseDetailPage() {
               >
                 + Yeni
               </Button>
-                  </div>
-                )}
+            </div>
+          )}
           {activeTab === 'races' && (
             <div className="flex items-center gap-2 ml-auto">
               <div ref={racesFilterButtonRef} className="relative">
@@ -576,6 +596,10 @@ export default function HorseDetailPage() {
             filterDropdownContainerRef={expensesFilterButtonRef}
             onActiveFiltersChange={setExpensesFilterCount}
             highlightExpenseId={highlightExpenseId}
+            onVisibleTotalChange={(total, currency) => {
+              setVisibleExpenseTotal(total)
+              setVisibleExpenseCurrency(currency)
+            }}
           />
         </TabsContent>
 

@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const { email, password, fullName, phone } = validation.data
+    const { email, password } = validation.data
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -52,8 +52,9 @@ export async function POST(request: Request) {
         role: 'TRAINER',
         trainerProfile: {
           create: {
-            fullName,
-            phone,
+            fullName: email.split('@')[0], // Use email prefix as default, can be updated later
+            phone: null,
+            tjkTrainerId: null,
           },
         },
       },

@@ -29,7 +29,20 @@ export async function GET(request: Request) {
       include: {
         ownerProfile: {
           include: {
-            stablemate: true,
+            stablemate: {
+              include: {
+                trainers: {
+                  include: {
+                    trainerProfile: {
+                      include: {
+                        user: true,
+                      },
+                    },
+                  },
+                  orderBy: { createdAt: 'asc' },
+                },
+              },
+            },
           },
         },
       },
@@ -102,7 +115,19 @@ export async function POST(request: Request) {
       )
     }
 
-    const { name, foundationYear, coOwners, location, website } = validation.data
+    const {
+      name,
+      foundationYear,
+      coOwners,
+      location,
+      website,
+      notifyHorseRegistered,
+      notifyHorseDeclared,
+      notifyNewTraining,
+      notifyNewExpense,
+      notifyNewNote,
+      notifyNewRace,
+    } = validation.data
 
     // Create stablemate
     const stablemate = await prisma.stablemate.create({
@@ -113,6 +138,12 @@ export async function POST(request: Request) {
         coOwners: coOwners || [],
         location,
         website,
+        notifyHorseRegistered,
+        notifyHorseDeclared,
+        notifyNewTraining,
+        notifyNewExpense,
+        notifyNewNote,
+        notifyNewRace,
       },
     })
 
@@ -182,7 +213,19 @@ export async function PATCH(request: Request) {
       )
     }
 
-    const { name, foundationYear, coOwners, location, website } = validation.data
+    const {
+      name,
+      foundationYear,
+      coOwners,
+      location,
+      website,
+      notifyHorseRegistered,
+      notifyHorseDeclared,
+      notifyNewTraining,
+      notifyNewExpense,
+      notifyNewNote,
+      notifyNewRace,
+    } = validation.data
 
     // Update stablemate
     const stablemate = await prisma.stablemate.update({
@@ -193,6 +236,20 @@ export async function PATCH(request: Request) {
         coOwners: coOwners || [],
         location,
         website,
+        notifyHorseRegistered:
+          typeof notifyHorseRegistered === 'boolean'
+            ? notifyHorseRegistered
+            : undefined,
+        notifyHorseDeclared:
+          typeof notifyHorseDeclared === 'boolean' ? notifyHorseDeclared : undefined,
+        notifyNewTraining:
+          typeof notifyNewTraining === 'boolean' ? notifyNewTraining : undefined,
+        notifyNewExpense:
+          typeof notifyNewExpense === 'boolean' ? notifyNewExpense : undefined,
+        notifyNewNote:
+          typeof notifyNewNote === 'boolean' ? notifyNewNote : undefined,
+        notifyNewRace:
+          typeof notifyNewRace === 'boolean' ? notifyNewRace : undefined,
       },
     })
 

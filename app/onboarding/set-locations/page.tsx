@@ -270,38 +270,38 @@ export default function SetLocationsPage() {
                       {/* Location Controls Container - styled similar to horse card */}
                       <div className="flex items-center gap-4 py-3.5 px-4 border-2 rounded-lg transition-all duration-200 h-[60px] justify-center flex-shrink-0 w-fit border-gray-200 hover:border-gray-300 bg-white hover:shadow-md">
                         {/* Location Type Radio Buttons */}
-                        <label className="flex items-center space-x-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`location-type-${horse.id}`}
-                            value="racecourse"
-                            checked={location.locationType === 'racecourse'}
-                            onChange={(e) => {
-                              if (e.target.checked && !isSubmitting) {
-                                updateLocationType(horse.id, 'racecourse')
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                            disabled={isSubmitting}
-                          />
-                          <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
-                        </label>
-                        <label className="flex items-center space-x-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`location-type-${horse.id}`}
-                            value="farm"
-                            checked={location.locationType === 'farm'}
-                            onChange={(e) => {
-                              if (e.target.checked && !isSubmitting) {
-                                updateLocationType(horse.id, 'farm')
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                            disabled={isSubmitting}
-                          />
-                          <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
-                        </label>
+                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`location-type-${horse.id}`}
+                              value="racecourse"
+                              checked={location.locationType === 'racecourse'}
+                              onChange={(e) => {
+                                if (e.target.checked && !isSubmitting) {
+                                  updateLocationType(horse.id, 'racecourse')
+                                }
+                              }}
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
+                          </label>
+                          <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`location-type-${horse.id}`}
+                              value="farm"
+                              checked={location.locationType === 'farm'}
+                              onChange={(e) => {
+                                if (e.target.checked && !isSubmitting) {
+                                  updateLocationType(horse.id, 'farm')
+                                }
+                              }}
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
+                          </label>
                       </div>
                     </div>
                   )

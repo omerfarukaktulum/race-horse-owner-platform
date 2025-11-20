@@ -15,8 +15,6 @@ export const registerOwnerSchema = z.object({
 export const registerTrainerSchema = z.object({
   email: z.string().email(TR.validation.invalidEmail),
   password: z.string().min(8, TR.validation.passwordTooShort),
-  fullName: z.string().min(2, TR.validation.required),
-  phone: z.string().optional(),
 })
 
 // Owner profile schemas
@@ -61,6 +59,33 @@ export const horseSchema = z.object({
   externalRef: z.string().optional(),
 })
 
+export const stablemateTrainerSchema = z.object({
+  trainerName: z.string().min(2, TR.validation.required),
+  trainerExternalId: z.string().optional(),
+  trainerPhone: z.string().optional(),
+  notes: z.string().optional(),
+})
+
+export const trainerAssignmentSchema = z.object({
+  assignments: z
+    .array(
+      z.object({
+        horseId: z.string().min(1, TR.validation.required),
+        trainerEntryId: z.string().nullable(),
+      })
+    )
+    .min(1, TR.validation.required),
+})
+
+export const trainerNotificationSchema = z.object({
+  notifyHorseRegistered: z.boolean().optional(),
+  notifyHorseDeclared: z.boolean().optional(),
+  notifyNewTraining: z.boolean().optional(),
+  notifyNewExpense: z.boolean().optional(),
+  notifyNewNote: z.boolean().optional(),
+  notifyNewRace: z.boolean().optional(),
+})
+
 // Expense schemas
 export const expenseSchema = z.object({
   horseIds: z.array(z.string()).min(1, TR.validation.required),
@@ -100,6 +125,9 @@ export type RegisterTrainerInput = z.infer<typeof registerTrainerSchema>
 export type OwnerProfileInput = z.infer<typeof ownerProfileSchema>
 export type StablemateInput = z.infer<typeof stablemateSchema>
 export type HorseInput = z.infer<typeof horseSchema>
+export type StablemateTrainerInput = z.infer<typeof stablemateTrainerSchema>
+export type TrainerAssignmentInput = z.infer<typeof trainerAssignmentSchema>
+export type TrainerNotificationInput = z.infer<typeof trainerNotificationSchema>
 export type ExpenseInput = z.infer<typeof expenseSchema>
 export type RacecourseInput = z.infer<typeof racecourseSchema>
 export type FarmInput = z.infer<typeof farmSchema>

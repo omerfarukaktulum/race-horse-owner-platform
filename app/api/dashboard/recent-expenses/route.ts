@@ -29,8 +29,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    // Get user's stablemate
-    let stablemateId: string | null = null
+    let horses: Array<{ id: string; name: string }> = []
 
     if (decoded.role === 'OWNER') {
       let ownerId = decoded.ownerId
@@ -44,30 +43,38 @@ export async function GET(request: Request) {
       if (ownerId) {
         const stablemate = await prisma.stablemate.findUnique({
           where: { ownerId },
+          select: { id: true },
         })
-        stablemateId = stablemate?.id || null
+        if (stablemate?.id) {
+          horses = await prisma.horse.findMany({
+            where: { stablemateId: stablemate.id },
+            select: { id: true, name: true },
+          })
+        }
       }
     } else if (decoded.role === 'TRAINER') {
-      // For trainers, we could show horses they train
-      // For now, return empty array
-      return NextResponse.json({ expenses: [] })
-    } else if (decoded.role === 'ADMIN') {
-      // Admins might need a different approach
+      let trainerId = decoded.trainerId
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+          select: { id: true },
+        })
+        trainerId = trainerProfile?.id
+      }
+
+      if (trainerId) {
+        horses = await prisma.horse.findMany({
+          where: { trainerId },
+          select: { id: true, name: true },
+        })
+      }
+    } else {
       return NextResponse.json({ expenses: [] })
     }
 
-    if (!stablemateId) {
+    if (!horses.length) {
       return NextResponse.json({ expenses: [] })
     }
-
-    // Get all horses for this stablemate
-    const horses = await prisma.horse.findMany({
-      where: { stablemateId },
-      select: {
-        id: true,
-        name: true,
-      },
-    })
 
     const horseIds = horses.map(h => h.id)
     const horseMap = new Map(horses.map(h => [h.id, h.name]))

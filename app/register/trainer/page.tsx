@@ -16,8 +16,6 @@ export default function RegisterTrainerPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +39,7 @@ export default function RegisterTrainerPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, fullName, phone }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json()
@@ -65,7 +63,7 @@ export default function RegisterTrainerPage() {
       if (signInResponse.ok) {
         // Use window.location for hard redirect to ensure cookie is included
         setTimeout(() => {
-          window.location.href = '/app/home'
+          window.location.href = '/onboarding/trainer-lookup'
         }, 500)
       } else {
         setTimeout(() => {
@@ -99,36 +97,7 @@ export default function RegisterTrainerPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-gray-700 font-medium">
-                {TR.auth.fullName}
-              </Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Ad Soyad"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                disabled={isLoading}
-                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-700 font-medium">
-                {TR.auth.phone}
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+90 555 123 4567"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                disabled={isLoading}
-                className="h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-700 font-medium">
                 {TR.auth.email}

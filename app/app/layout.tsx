@@ -11,12 +11,14 @@ import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
 
 function AppNavbar() {
-  const { user, signOut, isOwner } = useAuth()
+  const { user, signOut, isOwner, isTrainer } = useAuth()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
+  const [trainerName, setTrainerName] = useState<string | null>(null)
+  const [trainerPrimaryStablemate, setTrainerPrimaryStablemate] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -54,6 +56,27 @@ function AppNavbar() {
     fetchUserData()
   }, [isOwner])
 
+  useEffect(() => {
+    const fetchTrainerData = async () => {
+      if (!isTrainer) return
+
+      try {
+        const response = await fetch('/api/trainer/account', {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setTrainerName(data.trainer?.fullName ?? null)
+          setTrainerPrimaryStablemate(data.stablemates?.[0]?.name ?? null)
+        }
+      } catch (error) {
+        console.error('Error fetching trainer account data:', error)
+      }
+    }
+
+    fetchTrainerData()
+  }, [isTrainer])
+
   const navItems = [
     { href: '/app/home', label: TR.nav.home, icon: Home },
     { href: '/app/horses', label: TR.nav.horses, icon: LayoutGrid },
@@ -67,7 +90,7 @@ function AppNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
-            {ownerOfficialRef ? (
+            {isOwner && ownerOfficialRef ? (
               <div className="h-8 w-8 flex-shrink-0 relative flex items-center justify-center">
                 <img
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
@@ -84,11 +107,21 @@ function AppNavbar() {
                 />
                 <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden" />
               </div>
+            ) : isTrainer ? (
+              <User className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
             ) : (
               <LayoutGrid className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
             )}
             <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-              {stablemateName ? `${stablemateName} EKÜRİSİ` : 'EKÜRİM'}
+              {isOwner
+                ? stablemateName
+                  ? `${stablemateName} EKÜRİSİ`
+                  : 'EKÜRİM'
+                : isTrainer
+                ? trainerPrimaryStablemate
+                  ? `${trainerPrimaryStablemate} • Antrenör`
+                  : trainerName || 'Antrenör Paneli'
+                : 'EKÜRİM'}
             </span>
           </Link>
 
@@ -150,6 +183,20 @@ function AppNavbar() {
                   </div>
                 )}
               </div>
+            )}
+            {isTrainer && (
+              <Link href="/app/trainer/account">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`text-gray-600 hover:text-gray-900 flex items-center gap-1 ${
+                    pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : ''
+                  }`}
+                >
+                  <User className="h-4 w-4" />
+                  Hesap
+                </Button>
+              </Link>
             )}
             <Button
               onClick={signOut}
@@ -213,6 +260,20 @@ function AppNavbar() {
                     >
                       <TurkishLira className="h-4 w-4 mr-2" />
                       {TR.nav.billing}
+                    </Button>
+                  </Link>
+                </div>
+              )}
+              {isTrainer && (
+                <div className="border-t border-gray-200 pt-2 mt-2">
+                  <Link href="/app/trainer/account">
+                    <Button
+                      variant={pathname?.startsWith('/app/trainer/account') ? 'secondary' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Hesap
                     </Button>
                   </Link>
                 </div>

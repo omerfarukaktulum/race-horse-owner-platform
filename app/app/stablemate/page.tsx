@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, Info } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, Info, UserPlus, UserCircle, Trash2, Search, Check, UserSearch } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -115,6 +115,11 @@ interface StablemateData {
     name: string
     status: string
     yob?: number
+    trainerId?: string | null
+    trainer?: {
+      id: string
+      fullName?: string | null
+    } | null
   }>
   notifyHorseRegistered?: boolean
   notifyHorseDeclared?: boolean
@@ -122,6 +127,22 @@ interface StablemateData {
   notifyNewExpense?: boolean
   notifyNewNote?: boolean
   notifyNewRace?: boolean
+  trainers?: Array<{
+    id: string
+    trainerName: string
+    trainerExternalId?: string | null
+    trainerPhone?: string | null
+    notes?: string | null
+    trainerProfileId?: string | null
+    trainerProfile?: {
+      id: string
+      fullName: string
+      phone?: string | null
+      user?: {
+        email: string
+      } | null
+    } | null
+  }>
 }
 
 export default function StablematePage() {
@@ -150,6 +171,16 @@ export default function StablematePage() {
   })
   const [isSavingNotifications, setIsSavingNotifications] = useState(false)
   const [activeNotificationInfo, setActiveNotificationInfo] = useState<keyof typeof notificationSettings | null>(null)
+  const [isTrainerModalOpen, setIsTrainerModalOpen] = useState(false)
+  const [trainerSearchTerm, setTrainerSearchTerm] = useState('')
+  const [trainerSearchResults, setTrainerSearchResults] = useState<Array<{ id: string; name: string }>>([])
+  const [selectedTrainerResult, setSelectedTrainerResult] = useState<{ id: string; name: string } | null>(null)
+  const [isSearchingTrainer, setIsSearchingTrainer] = useState(false)
+  const [isSavingTrainer, setIsSavingTrainer] = useState(false)
+  const [removingTrainerId, setRemovingTrainerId] = useState<string | null>(null)
+  const [isTrainerAssignmentOpen, setIsTrainerAssignmentOpen] = useState(false)
+  const [trainerAssignments, setTrainerAssignments] = useState<Record<string, string | null>>({})
+  const [isSavingAssignments, setIsSavingAssignments] = useState(false)
 
   useEffect(() => {
     fetchStablemate()
@@ -170,6 +201,58 @@ export default function StablematePage() {
   useEffect(() => {
     setFormaAvailable(true)
   }, [ownerRef])
+
+  useEffect(() => {
+    if (!isTrainerModalOpen) {
+      setTrainerSearchTerm('')
+      setTrainerSearchResults([])
+      setSelectedTrainerResult(null)
+    }
+  }, [isTrainerModalOpen])
+
+  const handleTrainerSearch = useCallback(async () => {
+    if (trainerSearchTerm.trim().length < 2) {
+      setTrainerSearchResults([])
+      return
+    }
+
+    setIsSearchingTrainer(true)
+    try {
+      const response = await fetch(`/api/trainers/search?q=${encodeURIComponent(trainerSearchTerm.trim())}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Arama başarısız')
+      }
+
+      const resultsArray = Array.isArray(data.results) ? data.results : []
+      const normalized = resultsArray
+        .map((item: any) => ({
+          id: String(item.id ?? item.value ?? item.Id ?? ''),
+          name: String(item.name ?? item.text ?? item.Name ?? '').trim(),
+        }))
+        .filter((item: { id: string; name: string }) => item.id && item.name)
+
+      setTrainerSearchResults(normalized)
+    } catch (error) {
+      console.error('Trainer search error:', error)
+      setTrainerSearchResults([])
+    } finally {
+      setIsSearchingTrainer(false)
+    }
+  }, [trainerSearchTerm])
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (trainerSearchTerm.length >= 2 && isTrainerModalOpen) {
+        await handleTrainerSearch()
+      } else if (trainerSearchTerm.length < 2) {
+        setTrainerSearchResults([])
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [trainerSearchTerm, isTrainerModalOpen, handleTrainerSearch])
 
   const fetchStablemate = async () => {
     try {
@@ -211,6 +294,145 @@ export default function StablematePage() {
       toast.error('Eküri yüklenirken bir hata oluştu')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleSelectTrainerResult = (result: { id: string; name: string }) => {
+    setSelectedTrainerResult(result)
+  }
+
+  const handleAddTrainer = async () => {
+    if (!selectedTrainerResult) {
+      toast.error('Lütfen bir antrenör seçin')
+      return
+    }
+
+    setIsSavingTrainer(true)
+    try {
+      const response = await fetch('/api/stablemate/trainers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trainerName: selectedTrainerResult.name,
+          trainerExternalId: selectedTrainerResult.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Antrenör eklenemedi')
+      }
+
+      toast.success('Antrenör eklendi')
+      setIsTrainerModalOpen(false)
+      await fetchStablemate()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Antrenör eklenemedi'
+      toast.error(message)
+    } finally {
+      setIsSavingTrainer(false)
+    }
+  }
+
+  const handleRemoveTrainer = async (trainerId: string) => {
+    const confirmed = window.confirm('Bu antrenörü ekürinizden kaldırmak istediğinize emin misiniz?')
+    if (!confirmed) return
+
+    setRemovingTrainerId(trainerId)
+    try {
+      const response = await fetch(`/api/stablemate/trainers/${trainerId}`, {
+        method: 'DELETE',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Antrenör silinemedi')
+      }
+
+      toast.success('Antrenör kaldırıldı')
+      await fetchStablemate()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Antrenör silinemedi'
+      toast.error(message)
+    } finally {
+      setRemovingTrainerId(null)
+    }
+  }
+
+  const handleOpenAssignmentModal = () => {
+    if (!stablemate?.horses?.length) {
+      toast.info('Henüz atanacak at bulunmuyor')
+      return
+    }
+
+    const linkedEntries = stablemateTrainers.filter((entry) => entry.trainerProfileId)
+    if (!linkedEntries.length) {
+      toast.error('Önce kayıtlı bir antrenör ekleyin')
+      return
+    }
+
+    const defaultEntryId = linkedEntries.length === 1 ? linkedEntries[0].id : null
+    const selections: Record<string, string | null> = {}
+
+    stablemate.horses.forEach((horse) => {
+      const matchingEntry = horse.trainerId
+        ? linkedEntries.find((entry) => entry.trainerProfileId === horse.trainerId)
+        : null
+      if (matchingEntry) {
+        selections[horse.id] = matchingEntry.id
+      } else if (!horse.trainerId && defaultEntryId) {
+        selections[horse.id] = defaultEntryId
+      } else {
+        selections[horse.id] = null
+      }
+    })
+
+    setTrainerAssignments(selections)
+    setIsTrainerAssignmentOpen(true)
+  }
+
+  const handleAssignmentChange = (horseId: string, trainerEntryId: string | null) => {
+    setTrainerAssignments((prev) => ({
+      ...prev,
+      [horseId]: trainerEntryId,
+    }))
+  }
+
+  const handleSaveTrainerAssignments = async () => {
+    const assignmentsPayload = Object.entries(trainerAssignments).map(([horseId, trainerEntryId]) => ({
+      horseId,
+      trainerEntryId,
+    }))
+
+    if (!assignmentsPayload.length) {
+      setIsTrainerAssignmentOpen(false)
+      return
+    }
+
+    setIsSavingAssignments(true)
+    try {
+      const response = await fetch('/api/stablemate/trainers/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments: assignmentsPayload }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Atamalar kaydedilemedi')
+      }
+
+      toast.success('At antrenör atamaları güncellendi')
+      setIsTrainerAssignmentOpen(false)
+      await fetchStablemate()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Atamalar kaydedilemedi'
+      toast.error(message)
+    } finally {
+      setIsSavingAssignments(false)
     }
   }
 
@@ -273,7 +495,7 @@ export default function StablematePage() {
       ...prev,
       [key]: newValue,
     }))
-
+    
     setIsSavingNotifications(true)
     try {
       const response = await fetch('/api/onboarding/stablemate/notifications', {
@@ -341,6 +563,11 @@ export default function StablematePage() {
     },
   ]
 
+  const stablemateTrainers = stablemate?.trainers || []
+  const assignableTrainerEntries = stablemateTrainers.filter((entry) => entry.trainerProfileId)
+  const hasAssignableTrainers = assignableTrainerEntries.length > 0
+  const horsesList = stablemate?.horses || []
+
   const notificationOptions: Array<{
     key: keyof typeof notificationSettings
     title: string
@@ -399,7 +626,7 @@ export default function StablematePage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
         <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
           <CardContent className="p-6">
-          <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-2xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
@@ -416,9 +643,9 @@ export default function StablematePage() {
                   <div className="text-xs text-gray-400 text-center px-2">Forma yok</div>
                 )}
               </div>
-              <div>
+          <div>
                 <p className="text-xs uppercase tracking-wider text-indigo-500">Eküri Profili</p>
-                <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
+            <h1 className="mt-2 text-3xl font-bold text-gray-900">{stablemate?.name}</h1>
               </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -458,19 +685,112 @@ export default function StablematePage() {
                 </div>
               ))}
             </div>
+            <div className="mt-8 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Antrenörler</p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">
+                    Ekürinize bağlı antrenörleri yönetin
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50 flex items-center gap-2"
+                    onClick={() => setIsTrainerModalOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Antrenör Ekle
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-xl bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
+                    onClick={handleOpenAssignmentModal}
+                    disabled={!hasAssignableTrainers}
+                    title={
+                      hasAssignableTrainers
+                        ? 'Atlarınıza antrenör atayın'
+                        : 'Atama yapabilmek için kayıtlı bir antrenör gerekli'
+                    }
+                  >
+                    <Users className="h-4 w-4" />
+                    Atlara Antrenör Ata
+                  </Button>
+                </div>
+              </div>
+              {stablemateTrainers.length ? (
+                <div className="space-y-3">
+                  {stablemateTrainers.map((trainer) => {
+                    const isLinked = !!trainer.trainerProfileId
+                    const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
+                    const statusClass = isLinked
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                      : 'bg-amber-50 text-amber-700 border border-amber-100'
+                    return (
+                      <div
+                        key={trainer.id}
+                        className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-600">
+                            <UserCircle className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-base font-semibold text-gray-900">{trainer.trainerName}</p>
+                            <p className="text-xs text-gray-500">
+                              {trainer.trainerProfile?.fullName
+                                ? `${trainer.trainerProfile.fullName}${
+                                    trainer.trainerProfile.user?.email
+                                      ? ` • ${trainer.trainerProfile.user.email}`
+                                      : ''
+                                  }`
+                                : 'Hesap bağlantısı bekleniyor'}
+                            </p>
+                            {trainer.trainerExternalId && (
+                              <p className="text-[11px] text-gray-400 mt-1">
+                                TJK ID: {trainer.trainerExternalId}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-gray-500 hover:text-red-500"
+                            onClick={() => handleRemoveTrainer(trainer.id)}
+                            disabled={removingTrainerId === trainer.id}
+                            aria-label="Antrenörü kaldır"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
+                  Henüz bir antrenör eklenmedi. Başlamak için &ldquo;Antrenör Ekle&rdquo; butonuna tıklayın.
+                </div>
+              )}
+            </div>
           </div>
 
-            {!isEditing && (
-              <div className="flex gap-3">
-                <Button
-                  className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
-                  onClick={() => setIsEditing(true)}
-                >
+          {!isEditing && (
+            <div className="flex gap-3">
+              <Button
+                className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                onClick={() => setIsEditing(true)}
+              >
                   Düzenle
-                </Button>
-              </div>
-            )}
-          </div>
+              </Button>
+            </div>
+          )}
+        </div>
           </CardContent>
         </Card>
 
@@ -498,7 +818,7 @@ export default function StablematePage() {
                   <div className="grid grid-cols-[minmax(0,1fr),auto,auto] gap-3 items-center">
                     <div>
                       <Label className="text-sm font-semibold text-gray-900">{item.title}</Label>
-                    </div>
+              </div>
                     <button
                       type="button"
                       onClick={() =>
@@ -517,7 +837,7 @@ export default function StablematePage() {
                       type="button"
                       role="switch"
                       aria-checked={enabled}
-                      disabled={isSavingNotifications}
+                disabled={isSavingNotifications}
                       onClick={() => handleNotificationToggle(item.key)}
                       className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
                         enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
@@ -527,15 +847,15 @@ export default function StablematePage() {
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                           enabled ? 'translate-x-6' : 'translate-x-1'
                         }`}
-                      />
+              />
                     </button>
-                  </div>
+            </div>
                   {activeNotificationInfo === item.key && (
                     <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-2 text-sm text-indigo-900">
                       {item.description}
-                    </div>
+              </div>
                   )}
-                </div>
+            </div>
               )
             })}
           </div>
@@ -544,6 +864,192 @@ export default function StablematePage() {
     </div>
 
     </div>
+
+      <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
+        <DialogContent className="max-w-md bg-transparent border-none shadow-none p-0">
+          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-2xl border border-gray-200/50 flex flex-col max-h-[90vh]">
+            <CardHeader className="text-center space-y-4 flex-shrink-0">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+                  <UserSearch className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  Yeni Antrenör Ekle
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-2">
+                  TJK aramasını kullanarak iş birliği yapmak istediğiniz antrenörleri ekleyin.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col p-6">
+              {/* Fixed input section */}
+              <div className="space-y-2 flex-shrink-0 mb-4">
+                <Label htmlFor="trainerSearch" className="text-gray-700 font-medium">
+                  Antrenör Ara
+                </Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="trainerSearch"
+                    type="text"
+                    placeholder="Antrenör adını yazın (en az 2 karakter)"
+                    value={trainerSearchTerm}
+                    onChange={(e) => setTrainerSearchTerm(e.target.value)}
+                    className="pl-10 h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                    disabled={isSearchingTrainer}
+                  />
+                </div>
+                {isSearchingTrainer && (
+                  <p className="text-sm text-gray-500 flex items-center gap-2">
+                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#6366f1]"></span>
+                    Aranıyor...
+                  </p>
+                )}
+              </div>
+
+              {/* Dynamic results section - grows with content, scrollable if too many */}
+              {trainerSearchResults.length > 0 && (
+                <div className="flex flex-col space-y-3 mb-4 flex-shrink-0">
+                  <Label className="text-gray-700 font-medium">Antrenör Seç</Label>
+                  <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2">
+                    {trainerSearchResults.map((result) => {
+                      const isSelected = selectedTrainerResult?.id === result.id
+                      return (
+                        <button
+                          key={result.id}
+                          type="button"
+                          onClick={() => handleSelectTrainerResult(result)}
+                          className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg ${
+                            isSelected
+                              ? 'border-[#6366f1] shadow-xl from-indigo-50/80 via-indigo-50/60 to-white'
+                              : 'border-indigo-100/50 hover:border-indigo-200 hover:shadow-xl'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                                <UserCircle className="w-8 h-8 text-[#6366f1]" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="font-semibold text-gray-900">{result.name}</p>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  TJK ID: {result.id}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Seçim yaptıktan sonra antrenör ekürinize eklenecektir.
+                                </p>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="flex-shrink-0 ml-3">
+                                <div className="w-6 h-6 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center">
+                                  <Check className="h-4 w-4 text-white" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Fixed button section */}
+              <div className="flex justify-end pt-4 flex-shrink-0">
+                <Button
+                  onClick={handleAddTrainer}
+                  disabled={!selectedTrainerResult || isSavingTrainer}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6"
+                >
+                  {isSavingTrainer ? TR.common.loading : 'Antrenörü Ekle'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTrainerAssignmentOpen} onOpenChange={setIsTrainerAssignmentOpen}>
+        <DialogContent className="max-w-3xl bg-white/95 border border-indigo-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>Atlara Antrenör Ata</DialogTitle>
+            <DialogDescription>
+              Ekürinize bağlı atlar için hangi antrenörün sorumlu olduğunu belirleyin.
+            </DialogDescription>
+          </DialogHeader>
+          {hasAssignableTrainers ? (
+            horsesList.length ? (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                {horsesList.map((horse) => {
+                  const currentSelection = trainerAssignments[horse.id] ?? ''
+                  return (
+                    <div
+                      key={horse.id}
+                      className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4"
+                    >
+                      <div>
+                        <p className="text-base font-semibold text-gray-900">{horse.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {horse.status || 'Durum bilinmiyor'}
+                          {horse.trainer?.fullName ? ` • Aktif: ${horse.trainer.fullName}` : ''}
+                        </p>
+                      </div>
+                      <select
+                        value={currentSelection}
+                        onChange={(e) =>
+                          handleAssignmentChange(
+                            horse.id,
+                            e.target.value ? e.target.value : null
+                          )
+                        }
+                        className="h-11 rounded-xl border border-indigo-100 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 min-w-[220px]"
+                      >
+                        <option value="">Antrenör seçin</option>
+                        {assignableTrainerEntries.map((trainer) => (
+                          <option key={trainer.id} value={trainer.id}>
+                            {trainer.trainerName}{' '}
+                            {trainer.trainerProfile?.fullName &&
+                              `(${trainer.trainerProfile.fullName})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
+                Ekürinize bağlı at bulunamadı.
+              </div>
+            )
+          ) : (
+            <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 px-4 py-6 text-sm text-amber-700">
+              Atlara antrenör atayabilmek için önce kayıtlı (hesabı doğrulanmış) bir antrenör eklemelisiniz.
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsTrainerAssignmentOpen(false)}
+              className="h-11 rounded-2xl"
+            >
+              {TR.common.cancel}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveTrainerAssignments}
+              disabled={!hasAssignableTrainers || isSavingAssignments}
+              className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white disabled:opacity-60"
+            >
+              {isSavingAssignments ? TR.common.loading : 'Atamaları Kaydet'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={isEditing}

@@ -23,8 +23,9 @@ interface InitialNoteValues {
 interface AddNoteModalProps {
   open: boolean
   onClose: () => void
-  horseId: string
-  horseName: string
+  horseId?: string
+  horseName?: string
+  horses?: Array<{ id: string; name: string }>
   onSuccess?: () => void
   mode?: NoteModalMode
   noteId?: string
@@ -37,6 +38,7 @@ export function AddNoteModal({
   onClose,
   horseId,
   horseName,
+  horses = [],
   onSuccess,
   mode = 'create',
   noteId,
@@ -49,8 +51,11 @@ export function AddNoteModal({
   const [category, setCategory] = useState<NoteCategory | ''>('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
+  const [selectedHorseId, setSelectedHorseId] = useState(horseId || '')
+  const [selectedHorseName, setSelectedHorseName] = useState(horseName || '')
 
   const isEditMode = mode === 'edit'
+  const isSingleHorseMode = !!horseId && !!horseName
 
   useEffect(() => {
     if (open) {
@@ -85,9 +90,16 @@ export function AddNoteModal({
       setCategory('')
       setPhotos([])
       setPhotoPreviews([])
+      if (!isSingleHorseMode) {
+        setSelectedHorseId('')
+        setSelectedHorseName('')
+      } else {
+        setSelectedHorseId(horseId || '')
+        setSelectedHorseName(horseName || '')
+      }
     }
     }
-  }, [open, isEditMode, initialNote])
+  }, [open, isEditMode, initialNote, isSingleHorseMode, horseId, horseName])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -142,6 +154,13 @@ export function AddNoteModal({
     setIsSubmitting(true)
 
     try {
+      const targetHorseId = isSingleHorseMode ? horseId : selectedHorseId
+      if (!targetHorseId) {
+        toast.error('Lütfen bir at seçin')
+        setIsSubmitting(false)
+        return
+      }
+
       const formData = new FormData()
       formData.append('date', date)
       formData.append('note', note.trim())
@@ -161,7 +180,7 @@ export function AddNoteModal({
           body: formData,
         })
       } else {
-        response = await fetch(`/api/horses/${horseId}/notes`, {
+        response = await fetch(`/api/horses/${targetHorseId}/notes`, {
         method: 'POST',
         credentials: 'include',
         body: formData,
@@ -194,16 +213,41 @@ export function AddNoteModal({
               <FileText className="h-8 w-8 text-white" />
             </div>
           </div>
-          {horseName && (
+          {(isSingleHorseMode ? horseName : selectedHorseName) && (
             <div className="w-[240px] mx-auto">
               <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                {horseName}
+                {isSingleHorseMode ? horseName : selectedHorseName}
               </DialogTitle>
             </div>
           )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="w-[240px] mx-auto space-y-5">
+            {/* Horse Selection */}
+            {!isSingleHorseMode && (
+              <div className="space-y-2">
+                <Label className="text-gray-700 font-medium">At Seçin *</Label>
+                <select
+                  value={selectedHorseId}
+                  onChange={(e) => {
+                    const horse = horses.find((h) => h.id === e.target.value)
+                    setSelectedHorseId(e.target.value)
+                    setSelectedHorseName(horse?.name || '')
+                  }}
+                  required
+                  disabled={isSubmitting}
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">At seçin</option>
+                  {horses.map((horseOption) => (
+                    <option key={horseOption.id} value={horseOption.id}>
+                      {horseOption.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Category */}
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium">Kategori *</Label>

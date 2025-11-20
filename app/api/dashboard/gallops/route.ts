@@ -30,49 +30,67 @@ export async function GET(request: Request) {
 
     console.log('[Gallops API] User role:', decoded.role)
 
-    // Get user's owner profile
-    if (decoded.role !== 'OWNER') {
-      console.log('[Gallops API] User is not owner, returning empty')
-      return NextResponse.json({ gallops: [] })
-    }
+    let horseIds: string[] = []
 
-    let ownerId = decoded.ownerId
-    if (!ownerId) {
+    if (decoded.role === 'OWNER') {
+      let ownerId = decoded.ownerId
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+
+      if (!ownerId) {
+        console.log('[Gallops API] No owner profile found')
+        return NextResponse.json({ gallops: [] })
+      }
+
       const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: { userId: decoded.id },
-      })
-      ownerId = ownerProfile?.id
-    }
-
-    if (!ownerId) {
-      console.log('[Gallops API] No owner profile found')
-      return NextResponse.json({ gallops: [] })
-    }
-
-    // Get stablemate with horses
-    const ownerProfile = await prisma.ownerProfile.findUnique({
-      where: { id: ownerId },
-      select: {
-        stablemate: {
-          select: {
-            id: true,
-            horses: {
-              select: {
-                id: true,
-                name: true,
+        where: { id: ownerId },
+        select: {
+          stablemate: {
+            select: {
+              horses: {
+                select: {
+                  id: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    if (!ownerProfile?.stablemate) {
-      console.log('[Gallops API] No stablemate found for owner')
+      if (!ownerProfile?.stablemate) {
+        console.log('[Gallops API] No stablemate found for owner')
+        return NextResponse.json({ gallops: [] })
+      }
+
+      horseIds = ownerProfile.stablemate.horses.map((h) => h.id)
+    } else if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+          select: { id: true },
+        })
+        trainerId = trainerProfile?.id
+      }
+
+      if (!trainerId) {
+        console.log('[Gallops API] Trainer profile not found')
+        return NextResponse.json({ gallops: [] })
+      }
+
+      const trainerHorses = await prisma.horse.findMany({
+        where: { trainerId },
+        select: { id: true },
+      })
+      horseIds = trainerHorses.map((horse) => horse.id)
+    } else {
+      console.log('[Gallops API] Unsupported role')
       return NextResponse.json({ gallops: [] })
     }
-
-    const horseIds = ownerProfile.stablemate.horses.map((h: any) => h.id)
     
     if (horseIds.length === 0) {
       console.log('[Gallops API] No horses in stablemate')

@@ -34,49 +34,67 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
 
-    // Get user's owner profile
-    if (decoded.role !== 'OWNER') {
-      console.log('[Recent Races API] User is not owner, returning empty')
-      return NextResponse.json({ races: [] })
-    }
+    let horseIds: string[] = []
 
-    let ownerId = decoded.ownerId
-    if (!ownerId) {
+    if (decoded.role === 'OWNER') {
+      let ownerId = decoded.ownerId
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+
+      if (!ownerId) {
+        console.log('[Recent Races API] No owner profile found')
+        return NextResponse.json({ races: [] })
+      }
+
       const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: { userId: decoded.id },
-      })
-      ownerId = ownerProfile?.id
-    }
-
-    if (!ownerId) {
-      console.log('[Recent Races API] No owner profile found')
-      return NextResponse.json({ races: [] })
-    }
-
-    // Get stablemate with horses
-    const ownerProfile = await prisma.ownerProfile.findUnique({
-      where: { id: ownerId },
-      select: {
-        stablemate: {
-          select: {
-            id: true,
-            horses: {
-              select: {
-                id: true,
-                name: true,
+        where: { id: ownerId },
+        select: {
+          stablemate: {
+            select: {
+              horses: {
+                select: {
+                  id: true,
+                },
               },
             },
           },
         },
-      },
-    })
+      })
 
-    if (!ownerProfile?.stablemate) {
-      console.log('[Recent Races API] No stablemate found for owner')
+      if (!ownerProfile?.stablemate) {
+        console.log('[Recent Races API] No stablemate found for owner')
+        return NextResponse.json({ races: [] })
+      }
+
+      horseIds = ownerProfile.stablemate.horses.map((h) => h.id)
+    } else if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+          select: { id: true },
+        })
+        trainerId = trainerProfile?.id
+      }
+
+      if (!trainerId) {
+        console.log('[Recent Races API] Trainer profile not found')
+        return NextResponse.json({ races: [] })
+      }
+
+      const trainerHorses = await prisma.horse.findMany({
+        where: { trainerId },
+        select: { id: true },
+      })
+      horseIds = trainerHorses.map((horse) => horse.id)
+    } else {
+      console.log('[Recent Races API] Unsupported role')
       return NextResponse.json({ races: [] })
     }
-
-    const horseIds = ownerProfile.stablemate.horses.map((h: any) => h.id)
     
     if (horseIds.length === 0) {
       console.log('[Recent Races API] No horses in stablemate')

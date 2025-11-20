@@ -5,7 +5,6 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
-import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
@@ -15,7 +14,6 @@ interface Horse {
   id: string
   name: string
   status: string
-  selected: boolean
 }
 
 type AddExpenseMode = 'create' | 'edit'
@@ -58,6 +56,7 @@ export function AddExpenseModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const isSingleHorseMode = !!preselectedHorseId && !!preselectedHorseName
   const isEditMode = mode === 'edit'
+  const [selectedHorseId, setSelectedHorseId] = useState('')
 
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
@@ -75,7 +74,6 @@ export function AddExpenseModal({
           id: preselectedHorseId!,
           name: preselectedHorseName!,
           status: '',
-          selected: true,
         }])
         setIsLoadingHorses(false)
       } else {
@@ -120,6 +118,7 @@ export function AddExpenseModal({
       setNotes('')
       setPhotos([])
       setPhotoPreviews([])
+      setSelectedHorseId('')
     }
     }
   }, [open, preselectedHorseId, preselectedHorseName, isSingleHorseMode, mode, initialExpense])
@@ -135,8 +134,9 @@ export function AddExpenseModal({
 
       setHorses(
         (data.horses || []).map((horse: any) => ({
-          ...horse,
-          selected: horse.id === preselectedHorseId,
+          id: horse.id,
+          name: horse.name,
+          status: horse.status,
         }))
       )
     } catch (error) {
@@ -145,19 +145,6 @@ export function AddExpenseModal({
     } finally {
       setIsLoadingHorses(false)
     }
-  }
-
-  const toggleHorse = (index: number) => {
-    setHorses(
-      horses.map((horse, i) =>
-        i === index ? { ...horse, selected: !horse.selected } : horse
-      )
-    )
-  }
-
-  const selectAll = () => {
-    const allSelected = horses.every((h) => h.selected)
-    setHorses(horses.map((h) => ({ ...h, selected: !allSelected })))
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,15 +244,17 @@ export function AddExpenseModal({
         onSuccess?.()
         onClose()
       } else {
-        const selectedHorses = horses.filter((h) => h.selected)
-        if (selectedHorses.length === 0) {
-          toast.error('Lütfen en az bir at seçin')
+        if (!isSingleHorseMode && !selectedHorseId) {
+          toast.error('Lütfen bir at seçin')
           setIsSubmitting(false)
           return
         }
 
       const formData = new FormData()
-      formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
+      const horseIds = isSingleHorseMode
+        ? [preselectedHorseId]
+        : [selectedHorseId]
+      formData.append('horseIds', JSON.stringify(horseIds.filter(Boolean)))
       formData.append('date', date)
       formData.append('category', category)
       if (category === 'OZEL' && customCategory) {
@@ -327,22 +316,6 @@ export function AddExpenseModal({
                 <Label className="text-gray-700 font-medium">
                   {TR.expenses.selectHorses}
                 </Label>
-                {horses.length > 1 && (
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={selectAll}
-                      className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1] text-xs"
-                    >
-                      {horses.every((h) => h.selected)
-                        ? 'Seçimi Temizle'
-                        : TR.common.selectAll}
-                    </Button>
-                  </div>
-                )}
-
                 {isLoadingHorses ? (
                   <div className="text-center py-8 text-gray-500">
                     <p>{TR.common.loading}</p>
@@ -353,29 +326,22 @@ export function AddExpenseModal({
                     <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-60 overflow-y-auto border-2 border-indigo-100/50 rounded-lg p-3 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white">
-                    {horses.map((horse, index) => (
-                      <div
-                        key={horse.id}
-                        className={`flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 cursor-pointer ${
-                          horse.selected
-                            ? 'bg-indigo-100/50 border-2 border-[#6366f1]'
-                            : 'hover:bg-indigo-50/30 border-2 border-transparent'
-                        }`}
-                        onClick={() => toggleHorse(index)}
-                      >
-                        <Checkbox
-                          checked={horse.selected}
-                          onCheckedChange={() => toggleHorse(index)}
-                          className="data-[state=checked]:bg-[#6366f1] data-[state=checked]:border-[#6366f1]"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 text-sm">{horse.name}</p>
-                          <p className="text-xs text-gray-500">{horse.status}</p>
-                        </div>
-                      </div>
+                  <select
+                    value={selectedHorseId}
+                    onChange={(e) => setSelectedHorseId(e.target.value)}
+                    required
+                    disabled={isSubmitting}
+                    className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">
+                      At seçin
+                    </option>
+                    {horses.map((horse) => (
+                      <option key={horse.id} value={horse.id}>
+                        {horse.name}
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 )}
               </div>
             )}
