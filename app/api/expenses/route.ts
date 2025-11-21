@@ -298,7 +298,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        date: 'desc',
       },
       ...(decoded.role === 'TRAINER' ? {} : { take: limit }), // No limit for trainers, they need all expenses
     })

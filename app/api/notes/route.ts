@@ -133,7 +133,7 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        date: 'desc',
       },
       ...(limit ? { take: limit } : {}),
     })

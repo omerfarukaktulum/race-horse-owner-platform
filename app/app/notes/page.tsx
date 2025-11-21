@@ -165,9 +165,9 @@ export default function NotesPage() {
 
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => {
-      // Sort by createdAt (most recent first) to ensure latest entries are always on top
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime()
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime()
+      // Sort by date (tarih) descending - latest entries at the top
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
       return dateB - dateA
     })
   }, [notes])
