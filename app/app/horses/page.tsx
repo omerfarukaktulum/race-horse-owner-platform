@@ -1307,7 +1307,7 @@ export default function HorsesPage() {
                                     {horse.sireName || ''}
                                     {horse.sireName && horse.damName ? ' - ' : ''}
                                     {horse.damName || ''}
-                                  </span>
+                                </span>
                                 </div>
                               )}
                             </div>

@@ -212,7 +212,7 @@ export default function OwnerLookupPage() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
     </div>
   )
 }

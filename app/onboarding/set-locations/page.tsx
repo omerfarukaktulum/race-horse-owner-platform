@@ -273,37 +273,37 @@ export default function SetLocationsPage() {
 
                       <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3 justify-start sm:justify-end w-full">
                         <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
-                          <input
-                            type="radio"
-                            name={`location-type-${horse.id}`}
-                            value="racecourse"
-                            checked={location.locationType === 'racecourse'}
-                            onChange={(e) => {
-                              if (e.target.checked && !isSubmitting) {
-                                updateLocationType(horse.id, 'racecourse')
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                            disabled={isSubmitting}
-                          />
-                          <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
-                        </label>
+                            <input
+                              type="radio"
+                              name={`location-type-${horse.id}`}
+                              value="racecourse"
+                              checked={location.locationType === 'racecourse'}
+                              onChange={(e) => {
+                                if (e.target.checked && !isSubmitting) {
+                                  updateLocationType(horse.id, 'racecourse')
+                                }
+                              }}
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
+                          </label>
                         <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
-                          <input
-                            type="radio"
-                            name={`location-type-${horse.id}`}
-                            value="farm"
-                            checked={location.locationType === 'farm'}
-                            onChange={(e) => {
-                              if (e.target.checked && !isSubmitting) {
-                                updateLocationType(horse.id, 'farm')
-                              }
-                            }}
-                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                            disabled={isSubmitting}
-                          />
-                          <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
-                        </label>
+                            <input
+                              type="radio"
+                              name={`location-type-${horse.id}`}
+                              value="farm"
+                              checked={location.locationType === 'farm'}
+                              onChange={(e) => {
+                                if (e.target.checked && !isSubmitting) {
+                                  updateLocationType(horse.id, 'farm')
+                                }
+                              }}
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              disabled={isSubmitting}
+                            />
+                            <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
+                          </label>
                       </div>
                     </div>
                   )
