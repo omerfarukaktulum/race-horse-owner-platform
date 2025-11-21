@@ -98,7 +98,7 @@ export default function OwnerLookupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 px-3 pt-8 pb-10 w-full overflow-x-hidden flex justify-center flex-nowrap">
-      <Card className="w-full max-w-[360px] sm:max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden mx-auto">
+      <Card className="w-full max-w-[360px] sm:max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap mx-auto self-start">
         <CardHeader className="text-center space-y-4 flex-shrink-0 flex-nowrap">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
@@ -114,7 +114,7 @@ export default function OwnerLookupPage() {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 w-full overflow-x-hidden">
+        <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 w-full overflow-x-hidden flex-shrink-0">
           {/* Fixed input section */}
           <div className="space-y-2 flex-shrink-0 w-full">
             <Label htmlFor="search" className="text-gray-700 font-medium">

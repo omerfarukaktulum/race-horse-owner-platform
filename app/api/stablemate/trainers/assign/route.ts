@@ -80,40 +80,63 @@ export async function POST(request: Request) {
       trainerEntries.map((entry) => [entry.id, entry])
     )
 
+    // Validate all assignments before making any updates
     for (const assignment of assignments) {
-      if (!assignment.trainerEntryId) {
-        await prisma.horse.update({
-          where: { id: assignment.horseId },
-          data: { trainerId: null },
-        })
-        continue
+      if (assignment.trainerEntryId) {
+        const entry = trainerMap.get(assignment.trainerEntryId)
+        if (!entry) {
+          return NextResponse.json(
+            { error: 'Geçersiz antrenör seçimi' },
+            { status: 400 }
+          )
+        }
+        if (!entry.trainerProfileId) {
+          return NextResponse.json(
+            { error: 'Bu antrenör henüz kayıt olmamış' },
+            { status: 400 }
+          )
+        }
       }
-
-      const entry = trainerMap.get(assignment.trainerEntryId)
-      if (!entry) {
-        return NextResponse.json(
-          { error: 'Geçersiz antrenör seçimi' },
-          { status: 400 }
-        )
-      }
-      if (!entry.trainerProfileId) {
-        return NextResponse.json(
-          { error: 'Bu antrenör henüz kayıt olmamış' },
-          { status: 400 }
-        )
-      }
-
-      await prisma.horse.update({
-        where: { id: assignment.horseId },
-        data: { trainerId: entry.trainerProfileId },
-      })
     }
 
+    // Use a transaction to ensure all updates succeed or all fail
+    await prisma.$transaction(
+      assignments.map((assignment) =>
+        prisma.horse.update({
+          where: { id: assignment.horseId },
+          data: {
+            trainerId: assignment.trainerEntryId
+              ? trainerMap.get(assignment.trainerEntryId)!.trainerProfileId
+              : null,
+          },
+        })
+      )
+    )
+
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Stablemate Trainer Assign][POST] error:', error)
+    
+    // Handle database connection errors
+    if (error?.code === 'P1001') {
+      return NextResponse.json(
+        { error: 'Veritabanı bağlantısı kurulamadı. Lütfen daha sonra tekrar deneyin.' },
+        { status: 503 }
+      )
+    }
+    
+    // Handle Prisma errors
+    if (error?.code?.startsWith('P')) {
+      return NextResponse.json(
+        { error: 'Veritabanı hatası oluştu. Lütfen daha sonra tekrar deneyin.' },
+        { status: 500 }
+      )
+    }
+    
+    // Handle validation or other errors
+    const errorMessage = error?.message || 'Antrenör ataması yapılırken bir hata oluştu'
     return NextResponse.json(
-      { error: 'Failed to assign trainers' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
