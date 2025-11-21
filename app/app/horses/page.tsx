@@ -1162,9 +1162,9 @@ export default function HorsesPage() {
           }
         }}
       >
-        <DialogContent className="max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
-          <Card className="border-0 shadow-none flex flex-col h-full max-h-[90vh]">
-            <CardHeader className="space-y-4 flex-shrink-0">
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
                 <Trash2 className="h-8 w-8 text-white" />
               </div>
@@ -1184,7 +1184,7 @@ export default function HorsesPage() {
                         ? `${getFilteredHorsesForRemove().length} / ${horses.length} at bulundu` 
                         : `${horses.length} at bulundu`}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       {!isRemoveModalSearchOpen ? (
                         <Button
                           type="button"
@@ -1234,7 +1234,7 @@ export default function HorsesPage() {
                 </>
               )}
             </CardHeader>
-            <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
                 {horses.length === 0 ? (
                 <div className="text-center py-12 flex-shrink-0">
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1252,12 +1252,12 @@ export default function HorsesPage() {
                 </div>
                 ) : (
                   <>
-                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                    <div className="overflow-y-auto space-y-2">
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                    <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1 w-full">
                       {getFilteredHorsesForRemove().map((horse) => (
                         <div
                           key={horse.id}
-                          className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                          className={`flex flex-nowrap items-center gap-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 cursor-pointer w-full ${
                             selectedHorsesToRemove.includes(horse.id)
                               ? 'border-[#6366f1] bg-indigo-50/50 hover:shadow-md'
                               : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
@@ -1298,9 +1298,14 @@ export default function HorsesPage() {
                                 </span>
                               )}
                               {(horse.sireName || horse.damName) && (
-                                <span className="truncate min-w-0">
-                                  <span className="font-medium">Orijin:</span> {horse.sireName || ''} {horse.sireName && horse.damName ? ' - ' : ''} {horse.damName || ''}
-                                </span>
+                                <div className="flex items-start gap-1 w-full text-ellipsis overflow-hidden">
+                                  <span className="font-medium flex-shrink-0">Orijin:</span>
+                                  <span className="truncate block max-w-full">
+                                    {horse.sireName || ''}
+                                    {horse.sireName && horse.damName ? ' - ' : ''}
+                                    {horse.damName || ''}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>

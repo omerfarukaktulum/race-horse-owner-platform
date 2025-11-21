@@ -383,10 +383,10 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+      <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
         {currentStep === 'select' ? (
-          <Card className="border-0 shadow-none flex flex-col h-full max-h-[90vh]">
-            <CardHeader className="space-y-4 flex-shrink-0">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
                 <Download className="h-8 w-8 text-white" />
               </div>
@@ -453,7 +453,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                 </>
               )}
             </CardHeader>
-            <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
               {isLoading ? (
                 <div className="text-center py-12 flex-shrink-0">
                   <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -480,12 +480,12 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                    <div className="overflow-y-auto space-y-2">
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                    <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1 w-full">
                       {horses.map((horse, index) => (
                         <div
                           key={horse.externalRef || horse.name || index}
-                          className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 ${
+                          className={`flex flex-nowrap items-center gap-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 w-full ${
                             horse.isImported
                               ? 'border-green-200 bg-green-50/50 cursor-not-allowed'
                               : horse.selected
@@ -559,8 +559,8 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-0 shadow-none flex flex-col h-full max-h-[90vh]">
-            <CardHeader className="space-y-4 flex-shrink-0">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
                 <MapPin className="h-8 w-8 text-white" />
               </div>
@@ -575,7 +575,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
               {importedHorses.length === 0 ? (
                 <div className="flex flex-col items-center justify-center flex-1">
                   <Check className="h-16 w-16 text-green-500 mb-4" />
@@ -583,12 +583,12 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 min-h-0 overflow-y-auto space-y-3">
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 pr-1 w-full">
                     {importedHorses.map((horse) => {
                       const selection = locationSelections[horse.id] || 'racecourse'
                       return (
-                        <div key={horse.id} className="flex items-center gap-3">
-                          <div className="flex items-center space-x-3 py-2 px-3 border-2 rounded-lg border-gray-200 bg-white flex-1">
+                        <div key={horse.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
+                          <div className="flex flex-nowrap items-center gap-3 py-2 px-3 border-2 rounded-lg border-gray-200 bg-white flex-1">
                             {ownerRef && (
                               <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
                                 <img
@@ -614,8 +614,8 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 py-3 px-4 border-2 rounded-lg border-gray-200 bg-white">
-                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 py-3 px-4 border-2 rounded-lg border-gray-200 bg-white flex-1 justify-start sm:justify-end">
+                            <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
                               <input
                                 type="radio"
                                 name={`location-type-${horse.id}`}
@@ -627,7 +627,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                               />
                               <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
                             </label>
-                            <label className="flex items-center space-x-1.5 cursor-pointer">
+                            <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
                               <input
                                 type="radio"
                                 name={`location-type-${horse.id}`}
