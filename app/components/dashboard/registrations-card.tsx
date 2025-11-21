@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Calendar, ChevronDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { formatDate } from '@/lib/utils/format'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface RegistrationItem {
   id: string
@@ -17,9 +18,14 @@ interface RegistrationItem {
   type: 'KAYIT' | 'DEKLARE'
   jockeyName?: string   // Jockey name for declarations
   tjkUrl?: string
+  stablemate?: {        // Eküri info (only for trainers)
+    id: string
+    name: string
+  }
 }
 
 export function RegistrationsCard() {
+  const { isTrainer } = useAuth()
   const [registrations, setRegistrations] = useState<RegistrationItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -248,6 +254,11 @@ export function RegistrationsCard() {
                 {registration.jockeyName && (
                   <div className="text-xs text-gray-600 mb-2">
                     👤 {formatJockeyName(registration.jockeyName)}
+                  </div>
+                )}
+                {isTrainer && registration.stablemate && (
+                  <div className="text-xs text-gray-500 mt-2">
+                    🏢 Eküri: {registration.stablemate.name}
                   </div>
                 )}
               </div>

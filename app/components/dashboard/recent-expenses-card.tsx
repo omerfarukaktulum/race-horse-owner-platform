@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { TurkishLira, ChevronDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface ExpenseData {
   id: string
@@ -19,6 +20,10 @@ interface ExpenseData {
   note?: string
   addedBy: string
   createdAt: string
+  stablemate?: {        // Eküri info (only for trainers)
+    id: string
+    name: string
+  }
 }
 
 interface NoteData {
@@ -30,6 +35,10 @@ interface NoteData {
   category?: string
   addedBy: string
   createdAt?: string
+  stablemate?: {        // Eküri info (only for trainers)
+    id: string
+    name: string
+  }
 }
 
 type FeedItem =
@@ -38,6 +47,7 @@ type FeedItem =
 
 export function RecentExpensesCard() {
   const router = useRouter()
+  const { isTrainer } = useAuth()
   const [expenses, setExpenses] = useState<ExpenseData[]>([])
   const [notes, setNotes] = useState<NoteData[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -115,6 +125,10 @@ export function RecentExpensesCard() {
             category: note.category,
             addedBy: formatAddedBy(note.addedBy),
             createdAt: note.createdAt,
+            stablemate: note.horse?.stablemate ? {
+              id: note.horse.stablemate.id,
+              name: note.horse.stablemate.name,
+            } : undefined,
           }))
         )
       } catch (err) {
@@ -328,6 +342,11 @@ export function RecentExpensesCard() {
                         <p className="text-xs text-red-600 font-medium">
                           💰 {parseFloat(item.expense.amount).toLocaleString('tr-TR')} TL
                         </p>
+                        {isTrainer && item.expense.stablemate && (
+                          <div className="text-xs text-gray-500 mt-2">
+                            🏢 Eküri: {item.expense.stablemate.name}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <>
@@ -340,6 +359,11 @@ export function RecentExpensesCard() {
                         <p className="text-[11px] text-gray-500">
                           👤 {item.note.addedBy}
                         </p>
+                        {isTrainer && item.note.stablemate && (
+                          <div className="text-xs text-gray-500 mt-2">
+                            🏢 Eküri: {item.note.stablemate.name}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

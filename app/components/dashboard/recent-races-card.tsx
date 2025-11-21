@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Trophy, ChevronDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface RaceData {
   raceId?: string
@@ -18,10 +19,15 @@ interface RaceData {
   raceType?: string     // Race type (Kcins)
   prizeMoney?: string   // Prize money (İkramiye)
   jockeyName?: string   // Jockey name
+  stablemate?: {        // Eküri info (only for trainers)
+    id: string
+    name: string
+  }
 }
 
 export function RecentRacesCard() {
   const router = useRouter()
+  const { isTrainer } = useAuth()
   const [races, setRaces] = useState<RaceData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -256,6 +262,11 @@ export function RecentRacesCard() {
                 {race.prizeMoney && parseFloat(race.prizeMoney) > 0 && (
                   <div className="text-xs text-green-600 font-medium">
                     💰 {parseFloat(race.prizeMoney).toLocaleString('tr-TR')} TL
+                  </div>
+                )}
+                {isTrainer && race.stablemate && (
+                  <div className="text-xs text-gray-500 mt-2">
+                    🏢 Eküri: {race.stablemate.name}
                   </div>
                 )}
               </div>

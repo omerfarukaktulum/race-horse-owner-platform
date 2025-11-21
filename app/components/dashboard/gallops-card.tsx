@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Activity, ChevronDown } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { formatGallopStatus } from '@/lib/utils/gallops'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface GallopData {
   id: string
@@ -17,10 +18,15 @@ interface GallopData {
   jockeyName?: string
   horseId: string
   horseName: string
+  stablemate?: {        // Eküri info (only for trainers)
+    id: string
+    name: string
+  }
 }
 
 export function GallopsCard() {
   const router = useRouter()
+  const { isTrainer } = useAuth()
   const [gallops, setGallops] = useState<GallopData[]>([])
   const [visitedGallops, setVisitedGallops] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -268,6 +274,11 @@ export function GallopsCard() {
                           </tr>
                         </tbody>
                       </table>
+                    </div>
+                  )}
+                  {isTrainer && gallop.stablemate && (
+                    <div className="text-xs text-gray-500 mt-2">
+                      🏢 Eküri: {gallop.stablemate.name}
                     </div>
                   )}
                 </div>
