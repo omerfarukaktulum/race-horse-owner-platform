@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { Input } from '@/app/components/ui/input'
-import { Plus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, UserPlus } from 'lucide-react'
+import { Plus, Minus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, UserPlus } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
@@ -761,14 +761,16 @@ export default function HorsesPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
+                aria-label="Filtrele"
                 className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
                   hasActiveFilters
                     ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
                 }`}
               >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrele
+                <Filter className="h-4 w-4 md:mr-2" />
+                <span className="sr-only md:hidden">Filtrele</span>
+                <span className="hidden md:inline">Filtrele</span>
                 {hasActiveFilters && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
                     {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
@@ -922,14 +924,16 @@ export default function HorsesPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
+                aria-label="Sırala"
                 className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
                   sortBy
                     ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
                 }`}
               >
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                Sırala
+                <ArrowUpDown className="h-4 w-4 md:mr-2" />
+                <span className="sr-only md:hidden">Sırala</span>
+                <span className="hidden md:inline">Sırala</span>
               </Button>
           
               {/* Sort Dropdown */}
@@ -1040,10 +1044,12 @@ export default function HorsesPage() {
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setAddHorseModalOpen(true)}
+            aria-label={TR.horses.addHorse}
             className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            {TR.horses.addHorse}
+            <Plus className="h-4 w-4 md:mr-2" />
+            <span className="sr-only md:hidden">{TR.horses.addHorse}</span>
+            <span className="hidden md:inline">{TR.horses.addHorse}</span>
           </Button>
           <Button
             type="button"
@@ -1058,9 +1064,12 @@ export default function HorsesPage() {
               setIsRemoveModalSearchOpen(false)
               setRemoveHorseDialogOpen(true)
             }}
+            aria-label={TR.horses.removeHorse}
             className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {TR.horses.removeHorse}
+            <Minus className="h-4 w-4 md:mr-2" />
+            <span className="sr-only md:hidden">{TR.horses.removeHorse}</span>
+            <span className="hidden md:inline">{TR.horses.removeHorse}</span>
           </Button>
         </div>
       </div>
