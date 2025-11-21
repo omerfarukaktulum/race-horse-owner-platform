@@ -601,7 +601,7 @@ export default function HorsesPage() {
     const locationLabel = (() => {
       if (!horse.currentLocationType) return null
       if (horse.currentLocationType === 'racecourse') {
-        return { text: 'Hipodrom', color: 'bg-sky-100 text-sky-700 border-sky-200' }
+        return { text: 'Saha', color: 'bg-sky-100 text-sky-700 border-sky-200' }
       }
       if (horse.currentLocationType === 'farm') {
         return { text: 'Çiftlik', color: 'bg-sky-100 text-sky-700 border-sky-200' }
@@ -623,7 +623,7 @@ export default function HorsesPage() {
             {/* Origin Information - Separate Line */}
             {(horse.sireName || horse.damName) && (
               <div className="mb-3">
-                <p className="text-[10px] sm:text-xs text-gray-600 line-clamp-1">
+                <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
                   {horse.sireName && horse.damName 
                     ? `${horse.sireName} - ${horse.damName}`
                     : horse.sireName || horse.damName}
@@ -703,7 +703,8 @@ export default function HorsesPage() {
               }}
             >
               <FileText className="h-3 w-3 mr-1" />
-              Not Ekle
+              <span className="hidden sm:inline">Not Ekle</span>
+              <span className="sm:hidden">Not</span>
             </Button>
             <Button 
               size="sm"
@@ -716,7 +717,8 @@ export default function HorsesPage() {
               }}
             >
               <TurkishLira className="h-3 w-3 mr-1" />
-              Gider Ekle
+              <span className="hidden sm:inline">Gider Ekle</span>
+              <span className="sm:hidden">Gider</span>
             </Button>
             <Button 
               size="sm"
@@ -729,7 +731,8 @@ export default function HorsesPage() {
               }}
             >
               <MapPin className="h-3 w-3 mr-1" />
-              Konum Değiştir
+              <span className="hidden sm:inline">Konum Değiştir</span>
+              <span className="sm:hidden">Konum</span>
             </Button>
           </div>
       </Card>
