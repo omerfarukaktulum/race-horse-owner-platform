@@ -188,7 +188,7 @@ export default function SetLocationsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-nowrap items-start justify-center px-3 pt-8 pb-10 w-full overflow-x-hidden">
-      <Card className="w-full max-w-full sm:max-w-4xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-[360px] sm:max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden mx-auto">
         <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
             <MapPin className="h-8 w-8 text-white" />
@@ -271,8 +271,8 @@ export default function SetLocationsPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3 justify-start sm:justify-end w-full">
-                        <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
+                      <div className="flex flex-1 items-center gap-3 justify-end w-full flex-shrink-0">
+                        <label className="flex items-center space-x-1.5 cursor-pointer whitespace-nowrap">
                             <input
                               type="radio"
                               name={`location-type-${horse.id}`}
@@ -283,12 +283,12 @@ export default function SetLocationsPage() {
                                   updateLocationType(horse.id, 'racecourse')
                                 }
                               }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer flex-shrink-0"
                               disabled={isSubmitting}
                             />
                             <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
                           </label>
-                        <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
+                        <label className="flex items-center space-x-1.5 cursor-pointer whitespace-nowrap">
                             <input
                               type="radio"
                               name={`location-type-${horse.id}`}
@@ -299,7 +299,7 @@ export default function SetLocationsPage() {
                                   updateLocationType(horse.id, 'farm')
                                 }
                               }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer flex-shrink-0"
                               disabled={isSubmitting}
                             />
                             <span className="text-gray-700 text-sm font-medium">Çiftlik</span>

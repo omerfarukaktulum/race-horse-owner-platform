@@ -79,6 +79,7 @@ export default function NotesPage() {
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [categoryFilters, setCategoryFilters] = useState<NoteCategory[]>([])
   const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
+  const [availableStablemates, setAvailableStablemates] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -134,6 +135,11 @@ export default function NotesPage() {
       }
 
       setNotes(data.notes || [])
+      
+      // Store available stablemates for trainers (from API)
+      if (user?.role === 'TRAINER' && data.stablemates) {
+        setAvailableStablemates(data.stablemates)
+      }
     } catch (error) {
       console.error('Fetch notes error:', error)
       toast.error('Notlar yüklenirken bir hata oluştu')
@@ -275,17 +281,12 @@ export default function NotesPage() {
     return NOTE_CATEGORIES.filter((category) => available.has(category))
   }, [sortedNotes])
 
-  // Get unique stablemates (for trainers)
+  // Get unique stablemates (for trainers) - use API-provided list
   const getUniqueStablemates = useMemo(() => {
     if (user?.role !== 'TRAINER') return []
-    const stablemateSet = new Set<string>()
-    sortedNotes.forEach((note) => {
-      if (note.horse?.stablemate?.name) {
-        stablemateSet.add(note.horse.stablemate.name)
-      }
-    })
-    return Array.from(stablemateSet).sort()
-  }, [sortedNotes, user?.role])
+    // Use stablemates from API (all accessible stablemates) instead of just visible notes
+    return availableStablemates
+  }, [availableStablemates, user?.role])
 
   useEffect(() => {
     if (highlightedNoteId && highlightedRowRef.current) {

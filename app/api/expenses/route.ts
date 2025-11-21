@@ -187,6 +187,11 @@ export async function GET(request: Request) {
     const category = searchParams.get('category')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
+    const limitParam = searchParams.get('limit')
+    // For trainers, use a higher limit or no limit since they need to see expenses from all stablemates
+    // For owners, use the default limit
+    const defaultLimit = decoded.role === 'TRAINER' ? 10000 : 1000
+    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 0, 1), defaultLimit) : defaultLimit
 
     // Build filter
     const where: any = {}
@@ -238,9 +243,20 @@ export async function GET(request: Request) {
       }
       
       if (trainerId) {
-        where.horse = {
-          trainerId: trainerId,
-        }
+        // Trainers should see expenses for:
+        // 1. Horses assigned to them (horse.trainerId = trainerId)
+        // 2. Expenses they added themselves (addedById = userId)
+        // Prisma will AND the OR condition with other top-level filters
+        where.OR = [
+          {
+            horse: {
+              trainerId: trainerId,
+            },
+          },
+          {
+            addedById: decoded.id,
+          },
+        ]
       }
     }
 
@@ -284,9 +300,69 @@ export async function GET(request: Request) {
       orderBy: {
         createdAt: 'desc',
       },
+      ...(decoded.role === 'TRAINER' ? {} : { take: limit }), // No limit for trainers, they need all expenses
     })
 
-    return NextResponse.json({ expenses })
+    // For trainers, also fetch distinct stablemates they have access to
+    let stablemates: string[] = []
+    if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      if (trainerId) {
+        // Get distinct stablemates from:
+        // 1. Horses assigned to trainer
+        const assignedHorses = await prisma.horse.findMany({
+          where: { trainerId },
+          select: {
+            stablemate: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+        
+        // 2. Expenses added by trainer
+        const trainerExpenses = await prisma.expense.findMany({
+          where: { addedById: decoded.id },
+          select: {
+            horse: {
+              select: {
+                stablemate: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+        
+        // Combine and get unique stablemate names
+        const stablemateSet = new Set<string>()
+        assignedHorses.forEach((horse) => {
+          if (horse.stablemate?.name) {
+            stablemateSet.add(horse.stablemate.name)
+          }
+        })
+        trainerExpenses.forEach((expense) => {
+          if (expense.horse?.stablemate?.name) {
+            stablemateSet.add(expense.horse.stablemate.name)
+          }
+        })
+        
+        stablemates = Array.from(stablemateSet).sort()
+      }
+    }
+
+    return NextResponse.json({ expenses, stablemates })
   } catch (error) {
     console.error('Fetch expenses error:', error)
     return NextResponse.json(

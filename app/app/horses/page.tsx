@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
@@ -51,6 +51,8 @@ interface HorseData {
 
 export default function HorsesPage() {
   const { user } = useAuth()
+  // Memoize user role to prevent unnecessary re-renders
+  const userRole = useMemo(() => user?.role, [user?.role])
   const [horses, setHorses] = useState<HorseData[]>([])
   const [allHorses, setAllHorses] = useState<HorseData[]>([]) // Store all horses for filtering
   const [isLoading, setIsLoading] = useState(true)
@@ -139,7 +141,7 @@ export default function HorsesPage() {
       console.log('[Horses Page] Setting', data.horses?.length || 0, 'horses')
       const fetchedHorses = data.horses || []
       setAllHorses(fetchedHorses)
-      setHorses(fetchedHorses)
+      // Don't set horses here - let the filtering effect handle it to prevent double updates
     } catch (error) {
       console.error('Fetch horses error:', error)
       toast.error('Atlar yüklenirken bir hata oluştu')
@@ -304,7 +306,7 @@ export default function HorsesPage() {
     }
     
     // Apply stablemate filter (for trainers)
-    if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
+    if (stablemateFilters.length > 0 && userRole === 'TRAINER') {
       filtered = filtered.filter((horse) => {
         const stablemateName = horse.stablemate?.name
         return stablemateName && stablemateFilters.includes(stablemateName)
@@ -363,6 +365,15 @@ export default function HorsesPage() {
 
   // Filter horses when activeTab or other filters change
   useEffect(() => {
+    // Don't run if allHorses is empty (still loading)
+    if (allHorses.length === 0 && !isLoading) {
+      setHorses([])
+      return
+    }
+    if (allHorses.length === 0) {
+      return
+    }
+    
     const filtered = filterHorses()
     // Apply search query if exists
     if (searchQuery.trim()) {
@@ -386,7 +397,7 @@ export default function HorsesPage() {
     } else {
       setHorses(filtered)
     }
-  }, [categoryFilters, ageFilters, genderFilters, locationFilters, stablemateFilters, sortBy, allHorses, searchQuery, user?.role])
+  }, [categoryFilters, ageFilters, genderFilters, locationFilters, stablemateFilters, sortBy, allHorses, searchQuery, userRole, isLoading])
   
   // Get unique genders from user's horses
   const getUniqueGenders = () => {
@@ -454,7 +465,7 @@ export default function HorsesPage() {
 
   // Get unique stablemates (for trainers)
   const getUniqueStablemates = () => {
-    if (user?.role !== 'TRAINER') return []
+    if (userRole !== 'TRAINER') return []
     const stablemateSet = new Set<string>()
     allHorses.forEach((horse) => {
       if (horse.stablemate?.name) {
@@ -675,9 +686,9 @@ export default function HorsesPage() {
             </div>
             
             {/* Trainer/Owner Name - Separate Line */}
-            {(user?.role === 'TRAINER' && horse.stablemate?.owner?.officialName) || (user?.role !== 'TRAINER' && horse.trainer) ? (
+            {(userRole === 'TRAINER' && horse.stablemate?.owner?.officialName) || (userRole !== 'TRAINER' && horse.trainer) ? (
               <div className="mb-3">
-                {user?.role === 'TRAINER' && horse.stablemate?.owner?.officialName ? (
+                {userRole === 'TRAINER' && horse.stablemate?.owner?.officialName ? (
                   <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
                     👤 At Sahibi: {horse.stablemate.owner.officialName}
                   </span>
@@ -889,7 +900,7 @@ export default function HorsesPage() {
                 )}
 
                 {/* Stablemate Filter (for trainers) */}
-                {user?.role === 'TRAINER' && getUniqueStablemates().length > 0 && (
+                {userRole === 'TRAINER' && getUniqueStablemates().length > 0 && (
                   <div className="mb-4">
                     <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
                     <div className="flex flex-wrap gap-2">
@@ -1045,14 +1056,13 @@ export default function HorsesPage() {
           </div>
       </div>
         
-        {user?.role !== 'TRAINER' && (
+        {userRole !== 'TRAINER' && (
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setAddHorseModalOpen(true)}
               aria-label={TR.horses.addHorse}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
           >
-              <Plus className="h-4 w-4 md:mr-2" />
               <span className="sr-only md:hidden">{TR.horses.addHorse}</span>
               <span className="hidden md:inline">{TR.horses.addHorse}</span>
           </Button>
@@ -1072,7 +1082,6 @@ export default function HorsesPage() {
               aria-label={TR.horses.removeHorse}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed h-9 md:h-10"
           >
-              <Minus className="h-4 w-4 md:mr-2" />
               <span className="sr-only md:hidden">{TR.horses.removeHorse}</span>
               <span className="hidden md:inline">{TR.horses.removeHorse}</span>
           </Button>

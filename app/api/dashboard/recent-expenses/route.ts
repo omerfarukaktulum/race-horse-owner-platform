@@ -91,6 +91,20 @@ export async function GET(request: Request) {
       },
       take: limit,
       include: {
+        horse: {
+          select: {
+            id: true,
+            name: true,
+            ...(decoded.role === 'TRAINER' ? {
+              stablemate: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            } : {}),
+          },
+        },
         addedBy: {
           select: {
             email: true,
@@ -103,7 +117,13 @@ export async function GET(request: Request) {
     const expensesWithHorses = recentExpenses.map((expense) => ({
       id: expense.id,
       horseId: expense.horseId,
-      horseName: horseMap.get(expense.horseId) || 'Unknown',
+      horseName: expense.horse?.name || horseMap.get(expense.horseId) || 'Unknown',
+      ...(decoded.role === 'TRAINER' && expense.horse?.stablemate ? {
+        stablemate: {
+          id: expense.horse.stablemate.id,
+          name: expense.horse.stablemate.name,
+        },
+      } : {}),
       date: expense.date.toISOString(),
       category: expense.category,
       customName: expense.customName,

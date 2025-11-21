@@ -79,6 +79,7 @@ export default function ExpensesPage() {
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
+  const [availableStablemates, setAvailableStablemates] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -121,6 +122,11 @@ export default function ExpensesPage() {
         currency: exp.currency || 'TRY',
       }))
       setExpenses(transformedExpenses)
+      
+      // Store available stablemates for trainers (from API)
+      if (user?.role === 'TRAINER' && data.stablemates) {
+        setAvailableStablemates(data.stablemates)
+      }
     } catch (error) {
       console.error('Fetch expenses error:', error)
       toast.error('Giderler yüklenirken bir hata oluştu')
@@ -392,17 +398,12 @@ export default function ExpensesPage() {
     }))
   }, [sortedExpenses])
 
-  // Get unique stablemates (for trainers)
+  // Get unique stablemates (for trainers) - use API-provided list
   const getUniqueStablemates = useMemo(() => {
     if (user?.role !== 'TRAINER') return []
-    const stablemateSet = new Set<string>()
-    sortedExpenses.forEach((expense) => {
-      if (expense.horse?.stablemate?.name) {
-        stablemateSet.add(expense.horse.stablemate.name)
-      }
-    })
-    return Array.from(stablemateSet).sort()
-  }, [sortedExpenses, user?.role])
+    // Use stablemates from API (all accessible stablemates) instead of just visible expenses
+    return availableStablemates
+  }, [availableStablemates, user?.role])
 
   // Toggle functions
   const toggleCategoryFilter = (category: string) => {

@@ -35,20 +35,8 @@ export async function GET(request: Request) {
 
     if (decoded.role === 'OWNER') {
       // Get owner profile and stablemate
-      let ownerId = decoded.ownerId
-      if (!ownerId) {
-        const ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { userId: decoded.id },
-        })
-        ownerId = ownerProfile?.id
-      }
-
-      if (!ownerId) {
-        return NextResponse.json({ error: 'Owner profile not found' }, { status: 404 })
-      }
-
       const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: { id: ownerId },
+        where: decoded.ownerId ? { id: decoded.ownerId } : { userId: decoded.id },
         select: {
           stablemate: {
             select: {

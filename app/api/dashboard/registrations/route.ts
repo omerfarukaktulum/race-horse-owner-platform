@@ -123,6 +123,14 @@ export async function GET(request: Request) {
           select: {
             name: true,
             externalRef: true,
+            ...(decoded.role === 'TRAINER' ? {
+              stablemate: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            } : {}),
           },
         },
       },
@@ -150,6 +158,12 @@ export async function GET(request: Request) {
       return {
         id: `reg-${index}`,
         horseName: reg.horse.name,
+        ...(decoded.role === 'TRAINER' && reg.horse.stablemate ? {
+          stablemate: {
+            id: reg.horse.stablemate.id,
+            name: reg.horse.stablemate.name,
+          },
+        } : {}),
         raceDate: formattedDate,
         city: reg.city || undefined,
         distance: reg.distance || undefined,

@@ -110,6 +110,14 @@ export async function GET(request: Request) {
         horse: {
           select: {
             name: true,
+            ...(decoded.role === 'TRAINER' ? {
+              stablemate: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            } : {}),
           },
         },
       },
@@ -131,6 +139,12 @@ export async function GET(request: Request) {
         id: gallop.id,
         horseId: gallop.horseId,
         horseName: gallop.horse.name,
+        ...(decoded.role === 'TRAINER' && gallop.horse.stablemate ? {
+          stablemate: {
+            id: gallop.horse.stablemate.id,
+            name: gallop.horse.stablemate.name,
+          },
+        } : {}),
         date: formattedDate,
         distances: gallop.distances || {},
         status: gallop.status || undefined,

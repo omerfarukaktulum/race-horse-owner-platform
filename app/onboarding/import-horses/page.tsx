@@ -377,7 +377,7 @@ export default function ImportHorsesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-nowrap items-start justify-center px-3 pt-8 pb-10 w-full overflow-x-hidden">
-      <Card className="w-full max-w-full sm:max-w-2xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden">
+      <Card className="w-full max-w-[360px] sm:max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden mx-auto">
         <CardHeader className="space-y-4 flex-shrink-0">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
             <Download className="h-8 w-8 text-white" />

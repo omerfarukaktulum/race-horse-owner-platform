@@ -73,9 +73,20 @@ export async function GET(request: Request) {
       }
       
       if (trainerId) {
-        where.horse = {
-          trainerId: trainerId,
-        }
+        // Trainers should see notes for:
+        // 1. Horses assigned to them (horse.trainerId = trainerId)
+        // 2. Notes they added themselves (addedById = userId)
+        // Prisma will AND the OR condition with other top-level filters
+        where.OR = [
+          {
+            horse: {
+              trainerId: trainerId,
+            },
+          },
+          {
+            addedById: decoded.id,
+          },
+        ]
       }
     }
 
@@ -127,7 +138,66 @@ export async function GET(request: Request) {
       ...(limit ? { take: limit } : {}),
     })
 
-    return NextResponse.json({ notes })
+    // For trainers, also fetch distinct stablemates they have access to
+    let stablemates: string[] = []
+    if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      if (trainerId) {
+        // Get distinct stablemates from:
+        // 1. Horses assigned to trainer
+        const assignedHorses = await prisma.horse.findMany({
+          where: { trainerId },
+          select: {
+            stablemate: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+        
+        // 2. Notes added by trainer
+        const trainerNotes = await prisma.horseNote.findMany({
+          where: { addedById: decoded.id },
+          select: {
+            horse: {
+              select: {
+                stablemate: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+        
+        // Combine and get unique stablemate names
+        const stablemateSet = new Set<string>()
+        assignedHorses.forEach((horse) => {
+          if (horse.stablemate?.name) {
+            stablemateSet.add(horse.stablemate.name)
+          }
+        })
+        trainerNotes.forEach((note) => {
+          if (note.horse?.stablemate?.name) {
+            stablemateSet.add(note.horse.stablemate.name)
+          }
+        })
+        
+        stablemates = Array.from(stablemateSet).sort()
+      }
+    }
+
+    return NextResponse.json({ notes, stablemates })
   } catch (error) {
     console.error('Fetch notes error:', error)
     return NextResponse.json(
