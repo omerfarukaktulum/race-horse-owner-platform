@@ -5,7 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, ChevronDown, UserPlus, User, FileText, ChessKnight } from 'lucide-react'
+import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, UserPlus, User, FileText, ChessKnight } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect } from 'react'
@@ -14,7 +14,6 @@ function AppNavbar() {
   const { user, signOut, isOwner, isTrainer } = useAuth()
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
@@ -157,41 +156,18 @@ function AppNavbar() {
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {isOwner && (
-              <div className="relative">
+              <Link href="/app/stablemate">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
-                  onClick={() => setAccountMenuOpen(!accountMenuOpen)}
-                  onBlur={() => setTimeout(() => setAccountMenuOpen(false), 200)}
+                  className={`text-gray-600 hover:text-gray-900 flex items-center gap-1 ${
+                    pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : ''
+                  }`}
                 >
-                  <User className="h-4 w-4" />
-                  <span>Hesap</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${accountMenuOpen ? 'rotate-180' : ''}`} />
+                  <Settings className="h-4 w-4" />
+                  {TR.nav.stablemate}
                 </Button>
-                {accountMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                    <Link href="/app/stablemate">
-                      <button
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
-                        onClick={() => setAccountMenuOpen(false)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        {TR.nav.stablemate}
-                      </button>
-                    </Link>
-                    <Link href="/app/billing">
-                      <button
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
-                        onClick={() => setAccountMenuOpen(false)}
-                      >
-                        <TurkishLira className="h-4 w-4" />
-                        {TR.nav.billing}
-                      </button>
-                    </Link>
-                  </div>
-                )}
-              </div>
+              </Link>
             )}
             {isTrainer && (
               <Link href="/app/trainer/account">
@@ -259,16 +235,6 @@ function AppNavbar() {
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       {TR.nav.stablemate}
-                    </Button>
-                  </Link>
-                  <Link href="/app/billing">
-                    <Button
-                      variant={pathname?.startsWith('/app/billing') ? 'secondary' : 'ghost'}
-                      className="w-full justify-start"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <TurkishLira className="h-4 w-4 mr-2" />
-                      {TR.nav.billing}
                     </Button>
                   </Link>
                 </div>
