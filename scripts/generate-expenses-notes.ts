@@ -17,7 +17,7 @@ const EXPENSE_CATEGORIES = [
 ] as const
 
 // Note categories
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim'] as const
+const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi'] as const
 
 // Generate random date within last 12 months
 function getRandomDateInLast12Months(): Date {
@@ -146,6 +146,12 @@ const noteTemplates: Record<string, string[]> = {
     'Performans gelişimi kaydedildi. Yarışa hazırlık sürüyor.',
     'Kas gelişimi iyi. Atın formu yükseliyor.',
     'Genel gelişim pozitif. Yarış performansı artıyor.',
+  ],
+  'Kilo Takibi': [
+    'Günlük kilo ölçümü yapıldı. Normal seviyede.',
+    'Haftalık kilo takibi tamamlandı. İdeal ağırlıkta.',
+    'Kilo kontrolü yapıldı. Diyet programı uygulanıyor.',
+    'Aylık kilo değerlendirmesi yapıldı. Sağlıklı seviyede.',
   ],
 }
 

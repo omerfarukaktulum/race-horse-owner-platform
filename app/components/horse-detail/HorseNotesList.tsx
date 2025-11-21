@@ -11,8 +11,8 @@ import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
+const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi']
 
 interface HorseNote {
   id: string

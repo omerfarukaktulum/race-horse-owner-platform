@@ -11,8 +11,8 @@ import { useAuth } from '@/lib/context/auth-context'
 
 type NoteModalMode = 'create' | 'edit'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim']
+type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
+const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi']
 
 interface InitialNoteValues {
   date: string
