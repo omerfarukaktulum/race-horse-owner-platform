@@ -189,6 +189,9 @@ export default function StablematePage() {
   })
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [isAssignAllDialogOpen, setIsAssignAllDialogOpen] = useState(false)
+  const [newlyAddedTrainerEntryId, setNewlyAddedTrainerEntryId] = useState<string | null>(null)
+  const [isAssigningToAll, setIsAssigningToAll] = useState(false)
 
   useEffect(() => {
     fetchStablemate()
@@ -337,11 +340,48 @@ export default function StablematePage() {
       toast.success('Antrenör eklendi')
       setIsTrainerModalOpen(false)
       await fetchStablemate()
+      
+      // Show confirmation dialog to assign trainer to all horses
+      if (data.trainer?.id) {
+        setNewlyAddedTrainerEntryId(data.trainer.id)
+        setIsAssignAllDialogOpen(true)
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Antrenör eklenemedi'
       toast.error(message)
     } finally {
       setIsSavingTrainer(false)
+    }
+  }
+
+  const handleAssignTrainerToAll = async () => {
+    if (!newlyAddedTrainerEntryId) return
+
+    setIsAssigningToAll(true)
+    try {
+      const response = await fetch('/api/stablemate/trainers/assign-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trainerEntryId: newlyAddedTrainerEntryId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Antrenör ataması yapılamadı')
+      }
+
+      toast.success(`${data.assignedCount} ata antrenör atandı`)
+      setIsAssignAllDialogOpen(false)
+      setNewlyAddedTrainerEntryId(null)
+      await fetchStablemate()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Antrenör ataması yapılamadı'
+      toast.error(message)
+    } finally {
+      setIsAssigningToAll(false)
     }
   }
 
@@ -1033,7 +1073,7 @@ export default function StablematePage() {
                     id="trainerSearch"
                     type="text"
                     inputMode="search"
-                    placeholder="Antrenör adını yazın (en az 2 karakter)"
+                    placeholder="Antrenör adını yazın..."
                     value={trainerSearchTerm}
                     onChange={(e) => setTrainerSearchTerm(e.target.value)}
                     className="pl-10 h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] w-full"
@@ -1425,6 +1465,46 @@ export default function StablematePage() {
               {removingTrainerId !== null ? TR.common.loading : 'Kaldır'}
             </Button>
                   </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Trainer to All Horses Dialog */}
+      <Dialog
+        open={isAssignAllDialogOpen}
+        onOpenChange={(value) => {
+          setIsAssignAllDialogOpen(value)
+          if (!value) {
+            setNewlyAddedTrainerEntryId(null)
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white/95 backdrop-blur border border-indigo-100 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-gray-900">Tüm Atlara Atama</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Bu antrenörü ekürinizdeki tüm atlara atamak istiyor musunuz?
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAssignAllDialogOpen(false)
+                setNewlyAddedTrainerEntryId(null)
+              }}
+              className="border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+              disabled={isAssigningToAll}
+            >
+              Hayır
+            </Button>
+            <Button
+              onClick={handleAssignTrainerToAll}
+              disabled={isAssigningToAll}
+              className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md hover:from-indigo-600 hover:to-indigo-700"
+            >
+              {isAssigningToAll ? TR.common.loading : 'Evet, Tümüne Ata'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
         </>
