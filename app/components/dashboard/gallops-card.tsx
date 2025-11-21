@@ -233,14 +233,14 @@ export function GallopsCard() {
                       {gallop.jockeyName && `👤 ${formatJockeyName(gallop.jockeyName)}`}
                       {gallop.jockeyName && gallop.surface && ` • `}
                       {gallop.surface && (() => {
-                        // Extract only the surface type (Kum, Çim, Sentetik) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", etc.
+                        // Extract only the surface type (Kum, Çim, Sen) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", "S:Normal", etc.
                         const surface = gallop.surface
                         if (surface.startsWith('K:') || surface.toLowerCase().includes('kum')) {
                           return 'Kum'
                         } else if (surface.startsWith('Ç:') || surface.toLowerCase().includes('çim')) {
                           return 'Çim'
-                        } else if (surface.toLowerCase().includes('sentetik')) {
-                          return 'Sentetik'
+                        } else if (surface.startsWith('S:') || surface.toLowerCase().includes('sentetik')) {
+                          return 'Sen'
                         }
                         return surface.split(':')[0].split(' ')[0]
                       })()}

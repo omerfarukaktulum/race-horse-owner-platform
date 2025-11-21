@@ -238,14 +238,14 @@ export function RegistrationsCard() {
                   {registration.distance && `${registration.distance}`}
                   {registration.distance && registration.surface && ` • `}
                   {registration.surface && (() => {
-                    // Extract only the surface type (Kum, Çim, Sentetik) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", etc.
+                    // Extract only the surface type (Kum, Çim, Sen) from formats like "K:Normal", "Ç:Çok Yumuşak 3.9", "S:Normal", etc.
                     const surface = registration.surface
                     if (surface.startsWith('K:') || surface.toLowerCase().includes('kum')) {
                       return 'Kum'
                     } else if (surface.startsWith('Ç:') || surface.toLowerCase().includes('çim')) {
                       return 'Çim'
-                    } else if (surface.toLowerCase().includes('sentetik')) {
-                      return 'Sentetik'
+                    } else if (surface.startsWith('S:') || surface.toLowerCase().includes('sentetik')) {
+                      return 'Sen'
                     }
                     // If it's just the type without prefix, return as is
                     return surface.split(':')[0].split(' ')[0]
