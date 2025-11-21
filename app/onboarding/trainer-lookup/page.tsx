@@ -93,9 +93,9 @@ export default function TrainerLookupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-start justify-center p-4 pt-8">
-      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
-        <CardHeader className="text-center space-y-4 flex-shrink-0">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 px-3 pt-8 pb-10 w-full overflow-x-hidden flex justify-center flex-nowrap">
+      <Card className="w-full max-w-[360px] sm:max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden mx-auto">
+        <CardHeader className="text-center space-y-4 flex-shrink-0 flex-nowrap">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
               <User className="h-8 w-8 text-white" />
@@ -110,9 +110,9 @@ export default function TrainerLookupPage() {
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col p-6">
+        <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 w-full overflow-x-hidden">
           {/* Fixed input section */}
-          <div className="space-y-2 flex-shrink-0 mb-4">
+          <div className="space-y-2 flex-shrink-0 w-full">
             <Label htmlFor="search" className="text-gray-700 font-medium">
               Antrenör Ara
             </Label>
@@ -125,7 +125,7 @@ export default function TrainerLookupPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-11 border-gray-300 focus:border-emerald-500 focus:ring-emerald-500"
-                disabled={isSearching}
+                inputMode="search"
               />
             </div>
             {isSearching && (
@@ -138,27 +138,27 @@ export default function TrainerLookupPage() {
 
           {/* Dynamic results section - grows with content, scrollable if too many */}
           {results.length > 0 && (
-            <div className="flex flex-col space-y-3 mb-4 flex-shrink-0">
+            <div className="flex flex-col flex-nowrap space-y-3 flex-shrink-0 w-full">
               <Label className="text-gray-700 font-medium">Antrenör Seç</Label>
-              <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2">
+              <div className="max-h-[400px] overflow-y-auto overflow-x-hidden pr-1 space-y-2 w-full">
                 {results.map((result, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedTrainer(result)}
-                    className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-emerald-50/60 via-emerald-50/40 to-white shadow-lg ${
+                    className={`w-full min-w-0 p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-emerald-50/60 via-emerald-50/40 to-white shadow-lg ${
                       selectedTrainer?.id === result.id
                         ? 'border-emerald-500 shadow-xl from-emerald-50/80 via-emerald-50/60 to-white'
                         : 'border-emerald-100/50 hover:border-emerald-200 hover:shadow-xl'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center justify-between gap-3 flex-nowrap">
+                      <div className="flex items-center gap-3 flex-1 min-w-0 flex-nowrap">
                         <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
                           <UserCircle className="w-8 h-8 text-emerald-500" />
                         </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{result.name}</p>
-                          <p className="text-xs text-gray-600 mt-1">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 break-words">{result.name}</p>
+                          <p className="text-xs text-gray-600 mt-1 truncate">
                             TJK ID: {result.id}
                           </p>
                         </div>
