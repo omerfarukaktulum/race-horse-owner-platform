@@ -34,6 +34,14 @@ export function HorseMetadataCard({ horse }: Props) {
   const currentYear = new Date().getFullYear()
   const age = horse.yob ? currentYear - horse.yob : null
   
+  // Convert trainer name to camel case
+  const formatTrainerName = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ')
+  }
+  
   // Calculate days since last race
   let daysSinceRace = null
   if (horse.lastRaceDate) {
@@ -82,7 +90,7 @@ export function HorseMetadataCard({ horse }: Props) {
               </p>
             )}
             
-            {/* Age, Gender, Handicap - Matching horses page style */}
+            {/* Age, Gender, Handicap, Trainer - Matching horses page style */}
             <div className="flex flex-wrap gap-2 items-center mb-3">
               {age && (
                 <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${
@@ -113,6 +121,13 @@ export function HorseMetadataCard({ horse }: Props) {
                   HP: {horse.handicapPoints}
                 </span>
               )}
+
+              {horse.trainerName && (
+                <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
+                  👤 <span className="hidden sm:inline">Antrenör: </span>
+                  {formatTrainerName(horse.trainerName)}
+                </span>
+              )}
             </div>
             
             {/* Activity Summary - Right after badges */}
@@ -139,14 +154,6 @@ export function HorseMetadataCard({ horse }: Props) {
             )}
 
           </div>
-          
-          {/* Trainer */}
-          {horse.trainerName && (
-            <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200/50">
-              <p className="text-sm text-gray-500 mb-1">Antrenör</p>
-              <p className="text-base font-semibold text-gray-800">{horse.trainerName}</p>
-            </div>
-          )}
           
           {/* Current Location */}
           {horse.currentLocation && (
@@ -180,7 +187,10 @@ export function HorseMetadataCard({ horse }: Props) {
               <div className="mb-4">
                 <div className="grid grid-cols-6 gap-2 text-center">
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Toplam Koşu</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      <span className="hidden sm:inline">Toplam Koşu</span>
+                      <span className="sm:hidden">Toplam</span>
+                    </p>
                     <p className="text-lg font-bold text-gray-900">{horse.totalRaces}</p>
                   </div>
                   <div>
