@@ -767,27 +767,41 @@ export function StatisticsCharts({
     
     // Convert to array and format labels - maintain order by iterating keys in order
     const sortedKeys = Object.keys(chartData).sort()
-    return {
-      data: sortedKeys.map((key) => {
-        let label: string
-        if (grouping === 'daily') {
-          const date = new Date(key)
-          const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
-          label = `${dayNames[date.getDay()]} ${date.getDate()}`
-        } else if (grouping === 'weekly') {
-          const weekStart = new Date(key.replace('week-', ''))
-          label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
-        } else {
-          const [year, monthNum] = key.split('-')
-      const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
-          label = `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`
-        }
+    const chartDataArray = sortedKeys.map((key) => {
+      let label: string
+      if (grouping === 'daily') {
+        const date = new Date(key)
+        const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
+        label = `${dayNames[date.getDay()]} ${date.getDate()}`
+      } else if (grouping === 'weekly') {
+        const weekStart = new Date(key.replace('week-', ''))
+        label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
+      } else {
+        const [year, monthNum] = key.split('-')
+        const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+        label = `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`
+      }
       return {
-          period: label,
-          earnings: Math.round(chartData[key])
-        }
-      }),
-      title
+        period: label,
+        earnings: Math.round(chartData[key])
+      }
+    })
+    
+    // Calculate total earnings for the period
+    const totalEarnings = chartDataArray.reduce((sum, item) => sum + item.earnings, 0)
+    
+    // Update title with date range and total
+    let finalTitle = title
+    if (selectedRange) {
+      const rangeLabel = RANGE_OPTIONS.find(o => o.value === selectedRange)?.label || ''
+      finalTitle = `${title} (${rangeLabel}) • ${totalEarnings.toLocaleString('tr-TR')} ₺`
+    } else {
+      finalTitle = `${title} (Son 12 Ay) • ${totalEarnings.toLocaleString('tr-TR')} ₺`
+    }
+    
+    return {
+      data: chartDataArray,
+      title: finalTitle
     }
   }, [filteredRaces, selectedRange])
   
@@ -896,28 +910,42 @@ export function StatisticsCharts({
     
     // Convert to array and format labels - maintain order by iterating keys in order
     const sortedKeys = Object.keys(chartData).sort()
-    return {
-      data: sortedKeys.map((key) => {
-        let label: string
-        if (grouping === 'daily') {
-          const date = new Date(key)
-          const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
-          label = `${dayNames[date.getDay()]} ${date.getDate()}`
-        } else if (grouping === 'weekly') {
-          const weekStart = new Date(key.replace('week-', ''))
-          label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
-        } else {
-          const [year, monthNum] = key.split('-')
-      const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
-          label = `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`
-        }
-      return {
-          period: label,
-          expenses: Math.round(chartData[key])
+    const chartDataArray = sortedKeys.map((key) => {
+      let label: string
+      if (grouping === 'daily') {
+        const date = new Date(key)
+        const dayNames = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt']
+        label = `${dayNames[date.getDay()]} ${date.getDate()}`
+      } else if (grouping === 'weekly') {
+        const weekStart = new Date(key.replace('week-', ''))
+        label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`
+      } else {
+        const [year, monthNum] = key.split('-')
+        const monthNames = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+        label = `${monthNames[parseInt(monthNum) - 1]} ${year.slice(2)}`
       }
-      }),
-      title
-  }
+      return {
+        period: label,
+        expenses: Math.round(chartData[key])
+      }
+    })
+    
+    // Calculate total expenses for the period
+    const totalExpenses = chartDataArray.reduce((sum, item) => sum + item.expenses, 0)
+    
+    // Update title with date range and total
+    let finalTitle = title
+    if (selectedRange) {
+      const rangeLabel = RANGE_OPTIONS.find(o => o.value === selectedRange)?.label || ''
+      finalTitle = `${title} (${rangeLabel}) • ${totalExpenses.toLocaleString('tr-TR')} ₺`
+    } else {
+      finalTitle = `${title} (Son 12 Ay) • ${totalExpenses.toLocaleString('tr-TR')} ₺`
+    }
+    
+    return {
+      data: chartDataArray,
+      title: finalTitle
+    }
   }, [filteredExpenses, selectedRange])
   
   // Check if we have data
@@ -1756,7 +1784,7 @@ export function StatisticsCharts({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
-                        {getEarningsChartData.title}{!selectedRange && <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>}
+                {getEarningsChartData.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1821,7 +1849,7 @@ export function StatisticsCharts({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
                 <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
-                        {getExpensesChartData.title}{!selectedRange && <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>}
+                {getExpensesChartData.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
