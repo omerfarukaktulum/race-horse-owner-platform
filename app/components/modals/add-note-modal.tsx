@@ -19,6 +19,7 @@ interface InitialNoteValues {
   note: string
   photoUrl?: string | string[] | null
   category?: NoteCategory
+  kiloValue?: number | null
 }
 
 interface AddNoteModalProps {
@@ -51,6 +52,7 @@ export function AddNoteModal({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
   const [category, setCategory] = useState<NoteCategory | ''>('')
+  const [kiloValue, setKiloValue] = useState<string>('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [selectedHorseId, setSelectedHorseId] = useState(horseId || '')
@@ -128,6 +130,7 @@ export function AddNoteModal({
         setDate(formattedDate)
         setNote(initialNote.note || '')
         setCategory(initialNote.category || '')
+        setKiloValue(initialNote.kiloValue ? initialNote.kiloValue.toString() : '')
         const initialPhotos =
           typeof initialNote.photoUrl === 'string'
             ? (() => {
@@ -248,6 +251,21 @@ export function AddNoteModal({
       return
     }
 
+    // Validate kiloValue for Kilo Takibi or Yem Takibi
+    if ((category === 'Kilo Takibi' || category === 'Yem Takibi') && !kiloValue.trim()) {
+      toast.error('Lütfen kilo değeri girin')
+      return
+    }
+
+    const kiloValueNum = (category === 'Kilo Takibi' || category === 'Yem Takibi') && kiloValue.trim()
+      ? parseFloat(kiloValue.trim())
+      : null
+
+    if ((category === 'Kilo Takibi' || category === 'Yem Takibi') && (isNaN(kiloValueNum!) || kiloValueNum! <= 0)) {
+      toast.error('Lütfen geçerli bir kilo değeri girin')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -262,6 +280,9 @@ export function AddNoteModal({
       formData.append('date', date)
       formData.append('note', note.trim())
       formData.append('category', category)
+      if (kiloValueNum !== null) {
+        formData.append('kiloValue', kiloValueNum.toString())
+      }
       photos.forEach((photo) => {
         formData.append('photos', photo)
       })
@@ -386,6 +407,26 @@ export function AddNoteModal({
                 ))}
               </select>
             </div>
+
+            {/* Kilo Value - shown only for Kilo Takibi or Yem Takibi */}
+            {(category === 'Kilo Takibi' || category === 'Yem Takibi') && (
+              <div className="space-y-2">
+                <Label htmlFor="kiloValue" className="text-gray-700 font-medium">Kaç Kilo? *</Label>
+                <Input
+                  id="kiloValue"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={kiloValue}
+                  onChange={(e) => setKiloValue(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                  placeholder="Örn: 12.5"
+                  tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+                />
+              </div>
+            )}
 
             {/* Date */}
             <div className="space-y-2">

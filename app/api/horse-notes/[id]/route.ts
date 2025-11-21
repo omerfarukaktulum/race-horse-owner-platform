@@ -182,6 +182,15 @@ export async function PATCH(
       updateData.category = category
     }
 
+    const kiloValueStr = formData.get('kiloValue') as string | null
+    if (kiloValueStr !== null) {
+      const kiloValue = kiloValueStr ? parseFloat(kiloValueStr) : null
+      updateData.kiloValue = (category === 'Kilo Takibi' || category === 'Yem Takibi') ? kiloValue : null
+    } else if (category !== null && category !== 'Kilo Takibi' && category !== 'Yem Takibi') {
+      // If category is being changed away from kilo/yem categories, clear kiloValue
+      updateData.kiloValue = null
+    }
+
     const updatedNote = await prisma.horseNote.update({
       where: { id: params.id },
       data: updateData,

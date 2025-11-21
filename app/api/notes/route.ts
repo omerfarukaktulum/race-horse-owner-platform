@@ -100,6 +100,7 @@ export async function GET(request: Request) {
         note: true,
         category: true,
         photoUrl: true,
+        kiloValue: true,
         addedById: true,
         horse: {
           select: {

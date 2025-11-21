@@ -31,7 +31,10 @@ export async function POST(
     const date = formData.get('date') as string
     const note = formData.get('note') as string
     const category = formData.get('category') as NoteCategory | null
+    const kiloValueStr = formData.get('kiloValue') as string | null
     const photos = formData.getAll('photos') as File[]
+    
+    const kiloValue = kiloValueStr ? parseFloat(kiloValueStr) : null
 
     if (!date || !note || !category) {
       return NextResponse.json(
@@ -118,6 +121,7 @@ export async function POST(
         note: note.trim(),
         category,
         photoUrl,
+        kiloValue: (category === 'Kilo Takibi' || category === 'Yem Takibi') ? kiloValue : null,
         addedById: decoded.id,
       },
       include: {
@@ -226,6 +230,7 @@ export async function GET(
         note: true,
         category: true,
         photoUrl: true,
+        kiloValue: true,
         addedById: true,
         addedBy: {
           select: {

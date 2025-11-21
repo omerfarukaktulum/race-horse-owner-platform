@@ -127,6 +127,7 @@ interface HorseDetail {
     note: string
     category?: string
     photoUrl?: string | string[]
+    kiloValue?: number | null
     addedBy: {
       email: string
       role: string
@@ -570,6 +571,12 @@ useEffect(() => {
           <StatisticsCharts 
             races={horse.raceHistory || []} 
             expenses={expensesData}
+            notes={horse.notes?.filter(n => n.category).map(n => ({
+              id: n.id,
+              date: n.date,
+              category: n.category!,
+              kiloValue: n.kiloValue,
+            })) || []}
             hideButtons={true}
             showExpenseCategoryDistribution
             onFilterTriggerReady={(trigger) => {

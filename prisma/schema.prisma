@@ -413,6 +413,7 @@ model HorseNote {
   category   String
   note       String
   photoUrl   String?
+  kiloValue  Float?
   
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

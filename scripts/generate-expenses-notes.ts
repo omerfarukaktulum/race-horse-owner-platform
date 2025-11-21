@@ -184,13 +184,18 @@ function generateNoteSQL(
   addedById: string,
   category: string,
   date: Date,
-  note: string
+  note: string,
+  kiloValue?: number | null
 ): string {
   const dateStr = date.toISOString().replace('T', ' ').substring(0, 19)
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
   const id = generateId()
   
-  return `INSERT INTO horse_notes (id, "horseId", "addedById", date, category, note, "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${category}', '${note.replace(/'/g, "''")}', '${now}', '${now}');`
+  const kiloValueStr = (category === 'Kilo Takibi' || category === 'Yem Takibi') && kiloValue !== null && kiloValue !== undefined
+    ? kiloValue.toString()
+    : 'NULL'
+  
+  return `INSERT INTO horse_notes (id, "horseId", "addedById", date, category, note, "kiloValue", "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${category}', '${note.replace(/'/g, "''")}', ${kiloValueStr}, '${now}', '${now}');`
 }
 
 async function main() {
@@ -296,7 +301,8 @@ async function main() {
               ownerUserId,
               'Gelişim',
               noteDate,
-              getRandomElement(noteTemplates['Gelişim'])
+              getRandomElement(noteTemplates['Gelişim']),
+              null
             )
           )
         }
@@ -331,13 +337,22 @@ async function main() {
       for (let i = 0; i < 15; i++) {
         const date = getRandomDateInLast12Months()
         const category = getRandomElement([...NOTE_CATEGORIES])
+        let kiloValue: number | null = null
+        if (category === 'Kilo Takibi') {
+          // Horse weight: 350-500 kg
+          kiloValue = Math.round((Math.random() * 150 + 350) * 10) / 10
+        } else if (category === 'Yem Takibi') {
+          // Daily feed amount: 5-10 kg
+          kiloValue = Math.round((Math.random() * 5 + 5) * 10) / 10
+        }
         noteSQL.push(
           generateNoteSQL(
             horse.id,
             ownerUserId,
             category,
             date,
-            getRandomElement(noteTemplates[category])
+            getRandomElement(noteTemplates[category]),
+            kiloValue
           )
         )
       }
@@ -458,7 +473,8 @@ async function main() {
               trainerUserId,
               'Gelişim',
               noteDate,
-              getRandomElement(noteTemplates['Gelişim'])
+              getRandomElement(noteTemplates['Gelişim']),
+              null
             )
           )
         }
@@ -490,13 +506,22 @@ async function main() {
       for (let i = 0; i < 10; i++) {
         const date = getRandomDateInLast12Months()
         const category = getRandomElement([...NOTE_CATEGORIES])
+        let kiloValue: number | null = null
+        if (category === 'Kilo Takibi') {
+          // Horse weight: 350-500 kg
+          kiloValue = Math.round((Math.random() * 150 + 350) * 10) / 10
+        } else if (category === 'Yem Takibi') {
+          // Daily feed amount: 5-10 kg
+          kiloValue = Math.round((Math.random() * 5 + 5) * 10) / 10
+        }
         noteSQL.push(
           generateNoteSQL(
             horse.id,
             trainerUserId,
             category,
             date,
-            getRandomElement(noteTemplates[category])
+            getRandomElement(noteTemplates[category]),
+            kiloValue
           )
         )
       }
@@ -507,11 +532,19 @@ async function main() {
   const sqlContent = `-- Generated expenses and notes for demo data
 -- Generated on: ${new Date().toISOString()}
 
+BEGIN;
+
+-- Truncate only expenses and notes tables (base data should already exist)
+TRUNCATE TABLE expenses CASCADE;
+TRUNCATE TABLE horse_notes CASCADE;
+
 -- Expenses (${expenseSQL.length} records)
 ${expenseSQL.join('\n')}
 
 -- Notes (${noteSQL.length} records)
 ${noteSQL.join('\n')}
+
+COMMIT;
 `
   
   fs.writeFileSync('demo-expenses-notes.sql', sqlContent)
