@@ -855,8 +855,8 @@ export default function StablematePage() {
                   // Count horses assigned to this trainer (only if trainer is linked with a profile)
                   const horseCount = isLinked && trainer.trainerProfileId
                     ? horsesList.filter(
-                        (horse) => horse.trainerId === trainer.trainerProfileId
-                      ).length
+                    (horse) => horse.trainerId === trainer.trainerProfileId
+                  ).length
                     : 0
                   
                   const trainerProfileName = trainer.trainerProfile?.fullName
@@ -961,63 +961,63 @@ export default function StablematePage() {
                   </div>
                 )
               })}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Account Security */}
-        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                <ShieldCheck className="h-5 w-5" />
+          {/* Account Security */}
+          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    Şifre ve erişim ayarlarınızı yönetin
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  Şifre ve erişim ayarlarınızı yönetin
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={handlePasswordUpdate}>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
-                <Input value={ownerEmail} disabled className="bg-gray-50 border-gray-200" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
-                <Input
-                  type="password"
-                  placeholder="********"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
-                <Input
-                  type="password"
-                  placeholder="********"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  required
-                />
-              </div>
-              {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
-                disabled={isUpdatingPassword}
-              >
-                {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
-              </Button>
-            </form>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handlePasswordUpdate}>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
+                  <Input value={ownerEmail} disabled className="bg-gray-50 border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+                </Button>
+              </form>
           </CardContent>
         </Card>
-      </div>
+    </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
         <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
@@ -1157,9 +1157,9 @@ export default function StablematePage() {
                           return 0
                         }).map((horse) => {
                           const hasTrainer = trainerAssignments[horse.id] ?? null
-                          return (
-                            <div
-                              key={horse.id}
+                  return (
+                    <div
+                      key={horse.id}
                               className={`flex flex-nowrap items-center gap-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 w-full ${
                                 hasTrainer
                                   ? 'border-green-200 bg-green-50/50'
@@ -1190,22 +1190,22 @@ export default function StablematePage() {
                                 </div>
                                 <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
                                   <div className="mt-1 relative inline-block max-w-[200px]">
-                                    <select
+                      <select
                                       value={trainerAssignments[horse.id] ?? ''}
-                                      onChange={(e) =>
-                                        handleAssignmentChange(
-                                          horse.id,
-                                          e.target.value ? e.target.value : null
-                                        )
-                                      }
+                        onChange={(e) =>
+                          handleAssignmentChange(
+                            horse.id,
+                            e.target.value ? e.target.value : null
+                          )
+                        }
                                       className="h-8 rounded-lg border border-gray-300 bg-white px-2 pr-8 text-[10px] text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] appearance-none cursor-pointer w-full"
                                       style={{ 
                                         WebkitAppearance: 'none', 
                                         MozAppearance: 'none'
                                       }}
                                       onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <option value="">Antrenör seçin</option>
+                      >
+                        <option value="">Antrenör seçin</option>
                                       {assignableTrainerEntries.map((trainer) => {
                                         const fullName = trainer.trainerProfile?.fullName
                                         const trainerName = trainer.trainerName
@@ -1214,12 +1214,12 @@ export default function StablematePage() {
                                           ? `${trainerName} (${fullName})`
                                           : trainerName
                                         return (
-                                          <option key={trainer.id} value={trainer.id}>
+                          <option key={trainer.id} value={trainer.id}>
                                             {optionText}
-                                          </option>
+                          </option>
                                         )
                                       })}
-                                    </select>
+                      </select>
                                     <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                                   </div>
                                 </div>
@@ -1230,7 +1230,7 @@ export default function StablematePage() {
               </div>
                     </div>
                   </>
-                ) : (
+            ) : (
                   <div className="text-center py-12 flex-shrink-0">
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Users className="h-10 w-10 text-gray-400" />
@@ -1456,7 +1456,7 @@ export default function StablematePage() {
         </DialogContent>
       </Dialog>
     </div>
-    </>
+        </>
   )
 }
 
