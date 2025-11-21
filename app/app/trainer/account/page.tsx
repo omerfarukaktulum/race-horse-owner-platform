@@ -266,7 +266,7 @@ export default function TrainerAccountPage() {
                     className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col"
                   >
                     <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                    <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
                       {value}
                     </p>
                   </div>
@@ -312,7 +312,7 @@ export default function TrainerAccountPage() {
                       )}
                       <div className="min-w-0">
                         <p className="text-xs uppercase tracking-wider text-gray-500 truncate">{stablemate.name}</p>
-                        <p className="text-sm font-semibold text-gray-900 mt-1">{stablemate.totalHorses} At</p>
+                        <p className="text-sm font-semibold text-gray-900 mt-1">{stablemate.totalHorses}</p>
                       </div>
                     </div>
                   ))}
@@ -426,8 +426,8 @@ export default function TrainerAccountPage() {
                   {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
                 </Button>
               </form>
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stablemates and Horses */}

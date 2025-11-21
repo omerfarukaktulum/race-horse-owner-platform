@@ -220,16 +220,16 @@ function AppNavbar() {
                 </Link>
               ))}
               {isOwner && (
-                <Link href="/app/stablemate">
-                  <Button
-                    variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    {TR.nav.stablemate}
-                  </Button>
-                </Link>
+                  <Link href="/app/stablemate">
+                    <Button
+                      variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
+                      className="w-full justify-start"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      {TR.nav.stablemate}
+                    </Button>
+                  </Link>
               )}
               {isTrainer && (
                 <div className="border-t border-gray-200 pt-2 mt-2">

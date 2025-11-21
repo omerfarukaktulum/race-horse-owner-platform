@@ -457,23 +457,23 @@ export function AddExpenseModal({
               <div className="space-y-2">
                 <Label className="text-gray-700 font-medium">Eküri Seçin *</Label>
                 <div className="relative">
-                  <select
-                    ref={stablemateSelectRef}
-                    value={selectedStablemateId}
-                    onChange={(e) => setSelectedStablemateId(e.target.value)}
+                <select
+                  ref={stablemateSelectRef}
+                  value={selectedStablemateId}
+                  onChange={(e) => setSelectedStablemateId(e.target.value)}
                     onMouseDown={handleSelectMouseDown}
                     onTouchStart={handleSelectTouchStart}
-                    required
-                    disabled={isSubmitting || isLoadingStablemates}
+                  required
+                  disabled={isSubmitting || isLoadingStablemates}
                     className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
-                  >
-                    <option value="">Eküri seçin</option>
-                    {stablemates.map((stablemate) => (
-                      <option key={stablemate.id} value={stablemate.id}>
-                        {stablemate.name}
-                      </option>
-                    ))}
-                  </select>
+                >
+                  <option value="">Eküri seçin</option>
+                  {stablemates.map((stablemate) => (
+                    <option key={stablemate.id} value={stablemate.id}>
+                      {stablemate.name}
+                    </option>
+                  ))}
+                </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
                 </div>
               </div>
@@ -496,25 +496,25 @@ export function AddExpenseModal({
                   </div>
                 ) : (
                   <div className="relative">
-                    <select
+                  <select
                       ref={horseSelectRef}
-                      value={selectedHorseId}
-                      onChange={(e) => setSelectedHorseId(e.target.value)}
+                    value={selectedHorseId}
+                    onChange={(e) => setSelectedHorseId(e.target.value)}
                       onMouseDown={handleSelectMouseDown}
                       onTouchStart={handleSelectTouchStart}
-                      required
-                      disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
+                    required
+                    disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
                       className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 pr-10 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
-                    >
-                      <option value="">
-                        {isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}
+                  >
+                    <option value="">
+                      {isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}
+                    </option>
+                    {filteredHorses.map((horse) => (
+                      <option key={horse.id} value={horse.id}>
+                        {horse.name}
                       </option>
-                      {filteredHorses.map((horse) => (
-                        <option key={horse.id} value={horse.id}>
-                          {horse.name}
-                        </option>
-                      ))}
-                    </select>
+                    ))}
+                  </select>
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
                   </div>
                 )}
@@ -525,25 +525,25 @@ export function AddExpenseModal({
             <div className="space-y-2">
               <Label htmlFor="category" className="text-gray-700 font-medium">{TR.expenses.category} *</Label>
               <div className="relative">
-                <select
+              <select
                   ref={categorySelectRef}
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
                   onMouseDown={handleSelectMouseDown}
                   onTouchStart={handleSelectTouchStart}
-                  required
-                  disabled={isSubmitting}
-                  tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+                required
+                disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                   className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 pr-10 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
-                >
-                  <option value="">Kategori seçin</option>
-                  {EXPENSE_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
+              >
+                <option value="">Kategori seçin</option>
+                {EXPENSE_CATEGORIES.map((cat) => (
+                  <option key={cat.value} value={cat.value}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
               </div>
             </div>
@@ -552,15 +552,15 @@ export function AddExpenseModal({
             <div className="space-y-2">
               <Label htmlFor="date" className="text-gray-700 font-medium">{TR.expenses.date} *</Label>
               <div className="relative">
-                <Input
-                  id="date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  required
-                  disabled={isSubmitting}
-                  tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                required
+                disabled={isSubmitting}
+                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
                   lang="tr"
                   dir="ltr"
                   className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] cursor-pointer md:cursor-text [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:scale-110 md:[&::-webkit-calendar-picker-indicator]:opacity-60 md:[&::-webkit-calendar-picker-indicator]:scale-100 [&::-webkit-datetime-edit]:!text-left [&::-webkit-datetime-edit]:!pl-0 [&::-webkit-datetime-edit]:!ml-0 [&::-webkit-datetime-edit-fields-wrapper]:!text-left [&::-webkit-datetime-edit-fields-wrapper]:!pl-0 [&::-webkit-datetime-edit-fields-wrapper]:!ml-0 [&::-webkit-datetime-edit-fields-wrapper]:!flex [&::-webkit-datetime-edit-fields-wrapper]:!justify-start [&::-webkit-datetime-edit-text]:!text-left [&::-webkit-datetime-edit-month-field]:!text-left [&::-webkit-datetime-edit-day-field]:!text-left [&::-webkit-datetime-edit-year-field]:!text-left"

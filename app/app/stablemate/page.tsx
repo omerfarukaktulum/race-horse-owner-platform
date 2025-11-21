@@ -724,17 +724,17 @@ export default function StablematePage() {
           <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full min-w-0">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
                   <ChessKing className="h-5 w-5" />
                 </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
-                  <CardDescription className="text-gray-600 mt-1">
-                    {stablemate?.name}
-                  </CardDescription>
-                </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  {stablemate?.name}
+                </CardDescription>
               </div>
+            </div>
               {!isEditing && (
                 <Button
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
@@ -781,7 +781,7 @@ export default function StablematePage() {
                     )}
           </div>
                 ))}
-              </div>
+          </div>
             </div>
           </CardContent>
         </Card>
@@ -813,7 +813,7 @@ export default function StablematePage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                       <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                    </div>
+            </div>
                     <button
                       type="button"
                       role="switch"
@@ -833,7 +833,7 @@ export default function StablematePage() {
                   </div>
                 )
               })}
-            </div>
+        </div>
           </CardContent>
         </Card>
         </div>
@@ -858,15 +858,15 @@ export default function StablematePage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-start gap-4">
                   <div className="flex flex-wrap gap-2">
-              <Button
+                    <Button
                       variant="secondary"
                       className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
                       onClick={() => setIsTrainerModalOpen(true)}
                     >
                       <UserPlus className="h-4 w-4" />
                       Antrenör Ekle
-              </Button>
-              <Button
+                    </Button>
+                    <Button
                       variant="secondary"
                       className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
                       onClick={handleOpenAssignmentModal}
@@ -879,8 +879,8 @@ export default function StablematePage() {
                     >
                       <Users className="h-4 w-4" />
                       Antrenör Ata
-              </Button>
-            </div>
+                    </Button>
+                  </div>
                 </div>
                 {stablemateTrainers.length ? (
                   <div className="flex flex-col gap-2">
@@ -935,7 +935,7 @@ export default function StablematePage() {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-      </div>
+                      </div>
                     </div>
                       )
                     })}
@@ -963,7 +963,7 @@ export default function StablematePage() {
                   </CardDescription>
                 </div>
               </div>
-          </CardHeader>
+            </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={handlePasswordUpdate}>
                 <div className="space-y-2">
@@ -999,8 +999,8 @@ export default function StablematePage() {
                   {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
                 </Button>
               </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
