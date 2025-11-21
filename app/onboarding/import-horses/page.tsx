@@ -376,8 +376,8 @@ export default function ImportHorsesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-start justify-center p-4 pt-8">
-      <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-nowrap items-start justify-center px-3 pt-8 pb-10 w-full overflow-x-hidden">
+      <Card className="w-full max-w-full sm:max-w-2xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden">
         <CardHeader className="space-y-4 flex-shrink-0">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
             <Download className="h-8 w-8 text-white" />
@@ -446,7 +446,7 @@ export default function ImportHorsesPage() {
             </>
           )}
         </CardHeader>
-        <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+        <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
           {allHorses.length === 0 ? (
             <div className="text-center py-12 flex-shrink-0">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -465,14 +465,13 @@ export default function ImportHorsesPage() {
             </div>
           ) : (
             <>
-
               {/* Scrollable horse list */}
-              <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-                <div className="overflow-y-auto space-y-2">
+              <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1">
                   {horses.map((horse, index) => (
                     <div
                       key={horse.externalRef || horse.name || index}
-                      className={`flex items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
+                      className={`flex flex-nowrap items-center space-x-3 py-2 px-3 border-2 rounded-lg hover:shadow-md cursor-pointer transition-all duration-200 ${
                         horse.selected 
                           ? 'border-[#6366f1] bg-indigo-50/50' 
                           : horse.isImported
@@ -505,7 +504,7 @@ export default function ImportHorsesPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-nowrap">
                           <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
                           {horse.isImported && (
                             <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full whitespace-nowrap">
@@ -520,9 +519,12 @@ export default function ImportHorsesPage() {
                             </span>
                           )}
                           {(horse.sire && horse.dam) && (
-                            <span className="truncate min-w-0">
-                              <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
-                            </span>
+                            <div className="flex items-start gap-1 w-full text-ellipsis overflow-hidden">
+                              <span className="font-medium flex-shrink-0">Orijin:</span>
+                              <span className="truncate block max-w-full">
+                                {horse.sire} - {horse.dam}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </div>

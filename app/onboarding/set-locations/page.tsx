@@ -187,9 +187,9 @@ export default function SetLocationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex items-start justify-center p-4 pt-8">
-      <Card className="w-full max-w-fit bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col max-h-[90vh]">
-        <CardHeader className="space-y-4 flex-shrink-0">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-nowrap items-start justify-center px-3 pt-8 pb-10 w-full overflow-x-hidden">
+      <Card className="w-full max-w-full sm:max-w-4xl bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 flex flex-col flex-nowrap max-h-[90vh] overflow-hidden">
+        <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
           <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
             <MapPin className="h-8 w-8 text-white" />
           </div>
@@ -209,7 +209,7 @@ export default function SetLocationsPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col p-6 flex-1 min-h-0 overflow-hidden">
+        <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
           {horses.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1">
               <Check className="h-16 w-16 text-green-500 mb-4" />
@@ -223,21 +223,27 @@ export default function SetLocationsPage() {
             </div>
           ) : (
             <>
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+              <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-3 w-full pr-1">
                 {horses.map((horse) => {
                   const location = horseLocations[horse.id] || {
                     locationType: 'racecourse' as const,
                   }
 
                   return (
-                    <div key={horse.id} className="flex items-start gap-3 w-full">
-                      {/* Horse Card - same as import-horses page */}
+                    <div
+                      key={horse.id}
+                      className="border-2 border-gray-200 hover:border-gray-300 rounded-xl bg-white hover:shadow-md transition-all duration-200 p-3 flex flex-col sm:flex-row sm:items-center gap-4 w-full"
+                    >
                       <div
                         ref={(el) => {
                           horseCardRefs.current[horse.id] = el
                         }}
-                        className="flex items-center space-x-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 h-[60px] flex-shrink-0 border-gray-200 hover:border-gray-300 bg-white hover:shadow-md"
-                        style={horseCardWidth ? { width: `${horseCardWidth}px` } : undefined}
+                        className="flex items-center space-x-3 min-h-[56px] w-full sm:w-auto"
+                        style={
+                          horseCardWidth
+                            ? { width: `min(100%, ${horseCardWidth}px)` }
+                            : undefined
+                        }
                       >
                         {ownerRef && (
                           <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
@@ -260,48 +266,44 @@ export default function SetLocationsPage() {
                         <div className="min-w-0">
                           <p className="font-semibold text-sm text-gray-900">{horse.name}</p>
                           {horse.yob && (
-                            <div className="text-xs text-gray-600 mt-0.5">
-                              {horse.yob}
-                            </div>
+                            <div className="text-xs text-gray-600 mt-0.5">{horse.yob}</div>
                           )}
                         </div>
                       </div>
 
-                      {/* Location Controls Container - styled similar to horse card */}
-                      <div className="flex items-center gap-4 py-3.5 px-4 border-2 rounded-lg transition-all duration-200 h-[60px] justify-center flex-shrink-0 w-fit border-gray-200 hover:border-gray-300 bg-white hover:shadow-md">
-                        {/* Location Type Radio Buttons */}
-                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`location-type-${horse.id}`}
-                              value="racecourse"
-                              checked={location.locationType === 'racecourse'}
-                              onChange={(e) => {
-                                if (e.target.checked && !isSubmitting) {
-                                  updateLocationType(horse.id, 'racecourse')
-                                }
-                              }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                              disabled={isSubmitting}
-                            />
-                            <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
-                          </label>
-                          <label className="flex items-center space-x-1.5 cursor-pointer">
-                            <input
-                              type="radio"
-                              name={`location-type-${horse.id}`}
-                              value="farm"
-                              checked={location.locationType === 'farm'}
-                              onChange={(e) => {
-                                if (e.target.checked && !isSubmitting) {
-                                  updateLocationType(horse.id, 'farm')
-                                }
-                              }}
-                              className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
-                              disabled={isSubmitting}
-                            />
-                            <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
-                          </label>
+                      <div className="flex flex-1 flex-wrap sm:flex-nowrap items-center gap-3 justify-start sm:justify-end w-full">
+                        <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
+                          <input
+                            type="radio"
+                            name={`location-type-${horse.id}`}
+                            value="racecourse"
+                            checked={location.locationType === 'racecourse'}
+                            onChange={(e) => {
+                              if (e.target.checked && !isSubmitting) {
+                                updateLocationType(horse.id, 'racecourse')
+                              }
+                            }}
+                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                            disabled={isSubmitting}
+                          />
+                          <span className="text-gray-700 text-sm font-medium">Hipodrom</span>
+                        </label>
+                        <label className="flex items-center space-x-1.5 cursor-pointer flex-1 min-w-[140px]">
+                          <input
+                            type="radio"
+                            name={`location-type-${horse.id}`}
+                            value="farm"
+                            checked={location.locationType === 'farm'}
+                            onChange={(e) => {
+                              if (e.target.checked && !isSubmitting) {
+                                updateLocationType(horse.id, 'farm')
+                              }
+                            }}
+                            className="w-4 h-4 text-[#6366f1] focus:ring-[#6366f1] cursor-pointer"
+                            disabled={isSubmitting}
+                          />
+                          <span className="text-gray-700 text-sm font-medium">Çiftlik</span>
+                        </label>
                       </div>
                     </div>
                   )
