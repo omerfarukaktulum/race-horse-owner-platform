@@ -127,7 +127,40 @@ export function GallopsCard() {
     }
     
     // No dots - split by space and capitalize each word (HACI DEMİR -> Hacı Demir)
-    return name.split(' ').map(word => 
+    const words = name.split(' ').filter(word => word.trim() !== '')
+    
+    // If 4 or more words, abbreviate first two words (if each has at least 3 characters)
+    if (words.length >= 4) {
+      const firstWord = words[0]
+      const secondWord = words[1]
+      const restWords = words.slice(2)
+      
+      let formattedWords: string[] = []
+      
+      // Abbreviate first word only if it has at least 3 characters
+      if (firstWord.length >= 3) {
+        formattedWords.push(firstWord.charAt(0).toUpperCase() + '.')
+      } else {
+        formattedWords.push(firstWord.charAt(0).toUpperCase() + (firstWord.length > 1 ? firstWord.slice(1).toLowerCase() : ''))
+      }
+      
+      // Abbreviate second word only if it has at least 3 characters
+      if (secondWord.length >= 3) {
+        formattedWords.push(secondWord.charAt(0).toUpperCase() + '.')
+      } else {
+        formattedWords.push(secondWord.charAt(0).toUpperCase() + (secondWord.length > 1 ? secondWord.slice(1).toLowerCase() : ''))
+      }
+      
+      // Add the rest of the words with proper capitalization
+      const formattedRest = restWords.map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      )
+      
+      return [...formattedWords, ...formattedRest].join(' ')
+    }
+    
+    // 4 words or less - capitalize each word normally
+    return words.map(word => 
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ')
   }
