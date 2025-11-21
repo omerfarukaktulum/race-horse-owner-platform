@@ -347,9 +347,9 @@ export default function TrainerAccountPage() {
                 return (
                   <div
                     key={item.key}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center justify-between gap-4"
+                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center gap-2"
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                       <p className="text-xs text-gray-500 mt-1">{item.description}</p>
                     </div>
@@ -359,7 +359,7 @@ export default function TrainerAccountPage() {
                       aria-checked={enabled}
                       onClick={() => handleNotificationToggle(item.key)}
                       disabled={isSaving}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
                         enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
                       } ${isSaving ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
