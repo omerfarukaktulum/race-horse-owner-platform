@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -425,6 +425,26 @@ export default function StablematePage() {
       initializeTrainerAssignments()
     }
   }, [isTrainerAssignmentOpen, stablemate?.horses, stablemate?.trainers, initializeTrainerAssignments])
+
+  // Close any open select dropdowns when modal opens
+  useEffect(() => {
+    if (isTrainerAssignmentOpen) {
+      // Blur any focused select elements to close dropdowns
+      const activeElement = document.activeElement as HTMLElement
+      if (activeElement && activeElement.tagName === 'SELECT') {
+        activeElement.blur()
+      }
+      // Also blur any selects that might be open
+      setTimeout(() => {
+        const selects = document.querySelectorAll('select')
+        selects.forEach((select) => {
+          if (document.activeElement === select) {
+            select.blur()
+          }
+        })
+      }, 0)
+    }
+  }, [isTrainerAssignmentOpen])
 
   const handleAssignmentChange = (horseId: string, trainerEntryId: string | null) => {
     setTrainerAssignments((prev) => ({
@@ -992,15 +1012,13 @@ export default function StablematePage() {
     </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
-        <DialogContent className="max-w-md bg-transparent border-none shadow-none p-0">
-          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-2xl border border-gray-200/50 flex flex-col max-h-[90vh]">
-            <CardHeader className="text-center space-y-4 flex-shrink-0">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
                   <UserSearch className="h-8 w-8 text-white" />
                 </div>
-              </div>
-              <div>
+              <div className="text-center">
                 <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
                   Antrenör Ekle
                 </CardTitle>
@@ -1009,9 +1027,9 @@ export default function StablematePage() {
                 </CardDescription>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col p-6">
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
               {/* Fixed input section */}
-              <div className="space-y-2 flex-shrink-0 mb-4">
+              <div className="space-y-2 flex-shrink-0 w-full">
                 <Label htmlFor="trainerSearch" className="text-gray-700 font-medium">
                   Antrenör Ara
                 </Label>
@@ -1020,11 +1038,11 @@ export default function StablematePage() {
                   <Input
                     id="trainerSearch"
                     type="text"
+                    inputMode="search"
                     placeholder="Antrenör adını yazın (en az 2 karakter)"
                     value={trainerSearchTerm}
                     onChange={(e) => setTrainerSearchTerm(e.target.value)}
-                    className="pl-10 h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                    disabled={isSearchingTrainer}
+                    className="pl-10 h-11 border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] w-full"
                   />
                 </div>
                 {isSearchingTrainer && (
@@ -1037,9 +1055,10 @@ export default function StablematePage() {
 
               {/* Dynamic results section - grows with content, scrollable if too many */}
               {trainerSearchResults.length > 0 && (
-                <div className="flex flex-col space-y-3 mb-4 flex-shrink-0">
-                  <Label className="text-gray-700 font-medium">Antrenör Seç</Label>
-                  <div className="max-h-[400px] overflow-y-auto pr-2 space-y-2">
+                <>
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                    <Label className="text-gray-700 font-medium mb-3">Antrenör Seç</Label>
+                    <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1 w-full">
                     {trainerSearchResults.map((result) => {
                       const isSelected = selectedTrainerResult?.id === result.id
                       return (
@@ -1047,20 +1066,20 @@ export default function StablematePage() {
                           key={result.id}
                           type="button"
                           onClick={() => handleSelectTrainerResult(result)}
-                          className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg ${
+                          className={`w-full min-w-0 p-4 text-left border-2 rounded-lg transition-all duration-300 bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg ${
                             isSelected
                               ? 'border-[#6366f1] shadow-xl from-indigo-50/80 via-indigo-50/60 to-white'
                               : 'border-indigo-100/50 hover:border-indigo-200 hover:shadow-xl'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 flex-1">
+                          <div className="flex items-center justify-between gap-3 flex-nowrap">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
                               <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
                                 <UserCircle className="w-8 h-8 text-[#6366f1]" />
                               </div>
-                              <div className="flex-1">
-                                <p className="font-semibold text-gray-900">{result.name}</p>
-                                <p className="text-xs text-gray-600 mt-1">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-gray-900 break-words">{result.name}</p>
+                                <p className="text-xs text-gray-600 mt-1 truncate">
                                   TJK ID: {result.id}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-1">
@@ -1081,14 +1100,15 @@ export default function StablematePage() {
                     })}
                   </div>
                 </div>
+                </>
               )}
 
               {/* Fixed button section */}
-              <div className="flex justify-end pt-4 flex-shrink-0">
+              <div className="flex justify-end pt-4 border-t border-gray-200 mt-auto flex-shrink-0">
                 <Button
                   onClick={handleAddTrainer}
                   disabled={!selectedTrainerResult || isSavingTrainer}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6"
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   {isSavingTrainer ? TR.common.loading : 'Antrenörü Ekle'}
                 </Button>
@@ -1099,69 +1119,132 @@ export default function StablematePage() {
       </Dialog>
 
       <Dialog open={isTrainerAssignmentOpen} onOpenChange={setIsTrainerAssignmentOpen}>
-        <DialogContent className="max-w-3xl bg-white/95 border border-indigo-100 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle>Antrenör Değiştir</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
+                <Users className="h-8 w-8 text-white" />
+              </div>
+              <div className="text-center">
+                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  Antrenör Değiştir
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-2">
               Ekürinize bağlı atlar için hangi antrenörün sorumlu olduğunu belirleyin.
-            </DialogDescription>
-          </DialogHeader>
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
           {hasAssignableTrainers ? (
             horsesList.length ? (
-              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-                {horsesList.map((horse) => {
-                  const currentSelection = trainerAssignments[horse.id] ?? ''
-                  return (
-                    <div
-                      key={horse.id}
-                      className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex flex-wrap items-center justify-between gap-4"
-                    >
-                      <div>
-                        <p className="text-base font-semibold text-gray-900">{horse.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {horse.status || 'Durum bilinmiyor'}
-                          {horse.trainer?.fullName ? ` • Aktif: ${horse.trainer.fullName}` : ''}
-                        </p>
+                  <>
+                    <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                      <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1 w-full">
+                        {[...horsesList].sort((a, b) => {
+                          const aHasTrainer = trainerAssignments[a.id] ?? null
+                          const bHasTrainer = trainerAssignments[b.id] ?? null
+                          // Horses without trainers first
+                          if (!aHasTrainer && bHasTrainer) return -1
+                          if (aHasTrainer && !bHasTrainer) return 1
+                          return 0
+                        }).map((horse) => {
+                          const hasTrainer = trainerAssignments[horse.id] ?? null
+                          return (
+                            <div
+                              key={horse.id}
+                              className={`flex flex-nowrap items-center gap-3 py-2 px-3 border-2 rounded-lg transition-all duration-200 w-full ${
+                                hasTrainer
+                                  ? 'border-green-200 bg-green-50/50'
+                                  : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
+                              }`}
+                            >
+                              {ownerRef && (
+                                <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
+                                  <img
+                                    src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                                    alt="Eküri Forması"
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none'
+                                      const container = e.currentTarget.parentElement
+                                      if (container) {
+                                        const icon = container.querySelector('.fallback-icon') as HTMLElement
+                                        if (icon) icon.style.display = 'block'
+                                      }
+                                    }}
+                                  />
+                                  <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
                       </div>
-                      <select
-                        value={currentSelection}
-                        onChange={(e) =>
-                          handleAssignmentChange(
-                            horse.id,
-                            e.target.value ? e.target.value : null
-                          )
-                        }
-                        className="h-11 rounded-xl border border-indigo-100 bg-white px-3 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 min-w-[220px]"
-                      >
-                        <option value="">Antrenör seçin</option>
-                        {assignableTrainerEntries.map((trainer) => (
-                          <option key={trainer.id} value={trainer.id}>
-                            {trainer.trainerName}{' '}
-                            {trainer.trainerProfile?.fullName &&
-                              `(${trainer.trainerProfile.fullName})`}
-                          </option>
-                        ))}
-                      </select>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-sm text-gray-900 truncate">{horse.name}</p>
+                                </div>
+                                <div className="flex flex-col gap-0.5 text-xs text-gray-600 mt-0.5">
+                                  <div className="mt-1 relative inline-block max-w-[200px]">
+                                    <select
+                                      value={trainerAssignments[horse.id] ?? ''}
+                                      onChange={(e) =>
+                                        handleAssignmentChange(
+                                          horse.id,
+                                          e.target.value ? e.target.value : null
+                                        )
+                                      }
+                                      className="h-8 rounded-lg border border-gray-300 bg-white px-2 pr-8 text-[10px] text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] appearance-none cursor-pointer w-full"
+                                      style={{ 
+                                        WebkitAppearance: 'none', 
+                                        MozAppearance: 'none'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <option value="">Antrenör seçin</option>
+                                      {assignableTrainerEntries.map((trainer) => {
+                                        const fullName = trainer.trainerProfile?.fullName
+                                        const trainerName = trainer.trainerName
+                                        // Only show fullName in parentheses if it's different from trainerName
+                                        const optionText = fullName && fullName !== trainerName 
+                                          ? `${trainerName} (${fullName})`
+                                          : trainerName
+                                        return (
+                                          <option key={trainer.id} value={trainer.id}>
+                                            {optionText}
+                                          </option>
+                                        )
+                                      })}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                                  </div>
+                                </div>
+                              </div>
                     </div>
                   )
                 })}
               </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
-                Ekürinize bağlı at bulunamadı.
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-12 flex-shrink-0">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="h-10 w-10 text-gray-400" />
+                    </div>
+                    <p className="text-gray-700 font-medium mb-2">Ekürinize bağlı at bulunamadı.</p>
               </div>
             )
           ) : (
-            <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50/60 px-4 py-6 text-sm text-amber-700">
-              Atlara antrenör atayabilmek için önce kayıtlı (hesabı doğrulanmış) bir antrenör eklemelisiniz.
+                <div className="text-center py-12 flex-shrink-0">
+                  <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ShieldCheck className="h-10 w-10 text-amber-600" />
+                  </div>
+                  <p className="text-gray-700 font-medium mb-2">Kayıtlı antrenör bulunamadı.</p>
+                  <p className="text-sm text-gray-500">Atlara antrenör atayabilmek için önce kayıtlı (hesabı doğrulanmış) bir antrenör eklemelisiniz.</p>
             </div>
           )}
-          <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-auto flex-shrink-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsTrainerAssignmentOpen(false)}
-              className="h-11 rounded-2xl"
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
             >
               {TR.common.cancel}
             </Button>
@@ -1169,11 +1252,13 @@ export default function StablematePage() {
               type="button"
               onClick={handleSaveTrainerAssignments}
               disabled={!hasAssignableTrainers || isSavingAssignments}
-              className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white disabled:opacity-60"
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSavingAssignments ? TR.common.loading : 'Atamaları Kaydet'}
             </Button>
           </div>
+            </CardContent>
+          </Card>
         </DialogContent>
       </Dialog>
 

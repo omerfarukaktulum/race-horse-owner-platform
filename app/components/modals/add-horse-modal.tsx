@@ -538,7 +538,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                                   <span className="font-medium flex-shrink-0">Orijin:</span>
                                   <span className="truncate block max-w-full">
                                     {horse.sire} - {horse.dam}
-                                  </span>
+                                </span>
                                 </div>
                               )}
                             </div>
