@@ -34,14 +34,6 @@ export function HorseMetadataCard({ horse }: Props) {
   const currentYear = new Date().getFullYear()
   const age = horse.yob ? currentYear - horse.yob : null
   
-  // Convert trainer name to camel case
-  const formatTrainerName = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ')
-  }
-  
   // Calculate days since last race
   let daysSinceRace = null
   if (horse.lastRaceDate) {
@@ -125,7 +117,7 @@ export function HorseMetadataCard({ horse }: Props) {
               {horse.trainerName && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
                   👤 <span className="hidden sm:inline">Antrenör: </span>
-                  {formatTrainerName(horse.trainerName)}
+                  {horse.trainerName}
                 </span>
               )}
             </div>

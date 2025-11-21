@@ -53,14 +53,6 @@ export default function HorsesPage() {
   const { user } = useAuth()
   const [horses, setHorses] = useState<HorseData[]>([])
   const [allHorses, setAllHorses] = useState<HorseData[]>([]) // Store all horses for filtering
-  
-  // Convert name to camel case
-  const formatName = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ')
-  }
   const [isLoading, setIsLoading] = useState(true)
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
@@ -692,7 +684,7 @@ export default function HorsesPage() {
                 ) : horse.trainer && (
                   <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
                     👤 <span className="hidden sm:inline">Antrenör: </span>
-                    {formatName(horse.trainer.fullName)}
+                    {horse.trainer.fullName}
                   </span>
                 )}
               </div>
