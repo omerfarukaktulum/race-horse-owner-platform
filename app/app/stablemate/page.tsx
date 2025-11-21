@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -725,23 +725,10 @@ export default function StablematePage() {
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                {ownerRef && formaAvailable ? (
-                  <div className="w-12 h-12 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-                    <img
-                      src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
-                      alt="Eküri Forması"
-                      className="w-full h-full object-contain"
-                      onError={() => {
-                        setFormaAvailable(false)
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                )}
-          <div>
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <ChessKing className="h-5 w-5" />
+                </div>
+                <div>
                   <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
                   <CardDescription className="text-gray-600 mt-1">
                     {stablemate?.name}
@@ -750,7 +737,7 @@ export default function StablematePage() {
               </div>
               {!isEditing && (
                 <Button
-                  className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
                   onClick={() => setIsEditing(true)}
                 >
                   Düzenle
@@ -948,7 +935,7 @@ export default function StablematePage() {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </div>
+      </div>
                     </div>
                       )
                     })}
@@ -976,7 +963,7 @@ export default function StablematePage() {
                   </CardDescription>
                 </div>
               </div>
-            </CardHeader>
+          </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={handlePasswordUpdate}>
                 <div className="space-y-2">
