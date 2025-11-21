@@ -220,24 +220,16 @@ function AppNavbar() {
                 </Link>
               ))}
               {isOwner && (
-                <div className="border-t border-gray-200 pt-2 mt-2">
-                  <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Hesap
-                    </p>
-                  </div>
-                  <Link href="/app/stablemate">
-                    <Button
-                      variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
-                      className="w-full justify-start"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      {TR.nav.stablemate}
-                    </Button>
-                  </Link>
-                </div>
+                <Link href="/app/stablemate">
+                  <Button
+                    variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
+                    className="w-full justify-start"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    {TR.nav.stablemate}
+                  </Button>
+                </Link>
               )}
               {isTrainer && (
                 <div className="border-t border-gray-200 pt-2 mt-2">
