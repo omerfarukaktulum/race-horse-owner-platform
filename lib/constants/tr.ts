@@ -46,7 +46,7 @@ export const TR = {
     expenses: 'Giderler',
     notes: 'Notlar',
     statistics: 'İstatistikler',
-    stablemate: 'Ekürim',
+    stablemate: 'Eküri',
     billing: 'Faturalandırma',
     settings: 'Ayarlar',
     admin: 'Yönetim',

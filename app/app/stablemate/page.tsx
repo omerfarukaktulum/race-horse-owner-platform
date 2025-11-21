@@ -507,7 +507,6 @@ export default function StablematePage() {
         body: JSON.stringify({
           name,
           foundationYear: foundationYear ? parseInt(foundationYear) : undefined,
-          coOwners: coOwners ? coOwners.split('\n').filter(Boolean) : [],
           location: location || undefined,
           website: website || undefined,
         }),
@@ -721,35 +720,46 @@ export default function StablematePage() {
     <>
     <div className="space-y-8 pb-10">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
-        <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
+        <div className="flex flex-col gap-6 min-w-0">
+          <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full min-w-0">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              {ownerRef && formaAvailable ? (
-                <div className="w-12 h-12 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-                  <img
-                    src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
-                    alt="Eküri Forması"
-                    className="w-full h-full object-contain"
-                    onError={() => {
-                      setFormaAvailable(false)
-                    }}
-                  />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                {ownerRef && formaAvailable ? (
+                  <div className="w-12 h-12 rounded-xl border border-gray-200 bg-white flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
+                    <img
+                      src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
+                      alt="Eküri Forması"
+                      className="w-full h-full object-contain"
+                      onError={() => {
+                        setFormaAvailable(false)
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                )}
+          <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    {stablemate?.name}
+                  </CardDescription>
                 </div>
-              ) : (
-                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                  <Building2 className="h-5 w-5" />
-                </div>
-              )}
-              <div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Eküri Profili</CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  {stablemate?.name}
-                </CardDescription>
               </div>
-            </div>
+              {!isEditing && (
+                <Button
+                  className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Düzenle
+                </Button>
+              )}
+              </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
+            <div className="flex flex-wrap items-start gap-4">
               <div className="flex flex-wrap gap-2">
                 {summaryCards.map(({ label, value }) => (
                   <div
@@ -784,24 +794,66 @@ export default function StablematePage() {
                     )}
           </div>
                 ))}
-          </div>
-          {!isEditing && (
-                <div className="flex justify-end pt-2">
-              <Button
-                className="h-11 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
-                onClick={() => setIsEditing(true)}
-              >
-                    Düzenle
-              </Button>
+              </div>
             </div>
-          )}
-        </div>
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        {/* Notification Settings */}
+        <Card className="w-full min-w-0 bg-white/95 border border-indigo-100 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                <Bell className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  E-posta bildirimlerinizi yönetin
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {notificationOptions.map((item, index) => {
+                const enabled = notificationSettings[item.key]
+                return (
+                  <div
+                    key={item.key}
+                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center gap-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={enabled}
+                      disabled={isSavingNotifications}
+                      onClick={() => handleNotificationToggle(item.key)}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
+                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
+                      } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                          enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+
+        <div className="flex flex-col gap-6 min-w-0">
           {/* Trainer Management */}
-          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+          <Card className="w-full min-w-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -819,15 +871,15 @@ export default function StablematePage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-start gap-4">
                   <div className="flex flex-wrap gap-2">
-                    <Button
+              <Button
                       variant="secondary"
                       className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
                       onClick={() => setIsTrainerModalOpen(true)}
                     >
                       <UserPlus className="h-4 w-4" />
                       Antrenör Ekle
-                    </Button>
-                    <Button
+              </Button>
+              <Button
                       variant="secondary"
                       className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
                       onClick={handleOpenAssignmentModal}
@@ -839,9 +891,9 @@ export default function StablematePage() {
                       }
                     >
                       <Users className="h-4 w-4" />
-                      Antrenör Değiştir
-                    </Button>
-                  </div>
+                      Antrenör Ata
+              </Button>
+            </div>
                 </div>
                 {stablemateTrainers.length ? (
                   <div className="flex flex-col gap-2">
@@ -909,64 +961,9 @@ export default function StablematePage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      {/* Second Row: Notification Settings + Account Security */}
-      <div className="grid gap-6 lg:grid-cols-2 items-start">
-        {/* Notification Settings */}
-        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                <Bell className="h-5 w-5" />
-              </div>
-              <div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  E-posta bildirimlerinizi yönetin
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {notificationOptions.map((item, index) => {
-                const enabled = notificationSettings[item.key]
-                return (
-                  <div
-                    key={item.key}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center gap-2"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={enabled}
-                      disabled={isSavingNotifications}
-                      onClick={() => handleNotificationToggle(item.key)}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors flex-shrink-0 ${
-                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
-                      } ${isSavingNotifications ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                          enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                )
-              })}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Account Security */}
-          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+          <Card className="w-full min-w-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -1017,6 +1014,8 @@ export default function StablematePage() {
               </form>
           </CardContent>
         </Card>
+        </div>
+      </div>
     </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
@@ -1378,20 +1377,6 @@ export default function StablematePage() {
                 />
               </div>
 
-                <div className="space-y-2 flex flex-col items-center">
-                  <Label htmlFor="coOwners" className="text-gray-700 font-medium w-full max-w-xs">
-                    {TR.stablemate.coOwners}
-                  </Label>
-                <textarea
-                  id="coOwners"
-                  placeholder="Her satıra bir ortak sahip adı"
-                  value={coOwners}
-                  onChange={(e) => setCoOwners(e.target.value)}
-                  disabled={isSaving}
-                    className="min-h-[120px] w-full max-w-xs rounded-2xl border border-gray-200 bg-white/80 px-4 py-3 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-
                 <div className="flex justify-center gap-3 pt-4">
                 <Button
                   type="button"
@@ -1455,7 +1440,6 @@ export default function StablematePage() {
                   </div>
         </DialogContent>
       </Dialog>
-    </div>
         </>
   )
 }
