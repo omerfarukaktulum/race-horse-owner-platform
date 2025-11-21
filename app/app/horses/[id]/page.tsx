@@ -361,9 +361,9 @@ useEffect(() => {
     horseName: horse.name,
   }))
   return (
-    <div className="space-y-8 pb-8">
-      {/* Header with Back Button and Action Buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="pb-8">
+      {/* Header with Back Button - Desktop Only */}
+      <div className="hidden md:block mb-6">
         <Button
           variant="ghost"
           onClick={() => router.back()}
@@ -376,60 +376,62 @@ useEffect(() => {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="w-full sm:w-auto overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0 min-w-max sm:min-w-0">
             <TabsTrigger 
               value="info"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               At Bilgisi
             </TabsTrigger>
             <TabsTrigger 
               value="pedigree"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               Pedigri
             </TabsTrigger>
             <TabsTrigger 
               value="races"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               Koşular
             </TabsTrigger>
             <TabsTrigger 
               value="gallops"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               İdmanlar
             </TabsTrigger>
             <TabsTrigger 
               value="statistics"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               İstatistikler
             </TabsTrigger>
             <TabsTrigger 
               value="expenses"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               Giderler
             </TabsTrigger>
             <TabsTrigger 
               value="notes"
-              className="px-6 py-2.5 text-sm font-medium rounded-md transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
             >
               Notlar
             </TabsTrigger>
           </TabsList>
+          </div>
           {activeTab === 'expenses' && (
-            <div className="flex items-center gap-4 ml-auto">
-              <div className="text-right">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
+              <div className="text-right order-2 sm:order-1">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
                 <p className="text-lg font-semibold text-indigo-600">
                   {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
                 </p>
               </div>
-              <div ref={expensesFilterButtonRef} className="relative">
+              <div ref={expensesFilterButtonRef} className="relative order-1 sm:order-2">
                 <Button 
                   onClick={() => {
                     filterTriggerRef.current?.()
@@ -444,14 +446,14 @@ useEffect(() => {
               </div>
               <Button 
                 onClick={() => setIsExpenseModalOpen(true)}
-                className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300 order-3"
               >
                 + Yeni
               </Button>
             </div>
           )}
           {activeTab === 'races' && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={racesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -468,7 +470,7 @@ useEffect(() => {
             </div>
           )}
           {activeTab === 'gallops' && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={gallopsFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -485,7 +487,7 @@ useEffect(() => {
             </div>
           )}
           {activeTab === 'statistics' && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={statisticsFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -502,7 +504,7 @@ useEffect(() => {
             </div>
           )}
           {activeTab === 'notes' && (
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={notesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
