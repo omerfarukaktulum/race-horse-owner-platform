@@ -643,7 +643,7 @@ export default function StablematePage() {
   const locationFormatted = stablemate?.location || '—'
   const summaryCards = [
     {
-      label: 'Toplam At',
+      label: 'At Sayısı',
       value: totalHorses,
     },
   ]
@@ -754,7 +754,7 @@ export default function StablematePage() {
                     className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm inline-flex flex-col"
                   >
                     <p className="text-xs uppercase tracking-wider text-gray-500">{label}</p>
-                    <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                    <p className="text-sm font-semibold text-gray-900 mt-1">
                       {value}
                     </p>
                 </div>
