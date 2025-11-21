@@ -1160,9 +1160,40 @@ export function StatisticsCharts({
       </div>
 
       {/* Statistics Navigation Sidebar and Content */}
-      <div className="flex gap-6 mt-6">
-        {/* Left Sidebar Navigation */}
-        <div className="flex-shrink-0">
+      <div className="flex flex-col md:flex-row gap-6 mt-6">
+        {/* Mobile Navigation - Horizontal Scrollable */}
+        <div className="md:hidden w-full overflow-x-auto pb-2 -mx-4 px-4">
+          <div className="flex gap-2 min-w-max">
+            {[
+              { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
+              { id: 'pist' as const, label: 'Pist', icon: Layers },
+              { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
+              { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
+              { id: 'jokey' as const, label: 'Jokey', icon: Users },
+              { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
+              { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
+            ].map(({ id, label, icon: Icon }) => {
+              const isActive = selectedCategory === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedCategory(id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                  <span>{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Left Sidebar Navigation - Desktop Only */}
+        <div className="hidden md:block flex-shrink-0">
           <div className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-lg p-4 sticky top-4 min-w-fit">
             <nav className="space-y-1">
               {[
@@ -1195,7 +1226,7 @@ export function StatisticsCharts({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full">
     <div className="space-y-6">
             {/* Genel Category: First Row Charts */}
             {selectedCategory === 'genel' && (
