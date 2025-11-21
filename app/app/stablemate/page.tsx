@@ -846,37 +846,43 @@ export default function StablematePage() {
                 {stablemateTrainers.length ? (
                   <div className="flex flex-col gap-2">
                     {stablemateTrainers.map((trainer) => {
-                  const isLinked = !!trainer.trainerProfileId
+                  const isLinked = !!trainer.trainerProfileId && !!trainer.trainerProfile
                   const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
                   const statusClass = isLinked
                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                     : 'bg-amber-50 text-amber-700 border border-amber-100'
                   
-                  // Count horses assigned to this trainer
-                  const horseCount = horsesList.filter(
-                    (horse) => horse.trainerId === trainer.trainerProfileId
-                  ).length
+                  // Count horses assigned to this trainer (only if trainer is linked with a profile)
+                  const horseCount = isLinked && trainer.trainerProfileId
+                    ? horsesList.filter(
+                        (horse) => horse.trainerId === trainer.trainerProfileId
+                      ).length
+                    : 0
                   
                   const trainerProfileName = trainer.trainerProfile?.fullName
                   
                   return (
                     <div
                       key={trainer.id}
-                      className="flex flex-col w-full rounded-md border border-gray-100 bg-white px-3 py-3 shadow-sm relative group"
+                      className={`flex flex-col w-full rounded-md border px-3 py-3 shadow-sm relative group ${
+                        isLinked 
+                          ? 'sm:border-gray-100 sm:bg-white border-green-200 bg-green-50/50' 
+                          : 'sm:border-gray-100 sm:bg-white border-amber-200 bg-amber-50/50'
+                      }`}
                     >
                       <div className="flex items-center gap-3 flex-wrap w-full">
-                        <UserCircle className="h-8 w-8 text-indigo-600 flex-shrink-0" />
+                        <UserCircle className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-gray-900 truncate">{trainer.trainerName}</p>
                           {trainerProfileName && trainerProfileName.trim() !== trainer.trainerName.trim() && (
                             <p className="text-xs text-gray-500 truncate">{trainerProfileName}</p>
           )}
         </div>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusClass}`}>
+                        <span className={`hidden sm:inline text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${statusClass}`}>
                           {statusLabel}
                         </span>
-                        {horseCount > 0 && (
-                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                        {isLinked && horseCount > 0 && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap bg-emerald-50 text-emerald-700 border border-emerald-100">
                             {horseCount} At
                           </span>
                         )}
