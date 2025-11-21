@@ -25,6 +25,7 @@ interface TrainerAccountData {
     location?: string | null
     ownerName: string
     ownerEmail?: string | null
+    ownerOfficialRef?: string | null
     totalHorses: number
     horses: Array<{
       id: string
@@ -234,14 +235,41 @@ export default function TrainerAccountPage() {
                 </div>
               )}
               {accountData.stablemates.length > 0 && (
-                <div className="flex flex-col gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   {accountData.stablemates.map((stablemate) => (
                     <div
                       key={stablemate.id}
-                      className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm flex flex-col"
+                      className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm flex items-center gap-3"
                     >
-                      <p className="text-xs uppercase tracking-wider text-gray-500">{stablemate.name}</p>
-                      <p className="text-sm font-semibold text-gray-900 mt-1">{stablemate.totalHorses} At</p>
+                      {stablemate.ownerOfficialRef ? (
+                        <div className="w-10 h-10 rounded-xl border border-gray-200 overflow-hidden flex-shrink-0 bg-white">
+                          <img
+                            src={`https://medya-cdn.tjk.org/formaftp/${stablemate.ownerOfficialRef}.jpg`}
+                            alt={`${stablemate.name} forması`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon')
+                              if (fallback instanceof HTMLElement) {
+                                fallback.style.display = 'flex'
+                              }
+                            }}
+                          />
+                          <div className="fallback-icon hidden w-full h-full items-center justify-center">
+                            <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600">
+                              <Building2 className="h-4 w-4" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600 flex-shrink-0">
+                          <Building2 className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs uppercase tracking-wider text-gray-500 truncate">{stablemate.name}</p>
+                        <p className="text-sm font-semibold text-gray-900 mt-1">{stablemate.totalHorses} At</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -328,13 +356,40 @@ export default function TrainerAccountPage() {
               {accountData.stablemates.map((stablemate) => (
                 <div key={stablemate.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{stablemate.name}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {stablemate.ownerName}
-                        {stablemate.location ? ` • ${stablemate.location}` : ''}
-                        {stablemate.ownerEmail ? ` • ${stablemate.ownerEmail}` : ''}
-                      </p>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {stablemate.ownerOfficialRef ? (
+                        <div className="w-12 h-12 rounded-2xl border border-gray-200 overflow-hidden flex-shrink-0 bg-white">
+                          <img
+                            src={`https://medya-cdn.tjk.org/formaftp/${stablemate.ownerOfficialRef}.jpg`}
+                            alt={`${stablemate.name} forması`}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                              const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon')
+                              if (fallback instanceof HTMLElement) {
+                                fallback.style.display = 'flex'
+                              }
+                            }}
+                          />
+                          <div className="fallback-icon hidden w-full h-full items-center justify-center">
+                            <div className="rounded-xl bg-indigo-100 p-2 text-indigo-600">
+                              <Building2 className="h-5 w-5" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600 flex-shrink-0">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold text-gray-900 truncate">{stablemate.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {stablemate.ownerName}
+                          {stablemate.location ? ` • ${stablemate.location}` : ''}
+                          {stablemate.ownerEmail ? ` • ${stablemate.ownerEmail}` : ''}
+                        </p>
+                      </div>
                     </div>
                     <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
                       {stablemate.totalHorses} At
