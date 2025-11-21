@@ -242,9 +242,8 @@ export default function TrainerAccountPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] items-start">
-        {/* Trainer Profile */}
-        <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
+      {/* Trainer Profile - Standalone */}
+      <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -323,9 +322,10 @@ export default function TrainerAccountPage() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
-          {/* Notification Settings */}
-          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+      {/* Second Row: Notification Settings + Account Security */}
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
+        {/* Notification Settings */}
+        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -428,7 +428,6 @@ export default function TrainerAccountPage() {
               </form>
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Stablemates and Horses */}

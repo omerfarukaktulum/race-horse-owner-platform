@@ -909,64 +909,13 @@ export default function StablematePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Account Security */}
-          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                  <ShieldCheck className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
-                  <CardDescription className="text-gray-600 mt-1">
-                    Şifre ve erişim ayarlarınızı yönetin
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handlePasswordUpdate}>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
-                  <Input value={ownerEmail} disabled className="bg-gray-50 border-gray-200" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
-                  <Input
-                    type="password"
-                    placeholder="********"
-                    value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
-                  <Input
-                    type="password"
-                    placeholder="********"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                    required
-                  />
-                </div>
-                {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
-                  disabled={isUpdatingPassword}
-                >
-                  {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
-      {/* Notification Settings */}
-      <Card className="w-full max-w-2xl bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+      {/* Second Row: Notification Settings + Account Security */}
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
+        {/* Notification Settings */}
+        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
@@ -1015,7 +964,60 @@ export default function StablematePage() {
             </div>
           </CardContent>
         </Card>
-    </div>
+
+        {/* Account Security */}
+        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
+                <CardDescription className="text-gray-600 mt-1">
+                  Şifre ve erişim ayarlarınızı yönetin
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-4" onSubmit={handlePasswordUpdate}>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
+                <Input value={ownerEmail} disabled className="bg-gray-50 border-gray-200" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
+                <Input
+                  type="password"
+                  placeholder="********"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
+                <Input
+                  type="password"
+                  placeholder="********"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  required
+                />
+              </div>
+              {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
+                disabled={isUpdatingPassword}
+              >
+                {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
         <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
@@ -1453,7 +1455,8 @@ export default function StablematePage() {
                   </div>
         </DialogContent>
       </Dialog>
-        </>
+    </div>
+    </>
   )
 }
 
