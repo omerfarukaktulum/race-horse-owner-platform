@@ -25,6 +25,7 @@ export async function GET() {
     const trainerProfile = await prisma.trainerProfile.findUnique({
       where: { userId: decoded.id },
       include: {
+        user: true,
         horses: {
           include: {
             stablemate: true,
@@ -61,6 +62,7 @@ export async function GET() {
         location: link.stablemate.location,
         ownerName: link.stablemate.owner.officialName,
         ownerEmail: link.stablemate.owner.user?.email ?? null,
+        ownerOfficialRef: link.stablemate.owner.officialRef ?? null,
         totalHorses: horses.length,
         horses: horses.map((horse) => ({
           id: horse.id,
@@ -74,6 +76,7 @@ export async function GET() {
       trainer: {
         id: trainerProfile.id,
         fullName: trainerProfile.fullName,
+        email: trainerProfile.user.email,
         phone: trainerProfile.phone,
         tjkTrainerId: trainerProfile.tjkTrainerId,
         notifyHorseRegistered: trainerProfile.notifyHorseRegistered,

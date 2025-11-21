@@ -534,9 +534,12 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                                 </span>
                               )}
                               {(horse.sire && horse.dam) && (
-                                <span className="truncate min-w-0">
-                                  <span className="font-medium">Orijin:</span> {horse.sire} - {horse.dam}
-                                </span>
+                                <div className="flex items-start gap-1 w-full text-ellipsis overflow-hidden">
+                                  <span className="font-medium flex-shrink-0">Orijin:</span>
+                                  <span className="truncate block max-w-full">
+                                    {horse.sire} - {horse.dam}
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>

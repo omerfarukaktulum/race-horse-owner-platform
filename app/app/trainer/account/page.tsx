@@ -1,15 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
-import { User, Bell, Building2 } from 'lucide-react'
+import { Input } from '@/app/components/ui/input'
+import { Label } from '@/app/components/ui/label'
+import { User, Bell, Building2, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface TrainerAccountData {
   trainer: {
     id: string
     fullName: string
+    email: string
     phone?: string | null
     tjkTrainerId?: string | null
     notifyHorseRegistered: boolean
@@ -47,6 +50,12 @@ export default function TrainerAccountPage() {
     notifyNewRace: true,
   })
   const [savingNotificationKey, setSavingNotificationKey] = useState<string | null>(null)
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   const fetchAccountData = async () => {
     setIsLoading(true)
@@ -166,6 +175,42 @@ export default function TrainerAccountPage() {
     }
   }
 
+  const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPasswordError(null)
+
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Lütfen yeni şifreyi doldurun')
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Şifreler eşleşmiyor')
+      return
+    }
+
+    setIsUpdatingPassword(true)
+    try {
+      const response = await fetch('/api/account/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordForm.newPassword }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Şifre güncellenemedi')
+      }
+      toast.success('Şifreniz güncellendi')
+      setPasswordForm({ newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Şifre güncellenemedi'
+      setPasswordError(message)
+      toast.error(message)
+    } finally {
+      setIsUpdatingPassword(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -278,57 +323,112 @@ export default function TrainerAccountPage() {
           </CardContent>
         </Card>
 
-        {/* Notification Settings */}
-        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-                <Bell className="h-5 w-5" />
+        <div className="flex flex-col gap-6">
+          {/* Notification Settings */}
+          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    E-posta bildirimlerinizi yönetin
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-xl font-semibold text-gray-900">Bildirim Ayarları</CardTitle>
-                <CardDescription className="text-gray-600 mt-1">
-                  E-posta bildirimlerinizi yönetin
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {notificationOptions.map((item) => {
-                const enabled = notificationSettings[item.key]
-                const isSaving = savingNotificationKey === item.key
-                return (
-                  <div
-                    key={item.key}
-                    className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center justify-between gap-4"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={enabled}
-                      onClick={() => handleNotificationToggle(item.key)}
-                      disabled={isSaving}
-                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
-                        enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
-                      } ${isSaving ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {notificationOptions.map((item) => {
+                  const enabled = notificationSettings[item.key]
+                  const isSaving = savingNotificationKey === item.key
+                  return (
+                    <div
+                      key={item.key}
+                      className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm flex items-center justify-between gap-4"
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                          enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={enabled}
+                        onClick={() => handleNotificationToggle(item.key)}
+                        disabled={isSaving}
+                        className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors ${
+                          enabled ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5]' : 'bg-gray-200'
+                        } ${isSaving ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                            enabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Account Security */}
+          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    Şifre ve oturum ayarlarınızı yönetin
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handlePasswordUpdate}>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
+                  <Input value={accountData.trainer.email} disabled className="bg-gray-50 border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Stablemates and Horses */}

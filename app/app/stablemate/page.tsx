@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { FormEvent, useState, useEffect, useCallback } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
 
 const RACECOURSE_CITIES = [
@@ -151,6 +151,7 @@ export default function StablematePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [ownerRef, setOwnerRef] = useState<string | null>(null)
+  const [ownerEmail, setOwnerEmail] = useState<string>('')
   const [formaAvailable, setFormaAvailable] = useState(true)
 
   // Form state
@@ -182,6 +183,12 @@ export default function StablematePage() {
   const [isTrainerAssignmentOpen, setIsTrainerAssignmentOpen] = useState(false)
   const [trainerAssignments, setTrainerAssignments] = useState<Record<string, string | null>>({})
   const [isSavingAssignments, setIsSavingAssignments] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  })
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchStablemate()
@@ -191,9 +198,11 @@ export default function StablematePage() {
         if (!response.ok) return
         const data = await response.json()
         setOwnerRef(data.user?.ownerProfile?.officialRef || null)
+        setOwnerEmail(data.user?.email || '')
       } catch (error) {
         console.error('Owner ref fetch error:', error)
         setOwnerRef(null)
+        setOwnerEmail('')
       }
     }
     fetchOwnerReference()
@@ -559,6 +568,42 @@ export default function StablematePage() {
     }
   }
 
+  const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPasswordError(null)
+
+    if (!passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Lütfen yeni şifre alanlarını doldurun')
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('Şifreler eşleşmiyor')
+      return
+    }
+
+    setIsUpdatingPassword(true)
+    try {
+      const response = await fetch('/api/account/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordForm.newPassword }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Şifre güncellenemedi')
+      }
+      toast.success('Şifreniz güncellendi')
+      setPasswordForm({ newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Şifre güncellenemedi'
+      setPasswordError(message)
+      toast.error(message)
+    } finally {
+      setIsUpdatingPassword(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -734,52 +779,53 @@ export default function StablematePage() {
           </CardContent>
         </Card>
 
-        {/* Trainer Management */}
-        <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-semibold text-gray-900">Antrenör Yönetimi</CardTitle>
-              <CardDescription className="text-gray-600 mt-1">
-                Ekürinize bağlı antrenörleri yönetin
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-start gap-4">
-              <div className="flex flex-wrap gap-2">
-              <Button
-                  variant="secondary"
-                  className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
-                  onClick={() => setIsTrainerModalOpen(true)}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Antrenör Ekle
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
-                  onClick={handleOpenAssignmentModal}
-                  disabled={!hasAssignableTrainers}
-                  title={
-                    hasAssignableTrainers
-                      ? 'Atlarınıza antrenör atayın'
-                      : 'Atama yapabilmek için kayıtlı bir antrenör gerekli'
-                  }
-                >
-                  <Users className="h-4 w-4" />
-                  Antrenör Değiştir
-              </Button>
-            </div>
-            </div>
-            {stablemateTrainers.length ? (
-              <div className="flex flex-col gap-2">
-                {stablemateTrainers.map((trainer) => {
+        <div className="flex flex-col gap-6">
+          {/* Trainer Management */}
+          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Antrenör Yönetimi</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    Ekürinize bağlı antrenörleri yönetin
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-start gap-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2"
+                      onClick={() => setIsTrainerModalOpen(true)}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Antrenör Ekle
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="rounded-md bg-indigo-600/10 text-indigo-700 hover:bg-indigo-600/20 flex items-center gap-2 disabled:opacity-60"
+                      onClick={handleOpenAssignmentModal}
+                      disabled={!hasAssignableTrainers}
+                      title={
+                        hasAssignableTrainers
+                          ? 'Atlarınıza antrenör atayın'
+                          : 'Atama yapabilmek için kayıtlı bir antrenör gerekli'
+                      }
+                    >
+                      <Users className="h-4 w-4" />
+                      Antrenör Değiştir
+                    </Button>
+                  </div>
+                </div>
+                {stablemateTrainers.length ? (
+                  <div className="flex flex-col gap-2">
+                    {stablemateTrainers.map((trainer) => {
                   const isLinked = !!trainer.trainerProfileId
                   const statusLabel = isLinked ? 'Bağlandı' : 'Bekleniyor'
                   const statusClass = isLinked
@@ -826,17 +872,71 @@ export default function StablematePage() {
                         </Button>
                       </div>
                     </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
+                    Henüz bir antrenör eklenmedi. Başlamak için &ldquo;Antrenör Ekle&rdquo; butonuna tıklayın.
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/40 px-4 py-6 text-center text-sm text-gray-600">
-                Henüz bir antrenör eklenmedi. Başlamak için &ldquo;Antrenör Ekle&rdquo; butonuna tıklayın.
+            </CardContent>
+          </Card>
+
+          {/* Account Security */}
+          <Card className="w-full bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Hesap Güvenliği</CardTitle>
+                  <CardDescription className="text-gray-600 mt-1">
+                    Şifre ve erişim ayarlarınızı yönetin
+                  </CardDescription>
+                </div>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handlePasswordUpdate}>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">E-posta Adresi</Label>
+                  <Input value={ownerEmail} disabled className="bg-gray-50 border-gray-200" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Yeni Şifre (Tekrar)</Label>
+                  <Input
+                    type="password"
+                    placeholder="********"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                  />
+                </div>
+                {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
+                  disabled={isUpdatingPassword}
+                >
+                  {isUpdatingPassword ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Notification Settings */}

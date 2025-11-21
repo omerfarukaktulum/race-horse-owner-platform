@@ -86,6 +86,13 @@ export const trainerNotificationSchema = z.object({
   notifyNewRace: z.boolean().optional(),
 })
 
+export const changePasswordSchema = z.object({
+  password: z
+    .string()
+    .min(8, 'Şifre en az 8 karakter olmalı')
+    .max(128, 'Şifre en fazla 128 karakter olabilir'),
+})
+
 // Expense schemas
 export const expenseSchema = z.object({
   horseIds: z.array(z.string()).min(1, TR.validation.required),
@@ -128,6 +135,7 @@ export type HorseInput = z.infer<typeof horseSchema>
 export type StablemateTrainerInput = z.infer<typeof stablemateTrainerSchema>
 export type TrainerAssignmentInput = z.infer<typeof trainerAssignmentSchema>
 export type TrainerNotificationInput = z.infer<typeof trainerNotificationSchema>
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
 export type ExpenseInput = z.infer<typeof expenseSchema>
 export type RacecourseInput = z.infer<typeof racecourseSchema>
 export type FarmInput = z.infer<typeof farmSchema>
