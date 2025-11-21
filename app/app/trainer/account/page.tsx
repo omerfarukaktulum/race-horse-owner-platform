@@ -236,14 +236,14 @@ export default function TrainerAccountPage() {
   const totalHorses = accountData.stablemates.reduce((sum, stablemate) => sum + stablemate.totalHorses, 0)
 
   const summaryCards = [
-    { label: 'Çalıştığım Eküriler', value: accountData.stablemates.length.toString() },
-    { label: 'Sorumlu Olduğum Atlar', value: totalHorses.toString() },
+    { label: 'Eküri Sayısı', value: accountData.stablemates.length.toString() },
+    { label: 'At Sayısı', value: totalHorses.toString() },
   ]
 
   return (
     <div className="space-y-8 pb-10">
       {/* Trainer Profile - Standalone */}
-        <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full max-w-3xl">
+        <Card className="bg-white/95 border border-indigo-100 shadow-lg w-full">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-indigo-100 p-2 text-indigo-600">
