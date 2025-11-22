@@ -4,10 +4,10 @@ export const formatGallopStatus = (status?: string): string => {
   const normalized = status.trim().toUpperCase()
   const statusMap: Record<string, string> = {
     R: 'Rahat',
-    ÇR: 'Çok Rahat',
+    ÇR: 'Çok R.',
     Ç: 'Çalışarak',
-    HÇ: 'Hafif Çalışarak',
-    HR: 'Hafif Rahat',
+    HÇ: 'Hafif Ç.',
+    HR: 'Hafif R.',
   }
 
   return statusMap[normalized] || status
