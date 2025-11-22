@@ -104,6 +104,17 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
     })
   }, [gallops])
 
+  // Get available distance columns (columns that have at least one non-empty value)
+  const availableDistances = useMemo(() => {
+    return DISTANCE_OPTIONS.filter((distance) => {
+      return sortedGallops.some((gallop) => {
+        const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+        const time = distances[distance]
+        return time && time !== '-' && String(time).trim() !== ''
+      })
+    })
+  }, [sortedGallops])
+
   const racecourseOptions = useMemo(() => {
     const racecourses = new Set<string>()
     sortedGallops.forEach((gallop) => {
@@ -453,7 +464,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Pist
                   </th>
-                  {DISTANCE_OPTIONS.map((distance) => {
+                  {availableDistances.map((distance) => {
                     const isActive = selectedDistance === distance
                     const isVisible = !selectedDistance || selectedDistance === distance
                     return (
@@ -539,7 +550,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                         )}
                       </td>
                       
-                      {DISTANCE_OPTIONS.map((meter) => {
+                      {availableDistances.map((meter) => {
                         const isVisible = !selectedDistance || selectedDistance === meter
                         return (
                           <td key={meter} className={`px-3 py-3 text-center ${!isVisible ? 'hidden' : ''}`}>

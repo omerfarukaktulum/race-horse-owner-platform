@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort, formatCurrency } from '@/lib/utils/format'
 import { abbreviateRaceType } from '@/lib/utils/chart-data'
-import { Video, Image as ImageIcon, Medal, Filter, X } from 'lucide-react'
+import { formatGallopStatus } from '@/lib/utils/gallops'
+import { Video, Image as ImageIcon, Medal, Filter, X, Activity } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 
 interface RaceHistory {
   id: string
@@ -29,6 +31,16 @@ interface RaceHistory {
   photoUrl?: string
 }
 
+interface Gallop {
+  id: string
+  gallopDate: string
+  status?: string
+  racecourse?: string
+  surface?: string
+  jockeyName?: string
+  distances: any
+}
+
 type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'thisYear'
 
 const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
@@ -40,6 +52,7 @@ const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
 
 interface Props {
   races: RaceHistory[]
+  gallops?: Gallop[]
   hideButtons?: boolean
   onFilterTriggerReady?: (trigger: () => void) => void
   showFilterDropdown?: boolean
@@ -71,11 +84,12 @@ const getDistanceGroup = (distance?: number) => {
   return undefined
 }
 
-export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightRaceId }: Props) {
+export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightRaceId }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([])
   const [selectedDistanceGroups, setSelectedDistanceGroups] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
+  const [selectedRaceForGallops, setSelectedRaceForGallops] = useState<RaceHistory | null>(null)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
   const highlightedRaceRowRef = useRef<HTMLTableRowElement | null>(null)
@@ -485,12 +499,15 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Medya
                   </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Koşu Idmanları
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredRaces.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={11} className="px-4 py-6 text-center text-sm text-gray-500">
                       Seçilen filtrelerde koşu bulunamadı
                     </td>
                   </tr>
@@ -624,6 +641,19 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
                           )}
                         </div>
                       </td>
+                      
+                      {/* Koşu Idmanları */}
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedRaceForGallops(race)}
+                          className="h-8 w-8 p-0 hover:bg-indigo-50"
+                          title="Koşu Idmanları"
+                        >
+                          <Activity className="h-4 w-4 text-indigo-600" />
+                        </Button>
+                      </td>
                     </tr>
                   )
                 })
@@ -634,7 +664,231 @@ export function RaceHistoryTable({ races, hideButtons = false, onFilterTriggerRe
         </CardContent>
       </Card>
     </div>
+
+    {/* Gallops Modal */}
+    {selectedRaceForGallops && (
+      <RaceGallopsModal
+        race={selectedRaceForGallops}
+        races={sortedRaces}
+        gallops={gallops}
+        onClose={() => setSelectedRaceForGallops(null)}
+      />
+    )}
     </>
+  )
+}
+
+// Modal component for showing gallops between races
+function RaceGallopsModal({ 
+  race, 
+  races, 
+  gallops, 
+  onClose 
+}: { 
+  race: RaceHistory
+  races: RaceHistory[]
+  gallops: Gallop[]
+  onClose: () => void
+}) {
+  const [selectedDistance, setSelectedDistance] = useState<string | null>(null)
+  const DISTANCE_OPTIONS = ['200', '400', '600', '800', '1000', '1200', '1400']
+
+  // Find previous race
+  const previousRace = useMemo(() => {
+    const currentRaceDate = new Date(race.raceDate)
+    const previousRaces = races
+      .filter(r => new Date(r.raceDate) < currentRaceDate)
+      .sort((a, b) => new Date(b.raceDate).getTime() - new Date(a.raceDate).getTime())
+    return previousRaces[0] || null
+  }, [race, races])
+
+  // Filter gallops between previous race and current race
+  const filteredGallops = useMemo(() => {
+    const currentRaceDate = new Date(race.raceDate)
+    const previousRaceDate = previousRace ? new Date(previousRace.raceDate) : null
+    
+    let filtered = gallops.filter((gallop) => {
+      const gallopDate = new Date(gallop.gallopDate)
+      // Include gallops that are:
+      // - After previous race (or from beginning if no previous race)
+      // - Before or on current race date
+      if (previousRaceDate) {
+        return gallopDate > previousRaceDate && gallopDate <= currentRaceDate
+      }
+      return gallopDate <= currentRaceDate
+    })
+
+    // Filter by selected distance if any
+    if (selectedDistance) {
+      filtered = filtered.filter((gallop) => {
+        const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+        const time = distances[selectedDistance]
+        return time && time !== '-' && String(time).trim() !== ''
+      })
+    }
+
+    return filtered.sort((a, b) => new Date(b.gallopDate).getTime() - new Date(a.gallopDate).getTime())
+  }, [race, previousRace, gallops, selectedDistance])
+
+  // Get available distance columns (columns that have at least one non-empty value)
+  const availableDistances = useMemo(() => {
+    return DISTANCE_OPTIONS.filter((distance) => {
+      return filteredGallops.some((gallop) => {
+        const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+        const time = distances[distance]
+        return time && time !== '-' && String(time).trim() !== ''
+      })
+    })
+  }, [filteredGallops])
+
+  const toggleDistance = (distance: string) => {
+    setSelectedDistance((prev) => prev === distance ? null : distance)
+  }
+
+  // Get surface color (same as in GallopsTable)
+  const getSurfaceColor = (surface?: string) => {
+    if (!surface) return 'bg-gray-100 text-gray-800'
+    
+    if (surface.startsWith('Ç:') || surface === 'Ç' || surface === 'Çim') {
+      return 'bg-green-100 text-green-800'
+    } else if (surface.startsWith('K:') || surface === 'K' || surface === 'Kum') {
+      return 'bg-orange-100 text-orange-800'
+    } else if (surface.startsWith('S:') || surface === 'S' || surface.toLowerCase().includes('sentetik')) {
+      return 'bg-[#d39b1e] text-white'
+    }
+    return 'bg-gray-100 text-gray-800'
+  }
+  
+  // Format surface display
+  const formatSurface = (surface?: string) => {
+    if (!surface) return '-'
+    if (surface.toLowerCase().includes('sentetik')) return 'Sen'
+    return surface
+  }
+
+  // Get distance value
+  const getDistance = (distances: any, meter: string) => {
+    const time = distances[meter]
+    if (!time) return '-'
+    
+    const timeStr = String(time)
+    if (timeStr.startsWith('0.')) {
+      return timeStr.substring(2)
+    }
+    return timeStr
+  }
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="w-full max-w-7xl max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+          <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+            Koşu Idmanları
+          </DialogTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            {formatDateShort(race.raceDate)} - {race.city || ''} {race.distance ? `${race.distance}m` : ''}
+            {previousRace && ` (${formatDateShort(previousRace.raceDate)} - ${formatDateShort(race.raceDate)})`}
+          </p>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-auto px-6 py-4">
+          {filteredGallops.length === 0 ? (
+            <div className="text-center py-12">
+              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Bu koşu için idman verisi bulunmuyor</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Hipodrom
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Jokey
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Pist
+                    </th>
+                    {availableDistances.map((distance) => {
+                      const isActive = selectedDistance === distance
+                      const isVisible = !selectedDistance || selectedDistance === distance
+                      return (
+                        <th
+                          key={distance}
+                          onClick={() => toggleDistance(distance)}
+                          className={`px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors select-none ${
+                            isActive
+                              ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          } ${!isVisible ? 'hidden' : ''}`}
+                          title={`${distance}m filtrele`}
+                        >
+                          {distance}m
+                        </th>
+                      )
+                    })}
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Durum
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredGallops.map((gallop, index) => {
+                    const isStriped = index % 2 === 1
+                    const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+                    const statusLabel = formatGallopStatus(gallop.status)
+                    
+                    return (
+                      <tr
+                        key={gallop.id}
+                        className={`transition-colors ${
+                          isStriped ? 'bg-gray-50' : 'bg-white'
+                        } hover:bg-indigo-50/50`}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatDateShort(gallop.gallopDate)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-700">{gallop.racecourse || '-'}</span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-700">{gallop.jockeyName || '-'}</span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {gallop.surface && (
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
+                              {formatSurface(gallop.surface)}
+                            </span>
+                          )}
+                        </td>
+                        {availableDistances.map((meter) => {
+                          const isVisible = !selectedDistance || selectedDistance === meter
+                          return (
+                            <td key={meter} className={`px-3 py-3 text-center ${!isVisible ? 'hidden' : ''}`}>
+                              <span className="text-sm font-medium text-gray-800">{getDistance(distances, meter)}</span>
+                            </td>
+                          )
+                        })}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-700">{statusLabel || '-'}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

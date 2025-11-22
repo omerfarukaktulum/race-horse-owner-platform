@@ -540,6 +540,7 @@ useEffect(() => {
         <TabsContent value="races" className="mt-6">
           <RaceHistoryTable 
             races={horse.raceHistory || []}
+            gallops={horse.gallops || []}
             hideButtons={true}
             onFilterTriggerReady={(trigger) => {
               racesFilterTriggerRef.current = trigger
