@@ -923,10 +923,15 @@ function RaceGallopsModal({
               <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
                 Koşu İdmanları
               </DialogTitle>
-              <div className="text-sm text-gray-600 mt-2 space-y-1">
+              <div className="text-sm text-gray-600 mt-2 space-y-1 inline-block text-left">
                 <p>
                   <span className="font-semibold">Yarış:</span> {formatDateShort(race.raceDate)} ({[race.city, race.raceType, race.distance ? `${race.distance}` : '', race.surface ? formatSurface(race.surface) : ''].filter(Boolean).join(' ')})
                 </p>
+                {race.position && (
+                  <p>
+                    <span className="font-semibold">Sıra:</span> {race.position}
+                  </p>
+                )}
                 {previousRace && (
                   <p>
                     <span className="font-semibold">İdman Aralığı:</span> ({formatDateShort(previousRace.raceDate)} - {formatDateShort(race.raceDate)})
