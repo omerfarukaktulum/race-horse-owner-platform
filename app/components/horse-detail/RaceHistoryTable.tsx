@@ -500,7 +500,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                     Medya
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Koşu Idmanları
+                    Koşu İdmanları
                   </th>
                 </tr>
               </thead>
@@ -642,14 +642,14 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                         </div>
                       </td>
                       
-                      {/* Koşu Idmanları */}
+                      {/* Koşu İdmanları */}
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedRaceForGallops(race)}
                           className="h-8 w-8 p-0 hover:bg-indigo-50"
-                          title="Koşu Idmanları"
+                          title="Koşu İdmanları"
                         >
                           <Activity className="h-4 w-4 text-indigo-600" />
                         </Button>
@@ -783,7 +783,7 @@ function RaceGallopsModal({
       <DialogContent className="w-full max-w-7xl max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-            Koşu Idmanları
+            Koşu İdmanları
           </DialogTitle>
           <p className="text-sm text-gray-600 mt-1">
             {formatDateShort(race.raceDate)} - {race.city || ''} {race.distance ? `${race.distance}m` : ''}
