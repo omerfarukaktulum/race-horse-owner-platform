@@ -570,6 +570,7 @@ useEffect(() => {
             filterDropdownContainerRef={gallopsFilterButtonRef}
             onActiveFiltersChange={setGallopsFilterCount}
             highlightGallopId={highlightGallopId}
+            onRefresh={fetchHorse}
           />
         </TabsContent>
 

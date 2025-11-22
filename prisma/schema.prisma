@@ -338,6 +338,9 @@ model HorseGallop {
   // Store distances as JSON: { "1400": "1.02.20", "400": "0.38.50" }
   distances   Json     // { [distance: number]: string }
   
+  note        String?  // İdman Notu
+  photoUrl    String?  // Photo URL(s) - can be JSON array or single string
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

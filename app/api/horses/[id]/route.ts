@@ -72,6 +72,17 @@ export async function GET(
           take: 50, // Latest 50 races
         },
         gallops: {
+          select: {
+            id: true,
+            gallopDate: true,
+            status: true,
+            racecourse: true,
+            surface: true,
+            jockeyName: true,
+            distances: true,
+            note: true,
+            photoUrl: true,
+          },
           orderBy: { gallopDate: 'desc' },
           take: 100, // Latest 100 gallops
         },

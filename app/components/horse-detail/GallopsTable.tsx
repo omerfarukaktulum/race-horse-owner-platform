@@ -6,7 +6,11 @@ import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
 import { formatGallopStatus } from '@/lib/utils/gallops'
-import { Filter, X } from 'lucide-react'
+import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText } from 'lucide-react'
+import { AddGallopNoteModal } from '@/app/components/modals/add-gallop-note-modal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
+import { toast } from 'sonner'
+import { useAuth } from '@/lib/context/auth-context'
 
 interface Gallop {
   id: string
@@ -16,6 +20,8 @@ interface Gallop {
   surface?: string
   jockeyName?: string
   distances: any // JSON object with distances
+  note?: string | null
+  photoUrl?: string | string[] | null
 }
 
 type RangeKey = 'lastWeek' | 'lastMonth' | 'last3Months' | 'thisYear'
@@ -36,6 +42,7 @@ interface Props {
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
   highlightGallopId?: string
+  onRefresh?: () => void
 }
 
 const normalizeRacecourse = (racecourse?: string) => {
@@ -50,7 +57,8 @@ const normalizeStatus = (status?: string) => {
 
 const DISTANCE_OPTIONS = ['200', '400', '600', '800', '1000', '1200', '1400']
 
-export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId }: Props) {
+export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId, onRefresh }: Props) {
+  const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
@@ -59,6 +67,26 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
   const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
+  const [selectedGallopForNote, setSelectedGallopForNote] = useState<Gallop | null>(null)
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [attachmentViewer, setAttachmentViewer] = useState<{
+    open: boolean
+    attachments: string[]
+    currentIndex: number
+  }>({
+    open: false,
+    attachments: [],
+    currentIndex: 0,
+  })
+  const [noteViewer, setNoteViewer] = useState<{
+    open: boolean
+    note: string
+    gallopDate: string
+  }>({
+    open: false,
+    note: '',
+    gallopDate: '',
+  })
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -231,6 +259,50 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
       highlightedRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [highlightGallopId, filteredGallops.length])
+
+  // Helper function to get attachments from photoUrl
+  const getAttachments = useCallback((photoUrl?: string | string[] | null): string[] => {
+    if (!photoUrl) return []
+    if (Array.isArray(photoUrl)) return photoUrl.filter(Boolean)
+    try {
+      const parsed = JSON.parse(photoUrl)
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean)
+      }
+    } catch {
+      // ignore parse error, treat as string
+    }
+    return [photoUrl].filter(Boolean)
+  }, [])
+
+  // Open attachment viewer
+  const openAttachmentViewer = useCallback((attachments: string[], startIndex: number = 0) => {
+    setAttachmentViewer({
+      open: true,
+      attachments,
+      currentIndex: startIndex,
+    })
+  }, [])
+
+  // Handle add/edit note
+  const handleNoteClick = useCallback((gallop: Gallop) => {
+    setSelectedGallopForNote(gallop)
+    setIsNoteModalOpen(true)
+  }, [])
+
+  // Handle note modal success
+  const handleNoteSuccess = useCallback(() => {
+    onRefresh?.()
+  }, [onRefresh])
+
+  // Open note viewer
+  const openNoteViewer = useCallback((note: string, gallopDate: string) => {
+    setNoteViewer({
+      open: true,
+      note,
+      gallopDate,
+    })
+  }, [])
 
   if (gallops.length === 0) {
     return (
@@ -485,12 +557,15 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Durum
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    İdman Notu
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredGallops.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={availableDistances.length + 6} className="px-4 py-6 text-center text-sm text-gray-500">
                       Seçilen filtrelerde idman bulunamadı
                     </td>
                   </tr>
@@ -563,6 +638,59 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className="text-sm text-gray-700">{statusLabel || '-'}</span>
                       </td>
+                      
+                      {/* İdman Notu */}
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {gallop.note || gallop.photoUrl ? (
+                          <div className="flex justify-start gap-2">
+                            {(() => {
+                              const attachments = getAttachments(gallop.photoUrl)
+                              return (
+                                <>
+                                  {gallop.note && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openNoteViewer(gallop.note!, gallop.gallopDate)}
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                      title="Notu görüntüle"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  {attachments.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openAttachmentViewer(attachments)}
+                                      className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                      title={`${attachments.length} ek görüntüle`}
+                                    >
+                                      <Paperclip className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNoteClick(gallop)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )
+                            })()}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleNoteClick(gallop)}
+                            className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-800 hover:underline transition-colors"
+                            title="İdman notu ekle"
+                          >
+                            <Plus className="h-4 w-4" />
+                            <span>Ekle</span>
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   )
                 })
@@ -573,6 +701,112 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
         </CardContent>
       </Card>
     </div>
+
+    {/* Note Modal */}
+    {selectedGallopForNote && (
+      <AddGallopNoteModal
+        open={isNoteModalOpen}
+        onClose={() => {
+          setIsNoteModalOpen(false)
+          setSelectedGallopForNote(null)
+        }}
+        gallopId={selectedGallopForNote.id}
+        gallopDate={selectedGallopForNote.gallopDate}
+        initialNote={selectedGallopForNote.note}
+        initialPhotoUrl={selectedGallopForNote.photoUrl}
+        onSuccess={handleNoteSuccess}
+      />
+    )}
+
+    {/* Note Viewer */}
+    {noteViewer.open && (
+      <Dialog open={noteViewer.open} onOpenChange={() => setNoteViewer({ open: false, note: '', gallopDate: '' })}>
+        <DialogContent className="w-[320px] max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <div className="text-center">
+                <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                  İdman Notu
+                </DialogTitle>
+                <div className="text-sm text-gray-600 mt-2">
+                  <p>
+                    <span className="font-semibold">Tarih:</span> {formatDateShort(noteViewer.gallopDate)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto px-6 py-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{noteViewer.note}</p>
+            </div>
+          </div>
+          <div className="flex justify-end px-6 py-4 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNoteViewer({ open: false, note: '', gallopDate: '' })}
+            >
+              Kapat
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
+
+    {/* Attachment Viewer */}
+    {attachmentViewer.open && (
+      <Dialog open={attachmentViewer.open} onOpenChange={() => setAttachmentViewer({ open: false, attachments: [], currentIndex: 0 })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-white/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b border-gray-200">
+            <DialogTitle className="text-lg font-semibold">Ekler</DialogTitle>
+          </DialogHeader>
+          <div className="relative flex items-center justify-center p-6 bg-gray-50 min-h-[400px]">
+            {attachmentViewer.attachments.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachmentViewer((prev) => ({
+                      ...prev,
+                      currentIndex: prev.currentIndex > 0 ? prev.currentIndex - 1 : prev.attachments.length - 1,
+                    }))
+                  }}
+                  className="absolute left-4 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-colors z-10"
+                  title="Önceki"
+                >
+                  <ChevronLeft className="h-6 w-6 text-gray-700" />
+                </button>
+                <img
+                  src={attachmentViewer.attachments[attachmentViewer.currentIndex]}
+                  alt={`Attachment ${attachmentViewer.currentIndex + 1}`}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachmentViewer((prev) => ({
+                      ...prev,
+                      currentIndex: prev.currentIndex < prev.attachments.length - 1 ? prev.currentIndex + 1 : 0,
+                    }))
+                  }}
+                  className="absolute right-4 p-2 rounded-full bg-white/90 hover:bg-white shadow-lg transition-colors z-10"
+                  title="Sonraki"
+                >
+                  <ChevronRight className="h-6 w-6 text-gray-700" />
+                </button>
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-black/50 text-white text-sm rounded-full">
+                  {attachmentViewer.currentIndex + 1} / {attachmentViewer.attachments.length}
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    )}
     </>
   )
 }
