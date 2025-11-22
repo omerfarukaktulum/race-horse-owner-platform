@@ -1,5 +1,6 @@
-import { MapPin, Trophy } from 'lucide-react'
+import { MapPin, Trophy, CircleAlert } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils/format'
+import { useRouter } from 'next/navigation'
 
 interface HorseMetadata {
   name: string
@@ -24,6 +25,9 @@ interface HorseMetadata {
   lastRaceDate?: string
   lastPrizeDate?: string
   lastExpenseDate?: string
+  remainingWaitDays?: number | null
+  activeBannedMedicine?: { id: string; name: string } | null
+  horseId?: string
 }
 
 interface Props {
@@ -31,6 +35,7 @@ interface Props {
 }
 
 export function HorseMetadataCard({ horse }: Props) {
+  const router = useRouter()
   const currentYear = new Date().getFullYear()
   const age = horse.yob ? currentYear - horse.yob : null
   
@@ -69,9 +74,11 @@ export function HorseMetadataCard({ horse }: Props) {
         <div className="space-y-4">
           {/* Horse Name */}
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent mb-3">
-              {horse.name}
-            </h1>
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
+                {horse.name}
+              </h1>
+            </div>
             
             {/* Origin - Right below name */}
             {(horse.sireName || horse.damName) && (
@@ -80,6 +87,28 @@ export function HorseMetadataCard({ horse }: Props) {
                   ? `${horse.sireName} - ${horse.damName}`
                   : horse.sireName || horse.damName}
               </p>
+            )}
+
+            {/* Banned Medicine Label */}
+            {horse.remainingWaitDays !== null && horse.remainingWaitDays !== undefined && horse.remainingWaitDays > 0 && horse.activeBannedMedicine && (
+              <div className="mb-3">
+                <button
+                  onClick={() => {
+                    if (horse.horseId && horse.activeBannedMedicine) {
+                      router.push(`/app/horses/${horse.horseId}?tab=banned-medicines&highlightBannedMedicine=${horse.activeBannedMedicine.id}`)
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-md text-xs font-medium border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:border-red-300 transition-colors cursor-pointer flex items-start gap-2 w-full text-left"
+                >
+                  <CircleAlert className="h-8 w-6 flex-shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">Verilen Yasaklı İlaç ({horse.activeBannedMedicine?.name || ''})</span>
+                    <span className="font-semibold">
+                      Sonraki yarışa katılmak için kalan süre: {horse.remainingWaitDays} gün
+                    </span>
+                  </div>
+                </button>
+              </div>
             )}
             
             {/* Age, Gender, Handicap, Trainer - Matching horses page style */}
@@ -144,6 +173,7 @@ export function HorseMetadataCard({ horse }: Props) {
                 )}
               </div>
             )}
+
 
           </div>
           

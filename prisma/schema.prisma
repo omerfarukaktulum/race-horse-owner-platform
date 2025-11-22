@@ -45,6 +45,7 @@ model User {
   trainerProfile TrainerProfile?
   expenses       Expense[]
   notes          HorseNote[]
+  bannedMedicines HorseBannedMedicine[]
   
   accounts Account[]
   sessions Session[]
@@ -258,6 +259,7 @@ model Horse {
   registrations HorseRegistration[]
   gallops HorseGallop[]
   notes HorseNote[]
+  bannedMedicines HorseBannedMedicine[]
 
   @@index([stablemateId])
   @@index([trainerId])
@@ -426,6 +428,29 @@ model HorseNote {
   @@index([date])
   @@index([category])
   @@map("horse_notes")
+}
+
+model HorseBannedMedicine {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  medicineName String  // İlaç adı/tipi
+  givenDate    DateTime // İlaç verilme tarihi
+  waitDays     Int     // Yarışa katılmadan önce beklenmesi gereken gün sayısı
+  note         String? // Not
+  photoUrl     String? // Photo URL(s) - can be JSON array or single string
+  
+  addedById    String
+  addedBy      User    @relation(fields: [addedById], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([addedById])
+  @@index([givenDate])
+  @@map("horse_banned_medicines")
 }
 
 // NextAuth models

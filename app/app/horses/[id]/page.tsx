@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
+import { AddBannedMedicineModal } from '@/app/components/modals/add-banned-medicine-modal'
 import { HorseMetadataCard } from '@/app/components/horse-detail/HorseMetadataCard'
 import { StatisticsCharts } from '@/app/components/horse-detail/StatisticsCharts'
 import { PedigreeTree } from '@/app/components/horse-detail/PedigreeTree'
@@ -17,6 +18,7 @@ import { RaceHistoryTable } from '@/app/components/horse-detail/RaceHistoryTable
 import { GallopsTable } from '@/app/components/horse-detail/GallopsTable'
 import { HorseExpensesTable } from '@/app/components/horse-detail/HorseExpensesTable'
 import { HorseNotesList } from '@/app/components/horse-detail/HorseNotesList'
+import { BannedMedicinesTable } from '@/app/components/horse-detail/BannedMedicinesTable'
 import { formatCurrency } from '@/lib/utils/format'
 
 interface LocationHistory {
@@ -48,7 +50,7 @@ interface RaceHistory {
   photoUrl?: string
 }
 
-const HORSE_TABS = ['info', 'pedigree', 'races', 'gallops', 'statistics', 'expenses', 'notes'] as const
+const HORSE_TABS = ['info', 'pedigree', 'races', 'gallops', 'banned-medicines', 'statistics', 'expenses', 'notes'] as const
 type HorseTab = (typeof HORSE_TABS)[number]
 
 const isHorseTab = (value: string | null): value is HorseTab => {
@@ -152,6 +154,22 @@ interface HorseDetail {
     jockeyName?: string
     distances: any
   }>
+  bannedMedicines?: Array<{
+    id: string
+    medicineName: string
+    givenDate: string
+    waitDays: number
+    note?: string | null
+    photoUrl?: string | string[] | null
+    addedById: string
+    addedBy: {
+      email: string
+      role: string
+      ownerProfile?: { officialName: string }
+      trainerProfile?: { fullName: string }
+      name?: string
+    }
+  }>
 }
 
 export default function HorseDetailPage() {
@@ -165,6 +183,7 @@ export default function HorseDetailPage() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+  const [isBannedMedicineModalOpen, setIsBannedMedicineModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<HorseTab>(() => {
     const tabParam = searchParams?.get('tab')
     return isHorseTab(tabParam) ? tabParam : 'info'
@@ -179,12 +198,15 @@ export default function HorseDetailPage() {
   const [statisticsFilterCount, setStatisticsFilterCount] = useState(0)
   const [expensesFilterCount, setExpensesFilterCount] = useState(0)
   const [notesFilterCount, setNotesFilterCount] = useState(0)
+  const [bannedMedicinesFilterCount, setBannedMedicinesFilterCount] = useState(0)
+  const [showBannedMedicinesFilter, setShowBannedMedicinesFilter] = useState(false)
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
   const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
   const highlightExpenseId = searchParams?.get('highlightExpense') || undefined
+  const highlightBannedMedicineId = searchParams?.get('highlightBannedMedicine') || undefined
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
@@ -207,11 +229,13 @@ export default function HorseDetailPage() {
   const statisticsFilterTriggerRef = useRef<(() => void) | null>(null)
   const racesFilterTriggerRef = useRef<(() => void) | null>(null)
   const gallopsFilterTriggerRef = useRef<(() => void) | null>(null)
+  const bannedMedicinesFilterTriggerRef = useRef<(() => void) | null>(null)
   const expensesFilterButtonRef = useRef<HTMLDivElement>(null)
   const notesFilterButtonRef = useRef<HTMLDivElement>(null)
   const statisticsFilterButtonRef = useRef<HTMLDivElement>(null)
   const racesFilterButtonRef = useRef<HTMLDivElement>(null)
   const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
+  const bannedMedicinesFilterButtonRef = useRef<HTMLDivElement>(null)
 
   const getFilterButtonClass = (hasActive: boolean) =>
     `h-[42px] px-4 text-sm font-medium rounded-md border-2 shadow-md hover:shadow-lg transition-all duration-300 ${
@@ -268,6 +292,18 @@ useEffect(() => {
         // Don't fail the whole page if notes fail
       }
 
+      // Fetch banned medicines separately
+      try {
+        const medicinesResponse = await fetch(`/api/horses/${horseId}/banned-medicines`)
+        const medicinesData = await medicinesResponse.json()
+        if (medicinesResponse.ok && medicinesData.medicines) {
+          horseData.bannedMedicines = medicinesData.medicines
+        }
+      } catch (medicinesError) {
+        console.error('Fetch banned medicines error:', medicinesError)
+        // Don't fail the whole page if medicines fail
+      }
+
       setHorse(horseData)
     } catch (error) {
       console.error('Fetch horse error:', error)
@@ -313,6 +349,42 @@ useEffect(() => {
     ? horse.expenses[0].date
     : undefined
 
+  // Calculate remaining wait days for banned medicines
+  const calculateRemainingDays = (givenDate: string, waitDays: number): number => {
+    const given = new Date(givenDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    given.setHours(0, 0, 0, 0)
+    
+    const daysSinceGiven = Math.floor((today.getTime() - given.getTime()) / (1000 * 60 * 60 * 24))
+    const remaining = waitDays - daysSinceGiven
+    
+    return Math.max(0, remaining)
+  }
+
+  // Find the medicine with the most remaining days (the one that needs the longest wait)
+  let remainingWaitDays: number | null = null
+  let activeBannedMedicine: { id: string; name: string } | null = null
+  if (horse.bannedMedicines && horse.bannedMedicines.length > 0) {
+    const medicinesWithRemaining = horse.bannedMedicines
+      .map(med => ({
+        ...med,
+        remainingDays: calculateRemainingDays(med.givenDate, med.waitDays)
+      }))
+      .filter(med => med.remainingDays > 0)
+    
+    if (medicinesWithRemaining.length > 0) {
+      const medicineWithMaxDays = medicinesWithRemaining.reduce((max, med) => 
+        med.remainingDays > max.remainingDays ? med : max
+      )
+      remainingWaitDays = medicineWithMaxDays.remainingDays
+      activeBannedMedicine = {
+        id: medicineWithMaxDays.id,
+        name: medicineWithMaxDays.medicineName
+      }
+    }
+  }
+
   // Prepare metadata for card
   const horseMetadata = {
     name: horse.name,
@@ -337,6 +409,9 @@ useEffect(() => {
     lastRaceDate,
     lastPrizeDate,
     lastExpenseDate,
+    remainingWaitDays,
+    activeBannedMedicine,
+    horseId: horse.id,
   }
 
   // Prepare pedigree data
@@ -408,6 +483,12 @@ useEffect(() => {
               className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
             >
               İdmanlar
+            </TabsTrigger>
+            <TabsTrigger 
+              value="banned-medicines"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              Çıkıcı İlaçlar
             </TabsTrigger>
             <TabsTrigger 
               value="statistics"
@@ -532,6 +613,29 @@ useEffect(() => {
               </Button>
             </div>
           )}
+          {activeTab === 'banned-medicines' && (
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
+              <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    bannedMedicinesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtrele
+                  {renderFilterBadge(bannedMedicinesFilterCount)}
+                </Button>
+              </div>
+              <Button 
+                onClick={() => setIsBannedMedicineModalOpen(true)}
+                className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                + Yeni
+              </Button>
+            </div>
+          )}
         </div>
 
         <TabsContent value="info" className="mt-6">
@@ -571,6 +675,24 @@ useEffect(() => {
             onActiveFiltersChange={setGallopsFilterCount}
             highlightGallopId={highlightGallopId}
             onRefresh={fetchHorse}
+          />
+        </TabsContent>
+
+        <TabsContent value="banned-medicines" className="mt-6">
+          <BannedMedicinesTable 
+            medicines={horse.bannedMedicines || []}
+            horseId={horse.id}
+            horseName={horse.name}
+            onRefresh={fetchHorse}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              bannedMedicinesFilterTriggerRef.current = trigger
+            }}
+            showFilterDropdown={showBannedMedicinesFilter}
+            onFilterDropdownChange={setShowBannedMedicinesFilter}
+            filterDropdownContainerRef={bannedMedicinesFilterButtonRef}
+            onActiveFiltersChange={setBannedMedicinesFilterCount}
+            highlightBannedMedicineId={highlightBannedMedicineId}
           />
         </TabsContent>
 
@@ -645,6 +767,22 @@ useEffect(() => {
           open={isNoteModalOpen}
           onClose={() => {
             setIsNoteModalOpen(false)
+            fetchHorse() // Refresh data
+          }}
+        />
+      )}
+
+      {isBannedMedicineModalOpen && (
+        <AddBannedMedicineModal
+          horseId={horse.id}
+          horseName={horse.name}
+          open={isBannedMedicineModalOpen}
+          onClose={() => {
+            setIsBannedMedicineModalOpen(false)
+            fetchHorse() // Refresh data
+          }}
+          onSuccess={() => {
+            setIsBannedMedicineModalOpen(false)
             fetchHorse() // Refresh data
           }}
         />
