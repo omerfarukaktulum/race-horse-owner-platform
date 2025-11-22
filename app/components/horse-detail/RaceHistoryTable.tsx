@@ -778,17 +778,54 @@ function RaceGallopsModal({
     return timeStr
   }
 
+  // Calculate days before race
+  const getDaysBeforeRace = (gallopDate: string) => {
+    const raceDate = new Date(race.raceDate)
+    const gallop = new Date(gallopDate)
+    
+    // Set both dates to midnight for accurate day calculation
+    raceDate.setHours(0, 0, 0, 0)
+    gallop.setHours(0, 0, 0, 0)
+    
+    const diffTime = raceDate.getTime() - gallop.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) {
+      return 'Aynı gün'
+    } else if (diffDays === 1) {
+      return '1 gün önce'
+    } else if (diffDays > 0) {
+      return `${diffDays} gün önce`
+    } else {
+      // If gallop is after race (shouldn't happen, but handle it)
+      return `${Math.abs(diffDays)} gün sonra`
+    }
+  }
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="w-full max-w-7xl max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-          <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-            Koşu İdmanları
-          </DialogTitle>
-          <p className="text-sm text-gray-600 mt-1">
-            {formatDateShort(race.raceDate)} - {race.city || ''} {race.distance ? `${race.distance}m` : ''}
-            {previousRace && ` (${formatDateShort(previousRace.raceDate)} - ${formatDateShort(race.raceDate)})`}
-          </p>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <Activity className="h-8 w-8 text-white" />
+            </div>
+            <div className="text-center">
+              <DialogTitle className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                Koşu İdmanları
+              </DialogTitle>
+              <div className="text-sm text-gray-600 mt-2 space-y-1">
+                <p>
+                  <span className="font-semibold">Yarış:</span> {formatDateShort(race.raceDate)} ({[race.city, race.raceType, race.distance ? `${race.distance}` : '', race.surface ? formatSurface(race.surface) : ''].filter(Boolean).join(' ')})
+                </p>
+                {previousRace && (
+                  <p>
+                    <span className="font-semibold">İdman Aralığı:</span> ({formatDateShort(previousRace.raceDate)} - {formatDateShort(race.raceDate)})
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </DialogHeader>
         
         <div className="flex-1 overflow-auto px-6 py-4">
@@ -804,6 +841,9 @@ function RaceGallopsModal({
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Zamanlama
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Hipodrom
@@ -853,6 +893,11 @@ function RaceGallopsModal({
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="text-sm font-medium text-gray-900">
                             {formatDateShort(gallop.gallopDate)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-600 font-medium">
+                            {getDaysBeforeRace(gallop.gallopDate)}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
