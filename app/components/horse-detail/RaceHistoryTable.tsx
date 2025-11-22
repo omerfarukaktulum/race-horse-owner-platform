@@ -88,6 +88,8 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>([])
   const [selectedDistanceGroups, setSelectedDistanceGroups] = useState<string[]>([])
+  const [selectedResults, setSelectedResults] = useState<string[]>([])
+  const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const [selectedRaceForGallops, setSelectedRaceForGallops] = useState<RaceHistory | null>(null)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
@@ -147,6 +149,14 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
     return Array.from(surfaces)
   }, [sortedRaces])
 
+  const racecourseOptions = useMemo(() => {
+    const racecourses = new Set<string>()
+    sortedRaces.forEach((race) => {
+      if (race.city) racecourses.add(race.city)
+    })
+    return Array.from(racecourses).sort()
+  }, [sortedRaces])
+
   // Filter races based on selected filters
   const filteredRaces = useMemo(() => {
     let filtered = sortedRaces
@@ -190,6 +200,12 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
       })
     }
 
+    if (selectedRacecourses.length > 0) {
+      filtered = filtered.filter((race) => {
+        return race.city ? selectedRacecourses.includes(race.city) : false
+      })
+    }
+
     if (selectedDistanceGroups.length > 0) {
       filtered = filtered.filter((race) => {
         const group = getDistanceGroup(race.distance)
@@ -197,17 +213,38 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
       })
     }
 
+    // Filter by results
+    if (selectedResults.length > 0) {
+      filtered = filtered.filter((race) => {
+        if (!race.position) return false
+        
+        // Check if race matches any selected result filter (OR logic)
+        if (selectedResults.includes('ilk-3') && race.position >= 1 && race.position <= 3) {
+          return true
+        }
+        if (selectedResults.includes('tabela-disi') && race.position > 5) {
+          return true
+        }
+        if (selectedResults.includes('tabela-sonu') && (race.position === 4 || race.position === 5)) {
+          return true
+        }
+        return false
+      })
+    }
+
     return filtered
-  }, [sortedRaces, selectedRange, selectedSurfaces, selectedDistanceGroups])
+  }, [sortedRaces, selectedRange, selectedSurfaces, selectedRacecourses, selectedDistanceGroups, selectedResults])
 
   const clearFilters = useCallback(() => {
     setSelectedRange(null)
     setSelectedSurfaces([])
+    setSelectedRacecourses([])
     setSelectedDistanceGroups([])
+    setSelectedResults([])
   }, [])
 
   const activeFilterCount =
-    (selectedRange ? 1 : 0) + selectedSurfaces.length + selectedDistanceGroups.length
+    (selectedRange ? 1 : 0) + selectedSurfaces.length + selectedRacecourses.length + selectedDistanceGroups.length + selectedResults.length
   const hasActiveFilters = activeFilterCount > 0
 
   useEffect(() => {
@@ -223,6 +260,18 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
   const toggleDistanceGroup = (group: string) => {
     setSelectedDistanceGroups((prev) =>
       prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]
+    )
+  }
+
+  const toggleRacecourse = (racecourse: string) => {
+    setSelectedRacecourses((prev) =>
+      prev.includes(racecourse) ? prev.filter((r) => r !== racecourse) : [...prev, racecourse]
+    )
+  }
+
+  const toggleResult = (result: string) => {
+    setSelectedResults((prev) =>
+      prev.includes(result) ? prev.filter((r) => r !== result) : [...prev, result]
     )
   }
 
@@ -381,6 +430,66 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                 </div>
               </div>
 
+              {/* Racecourse Filter */}
+              {racecourseOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                  <div className="flex flex-wrap gap-2">
+                    {racecourseOptions.map((racecourse) => {
+                      const isActive = selectedRacecourses.includes(racecourse)
+                      return (
+                        <button
+                          key={racecourse}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleRacecourse(racecourse)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {racecourse}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Result Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Sonuç</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'ilk-3', label: 'İlk 3 Sıra' },
+                    { value: 'tabela-sonu', label: 'Tabela Sonu' },
+                    { value: 'tabela-disi', label: 'Tabela Dışı' },
+                  ].map((option) => {
+                    const isActive = selectedResults.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleResult(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {surfaceOptions.length > 0 && (
                 <div className="mb-4">
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Pist Türü</label>
@@ -520,7 +629,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                   return (
                     <tr
                       key={race.id}
-                      ref={isHighlighted ? (el) => (highlightedRaceRowRef.current = el) : undefined}
+                      ref={isHighlighted ? (el) => { highlightedRaceRowRef.current = el } : undefined}
                       className={`transition-colors ${
                         isHighlighted
                           ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'
