@@ -1063,7 +1063,7 @@ export default function HorsesPage() {
               aria-label={TR.horses.addHorse}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
           >
-              <span className="sr-only md:hidden">{TR.horses.addHorse}</span>
+              <Plus className="h-4 w-4 md:hidden" />
               <span className="hidden md:inline">{TR.horses.addHorse}</span>
           </Button>
           <Button
@@ -1082,7 +1082,7 @@ export default function HorsesPage() {
               aria-label={TR.horses.removeHorse}
               className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed h-9 md:h-10"
           >
-              <span className="sr-only md:hidden">{TR.horses.removeHorse}</span>
+              <Minus className="h-4 w-4 md:hidden" />
               <span className="hidden md:inline">{TR.horses.removeHorse}</span>
           </Button>
         </div>
