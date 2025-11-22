@@ -48,10 +48,13 @@ const normalizeStatus = (status?: string) => {
   return status.trim()
 }
 
+const DISTANCE_OPTIONS = ['200', '400', '600', '800', '1000', '1200', '1400']
+
 export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId }: Props) {
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [selectedDistance, setSelectedDistance] = useState<string | null>(null)
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
@@ -169,17 +172,27 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
       })
     }
 
+    // Filter by distance - show only gallops that have data for the selected distance
+    if (selectedDistance) {
+      filtered = filtered.filter((gallop) => {
+        const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+        const time = distances[selectedDistance]
+        return time && time !== '-' && String(time).trim() !== ''
+      })
+    }
+
     return filtered
-  }, [sortedGallops, selectedRange, selectedRacecourses, selectedStatuses])
+  }, [sortedGallops, selectedRange, selectedRacecourses, selectedStatuses, selectedDistance])
 
   const clearFilters = useCallback(() => {
     setSelectedRange(null)
     setSelectedRacecourses([])
     setSelectedStatuses([])
+    setSelectedDistance(null)
   }, [])
 
   const activeFilterCount =
-    (selectedRange ? 1 : 0) + selectedRacecourses.length + selectedStatuses.length
+    (selectedRange ? 1 : 0) + selectedRacecourses.length + selectedStatuses.length + (selectedDistance ? 1 : 0)
   const hasActiveFilters = activeFilterCount > 0
   const toggleRacecourse = (racecourse: string) => {
     setSelectedRacecourses((prev) =>
@@ -191,6 +204,10 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
     setSelectedStatuses((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     )
+  }
+
+  const toggleDistance = (distance: string) => {
+    setSelectedDistance((prev) => prev === distance ? null : distance)
   }
 
 
@@ -364,6 +381,33 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 </div>
               )}
 
+              {/* Distance Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+                <div className="flex flex-wrap gap-2">
+                  {DISTANCE_OPTIONS.map((distance) => {
+                    const isActive = selectedDistance === distance
+                    return (
+                      <button
+                        key={distance}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleDistance(distance)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {distance}m
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <button
@@ -409,27 +453,24 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Pist
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    200m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    400m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    600m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    800m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    1000m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    1200m
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    1400m
-                  </th>
+                  {DISTANCE_OPTIONS.map((distance) => {
+                    const isActive = selectedDistance === distance
+                    const isVisible = !selectedDistance || selectedDistance === distance
+                    return (
+                      <th
+                        key={distance}
+                        onClick={() => toggleDistance(distance)}
+                        className={`px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors select-none ${
+                          isActive
+                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        } ${!isVisible ? 'hidden' : ''}`}
+                        title={`${distance}m filtrele`}
+                      >
+                        {distance}m
+                      </th>
+                    )
+                  })}
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                     Durum
                   </th>
@@ -498,11 +539,14 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                         )}
                       </td>
                       
-                      {['200','400','600','800','1000','1200','1400'].map((meter) => (
-                        <td key={meter} className="px-3 py-3 text-center">
-                          <span className="text-sm font-medium text-gray-800">{getDistance(meter)}</span>
-                        </td>
-                      ))}
+                      {DISTANCE_OPTIONS.map((meter) => {
+                        const isVisible = !selectedDistance || selectedDistance === meter
+                        return (
+                          <td key={meter} className={`px-3 py-3 text-center ${!isVisible ? 'hidden' : ''}`}>
+                            <span className="text-sm font-medium text-gray-800">{getDistance(meter)}</span>
+                          </td>
+                        )
+                      })}
                       
                       {/* Status */}
                       <td className="px-4 py-3 whitespace-nowrap">
