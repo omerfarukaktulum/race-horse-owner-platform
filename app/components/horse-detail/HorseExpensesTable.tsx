@@ -25,6 +25,9 @@ interface Expense {
   addedBy: {
     email: string
     role: string
+    ownerProfile?: { officialName: string }
+    trainerProfile?: { fullName: string }
+    name?: string
   }
 }
 

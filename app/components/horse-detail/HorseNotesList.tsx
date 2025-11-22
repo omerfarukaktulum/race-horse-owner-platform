@@ -45,7 +45,7 @@ interface Props {
 
 const ROLE_MAP: Record<string, string> = {
   OWNER: 'At Sahibi',
-  TRAINER: 'Trainer',
+  TRAINER: 'Antrenör',
   GROOM: 'Groom',
 }
 
@@ -222,7 +222,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   const getUniqueAddedBy = useMemo(() => {
     const roleMap: Record<string, string> = {
       OWNER: 'At Sahibi',
-      TRAINER: 'Trainer',
+      TRAINER: 'Antrenör',
       GROOM: 'Groom',
     }
     const addedByMap = new Map<string, string>()

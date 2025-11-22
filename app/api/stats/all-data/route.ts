@@ -35,8 +35,20 @@ export async function GET(request: Request) {
 
     if (decoded.role === 'OWNER') {
       // Get owner profile and stablemate
+      let ownerId = decoded.ownerId
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+
+      if (!ownerId) {
+        return NextResponse.json({ error: 'Owner profile not found' }, { status: 404 })
+      }
+
       const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: decoded.ownerId ? { id: decoded.ownerId } : { userId: decoded.id },
+        where: { id: ownerId },
         select: {
           stablemate: {
             select: {
@@ -105,14 +117,6 @@ export async function GET(request: Request) {
           select: {
             id: true,
             name: true,
-            ...(decoded.role === 'TRAINER' ? {
-              stablemate: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            } : {}),
           },
         },
       },
@@ -133,14 +137,6 @@ export async function GET(request: Request) {
           select: {
             id: true,
             name: true,
-            ...(decoded.role === 'TRAINER' ? {
-              stablemate: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            } : {}),
           },
         },
       },
@@ -162,16 +158,6 @@ export async function GET(request: Request) {
       position: race.position || undefined,
       horseId: race.horseId,
       horseName: race.horse?.name,
-      ...(decoded.role === 'TRAINER' && race.horse?.stablemate ? {
-        horse: {
-          id: race.horse.id,
-          name: race.horse.name,
-          stablemate: {
-            id: race.horse.stablemate.id,
-            name: race.horse.stablemate.name,
-          },
-        },
-      } : {}),
     }))
 
     // Format expenses
@@ -181,16 +167,6 @@ export async function GET(request: Request) {
       horseId: expense.horseId || undefined,
       horseName: expense.horse?.name,
       category: expense.category || undefined,
-      ...(decoded.role === 'TRAINER' && expense.horse?.stablemate ? {
-        horse: {
-          id: expense.horse.id,
-          name: expense.horse.name,
-          stablemate: {
-            id: expense.horse.stablemate.id,
-            name: expense.horse.stablemate.name,
-          },
-        },
-      } : {}),
     }))
 
     return NextResponse.json({

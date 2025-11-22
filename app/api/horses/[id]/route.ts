@@ -44,6 +44,16 @@ export async function GET(
               select: {
                 email: true,
                 role: true,
+                ownerProfile: {
+                  select: {
+                    officialName: true,
+                  },
+                },
+                trainerProfile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
               },
             },
           },

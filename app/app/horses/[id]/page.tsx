@@ -116,18 +116,23 @@ interface HorseDetail {
     currency: string
     note?: string
     photoUrl?: string | string[] | null
+    addedById: string
     addedBy: {
       email: string
       role: string
+      ownerProfile?: { officialName: string }
+      trainerProfile?: { fullName: string }
+      name?: string
     }
   }>
   notes?: Array<{
     id: string
     date: string
     note: string
-    category?: string
+    category?: 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
     photoUrl?: string | string[]
     kiloValue?: number | null
+    addedById: string
     addedBy: {
       email: string
       role: string

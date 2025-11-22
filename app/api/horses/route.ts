@@ -31,10 +31,21 @@ export async function GET(request: Request) {
 
     if (decoded.role === 'OWNER') {
       // Get owner profile - check by userId if ownerId not in token (for users who just completed onboarding)
-      const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: decoded.ownerId ? { id: decoded.ownerId } : { userId: decoded.id },
-        include: { stablemate: true },
-      })
+      let ownerProfile
+      
+      if (decoded.ownerId) {
+        ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { id: decoded.ownerId },
+          include: { stablemate: true },
+        })
+      } else {
+        // Token doesn't have ownerId yet, check by userId
+        console.log('[Horses API] No ownerId in token, checking by userId')
+        ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+          include: { stablemate: true },
+        })
+      }
 
       console.log('[Horses API] Owner profile:', {
         hasOwnerProfile: !!ownerProfile,
