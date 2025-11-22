@@ -236,6 +236,10 @@ export default function HorseDetailPage() {
   const racesFilterButtonRef = useRef<HTMLDivElement>(null)
   const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
   const bannedMedicinesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const mobileTabsContainerRef = useRef<HTMLDivElement>(null)
+  const activeTabButtonRef = useRef<HTMLButtonElement>(null)
+  const [showLeftFade, setShowLeftFade] = useState(false)
+  const [showRightFade, setShowRightFade] = useState(true)
 
   const getFilterButtonClass = (hasActive: boolean) =>
     `h-[42px] px-4 text-sm font-medium rounded-md border-2 shadow-md hover:shadow-lg transition-all duration-300 ${
@@ -256,6 +260,48 @@ export default function HorseDetailPage() {
       fetchHorse()
     }
   }, [horseId])
+
+  // Center the active tab in mobile view and update fade indicators
+  useEffect(() => {
+    const container = mobileTabsContainerRef.current
+    if (!container) return
+
+    const checkScroll = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = container
+      const hasMoreContent = scrollWidth > clientWidth
+      setShowLeftFade(hasMoreContent && scrollLeft > 10)
+      setShowRightFade(hasMoreContent && scrollLeft < scrollWidth - clientWidth - 10)
+    }
+
+    // Center active tab
+    if (activeTabButtonRef.current && container) {
+      const button = activeTabButtonRef.current
+      const buttonLeft = button.offsetLeft
+      const buttonWidth = button.offsetWidth
+      const containerWidth = container.offsetWidth
+      const scrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2)
+      
+      container.scrollTo({
+        left: scrollLeft,
+        behavior: 'smooth'
+      })
+      
+      // Check scroll position after scrolling
+      setTimeout(checkScroll, 300)
+    } else {
+      checkScroll()
+    }
+
+    // Listen to scroll events
+    container.addEventListener('scroll', checkScroll)
+    window.addEventListener('resize', checkScroll)
+
+    return () => {
+      container.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+    }
+  }, [activeTab])
+
 
 useEffect(() => {
   if (horse?.expenses && horse.expenses.length > 0) {
@@ -458,7 +504,58 @@ useEffect(() => {
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="w-full sm:w-auto overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          {/* Mobile: Horizontal Scrollable Buttons */}
+          <div className="sm:hidden relative w-full -mx-4 px-4">
+            {/* Left fade gradient */}
+            {showLeftFade && (
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
+            )}
+            
+            {/* Scrollable container */}
+            <div 
+              ref={mobileTabsContainerRef}
+              className="overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              <div className="flex gap-0 min-w-max">
+                {[
+                  { id: 'info' as const, label: 'At Bilgisi' },
+                  { id: 'pedigree' as const, label: 'Pedigri' },
+                  { id: 'races' as const, label: 'Koşular' },
+                  { id: 'gallops' as const, label: 'İdmanlar' },
+                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
+                  { id: 'statistics' as const, label: 'İstatistikler' },
+                  { id: 'expenses' as const, label: 'Giderler' },
+                  { id: 'notes' as const, label: 'Notlar' },
+                ].map(({ id, label }, index, array) => {
+                  const isActive = activeTab === id
+                  const isFirst = index === 0
+                  const isLast = index === array.length - 1
+                  return (
+                    <button
+                      key={id}
+                      ref={isActive ? activeTabButtonRef : null}
+                      onClick={() => handleTabChange(id)}
+                      className={`px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                        isActive
+                          ? `bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md rounded-sm ${isFirst ? 'rounded-l-md' : ''} ${isLast ? 'rounded-r-md' : ''}`
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border-y border-l border-gray-200 first:rounded-l-md last:rounded-r-md last:border-r'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            
+            {/* Right fade gradient */}
+            {showRightFade && (
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10" />
+            )}
+          </div>
+
+          {/* Desktop: Standard TabsList */}
+          <div className="hidden sm:block w-full sm:w-auto overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0 min-w-max sm:min-w-0">
             <TabsTrigger 
               value="info"
