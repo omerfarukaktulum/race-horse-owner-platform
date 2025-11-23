@@ -4,13 +4,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { ArrowLeft, FileText, MapPin, Filter, Plus } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, Filter, Plus, NotebookPen } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddBannedMedicineModal } from '@/app/components/modals/add-banned-medicine-modal'
+import { ShowTrainingPlansModal } from '@/app/components/modals/show-training-plans-modal'
 import { HorseMetadataCard } from '@/app/components/horse-detail/HorseMetadataCard'
 import { StatisticsCharts } from '@/app/components/horse-detail/StatisticsCharts'
 import { PedigreeTree } from '@/app/components/horse-detail/PedigreeTree'
@@ -184,6 +185,7 @@ export default function HorseDetailPage() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [isBannedMedicineModalOpen, setIsBannedMedicineModalOpen] = useState(false)
+  const [isShowTrainingPlansModalOpen, setIsShowTrainingPlansModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<HorseTab>(() => {
     const tabParam = searchParams?.get('tab')
     return isHorseTab(tabParam) ? tabParam : 'info'
@@ -668,6 +670,14 @@ useEffect(() => {
                   {renderFilterBadge(gallopsFilterCount)}
                 </Button>
               </div>
+              <Button
+                variant="outline"
+                onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                className="h-[42px] px-4 text-sm font-medium rounded-md border-2 shadow-md hover:shadow-lg transition-all duration-300 border-gray-300 text-gray-700 hover:border-gray-400 whitespace-nowrap"
+              >
+                <NotebookPen className="h-4 w-4 mr-2" />
+                İdman Planı
+              </Button>
             </div>
           )}
           {activeTab === 'statistics' && (
@@ -763,6 +773,9 @@ useEffect(() => {
           <GallopsTable 
             gallops={horse.gallops || []}
             hideButtons={true}
+            horseId={horse.id}
+            horseName={horse.name}
+            onRefresh={fetchHorse}
             onFilterTriggerReady={(trigger) => {
               gallopsFilterTriggerRef.current = trigger
             }}
@@ -771,7 +784,6 @@ useEffect(() => {
             filterDropdownContainerRef={gallopsFilterButtonRef}
             onActiveFiltersChange={setGallopsFilterCount}
             highlightGallopId={highlightGallopId}
-            onRefresh={fetchHorse}
           />
         </TabsContent>
 
@@ -907,6 +919,16 @@ useEffect(() => {
             setIsExpenseModalOpen(false)
             fetchHorse()
           }}
+        />
+      )}
+
+      {isShowTrainingPlansModalOpen && (
+        <ShowTrainingPlansModal
+          open={isShowTrainingPlansModalOpen}
+          onClose={() => setIsShowTrainingPlansModalOpen(false)}
+          horseId={horse.id}
+          horseName={horse.name}
+          onRefresh={fetchHorse}
         />
       )}
     </div>

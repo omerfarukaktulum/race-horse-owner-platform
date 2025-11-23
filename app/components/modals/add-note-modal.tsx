@@ -62,6 +62,9 @@ export function AddNoteModal({
   const [allHorses, setAllHorses] = useState<Array<{ id: string; name: string; stablemate?: { id: string; name: string } | null }>>([])
   const [isLoadingStablemates, setIsLoadingStablemates] = useState(false)
   const stablemateSelectRef = useRef<HTMLSelectElement>(null)
+  const categorySelectRef = useRef<HTMLSelectElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+  const [modalJustOpened, setModalJustOpened] = useState(false)
 
   const isEditMode = mode === 'edit'
   const isSingleHorseMode = !!horseId && !!horseName
@@ -175,18 +178,103 @@ export function AddNoteModal({
     }
   }, [selectedStablemateId])
 
-  // Focus eküri dropdown when modal opens (for trainers)
+  // Track when modal just opened to prevent auto-opening select/date picker on mobile
   useEffect(() => {
-    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
-      // Focus immediately when modal opens
+    if (open) {
+      setModalJustOpened(true)
+      // Blur all select and date input elements immediately to prevent auto-opening on mobile
+      const blurInputs = () => {
+        if (categorySelectRef.current) {
+          categorySelectRef.current.blur()
+        }
+        if (dateInputRef.current) {
+          dateInputRef.current.blur()
+        }
+        if (stablemateSelectRef.current) {
+          stablemateSelectRef.current.blur()
+        }
+        // Also blur any other focused select or input elements
+        const focusedElement = document.activeElement as HTMLElement
+        if (focusedElement) {
+          if (focusedElement.tagName === 'SELECT' || focusedElement.tagName === 'INPUT') {
+            focusedElement.blur()
+          }
+        }
+      }
+      
+      // Blur immediately
+      blurInputs()
+      
+      // Blur after delays to catch any late focus
+      const timer1 = setTimeout(blurInputs, 50)
+      const timer2 = setTimeout(blurInputs, 150)
+      const timer3 = setTimeout(blurInputs, 300)
+      const timer4 = setTimeout(() => setModalJustOpened(false), 500)
+      
+      return () => {
+        clearTimeout(timer1)
+        clearTimeout(timer2)
+        clearTimeout(timer3)
+        clearTimeout(timer4)
+      }
+    } else {
+      setModalJustOpened(false)
+    }
+  }, [open])
+
+  // Prevent select/date picker from opening on mobile when modal just opened
+  const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
+
+  const handleSelectTouchStart = (e: React.TouchEvent<HTMLSelectElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
+
+  const handleDateInputMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
+
+  const handleDateInputTouchStart = (e: React.TouchEvent<HTMLInputElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
+
+  // Focus eküri dropdown when modal opens (for trainers) - but only after modal is ready
+  useEffect(() => {
+    if (open && isTrainer && !isSingleHorseMode && !isEditMode && !modalJustOpened) {
+      // Focus after modal is ready
       const timer = setTimeout(() => {
         if (stablemateSelectRef.current) {
           stablemateSelectRef.current.focus()
         }
-      }, 50)
+      }, 600)
       return () => clearTimeout(timer)
     }
-  }, [open, isTrainer, isSingleHorseMode, isEditMode])
+  }, [open, isTrainer, isSingleHorseMode, isEditMode, modalJustOpened])
 
   // Focus eküri dropdown when it becomes enabled (after stablemates load)
   useEffect(() => {
@@ -391,21 +479,35 @@ export function AddNoteModal({
             {/* Category */}
             <div className="space-y-2">
               <Label className="text-gray-700 font-medium">Kategori *</Label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as NoteCategory | '')}
-                disabled={isSubmitting}
-                required
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Kategori seçin</option>
-                {NOTE_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              <div style={modalJustOpened ? { pointerEvents: 'none' } : undefined}>
+                <select
+                  ref={categorySelectRef}
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as NoteCategory | '')}
+                  onMouseDown={handleSelectMouseDown}
+                  onTouchStart={handleSelectTouchStart}
+                  onFocus={(e) => {
+                    if (modalJustOpened) {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setTimeout(() => {
+                        e.target.blur()
+                      }, 0)
+                    }
+                  }}
+                  disabled={isSubmitting || modalJustOpened}
+                  required
+                  tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+                  className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Kategori seçin</option>
+                  {NOTE_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Kilo Value - shown only for Kilo Takibi or Yem Takibi */}
@@ -431,18 +533,42 @@ export function AddNoteModal({
             {/* Date */}
             <div className="space-y-2">
               <Label htmlFor="date" className="text-gray-700 font-medium">Tarih *</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-                required
-                disabled={isSubmitting}
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                style={{ width: '100%', maxWidth: '240px' }}
-              />
+              <div style={modalJustOpened ? { pointerEvents: 'none' } : undefined}>
+                <Input
+                  ref={dateInputRef}
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  autoFocus={false}
+                  onMouseDown={handleDateInputMouseDown}
+                  onTouchStart={handleDateInputTouchStart}
+                  onFocus={(e) => {
+                    if (modalJustOpened) {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setTimeout(() => {
+                        e.target.blur()
+                      }, 0)
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (modalJustOpened) {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setTimeout(() => {
+                        setModalJustOpened(false)
+                      }, 100)
+                    }
+                  }}
+                  disabled={isSubmitting || modalJustOpened}
+                  required
+                  tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  style={{ width: '100%', maxWidth: '240px' }}
+                />
+              </div>
             </div>
 
             {/* Note */}

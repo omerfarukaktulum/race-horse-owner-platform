@@ -46,6 +46,7 @@ model User {
   expenses       Expense[]
   notes          HorseNote[]
   bannedMedicines HorseBannedMedicine[]
+  trainingPlans  HorseTrainingPlan[]
   
   accounts Account[]
   sessions Session[]
@@ -260,6 +261,7 @@ model Horse {
   gallops HorseGallop[]
   notes HorseNote[]
   bannedMedicines HorseBannedMedicine[]
+  trainingPlans HorseTrainingPlan[]
 
   @@index([stablemateId])
   @@index([trainerId])
@@ -451,6 +453,27 @@ model HorseBannedMedicine {
   @@index([addedById])
   @@index([givenDate])
   @@map("horse_banned_medicines")
+}
+
+model HorseTrainingPlan {
+  id          String   @id @default(cuid())
+  horseId     String
+  horse       Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  
+  planDate    DateTime // Future date for the training
+  distance    String   // Kenter, Tırıs, 200, 400, 600, 800, 1000, 1200, 1400, 1600
+  note        String?  // Optional note
+  
+  addedById   String
+  addedBy     User     @relation(fields: [addedById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([horseId])
+  @@index([addedById])
+  @@index([planDate])
+  @@map("horse_training_plans")
 }
 
 // NextAuth models

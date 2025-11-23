@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
 import { formatGallopStatus } from '@/lib/utils/gallops'
-import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText } from 'lucide-react'
+import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText, NotebookPen } from 'lucide-react'
 import { AddGallopNoteModal } from '@/app/components/modals/add-gallop-note-modal'
+import { ShowTrainingPlansModal } from '@/app/components/modals/show-training-plans-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
@@ -43,6 +44,8 @@ interface Props {
   onActiveFiltersChange?: (count: number) => void
   highlightGallopId?: string
   onRefresh?: () => void
+  horseId?: string
+  horseName?: string
 }
 
 const normalizeRacecourse = (racecourse?: string) => {
@@ -57,7 +60,7 @@ const normalizeStatus = (status?: string) => {
 
 const DISTANCE_OPTIONS = ['200', '400', '600', '800', '1000', '1200', '1400']
 
-export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId, onRefresh }: Props) {
+export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightGallopId, onRefresh, horseId, horseName }: Props) {
   const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [selectedRacecourses, setSelectedRacecourses] = useState<string[]>([])
@@ -69,6 +72,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
   const [selectedGallopForNote, setSelectedGallopForNote] = useState<Gallop | null>(null)
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [isShowTrainingPlansModalOpen, setIsShowTrainingPlansModalOpen] = useState(false)
   const [attachmentViewer, setAttachmentViewer] = useState<{
     open: boolean
     attachments: string[]
@@ -337,33 +341,33 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   
   return (
     <>
-      {/* Filter dropdown container - always rendered for dropdown positioning */}
-      <div 
-        className="relative filter-dropdown-container"
-        ref={filterDropdownRef}
-        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
-      >
+      {/* Filter dropdown container and Training Plan Button - on same line */}
+      <div className="flex flex-row items-center gap-2 mb-4">
+        {/* Filter Button */}
         {!hideButtons && (
-          <Button
-            variant="outline"
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
+          <div 
+            className="relative filter-dropdown-container"
+            ref={filterDropdownRef}
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtrele
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                1
-              </span>
-            )}
-          </Button>
-        )}
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 sm:px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filtrele
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  1
+                </span>
+              )}
+            </Button>
 
-        {showFilterDropdown && (() => {
+            {showFilterDropdown && (() => {
           const dropdownContent = (
             <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
               <div className="flex items-center justify-between mb-4">
@@ -515,6 +519,20 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
           
           return dropdownContent
         })()}
+          </div>
+        )}
+
+        {/* Training Plan Button - only visible when hideButtons is false */}
+        {!hideButtons && horseId && horseName && (
+          <Button
+            variant="outline"
+            onClick={() => setIsShowTrainingPlansModalOpen(true)}
+            className="border-2 font-medium px-3 sm:px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-gray-300 text-gray-700 hover:border-gray-400 whitespace-nowrap"
+          >
+            <NotebookPen className="h-4 w-4 mr-2" />
+            İdman Planı
+          </Button>
+        )}
       </div>
 
     <div>
@@ -806,6 +824,17 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
           </div>
         </DialogContent>
       </Dialog>
+    )}
+
+    {/* Training Plan Modal */}
+    {horseId && horseName && (
+      <ShowTrainingPlansModal
+        open={isShowTrainingPlansModalOpen}
+        onClose={() => setIsShowTrainingPlansModalOpen(false)}
+        horseId={horseId}
+        horseName={horseName}
+        onRefresh={onRefresh}
+      />
     )}
     </>
   )
