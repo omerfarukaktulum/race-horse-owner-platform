@@ -4,9 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
-import { Activity } from 'lucide-react'
+import { NotebookPen } from 'lucide-react'
 
 type TrainingPlanModalMode = 'create' | 'edit'
 
@@ -16,6 +17,7 @@ interface InitialTrainingPlanValues {
   planDate: string
   distance: string
   note?: string | null
+  racecourseId?: string | null
 }
 
 interface AddTrainingPlanModalProps {
@@ -43,7 +45,11 @@ export function AddTrainingPlanModal({
   const [planDate, setPlanDate] = useState('')
   const [distance, setDistance] = useState('')
   const [note, setNote] = useState('')
+  const [racecourseId, setRacecourseId] = useState('')
+  const [racecourses, setRacecourses] = useState<Array<{ id: string; name: string }>>([])
+  const [isLoadingRacecourses, setIsLoadingRacecourses] = useState(false)
   const distanceSelectRef = useRef<HTMLSelectElement>(null)
+  const racecourseSelectRef = useRef<HTMLSelectElement>(null)
   const dateInputRef = useRef<HTMLInputElement>(null)
   const [modalJustOpened, setModalJustOpened] = useState(false)
 
@@ -57,6 +63,9 @@ export function AddTrainingPlanModal({
       const blurInputs = () => {
         if (distanceSelectRef.current) {
           distanceSelectRef.current.blur()
+        }
+        if (racecourseSelectRef.current) {
+          racecourseSelectRef.current.blur()
         }
         if (dateInputRef.current) {
           dateInputRef.current.blur()
@@ -136,6 +145,55 @@ export function AddTrainingPlanModal({
     }
   }
 
+  // Fetch racecourses when modal opens
+  useEffect(() => {
+    if (open) {
+      setIsLoadingRacecourses(true)
+      fetch('/api/racecourses', { 
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then((res) => {
+          console.log('Racecourses API response status:', res.status)
+          if (!res.ok) {
+            // Check if it's a redirect (authentication issue)
+            if (res.redirected || res.status === 401 || res.status === 403) {
+              throw new Error('Authentication required')
+            }
+            throw new Error(`Failed to fetch racecourses: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then((data) => {
+          console.log('Racecourses API response data:', data)
+          if (data.racecourses && Array.isArray(data.racecourses)) {
+            const mappedRacecourses = data.racecourses.map((rc: any) => ({ 
+              id: rc.id, 
+              name: rc.name 
+            }))
+            console.log('Mapped racecourses:', mappedRacecourses, 'Count:', mappedRacecourses.length)
+            setRacecourses(mappedRacecourses)
+          } else {
+            console.warn('Invalid racecourses response structure:', data)
+            setRacecourses([])
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch racecourses:', err)
+          toast.error('Hipodromlar yüklenirken bir hata oluştu: ' + err.message)
+          setRacecourses([])
+        })
+        .finally(() => {
+          setIsLoadingRacecourses(false)
+        })
+    } else {
+      // Reset racecourses when modal closes
+      setRacecourses([])
+    }
+  }, [open])
+
   // Initialize form with existing data
   useEffect(() => {
     if (open) {
@@ -143,6 +201,7 @@ export function AddTrainingPlanModal({
         setPlanDate(initialPlan.planDate ? new Date(initialPlan.planDate).toISOString().split('T')[0] : '')
         setDistance(initialPlan.distance || '')
         setNote(initialPlan.note || '')
+        setRacecourseId(initialPlan.racecourseId || '')
       } else {
         // Reset form for create mode
         const tomorrow = new Date()
@@ -150,6 +209,7 @@ export function AddTrainingPlanModal({
         setPlanDate(tomorrow.toISOString().split('T')[0])
         setDistance('')
         setNote('')
+        setRacecourseId('')
       }
     }
   }, [open, isEditMode, initialPlan])
@@ -195,6 +255,7 @@ export function AddTrainingPlanModal({
           planDate,
           distance,
           note: note.trim() || null,
+          racecourseId: racecourseId || null,
         }),
       })
 
@@ -220,7 +281,7 @@ export function AddTrainingPlanModal({
         <DialogHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
-              <Activity className="h-8 w-8 text-white" />
+              <NotebookPen className="h-8 w-8 text-white" />
             </div>
           </div>
           {horseName && (
@@ -245,10 +306,9 @@ export function AddTrainingPlanModal({
                 Tarih <span className="text-red-500">*</span>
               </Label>
               <div style={modalJustOpened ? { pointerEvents: 'none' } : undefined}>
-                <Input
+                <TurkishDateInput
                   ref={dateInputRef}
                   id="planDate"
-                  type="date"
                   value={planDate}
                   onChange={(e) => setPlanDate(e.target.value)}
                   min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
@@ -277,9 +337,41 @@ export function AddTrainingPlanModal({
                       }, 100)
                     }
                   }}
-                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
                 />
               </div>
+            </div>
+
+            {/* Racecourse */}
+            <div className="space-y-2">
+              <Label htmlFor="racecourse" className="text-gray-700 font-medium">
+                Hipodrom
+              </Label>
+              <select
+                ref={racecourseSelectRef}
+                id="racecourse"
+                value={racecourseId}
+                onChange={(e) => setRacecourseId(e.target.value)}
+                onMouseDown={handleSelectMouseDown}
+                onTouchStart={handleSelectTouchStart}
+                onFocus={(e) => {
+                  // Prevent auto-opening on mobile by blurring if modal just opened
+                  if (modalJustOpened) {
+                    setTimeout(() => {
+                      e.target.blur()
+                    }, 0)
+                  }
+                }}
+                disabled={isSubmitting || isLoadingRacecourses}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Hipodrom seçin...</option>
+                {racecourses.map((racecourse) => (
+                  <option key={racecourse.id} value={racecourse.id}>
+                    {racecourse.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Distance */}

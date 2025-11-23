@@ -71,6 +71,12 @@ export async function GET(
     const plans = await prisma.horseTrainingPlan.findMany({
       where: { horseId },
       include: {
+        racecourse: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         addedBy: {
           include: {
             ownerProfile: {
@@ -122,7 +128,7 @@ export async function POST(
 
     const horseId = params.id
     const body = await request.json()
-    const { planDate, distance, note } = body
+    const { planDate, distance, note, racecourseId } = body
 
     // Validate required fields
     if (!planDate || !distance) {
@@ -202,6 +208,7 @@ export async function POST(
         planDate: new Date(planDate),
         distance,
         note: note?.trim() || null,
+        racecourseId: racecourseId || null,
         addedById: decoded.id,
       },
       include: {

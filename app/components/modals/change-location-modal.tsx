@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils/format'
@@ -212,16 +213,14 @@ export function ChangeLocationModal({
             {/* Start Date */}
             <div className="space-y-2">
               <Label htmlFor="startDate" className="text-gray-700 font-medium">Başlangıç Tarihi *</Label>
-              <Input
+              <TurkishDateInput
                 id="startDate"
-                type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
                 required
                 disabled={isSubmitting}
-                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                style={{ width: '100%', maxWidth: '240px' }}
+                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
               />
             </div>
 

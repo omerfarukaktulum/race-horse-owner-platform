@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { Pill, X } from 'lucide-react'
@@ -313,14 +314,13 @@ export function AddBannedMedicineModal({
               <Label htmlFor="givenDate" className="text-gray-700 font-medium">
                 Verilme Tarihi <span className="text-red-500">*</span>
               </Label>
-              <Input
+              <TurkishDateInput
                 id="givenDate"
-                type="date"
                 value={givenDate}
                 onChange={(e) => setGivenDate(e.target.value)}
                 required
                 disabled={isSubmitting}
-                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
               />
             </div>
 

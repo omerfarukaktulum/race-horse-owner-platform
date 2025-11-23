@@ -163,6 +163,7 @@ model Racecourse {
   
   horses Horse[]
   locationHistory HorseLocationHistory[]
+  trainingPlans HorseTrainingPlan[]
 
   @@map("racecourses")
 }
@@ -463,6 +464,8 @@ model HorseTrainingPlan {
   planDate    DateTime // Future date for the training
   distance    String   // Kenter, Tırıs, 200, 400, 600, 800, 1000, 1200, 1400, 1600
   note        String?  // Optional note
+  racecourseId String? // Optional racecourse
+  racecourse  Racecourse? @relation(fields: [racecourseId], references: [id], onDelete: SetNull)
   
   addedById   String
   addedBy     User     @relation(fields: [addedById], references: [id])

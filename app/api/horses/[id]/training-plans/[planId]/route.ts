@@ -25,7 +25,7 @@ export async function PATCH(
     const horseId = params.id
     const planId = params.planId
     const body = await request.json()
-    const { planDate, distance, note } = body
+    const { planDate, distance, note, racecourseId } = body
 
     // Validate required fields
     if (!planDate || !distance) {
@@ -127,8 +127,15 @@ export async function PATCH(
         planDate: new Date(planDate),
         distance,
         note: note?.trim() || null,
+        racecourseId: racecourseId || null,
       },
       include: {
+        racecourse: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         addedBy: {
           include: {
             ownerProfile: {

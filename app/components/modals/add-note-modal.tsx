@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { FileText } from 'lucide-react'
@@ -221,6 +222,7 @@ export function AddNoteModal({
       setModalJustOpened(false)
     }
   }, [open])
+
 
   // Prevent select/date picker from opening on mobile when modal just opened
   const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
@@ -534,10 +536,9 @@ export function AddNoteModal({
             <div className="space-y-2">
               <Label htmlFor="date" className="text-gray-700 font-medium">Tarih *</Label>
               <div style={modalJustOpened ? { pointerEvents: 'none' } : undefined}>
-                <Input
+                <TurkishDateInput
                   ref={dateInputRef}
                   id="date"
-                  type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
@@ -565,8 +566,7 @@ export function AddNoteModal({
                   disabled={isSubmitting || modalJustOpened}
                   required
                   tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  style={{ width: '100%', maxWidth: '240px' }}
+                  className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
                 />
               </div>
             </div>
@@ -583,6 +583,7 @@ export function AddNoteModal({
                 disabled={isSubmitting}
                 rows={4}
                 tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
+                autoFocus={false}
                 className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               />
             </div>

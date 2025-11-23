@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
+import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
@@ -551,31 +552,16 @@ export function AddExpenseModal({
             {/* Date */}
             <div className="space-y-2">
               <Label htmlFor="date" className="text-gray-700 font-medium">{TR.expenses.date} *</Label>
-              <div className="relative">
-              <Input
+              <TurkishDateInput
                 id="date"
-                type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
                 required
                 disabled={isSubmitting}
                 tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                  lang="tr"
-                  dir="ltr"
-                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] cursor-pointer md:cursor-text [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:scale-110 md:[&::-webkit-calendar-picker-indicator]:opacity-60 md:[&::-webkit-calendar-picker-indicator]:scale-100 [&::-webkit-datetime-edit]:!text-left [&::-webkit-datetime-edit]:!pl-0 [&::-webkit-datetime-edit]:!ml-0 [&::-webkit-datetime-edit-fields-wrapper]:!text-left [&::-webkit-datetime-edit-fields-wrapper]:!pl-0 [&::-webkit-datetime-edit-fields-wrapper]:!ml-0 [&::-webkit-datetime-edit-fields-wrapper]:!flex [&::-webkit-datetime-edit-fields-wrapper]:!justify-start [&::-webkit-datetime-edit-text]:!text-left [&::-webkit-datetime-edit-month-field]:!text-left [&::-webkit-datetime-edit-day-field]:!text-left [&::-webkit-datetime-edit-year-field]:!text-left"
-                  style={{ 
-                    textAlign: 'left', 
-                    paddingLeft: '12px',
-                    direction: 'ltr'
-                  }}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none md:hidden">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
+                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
+              />
             </div>
 
             {/* Custom Category Name */}

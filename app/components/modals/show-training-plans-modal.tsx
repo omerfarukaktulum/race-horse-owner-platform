@@ -13,6 +13,11 @@ interface TrainingPlan {
   planDate: string
   distance: string
   note?: string | null
+  racecourseId?: string | null
+  racecourse?: {
+    id: string
+    name: string
+  } | null
   addedById: string
   addedBy: {
     email: string
@@ -180,9 +185,8 @@ export function ShowTrainingPlansModal({
                 {/* Add Button - Top Right */}
                 <div className="flex justify-end">
                   <Button
-                    variant="outline"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 border-[#6366f1] bg-indigo-50 text-[#6366f1] hover:bg-indigo-100"
+                    className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Yeni
@@ -204,6 +208,9 @@ export function ShowTrainingPlansModal({
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Zamanlama
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Hipodrom
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Mesafe
@@ -237,6 +244,11 @@ export function ShowTrainingPlansModal({
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className="text-sm text-gray-700">
                             {calculateDaysUntil(plan.planDate)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-700">
+                            {plan.racecourse?.name || '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -286,15 +298,6 @@ export function ShowTrainingPlansModal({
             )}
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 flex-shrink-0 flex justify-end">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="px-6"
-            >
-              Kapat
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
@@ -328,6 +331,7 @@ export function ShowTrainingPlansModal({
             planDate: selectedPlanForEdit.planDate,
             distance: selectedPlanForEdit.distance,
             note: selectedPlanForEdit.note,
+            racecourseId: selectedPlanForEdit.racecourseId || null,
           }}
         />
       )}
