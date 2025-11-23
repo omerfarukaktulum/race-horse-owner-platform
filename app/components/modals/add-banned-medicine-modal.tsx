@@ -49,8 +49,67 @@ export function AddBannedMedicineModal({
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [existingPhotos, setExistingPhotos] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const medicineSelectRef = useRef<HTMLSelectElement>(null)
+  const [modalJustOpened, setModalJustOpened] = useState(false)
 
   const isEditMode = mode === 'edit'
+
+  // Prevent dropdowns from auto-opening on mobile when modal opens
+  useEffect(() => {
+    if (open) {
+      setModalJustOpened(true)
+      // Blur all select elements immediately to prevent auto-opening on mobile
+      const blurSelects = () => {
+        if (medicineSelectRef.current) {
+          medicineSelectRef.current.blur()
+        }
+        // Also blur any other focused select elements
+        const focusedElement = document.activeElement as HTMLElement
+        if (focusedElement && focusedElement.tagName === 'SELECT') {
+          focusedElement.blur()
+        }
+      }
+      
+      // Blur immediately
+      blurSelects()
+      
+      // Blur after a short delay to catch any late focus
+      const timer1 = setTimeout(blurSelects, 50)
+      const timer2 = setTimeout(blurSelects, 150)
+      const timer3 = setTimeout(() => setModalJustOpened(false), 300)
+      
+      return () => {
+        clearTimeout(timer1)
+        clearTimeout(timer2)
+        clearTimeout(timer3)
+      }
+    } else {
+      setModalJustOpened(false)
+    }
+  }, [open])
+
+  // Prevent select from opening on mobile when modal just opened
+  const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      // Allow opening after a short delay
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
+
+  const handleSelectTouchStart = (e: React.TouchEvent<HTMLSelectElement>) => {
+    if (modalJustOpened) {
+      e.preventDefault()
+      e.stopPropagation()
+      // Allow opening after a short delay
+      setTimeout(() => {
+        setModalJustOpened(false)
+      }, 100)
+    }
+  }
 
   // Initialize form with existing data
   useEffect(() => {
@@ -214,81 +273,97 @@ export function AddBannedMedicineModal({
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-          {/* Medicine Name Dropdown */}
-          <div>
-            <Label htmlFor="medicineName" className="text-sm font-medium text-gray-700">
-              İlaç Adı <span className="text-red-500">*</span>
-            </Label>
-            <select
-              id="medicineName"
-              value={medicineName}
-              onChange={(e) => setMedicineName(e.target.value)}
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            >
-              <option value="">İlaç seçin...</option>
-              {BANNED_MEDICINES.map((med) => (
-                <option key={med} value={med}>
-                  {med}
-                </option>
-              ))}
-            </select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="w-[240px] mx-auto space-y-5">
+            {/* Medicine Name Dropdown */}
+            <div className="space-y-2">
+              <Label htmlFor="medicineName" className="text-gray-700 font-medium">
+                İlaç Adı <span className="text-red-500">*</span>
+              </Label>
+              <select
+                ref={medicineSelectRef}
+                id="medicineName"
+                value={medicineName}
+                onChange={(e) => setMedicineName(e.target.value)}
+                onMouseDown={handleSelectMouseDown}
+                onTouchStart={handleSelectTouchStart}
+                onFocus={(e) => {
+                  // Prevent auto-opening on mobile by blurring if modal just opened
+                  if (modalJustOpened) {
+                    setTimeout(() => {
+                      e.target.blur()
+                    }, 0)
+                  }
+                }}
+                required
+                disabled={isSubmitting}
+                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">İlaç seçin...</option>
+                {BANNED_MEDICINES.map((med) => (
+                  <option key={med} value={med}>
+                    {med}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Given Date */}
-          <div>
-            <Label htmlFor="givenDate" className="text-sm font-medium text-gray-700">
-              Verilme Tarihi <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="givenDate"
-              type="date"
-              value={givenDate}
-              onChange={(e) => setGivenDate(e.target.value)}
-              className="mt-1"
-              required
-            />
-          </div>
+            {/* Given Date */}
+            <div className="space-y-2">
+              <Label htmlFor="givenDate" className="text-gray-700 font-medium">
+                Verilme Tarihi <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="givenDate"
+                type="date"
+                value={givenDate}
+                onChange={(e) => setGivenDate(e.target.value)}
+                required
+                disabled={isSubmitting}
+                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              />
+            </div>
 
-          {/* Wait Days */}
-          <div>
-            <Label htmlFor="waitDays" className="text-sm font-medium text-gray-700">
-              Bekleme Süresi (Gün) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="waitDays"
-              type="number"
-              min="0"
-              value={waitDays}
-              onChange={(e) => setWaitDays(e.target.value)}
-              placeholder="Örn: 7"
-              className="mt-1"
-              required
-            />
-          </div>
+            {/* Wait Days */}
+            <div className="space-y-2">
+              <Label htmlFor="waitDays" className="text-gray-700 font-medium">
+                Bekleme Süresi (Gün) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="waitDays"
+                type="number"
+                min="0"
+                value={waitDays}
+                onChange={(e) => setWaitDays(e.target.value)}
+                placeholder="Örn: 7"
+                required
+                disabled={isSubmitting}
+                className="h-11 w-full"
+              />
+            </div>
 
-          {/* Note */}
-          <div>
-            <Label htmlFor="note" className="text-sm font-medium text-gray-700">
-              Not
-            </Label>
-            <textarea
-              id="note"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="İlaç hakkında notlar..."
-              className="mt-1 w-full min-h-[100px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-              rows={4}
-            />
-          </div>
+            {/* Note */}
+            <div className="space-y-2">
+              <Label htmlFor="note" className="text-gray-700 font-medium">
+                Not
+              </Label>
+              <textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="İlaç hakkında notlar..."
+                disabled={isSubmitting}
+                className="flex min-h-[100px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
+                rows={4}
+              />
+            </div>
 
-          {/* Photos */}
-          <div>
-            <Label className="text-sm font-medium text-gray-700">
-              Fotoğraflar
-            </Label>
-            <div className="mt-2 space-y-3">
+            {/* Photos */}
+            <div className="space-y-2">
+              <Label className="text-gray-700 font-medium">
+                Fotoğraflar
+              </Label>
+              <div className="space-y-3">
               {/* Existing photos */}
               {existingPhotos.length > 0 && (
                 <div className="grid grid-cols-2 gap-2">
@@ -353,6 +428,7 @@ export function AddBannedMedicineModal({
                 </Button>
               </div>
             </div>
+          </div>
           </div>
 
           {/* Submit Buttons */}
