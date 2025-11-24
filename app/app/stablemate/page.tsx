@@ -784,7 +784,7 @@ export default function StablematePage() {
             <div className="flex items-center gap-3 ml-auto sm:ml-0">
               {!isEditing && (
                 <Button
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
                   onClick={() => setIsEditing(true)}
                 >
                   Düzenle
