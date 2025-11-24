@@ -647,7 +647,7 @@ useEffect(() => {
           {/* Mobile: Expenses buttons and total */}
           {activeTab === 'expenses' && (
             <div className="sm:hidden flex flex-col gap-3 mt-4">
-              <div className="flex items-center justify-end gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
                   <Button 
                     size="sm"
@@ -761,7 +761,7 @@ useEffect(() => {
                 </Button>
               </div>
               {/* Mobile: Notes buttons */}
-              <div className="sm:hidden flex items-center justify-end gap-3 mt-4">
+              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={notesFilterButtonRef} className="relative">
                   <Button 
                     size="sm"
