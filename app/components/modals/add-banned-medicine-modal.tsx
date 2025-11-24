@@ -1,14 +1,19 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
+import {
+  ModalSelect,
+  ModalDateField,
+  ModalInput,
+  ModalTextarea,
+  ModalPhotoUpload,
+} from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
-import { Pill, X } from 'lucide-react'
+import { Pill, X, Hourglass } from 'lucide-react'
 import { BANNED_MEDICINES } from '@/lib/constants/banned-medicines'
+import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 type MedicineModalMode = 'create' | 'edit'
 
@@ -49,68 +54,9 @@ export function AddBannedMedicineModal({
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [existingPhotos, setExistingPhotos] = useState<string[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const medicineSelectRef = useRef<HTMLSelectElement>(null)
-  const [modalJustOpened, setModalJustOpened] = useState(false)
+  const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   const isEditMode = mode === 'edit'
-
-  // Prevent dropdowns from auto-opening on mobile when modal opens
-  useEffect(() => {
-    if (open) {
-      setModalJustOpened(true)
-      // Blur all select elements immediately to prevent auto-opening on mobile
-      const blurSelects = () => {
-        if (medicineSelectRef.current) {
-          medicineSelectRef.current.blur()
-        }
-        // Also blur any other focused select elements
-        const focusedElement = document.activeElement as HTMLElement
-        if (focusedElement && focusedElement.tagName === 'SELECT') {
-          focusedElement.blur()
-        }
-      }
-      
-      // Blur immediately
-      blurSelects()
-      
-      // Blur after a short delay to catch any late focus
-      const timer1 = setTimeout(blurSelects, 50)
-      const timer2 = setTimeout(blurSelects, 150)
-      const timer3 = setTimeout(() => setModalJustOpened(false), 300)
-      
-      return () => {
-        clearTimeout(timer1)
-        clearTimeout(timer2)
-        clearTimeout(timer3)
-      }
-    } else {
-      setModalJustOpened(false)
-    }
-  }, [open])
-
-  // Prevent select from opening on mobile when modal just opened
-  const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
-
-  const handleSelectTouchStart = (e: React.TouchEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
 
   // Initialize form with existing data
   useEffect(() => {
@@ -159,25 +105,33 @@ export function AddBannedMedicineModal({
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
-    const newPhotos: File[] = []
-    const newPreviews: string[] = []
-
-    files.forEach((file) => {
-      if (file.type.startsWith('image/')) {
-        newPhotos.push(file)
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          if (result) {
-            newPreviews.push(result)
-            setPhotoPreviews([...photoPreviews, ...newPreviews])
+    const validFiles: File[] = []
+    const previewPromises = files.map(
+      (file) =>
+        new Promise<string | null>((resolve) => {
+          if (!file.type.startsWith('image/')) {
+            resolve(null)
+            return
           }
-        }
-        reader.readAsDataURL(file)
+          validFiles.push(file)
+          const reader = new FileReader()
+          reader.onload = (event) => resolve((event.target?.result as string) || null)
+          reader.onerror = () => resolve(null)
+          reader.readAsDataURL(file)
+        })
+    )
+
+    Promise.all(previewPromises).then((results) => {
+      const filteredPreviews = results.filter((result): result is string => !!result)
+      if (validFiles.length > 0 && filteredPreviews.length > 0) {
+        setPhotos((prev) => [...prev, ...validFiles])
+        setPhotoPreviews((prev) => [...prev, ...filteredPreviews])
       }
     })
 
-    setPhotos((prev) => [...prev, ...newPhotos])
+    if (e.target) {
+      e.target.value = ''
+    }
   }
 
   const removePhoto = (index: number) => {
@@ -256,7 +210,7 @@ export function AddBannedMedicineModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
-        <DialogHeader className="text-center space-y-4">
+        <DialogHeader className="text-center sm:text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
               <Pill className="h-8 w-8 text-white" />
@@ -274,98 +228,66 @@ export function AddBannedMedicineModal({
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="w-[240px] mx-auto space-y-5">
-            {/* Medicine Name Dropdown */}
-            <div className="space-y-2">
-              <Label htmlFor="medicineName" className="text-gray-700 font-medium">
-                İlaç Adı <span className="text-red-500">*</span>
-              </Label>
-              <select
-                ref={medicineSelectRef}
-                id="medicineName"
-                value={medicineName}
-                onChange={(e) => setMedicineName(e.target.value)}
-                onMouseDown={handleSelectMouseDown}
-                onTouchStart={handleSelectTouchStart}
-                onFocus={(e) => {
-                  // Prevent auto-opening on mobile by blurring if modal just opened
-                  if (modalJustOpened) {
-                    setTimeout(() => {
-                      e.target.blur()
-                    }, 0)
-                  }
-                }}
-                required
-                disabled={isSubmitting}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">İlaç seçin...</option>
-                {BANNED_MEDICINES.map((med) => (
-                  <option key={med} value={med}>
-                    {med}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <form onSubmit={handleSubmit}>
+          <div className="w-[260px] mx-auto space-y-5">
+            <ModalSelect
+              label="İlaç Adı"
+              required
+              value={medicineName}
+              onChange={(e) => setMedicineName(e.target.value)}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<Pill className="h-4 w-4" />}
+            >
+              <option value="">İlaç seçin...</option>
+              {BANNED_MEDICINES.map((med) => (
+                <option key={med} value={med}>
+                  {med}
+                </option>
+              ))}
+            </ModalSelect>
 
-            {/* Given Date */}
-            <div className="space-y-2">
-              <Label htmlFor="givenDate" className="text-gray-700 font-medium">
-                Verilme Tarihi <span className="text-red-500">*</span>
-              </Label>
-              <TurkishDateInput
-                id="givenDate"
-                value={givenDate}
-                onChange={(e) => setGivenDate(e.target.value)}
-                required
-                disabled={isSubmitting}
-                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-              />
-            </div>
+            <ModalDateField
+              label="Verilme Tarihi"
+              required
+              id="givenDate"
+              value={givenDate}
+              onChange={(e) => setGivenDate(e.target.value)}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              onClick={guardPointerEvent}
+            />
 
-            {/* Wait Days */}
-            <div className="space-y-2">
-              <Label htmlFor="waitDays" className="text-gray-700 font-medium">
-                Bekleme Süresi (Gün) <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="waitDays"
-                type="number"
-                min="0"
-                value={waitDays}
-                onChange={(e) => setWaitDays(e.target.value)}
-                placeholder="Örn: 7"
-                required
-                disabled={isSubmitting}
-                className="h-11 w-full"
-              />
-            </div>
+            <ModalInput
+              label="Bekleme Süresi (Gün)"
+              required
+              id="waitDays"
+              type="number"
+              min="0"
+              value={waitDays}
+              onChange={(e) => setWaitDays(e.target.value)}
+              placeholder="Örn: 7"
+              disabled={isSubmitting}
+              startIcon={<Hourglass className="h-4 w-4" />}
+            />
 
-            {/* Note */}
-            <div className="space-y-2">
-              <Label htmlFor="note" className="text-gray-700 font-medium">
-                Not
-              </Label>
-              <textarea
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="İlaç hakkında notlar..."
-                disabled={isSubmitting}
-                className="flex min-h-[100px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-                rows={4}
-              />
-            </div>
+            <ModalTextarea
+              label="Not"
+              id="medicine-note"
+              placeholder="İlaç hakkında notlar..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={isSubmitting}
+              rows={4}
+            />
 
-            {/* Photos */}
-            <div className="space-y-2">
-              <Label className="text-gray-700 font-medium">
-                Fotoğraflar
-              </Label>
+            {existingPhotos.length > 0 && (
               <div className="space-y-3">
-              {/* Existing photos */}
-              {existingPhotos.length > 0 && (
+                <p className="text-sm font-medium text-gray-700">Yüklenmiş Fotoğraflar</p>
                 <div className="grid grid-cols-2 gap-2">
                   {existingPhotos.map((photo, index) => (
                     <div key={index} className="relative group">
@@ -384,70 +306,35 @@ export function AddBannedMedicineModal({
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* New photo previews */}
-              {photoPreviews.length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {photoPreviews.map((preview, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePhoto(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add photo button */}
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full"
-                >
-                  Fotoğraf Ekle
-                </Button>
               </div>
-            </div>
-          </div>
-          </div>
+            )}
 
-          {/* Submit Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
+            <ModalPhotoUpload
+              label="Yeni Fotoğraf Ekle"
+              inputId="medicine-photo"
               disabled={isSubmitting}
-            >
-              İptal
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !medicineName || !givenDate || !waitDays}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
-            >
-              {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
-            </Button>
+              previews={photoPreviews}
+              onChange={handlePhotoChange}
+              onRemove={removePhoto}
+            />
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                İptal
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !medicineName || !givenDate || !waitDays}
+                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
+              >
+                {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

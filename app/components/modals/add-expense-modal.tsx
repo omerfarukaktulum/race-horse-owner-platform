@@ -1,16 +1,21 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
+import {
+  ModalSelect,
+  ModalDateField,
+  ModalInput,
+  ModalTextarea,
+  ModalPhotoUpload,
+} from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
-import { TurkishLira, ChevronDown } from 'lucide-react'
+import { TurkishLira, Users, UserRound, Wallet, NotebookPen, ListChecks } from 'lucide-react'
 import { useAuth } from '@/lib/context/auth-context'
+import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 interface Horse {
   id: string
@@ -67,10 +72,7 @@ export function AddExpenseModal({
   const [stablemates, setStablemates] = useState<Array<{ id: string; name: string }>>([])
   const [selectedStablemateId, setSelectedStablemateId] = useState('')
   const [isLoadingStablemates, setIsLoadingStablemates] = useState(false)
-  const stablemateSelectRef = useRef<HTMLSelectElement>(null)
-  const horseSelectRef = useRef<HTMLSelectElement>(null)
-  const categorySelectRef = useRef<HTMLSelectElement>(null)
-  const [modalJustOpened, setModalJustOpened] = useState(false)
+  const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
   const isTrainer = user?.role === 'TRAINER'
 
   // Form state
@@ -106,69 +108,6 @@ export function AddExpenseModal({
         })
     }
   }, [open, isTrainer, isSingleHorseMode, isEditMode])
-
-  // Prevent dropdowns from auto-opening on mobile when modal opens
-  useEffect(() => {
-    if (open) {
-      setModalJustOpened(true)
-      // Blur all select elements immediately to prevent auto-opening on mobile
-      const blurSelects = () => {
-        if (stablemateSelectRef.current) {
-          stablemateSelectRef.current.blur()
-        }
-        if (horseSelectRef.current) {
-          horseSelectRef.current.blur()
-        }
-        if (categorySelectRef.current) {
-          categorySelectRef.current.blur()
-        }
-        // Also blur any other focused select elements
-        const focusedElement = document.activeElement as HTMLElement
-        if (focusedElement && focusedElement.tagName === 'SELECT') {
-          focusedElement.blur()
-        }
-      }
-      
-      // Blur immediately
-      blurSelects()
-      
-      // Blur after a short delay to catch any late focus
-      const timer1 = setTimeout(blurSelects, 50)
-      const timer2 = setTimeout(blurSelects, 150)
-      const timer3 = setTimeout(() => setModalJustOpened(false), 300)
-      
-      return () => {
-        clearTimeout(timer1)
-        clearTimeout(timer2)
-        clearTimeout(timer3)
-      }
-    } else {
-      setModalJustOpened(false)
-    }
-  }, [open])
-  
-  // Prevent select from opening on mobile when modal just opened
-  const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
-  
-  const handleSelectTouchStart = (e: React.TouchEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
 
   // Filter horses by selected stablemate
   const filteredHorses = isTrainer && selectedStablemateId
@@ -239,32 +178,6 @@ export function AddExpenseModal({
     }
   }, [selectedStablemateId])
 
-  // Focus eküri dropdown when modal opens (for trainers)
-  useEffect(() => {
-    if (open && isTrainer && !isSingleHorseMode && !isEditMode) {
-      // Focus immediately when modal opens
-      const timer = setTimeout(() => {
-        if (stablemateSelectRef.current) {
-          stablemateSelectRef.current.focus()
-        }
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [open, isTrainer, isSingleHorseMode, isEditMode])
-
-  // Focus eküri dropdown when it becomes enabled (after stablemates load)
-  useEffect(() => {
-    if (open && isTrainer && !isSingleHorseMode && !isEditMode && !isLoadingStablemates && stablemates.length > 0) {
-      // Focus when stablemates are loaded and dropdown is enabled
-      const timer = setTimeout(() => {
-        if (stablemateSelectRef.current) {
-          stablemateSelectRef.current.focus()
-        }
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [open, isTrainer, isSingleHorseMode, isEditMode, isLoadingStablemates, stablemates.length])
-
   const fetchHorses = async () => {
     try {
       const response = await fetch('/api/horses', { credentials: 'include' })
@@ -313,6 +226,10 @@ export function AddExpenseModal({
       }
       reader.readAsDataURL(file)
     })
+
+    if (e.target) {
+      e.target.value = ''
+    }
   }
 
   const handleRemovePhoto = (index: number) => {
@@ -321,7 +238,7 @@ export function AddExpenseModal({
     setPhotos(newPhotos)
     setPhotoPreviews(newPreviews)
     // Reset the file input
-    const fileInput = document.getElementById('photo') as HTMLInputElement
+  const fileInput = document.getElementById('expense-photo') as HTMLInputElement
     if (fileInput) {
       fileInput.value = ''
     }
@@ -437,7 +354,7 @@ export function AddExpenseModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
-        <DialogHeader className="text-center space-y-4">
+        <DialogHeader className="text-center sm:text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
               <TurkishLira className="h-8 w-8 text-white" />
@@ -451,61 +368,51 @@ export function AddExpenseModal({
             </div>
           )}
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="w-[240px] max-w-[240px] mx-auto space-y-5 overflow-hidden">
-            {/* Stablemate Selection (for trainers) */}
+        <form onSubmit={handleSubmit}>
+          <div className="w-[260px] mx-auto space-y-5">
             {!isSingleHorseMode && isTrainer && (
-              <div className="space-y-2">
-                <Label className="text-gray-700 font-medium">Eküri Seçin *</Label>
-                <div className="relative">
-                <select
-                  ref={stablemateSelectRef}
-                  value={selectedStablemateId}
-                  onChange={(e) => setSelectedStablemateId(e.target.value)}
-                    onMouseDown={handleSelectMouseDown}
-                    onTouchStart={handleSelectTouchStart}
-                  required
-                  disabled={isSubmitting || isLoadingStablemates}
-                    className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
-                >
-                  <option value="">Eküri seçin</option>
-                  {stablemates.map((stablemate) => (
-                    <option key={stablemate.id} value={stablemate.id}>
-                      {stablemate.name}
-                    </option>
-                  ))}
-                </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
-                </div>
-              </div>
+              <ModalSelect
+                label="Eküri Seçin"
+                required
+                value={selectedStablemateId}
+                onChange={(e) => setSelectedStablemateId(e.target.value)}
+                disabled={isSubmitting || isLoadingStablemates}
+                onMouseDown={guardPointerEvent}
+                onTouchStart={guardPointerEvent}
+                onFocus={guardFocusEvent}
+                icon={<Users className="h-4 w-4" />}
+              >
+                <option value="">Eküri seçin</option>
+                {stablemates.map((stablemate) => (
+                  <option key={stablemate.id} value={stablemate.id}>
+                    {stablemate.name}
+                  </option>
+                ))}
+              </ModalSelect>
             )}
 
-            {/* Horse Selection */}
             {!isSingleHorseMode && (
-              <div className="space-y-2">
-                <Label className="text-gray-700 font-medium">
-                  {TR.expenses.selectHorses}
-                </Label>
+              <>
                 {isLoadingHorses ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>{TR.common.loading}</p>
+                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-8 text-center text-sm text-gray-500">
+                    {TR.common.loading}
                   </div>
                 ) : filteredHorses.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 border rounded-lg">
+                  <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-6 text-center text-sm text-gray-500">
                     <p>{isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'Henüz atınız bulunmuyor.'}</p>
-                    {!isTrainer && <p className="text-sm mt-2">Önce at eklemeniz gerekiyor.</p>}
+                    {!isTrainer && <p className="mt-2 text-xs text-gray-400">Önce at eklemeniz gerekiyor.</p>}
                   </div>
                 ) : (
-                  <div className="relative">
-                  <select
-                      ref={horseSelectRef}
+                  <ModalSelect
+                    label={TR.expenses.selectHorses}
+                    required
                     value={selectedHorseId}
                     onChange={(e) => setSelectedHorseId(e.target.value)}
-                      onMouseDown={handleSelectMouseDown}
-                      onTouchStart={handleSelectTouchStart}
-                    required
                     disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
-                      className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 pr-10 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
+                    onMouseDown={guardPointerEvent}
+                    onTouchStart={guardPointerEvent}
+                    onFocus={guardFocusEvent}
+                    icon={<UserRound className="h-4 w-4" />}
                   >
                     <option value="">
                       {isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}
@@ -515,148 +422,91 @@ export function AddExpenseModal({
                         {horse.name}
                       </option>
                     ))}
-                  </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
-                  </div>
+                  </ModalSelect>
                 )}
-              </div>
+              </>
             )}
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category" className="text-gray-700 font-medium">{TR.expenses.category} *</Label>
-              <div className="relative">
-              <select
-                  ref={categorySelectRef}
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                  onMouseDown={handleSelectMouseDown}
-                  onTouchStart={handleSelectTouchStart}
-                required
-                disabled={isSubmitting}
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                  className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 pr-10 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer md:cursor-default"
-              >
-                <option value="">Kategori seçin</option>
-                {EXPENSE_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none md:hidden" />
-              </div>
-            </div>
+            <ModalSelect
+              label={TR.expenses.category}
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<ListChecks className="h-4 w-4" />}
+            >
+              <option value="">Kategori seçin</option>
+              {EXPENSE_CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </ModalSelect>
 
-            {/* Date */}
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-gray-700 font-medium">{TR.expenses.date} *</Label>
-              <TurkishDateInput
-                id="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-                required
-                disabled={isSubmitting}
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-              />
-            </div>
+            <ModalDateField
+              label={TR.expenses.date}
+              required
+              id="expense-date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              onClick={guardPointerEvent}
+            />
 
-            {/* Custom Category Name */}
             {category === 'OZEL' && (
-              <div className="space-y-2">
-                <Label htmlFor="customCategory" className="text-gray-700 font-medium">Özel Kategori Adı *</Label>
-                <Input
-                  id="customCategory"
-                  type="text"
-                  placeholder="Kategori adı girin"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
+              <ModalInput
+                label="Özel Kategori Adı"
+                required
+                id="customCategory"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                disabled={isSubmitting}
+                placeholder="Kategori adı girin"
+                startIcon={<NotebookPen className="h-4 w-4" />}
+              />
             )}
 
-            {/* Amount */}
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-gray-700 font-medium">{TR.expenses.amount} (₺) *</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-                disabled={isSubmitting}
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                className="h-11 w-full border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
+            <ModalInput
+              label={`${TR.expenses.amount} (₺)`}
+              required
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              disabled={isSubmitting}
+              startIcon={<Wallet className="h-4 w-4" />}
+            />
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-gray-700 font-medium">Not *</Label>
-              <textarea
-                id="notes"
-                placeholder="Not Ekleyin"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                disabled={isSubmitting}
-                rows={3}
-                tabIndex={isTrainer && !isSingleHorseMode ? -1 : 0}
-                className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-              />
-            </div>
+            <ModalTextarea
+              label="Not"
+              required
+              id="notes"
+              placeholder="Not Ekleyin"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isSubmitting}
+              rows={3}
+            />
 
-            {/* Photo Upload */}
-            <div className="space-y-2">
-              <Label htmlFor="photo" className="text-gray-700 font-medium">{TR.expenses.photo}</Label>
-              <div className="relative">
-                <label htmlFor="photo" className="cursor-pointer">
-                  <div className="flex items-center justify-center h-11 w-full border-2 border-dashed border-gray-300 rounded-md hover:border-[#6366f1] transition-colors bg-gray-50 hover:bg-gray-100">
-                    <span className="text-sm text-gray-600 font-medium">Dosya Seç</span>
-                  </div>
-                  <Input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoChange}
-                    disabled={isSubmitting}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              {photoPreviews.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {photoPreviews.map((preview, index) => (
-                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-gray-300">
-                      <img
-                        src={preview}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(index)}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-colors"
-                        aria-label="Remove photo"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ModalPhotoUpload
+              label={TR.expenses.photo}
+              inputId="expense-photo"
+              disabled={isSubmitting}
+              previews={photoPreviews}
+              onChange={handlePhotoChange}
+              onRemove={handleRemovePhoto}
+            />
 
-            {/* Actions */}
             <div className="pt-2">
               <div className="flex justify-end space-x-2">
                 <Button
@@ -668,14 +518,12 @@ export function AddExpenseModal({
                 >
                   {TR.common.cancel}
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {isSubmitting
-                    ? TR.common.loading
-                    : submitLabel || (isEditMode ? 'Kaydet' : TR.expenses.addExpense)}
+                  {isSubmitting ? TR.common.loading : submitLabel || (isEditMode ? 'Kaydet' : TR.expenses.addExpense)}
                 </Button>
               </div>
             </div>

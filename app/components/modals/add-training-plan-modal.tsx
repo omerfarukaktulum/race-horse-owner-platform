@@ -1,13 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
+import {
+  ModalDateField,
+  ModalSelect,
+  ModalTextarea,
+} from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
-import { NotebookPen } from 'lucide-react'
+import { NotebookPen, MapPin, Ruler } from 'lucide-react'
+import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 type TrainingPlanModalMode = 'create' | 'edit'
 
@@ -48,102 +51,9 @@ export function AddTrainingPlanModal({
   const [racecourseId, setRacecourseId] = useState('')
   const [racecourses, setRacecourses] = useState<Array<{ id: string; name: string }>>([])
   const [isLoadingRacecourses, setIsLoadingRacecourses] = useState(false)
-  const distanceSelectRef = useRef<HTMLSelectElement>(null)
-  const racecourseSelectRef = useRef<HTMLSelectElement>(null)
-  const dateInputRef = useRef<HTMLInputElement>(null)
-  const [modalJustOpened, setModalJustOpened] = useState(false)
+  const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   const isEditMode = mode === 'edit'
-
-  // Track when modal just opened to prevent auto-opening select/date picker on mobile
-  useEffect(() => {
-    if (open) {
-      setModalJustOpened(true)
-      // Blur all select and date input elements immediately to prevent auto-opening on mobile
-      const blurInputs = () => {
-        if (distanceSelectRef.current) {
-          distanceSelectRef.current.blur()
-        }
-        if (racecourseSelectRef.current) {
-          racecourseSelectRef.current.blur()
-        }
-        if (dateInputRef.current) {
-          dateInputRef.current.blur()
-        }
-        // Also blur any other focused select or input elements
-        const focusedElement = document.activeElement as HTMLElement
-        if (focusedElement) {
-          if (focusedElement.tagName === 'SELECT' || focusedElement.tagName === 'INPUT') {
-            focusedElement.blur()
-          }
-        }
-      }
-      
-      // Blur immediately
-      blurInputs()
-      
-      // Blur after a short delay to catch any late focus
-      const timer1 = setTimeout(blurInputs, 50)
-      const timer2 = setTimeout(blurInputs, 150)
-      const timer3 = setTimeout(blurInputs, 300)
-      const timer4 = setTimeout(() => setModalJustOpened(false), 500)
-      
-      return () => {
-        clearTimeout(timer1)
-        clearTimeout(timer2)
-        clearTimeout(timer3)
-        clearTimeout(timer4)
-      }
-    } else {
-      setModalJustOpened(false)
-    }
-  }, [open])
-
-  // Prevent select from opening on mobile when modal just opened
-  const handleSelectMouseDown = (e: React.MouseEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
-
-  const handleSelectTouchStart = (e: React.TouchEvent<HTMLSelectElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
-
-  // Prevent date picker from opening on mobile when modal just opened
-  const handleDateInputMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
-
-  const handleDateInputTouchStart = (e: React.TouchEvent<HTMLInputElement>) => {
-    if (modalJustOpened) {
-      e.preventDefault()
-      e.stopPropagation()
-      // Allow opening after a short delay
-      setTimeout(() => {
-        setModalJustOpened(false)
-      }, 100)
-    }
-  }
 
   // Fetch racecourses when modal opens
   useEffect(() => {
@@ -278,7 +188,7 @@ export function AddTrainingPlanModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
-        <DialogHeader className="text-center space-y-4">
+        <DialogHeader className="text-center sm:text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
               <NotebookPen className="h-8 w-8 text-white" />
@@ -298,149 +208,90 @@ export function AddTrainingPlanModal({
           )}
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="w-[240px] mx-auto space-y-5">
-            {/* Plan Date */}
-            <div className="space-y-2">
-              <Label htmlFor="planDate" className="text-gray-700 font-medium">
-                Tarih <span className="text-red-500">*</span>
-              </Label>
-              <div style={modalJustOpened ? { pointerEvents: 'none' } : undefined}>
-                <TurkishDateInput
-                  ref={dateInputRef}
-                  id="planDate"
-                  value={planDate}
-                  onChange={(e) => setPlanDate(e.target.value)}
-                  min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
-                  required
-                  disabled={isSubmitting || modalJustOpened}
-                  autoFocus={false}
-                  onMouseDown={handleDateInputMouseDown}
-                  onTouchStart={handleDateInputTouchStart}
-                  onFocus={(e) => {
-                    // Prevent auto-opening on mobile by blurring if modal just opened
-                    if (modalJustOpened) {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setTimeout(() => {
-                        e.target.blur()
-                      }, 0)
-                    }
-                  }}
-                  onClick={(e) => {
-                    // Prevent date picker from opening if modal just opened
-                    if (modalJustOpened) {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setTimeout(() => {
-                        setModalJustOpened(false)
-                      }, 100)
-                    }
-                  }}
-                  className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
-            </div>
-
-            {/* Racecourse */}
-            <div className="space-y-2">
-              <Label htmlFor="racecourse" className="text-gray-700 font-medium">
-                Hipodrom
-              </Label>
-              <select
-                ref={racecourseSelectRef}
-                id="racecourse"
-                value={racecourseId}
-                onChange={(e) => setRacecourseId(e.target.value)}
-                onMouseDown={handleSelectMouseDown}
-                onTouchStart={handleSelectTouchStart}
-                onFocus={(e) => {
-                  // Prevent auto-opening on mobile by blurring if modal just opened
-                  if (modalJustOpened) {
-                    setTimeout(() => {
-                      e.target.blur()
-                    }, 0)
-                  }
-                }}
-                disabled={isSubmitting || isLoadingRacecourses}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Hipodrom seçin...</option>
-                {racecourses.map((racecourse) => (
-                  <option key={racecourse.id} value={racecourse.id}>
-                    {racecourse.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Distance */}
-            <div className="space-y-2">
-              <Label htmlFor="distance" className="text-gray-700 font-medium">
-                İdman Mesafesi <span className="text-red-500">*</span>
-              </Label>
-              <select
-                ref={distanceSelectRef}
-                id="distance"
-                value={distance}
-                onChange={(e) => setDistance(e.target.value)}
-                onMouseDown={handleSelectMouseDown}
-                onTouchStart={handleSelectTouchStart}
-                onFocus={(e) => {
-                  // Prevent auto-opening on mobile by blurring if modal just opened
-                  if (modalJustOpened) {
-                    setTimeout(() => {
-                      e.target.blur()
-                    }, 0)
-                  }
-                }}
-                required
-                disabled={isSubmitting}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">Mesafe seçin...</option>
-                {DISTANCE_OPTIONS.map((dist) => (
-                  <option key={dist} value={dist}>
-                    {dist === 'Kenter' || dist === 'Tırıs' ? dist : `${dist}m`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Note */}
-            <div className="space-y-2">
-              <Label htmlFor="note" className="text-gray-700 font-medium">
-                Not
-              </Label>
-              <textarea
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="İdman planı hakkında notlar..."
-                disabled={isSubmitting}
-                className="flex min-h-[100px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
+        <form onSubmit={handleSubmit}>
+          <div className="w-[260px] mx-auto space-y-5">
+            <ModalDateField
+              label="Tarih"
+              required
+              id="planDate"
+              value={planDate}
+              onChange={(e) => setPlanDate(e.target.value)}
+              min={(() => {
+                const tomorrow = new Date()
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                return tomorrow.toISOString().split('T')[0]
+              })()}
               disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              onClick={guardPointerEvent}
+            />
+
+            <ModalSelect
+              label="Hipodrom"
+              value={racecourseId}
+              onChange={(e) => setRacecourseId(e.target.value)}
+              disabled={isSubmitting || isLoadingRacecourses}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<MapPin className="h-4 w-4" />}
             >
-              İptal
-            </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || !planDate || !distance}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
+              <option value="">Hipodrom seçin...</option>
+              {racecourses.map((racecourse) => (
+                <option key={racecourse.id} value={racecourse.id}>
+                  {racecourse.name}
+                </option>
+              ))}
+            </ModalSelect>
+
+            <ModalSelect
+              label="İdman Mesafesi"
+              required
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<Ruler className="h-4 w-4" />}
             >
-              {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
-            </Button>
+              <option value="">Mesafe seçin...</option>
+              {DISTANCE_OPTIONS.map((dist) => (
+                <option key={dist} value={dist}>
+                  {dist === 'Kenter' || dist === 'Tırıs' ? dist : `${dist}m`}
+                </option>
+              ))}
+            </ModalSelect>
+
+            <ModalTextarea
+              label="Not"
+              id="note"
+              placeholder="İdman planı hakkında notlar..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={isSubmitting}
+              rows={4}
+            />
+
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
+                İptal
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !planDate || !distance}
+                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
+              >
+                {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

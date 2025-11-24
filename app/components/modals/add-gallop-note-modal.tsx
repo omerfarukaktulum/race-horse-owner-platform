@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
-import { Label } from '@/app/components/ui/label'
 import { toast } from 'sonner'
 import { FileText, X } from 'lucide-react'
 import { formatDateShort } from '@/lib/utils/format'
+import { ModalTextarea, ModalPhotoUpload } from '@/app/components/ui/modal-field'
 
 interface AddGallopNoteModalProps {
   open: boolean
@@ -32,7 +32,6 @@ export function AddGallopNoteModal({
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
   const [existingPhotos, setExistingPhotos] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const isEditMode = !!initialNote || !!initialPhotoUrl
 
@@ -73,25 +72,33 @@ export function AddGallopNoteModal({
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
-    const newPhotos: File[] = []
-    const newPreviews: string[] = []
-
-    files.forEach((file) => {
-      if (file.type.startsWith('image/')) {
-        newPhotos.push(file)
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          if (result) {
-            newPreviews.push(result)
-            setPhotoPreviews([...photoPreviews, ...newPreviews])
+    const validFiles: File[] = []
+    const previewPromises = files.map(
+      (file) =>
+        new Promise<string | null>((resolve) => {
+          if (!file.type.startsWith('image/')) {
+            resolve(null)
+            return
           }
-        }
-        reader.readAsDataURL(file)
+          validFiles.push(file)
+          const reader = new FileReader()
+          reader.onload = (event) => resolve((event.target?.result as string) || null)
+          reader.onerror = () => resolve(null)
+          reader.readAsDataURL(file)
+        })
+    )
+
+    Promise.all(previewPromises).then((results) => {
+      const filteredPreviews = results.filter((result): result is string => !!result)
+      if (validFiles.length > 0 && filteredPreviews.length > 0) {
+        setPhotos((prev) => [...prev, ...validFiles])
+        setPhotoPreviews((prev) => [...prev, ...filteredPreviews])
       }
     })
 
-    setPhotos((prev) => [...prev, ...newPhotos])
+    if (e.target) {
+      e.target.value = ''
+    }
   }
 
   const removePhoto = (index: number) => {
@@ -207,91 +214,48 @@ export function AddGallopNoteModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-auto px-6 py-4">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="note" className="text-sm font-medium text-gray-700">
-                İdman Notu
-              </Label>
-              <textarea
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="İdman hakkında notlarınızı buraya yazın..."
-                className="mt-1 w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                rows={5}
-              />
-            </div>
+          <div className="space-y-5">
+            <ModalTextarea
+              label="İdman Notu"
+              id="gallop-note"
+              placeholder="İdman hakkında notlarınızı buraya yazın..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={5}
+            />
 
-            <div>
-              <Label className="text-sm font-medium text-gray-700">
-                Fotoğraflar
-              </Label>
-              <div className="mt-2 space-y-3">
-                {/* Existing photos */}
-                {existingPhotos.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {existingPhotos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={photo}
-                          alt={`Existing ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeExistingPhoto(index)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* New photo previews */}
-                {photoPreviews.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {photoPreviews.map((preview, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add photo button */}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full"
-                  >
-                    Fotoğraf Ekle
-                  </Button>
+            {existingPhotos.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">Yüklenmiş Fotoğraflar</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {existingPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={photo}
+                        alt={`Existing ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingPhoto(index)}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
+
+            <ModalPhotoUpload
+              label="Yeni Fotoğraf Ekle"
+              inputId="gallop-note-photo"
+              disabled={isSubmitting}
+              previews={photoPreviews}
+              onChange={handlePhotoChange}
+              onRemove={removePhoto}
+            />
           </div>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">

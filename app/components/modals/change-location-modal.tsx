@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
-import { Input } from '@/app/components/ui/input'
-import { Label } from '@/app/components/ui/label'
-import { TurkishDateInput } from '@/app/components/ui/turkish-date-input'
+import {
+  ModalSelect,
+  ModalDateField,
+  ModalTextarea,
+} from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
-import { formatDate } from '@/lib/utils/format'
 import { MapPin } from 'lucide-react'
+import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 interface ChangeLocationModalProps {
   open: boolean
@@ -71,6 +73,7 @@ export function ChangeLocationModal({
   const [city, setCity] = useState(currentCity || '')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
+  const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   useEffect(() => {
     if (open) {
@@ -133,7 +136,7 @@ export function ChangeLocationModal({
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
-        <DialogHeader className="text-center space-y-4">
+        <DialogHeader className="text-center sm:text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
               <MapPin className="h-8 w-8 text-white" />
@@ -149,7 +152,7 @@ export function ChangeLocationModal({
           <div className="w-[240px] mx-auto space-y-5">
             {/* Location Type */}
             <div className="space-y-2">
-              <Label className="text-gray-700 font-medium">Konum Tipi *</Label>
+              <p className="text-sm font-medium text-gray-700">Konum Tipi *</p>
               <div className="flex gap-4">
                 <label className="flex items-center space-x-2 cursor-pointer">
                   <input
@@ -183,61 +186,56 @@ export function ChangeLocationModal({
             {/* Current Location Display */}
             {(currentLocationType && currentCity) && (
               <div className="p-3 border-2 border-indigo-100/50 rounded-lg bg-gradient-to-br from-indigo-50/60 via-indigo-50/40 to-white shadow-lg">
-                <Label className="text-xs text-gray-600 mb-1 block">Mevcut Konum</Label>
+                <p className="text-xs text-gray-600 mb-1 block font-medium">Mevcut Konum</p>
                 <p className="text-sm font-medium text-gray-900">
                   {currentLocationType === 'racecourse' ? 'Hipodrom' : 'Çiftlik'}: {currentCity}
                 </p>
               </div>
             )}
 
-            {/* City Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="city" className="text-gray-700 font-medium">Şehir *</Label>
-              <select
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                required
-                disabled={isSubmitting}
-                className="flex h-11 w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="">{locationType === 'racecourse' ? 'Hipodrom Seçin' : 'Şehir Seçin'}</option>
-                {availableCities.map((cityName) => (
-                  <option key={cityName} value={cityName}>
-                    {cityName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ModalSelect
+              label="Şehir"
+              required
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<MapPin className="h-4 w-4" />}
+            >
+              <option value="">{locationType === 'racecourse' ? 'Hipodrom Seçin' : 'Şehir Seçin'}</option>
+              {availableCities.map((cityName) => (
+                <option key={cityName} value={cityName}>
+                  {cityName}
+                </option>
+              ))}
+            </ModalSelect>
 
-            {/* Start Date */}
-            <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-gray-700 font-medium">Başlangıç Tarihi *</Label>
-              <TurkishDateInput
-                id="startDate"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-                required
-                disabled={isSubmitting}
-                className="border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-              />
-            </div>
+            <ModalDateField
+              label="Başlangıç Tarihi"
+              required
+              id="startDate"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              onClick={guardPointerEvent}
+            />
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-gray-700 font-medium">Not *</Label>
-              <textarea
-                id="notes"
-                placeholder="Not ekleyin"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                required
-                disabled={isSubmitting}
-                rows={3}
-                className="flex w-full rounded-md border border-gray-300 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:border-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-              />
-            </div>
+            <ModalTextarea
+              label="Not"
+              required
+              id="notes"
+              placeholder="Not ekleyin"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isSubmitting}
+              rows={3}
+            />
 
             {/* Actions */}
             <div className="pt-2">

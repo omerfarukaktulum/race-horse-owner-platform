@@ -3,6 +3,8 @@
 import * as React from 'react'
 import DatePicker, { registerLocale } from 'react-datepicker'
 import { tr } from 'date-fns/locale'
+import { format } from 'date-fns'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import 'react-datepicker/dist/react-datepicker.css'
 
@@ -81,6 +83,50 @@ const TurkishDateInput = React.forwardRef<HTMLInputElement, TurkishDateInputProp
       }
     }
 
+    const renderHeader = ({
+      date: currentDate,
+      decreaseMonth,
+      increaseMonth,
+      prevMonthButtonDisabled,
+      nextMonthButtonDisabled,
+    }: {
+      date: Date
+      decreaseMonth: () => void
+      increaseMonth: () => void
+      prevMonthButtonDisabled: boolean
+      nextMonthButtonDisabled: boolean
+    }) => (
+      <div className="flex items-center justify-between px-4 py-2 text-white">
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={(event) => {
+            event.preventDefault()
+            decreaseMonth()
+          }}
+          disabled={prevMonthButtonDisabled}
+          className="rounded-full p-1.5 transition hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <span className="text-sm font-semibold tracking-wide">
+          {format(currentDate, 'MMMM yyyy', { locale: tr })}
+        </span>
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={(event) => {
+            event.preventDefault()
+            increaseMonth()
+          }}
+          disabled={nextMonthButtonDisabled}
+          className="rounded-full p-1.5 transition hover:bg-white/15 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    )
+
     return (
       <div className="relative">
         <DatePicker
@@ -94,6 +140,7 @@ const TurkishDateInput = React.forwardRef<HTMLInputElement, TurkishDateInputProp
           dateFormat="dd/MM/yyyy"
           placeholderText="GG/AA/YYYY"
           autoFocus={autoFocus}
+          renderCustomHeader={renderHeader as any}
           className={cn(
             // Standard width and height to match other inputs
             'h-11 w-full',
