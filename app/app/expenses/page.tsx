@@ -649,13 +649,7 @@ export default function ExpensesPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 ml-auto">
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
-            <p className="text-lg font-semibold text-indigo-600">
-              {formatCurrency(totalAmount, defaultCurrency)}
-            </p>
-          </div>
+        <div className="flex flex-col items-end gap-2">
           <Button
             size="sm"
             onClick={() => setIsAddModalOpen(true)}
@@ -663,7 +657,13 @@ export default function ExpensesPage() {
           >
             Ekle
           </Button>
-            </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+            <p className="text-lg font-semibold text-indigo-600">
+              {formatCurrency(totalAmount, defaultCurrency)}
+            </p>
+          </div>
+        </div>
               </div>
 
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
