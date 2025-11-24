@@ -101,15 +101,17 @@ export const TR = {
   },
   
   expenseCategories: {
-    IDMAN_JOKEYI: 'İdman Jokeyi Ücreti',
-    SEYIS: 'Seyis Giderleri',
+    YARIS_KAYIT_DECLARE: 'Yarış Kayıt/Deklare Giderleri',
+    YEM_SAMAN_OT_TALAS: 'Saman/Ot/Yem/Talaş Giderleri',
     ILAC: 'İlaç Giderleri',
-    YEM_SAMAN_OT: 'Saman/Ot/Yem Giderleri',
-    EKSTRA_ILAC: 'Ekstra İlaç Giderleri',
-    YARIS_KAYIT: 'Yarış Kayıt Giderleri',
-    NAKLIYE: 'Nakliye (Hipodrom Arası)',
+    SEYIS: 'Seyis Giderleri',
+    SIGORTA: 'Sigorta Giderleri',
+    MONT: 'Mont Giderleri',
+    IDMAN_JOKEYI: 'İdman Jokeyi Ücreti',
+    NAL_NALBANT: 'Nal/Nalbant Giderleri',
+    SARAC: 'Saraç Giderleri',
+    NAKLIYE: 'Nakliye (Hipodrom Arası) Ücreti',
     SEZONLUK_AHIR: 'Sezonluk/Ahır Ücreti',
-    OZEL: 'Özel',
   },
   
   statistics: {

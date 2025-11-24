@@ -5,16 +5,21 @@ const prisma = new PrismaClient()
 
 // Expense categories
 const EXPENSE_CATEGORIES = [
-  'IDMAN_JOKEYI',
-  'SEYIS',
+  'YARIS_KAYIT_DECLARE',
+  'YEM_SAMAN_OT_TALAS',
   'ILAC',
-  'YEM_SAMAN_OT',
-  'EKSTRA_ILAC',
-  'YARIS_KAYIT',
+  'SEYIS',
+  'SIGORTA',
+  'MONT',
+  'IDMAN_JOKEYI',
+  'NAL_NALBANT',
+  'SARAC',
   'NAKLIYE',
   'SEZONLUK_AHIR',
-  'OZEL',
 ] as const
+
+// Categories that require horse selection
+const HORSE_REQUIRED_CATEGORIES = ['ILAC', 'MONT', 'NAKLIYE'] as const
 
 // Generate random date within last 12 months
 function getRandomDateInLast12Months(): Date {
@@ -35,22 +40,22 @@ function getDateRelativeToRace(raceDate: Date, daysOffset: number): Date {
 
 // Expense templates based on category
 const expenseTemplates: Record<string, { amounts: number[], notes: string[] }> = {
-  IDMAN_JOKEYI: {
-    amounts: [500, 600, 700, 800, 1000, 1200],
+  YARIS_KAYIT_DECLARE: {
+    amounts: [200, 250, 300, 350, 400],
     notes: [
-      'İdman jokeyi ücreti',
-      'Haftalık idman jokeyi ödemesi',
-      'İdman jokeyi günlük ücret',
-      'Jokey idman ücreti',
+      'Yarış kayıt ücreti',
+      'Yarış deklare masrafı',
+      'Kayıt ve deklare ücreti',
+      'Yarış kayıt bedeli',
     ],
   },
-  SEYIS: {
-    amounts: [2000, 2500, 3000, 3500, 4000],
+  YEM_SAMAN_OT_TALAS: {
+    amounts: [800, 1000, 1200, 1500, 2000],
     notes: [
-      'Seyis aylık ücret',
-      'Seyis maaşı',
-      'Seyis ödemesi',
-      'Seyis ücreti',
+      'Aylık yem gideri',
+      'Yem, saman ve talaş alımı',
+      'Ot ve yem masrafı',
+      'Yem takviyesi',
     ],
   },
   ILAC: {
@@ -62,31 +67,58 @@ const expenseTemplates: Record<string, { amounts: number[], notes: string[] }> =
       'Sağlık ilaçları',
     ],
   },
-  YEM_SAMAN_OT: {
-    amounts: [800, 1000, 1200, 1500, 2000],
+  SEYIS: {
+    amounts: [2000, 2500, 3000, 3500, 4000],
     notes: [
-      'Aylık yem gideri',
-      'Yem ve saman alımı',
-      'Ot ve yem masrafı',
-      'Yem takviyesi',
+      'Seyis aylık ücret',
+      'Seyis maaşı',
+      'Seyis ödemesi',
+      'Seyis ücreti',
     ],
   },
-  EKSTRA_ILAC: {
-    amounts: [300, 400, 500, 600, 800],
+  SIGORTA: {
+    amounts: [1000, 1500, 2000, 2500, 3000],
     notes: [
-      'Özel ilaç tedavisi',
-      'Ekstra vitamin takviyesi',
-      'Özel bakım ilacı',
-      'Tedavi ilacı',
+      'At sigortası ödemesi',
+      'Yıllık sigorta gideri',
+      'Sigorta primi',
+      'Sigorta masrafı',
     ],
   },
-  YARIS_KAYIT: {
+  MONT: {
+    amounts: [500, 600, 700, 800, 1000],
+    notes: [
+      'Mont gideri',
+      'Mont masrafı',
+      'Mont ödemesi',
+      'Mont ücreti',
+    ],
+  },
+  IDMAN_JOKEYI: {
+    amounts: [500, 600, 700, 800, 1000, 1200],
+    notes: [
+      'İdman jokeyi ücreti',
+      'Haftalık idman jokeyi ödemesi',
+      'İdman jokeyi günlük ücret',
+      'Jokey idman ücreti',
+    ],
+  },
+  NAL_NALBANT: {
     amounts: [200, 250, 300, 350, 400],
     notes: [
-      'Yarış kayıt ücreti',
-      'Yarış kayıt masrafı',
-      'Kayıt ücreti',
-      'Yarış kayıt bedeli',
+      'Nal gideri',
+      'Nalbant ücreti',
+      'Nal masrafı',
+      'Nalbant ödemesi',
+    ],
+  },
+  SARAC: {
+    amounts: [300, 400, 500, 600, 800],
+    notes: [
+      'Saraç gideri',
+      'Saraç masrafı',
+      'Saraç ücreti',
+      'Saraç ödemesi',
     ],
   },
   NAKLIYE: {
@@ -105,15 +137,6 @@ const expenseTemplates: Record<string, { amounts: number[], notes: string[] }> =
       'Aylık ahır ücreti',
       'Ahır kira ödemesi',
       'Sezonluk barınma ücreti',
-    ],
-  },
-  OZEL: {
-    amounts: [300, 400, 500, 600, 800, 1000],
-    notes: [
-      'Özel bakım gideri',
-      'Ekstra masraf',
-      'Özel harcama',
-      'Diğer giderler',
     ],
   },
 }
@@ -164,7 +187,7 @@ function generateId(): string {
 }
 
 function generateExpenseSQL(
-  horseId: string,
+  horseId: string | null,
   addedById: string,
   category: string,
   date: Date,
@@ -174,8 +197,9 @@ function generateExpenseSQL(
   const dateStr = date.toISOString().replace('T', ' ').substring(0, 19)
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
   const id = generateId()
+  const horseIdStr = horseId ? `'${horseId}'` : 'NULL'
   
-  return `INSERT INTO expenses (id, "horseId", "addedById", date, category, amount, currency, note, "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${category}', ${amount}, 'TRY', '${note.replace(/'/g, "''")}', '${now}', '${now}');`
+  return `INSERT INTO expenses (id, "horseId", "addedById", date, category, amount, currency, note, "createdAt", "updatedAt") VALUES ('${id}', ${horseIdStr}, '${addedById}', '${dateStr}', '${category}', ${amount}, 'TRY', '${note.replace(/'/g, "''")}', '${now}', '${now}');`
 }
 
 function generateNoteSQL(
@@ -247,11 +271,11 @@ async function main() {
         for (const race of horse.raceHistory) {
           // Add race registration expense (before race)
           const registrationDate = getDateRelativeToRace(race.raceDate, -7)
-          const regCategory = 'YARIS_KAYIT'
+          const regCategory = 'YARIS_KAYIT_DECLARE'
           const regTemplate = expenseTemplates[regCategory]
           expenseSQL.push(
             generateExpenseSQL(
-              horse.id,
+              null, // No horse required for registration
               ownerUserId,
               regCategory,
               registrationDate,
@@ -305,11 +329,15 @@ async function main() {
       }
       
       // Add monthly recurring expenses (random dates in last 12 months)
+      // Some categories require horses, others don't
       const monthlyExpenses = [
-        { category: 'SEYIS', count: 12 },
-        { category: 'YEM_SAMAN_OT', count: 12 },
-        { category: 'ILAC', count: 8 },
-        { category: 'SEZONLUK_AHIR', count: 1 },
+        { category: 'SEYIS', count: 12, requiresHorse: false },
+        { category: 'YEM_SAMAN_OT_TALAS', count: 12, requiresHorse: false },
+        { category: 'ILAC', count: 8, requiresHorse: true },
+        { category: 'SEZONLUK_AHIR', count: 1, requiresHorse: false },
+        { category: 'SIGORTA', count: 1, requiresHorse: false },
+        { category: 'NAL_NALBANT', count: 6, requiresHorse: false },
+        { category: 'SARAC', count: 4, requiresHorse: false },
       ]
       
       for (const monthly of monthlyExpenses) {
@@ -318,7 +346,7 @@ async function main() {
           const template = expenseTemplates[monthly.category]
           expenseSQL.push(
             generateExpenseSQL(
-              horse.id,
+              monthly.requiresHorse ? horse.id : null,
               ownerUserId,
               monthly.category,
               date,
@@ -327,6 +355,22 @@ async function main() {
             )
           )
         }
+      }
+      
+      // Add MONT expenses (requires horse)
+      for (let i = 0; i < 3; i++) {
+        const date = getRandomDateInLast12Months()
+        const template = expenseTemplates['MONT']
+        expenseSQL.push(
+          generateExpenseSQL(
+            horse.id,
+            ownerUserId,
+            'MONT',
+            date,
+            getRandomElement(template.amounts),
+            getRandomElement(template.notes)
+          )
+        )
       }
       
       // Add random notes
@@ -445,9 +489,9 @@ async function main() {
             )
           )
           
-          // Extra medicine expense
+          // Medicine expense (ILAC requires horse)
           const medDate = getDateRelativeToRace(race.raceDate, -4)
-          const medCategory = 'EKSTRA_ILAC'
+          const medCategory = 'ILAC'
           const medTemplate = expenseTemplates[medCategory]
           expenseSQL.push(
             generateExpenseSQL(
@@ -481,7 +525,7 @@ async function main() {
         // Add some random expenses for horses in stablemates
         for (let i = 0; i < 5; i++) {
           const date = getRandomDateInLast12Months()
-          const category = getRandomElement(['IDMAN_JOKEYI', 'EKSTRA_ILAC', 'ILAC'])
+          const category = getRandomElement(['IDMAN_JOKEYI', 'ILAC', 'MONT'])
           const template = expenseTemplates[category]
           expenseSQL.push(
             generateExpenseSQL(

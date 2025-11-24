@@ -12,8 +12,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { EXPENSE_CATEGORIES } from '@/lib/constants/expense-categories'
-import { TurkishLira, Users, UserRound, Wallet, NotebookPen, ListChecks } from 'lucide-react'
+import { EXPENSE_CATEGORIES, HORSE_REQUIRED_CATEGORIES } from '@/lib/constants/expense-categories'
+import { TurkishLira, Users, UserRound, Wallet, ListChecks } from 'lucide-react'
 import { useAuth } from '@/lib/context/auth-context'
 import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
@@ -78,7 +78,6 @@ export function AddExpenseModal({
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [category, setCategory] = useState('')
-  const [customCategory, setCustomCategory] = useState('')
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [photos, setPhotos] = useState<File[]>([])
@@ -133,7 +132,6 @@ export function AddExpenseModal({
           : new Date().toISOString().split('T')[0]
         setDate(formattedDate)
         setCategory(initialExpense.category || '')
-        setCustomCategory(initialExpense.customName || '')
         setAmount(initialExpense.amount?.toString() || '')
         setNotes(initialExpense.note || '')
         const initialPhotos =
@@ -160,7 +158,6 @@ export function AddExpenseModal({
       } else {
       setDate(new Date().toISOString().split('T')[0])
       setCategory('')
-      setCustomCategory('')
       setAmount('')
       setNotes('')
       setPhotos([])
@@ -252,8 +249,10 @@ export function AddExpenseModal({
       return
     }
 
-    if (category === 'OZEL' && !customCategory) {
-      toast.error('Lütfen özel kategori adı girin')
+    // Check if horse is required for this category
+    const requiresHorse = HORSE_REQUIRED_CATEGORIES.includes(category as any)
+    if (requiresHorse && !isSingleHorseMode && !selectedHorseId) {
+      toast.error('Lütfen bir at seçin')
       return
     }
 
@@ -278,9 +277,6 @@ export function AddExpenseModal({
         const formData = new FormData()
         formData.append('date', date)
         formData.append('category', category)
-        if (category === 'OZEL' && customCategory) {
-          formData.append('customName', customCategory)
-        }
         formData.append('amount', amount)
         formData.append('currency', 'TRY')
         formData.append('notes', notes)
@@ -304,7 +300,8 @@ export function AddExpenseModal({
         onSuccess?.()
         onClose()
       } else {
-        if (!isSingleHorseMode && !selectedHorseId) {
+        const requiresHorse = HORSE_REQUIRED_CATEGORIES.includes(category as any)
+        if (requiresHorse && !isSingleHorseMode && !selectedHorseId) {
           toast.error('Lütfen bir at seçin')
           setIsSubmitting(false)
           return
@@ -313,13 +310,10 @@ export function AddExpenseModal({
       const formData = new FormData()
       const horseIds = isSingleHorseMode
         ? [preselectedHorseId]
-        : [selectedHorseId]
+        : (requiresHorse ? [selectedHorseId] : [])
       formData.append('horseIds', JSON.stringify(horseIds.filter(Boolean)))
       formData.append('date', date)
       formData.append('category', category)
-      if (category === 'OZEL' && customCategory) {
-        formData.append('customName', customCategory)
-      }
       formData.append('amount', amount)
       formData.append('currency', 'TRY')
       formData.append('notes', notes)
@@ -391,7 +385,35 @@ export function AddExpenseModal({
               </ModalSelect>
             )}
 
-            {!isSingleHorseMode && (
+            <ModalSelect
+              label={TR.expenses.category}
+              required
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value)
+                // Reset horse selection when category changes
+                if (!isSingleHorseMode) {
+                  setSelectedHorseId('')
+                }
+              }}
+              disabled={isSubmitting}
+              onMouseDown={guardPointerEvent}
+              onTouchStart={guardPointerEvent}
+              onFocus={guardFocusEvent}
+              icon={<ListChecks className="h-4 w-4" />}
+            >
+              <option value="">Kategori seçin</option>
+              {(isSingleHorseMode
+                ? EXPENSE_CATEGORIES.filter((cat) => HORSE_REQUIRED_CATEGORIES.includes(cat.value as any))
+                : EXPENSE_CATEGORIES
+              ).map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </ModalSelect>
+
+            {!isSingleHorseMode && category && HORSE_REQUIRED_CATEGORIES.includes(category as any) && (
               <>
                 {isLoadingHorses ? (
                   <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 px-4 py-8 text-center text-sm text-gray-500">
@@ -427,25 +449,6 @@ export function AddExpenseModal({
               </>
             )}
 
-            <ModalSelect
-              label={TR.expenses.category}
-              required
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              disabled={isSubmitting}
-              onMouseDown={guardPointerEvent}
-              onTouchStart={guardPointerEvent}
-              onFocus={guardFocusEvent}
-              icon={<ListChecks className="h-4 w-4" />}
-            >
-              <option value="">Kategori seçin</option>
-              {EXPENSE_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </ModalSelect>
-
             <ModalDateField
               label={TR.expenses.date}
               required
@@ -460,18 +463,6 @@ export function AddExpenseModal({
               onClick={guardPointerEvent}
             />
 
-            {category === 'OZEL' && (
-              <ModalInput
-                label="Özel Kategori Adı"
-                required
-                id="customCategory"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Kategori adı girin"
-                startIcon={<NotebookPen className="h-4 w-4" />}
-              />
-            )}
 
             <ModalInput
               label={`${TR.expenses.amount} (₺)`}

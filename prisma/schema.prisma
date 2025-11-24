@@ -22,15 +22,17 @@ enum HorseStatus {
 }
 
 enum ExpenseCategory {
-  IDMAN_JOKEYI
-  SEYIS
+  YARIS_KAYIT_DECLARE
+  YEM_SAMAN_OT_TALAS
   ILAC
-  YEM_SAMAN_OT
-  EKSTRA_ILAC
-  YARIS_KAYIT
+  SEYIS
+  SIGORTA
+  MONT
+  IDMAN_JOKEYI
+  NAL_NALBANT
+  SARAC
   NAKLIYE
   SEZONLUK_AHIR
-  OZEL
 }
 
 model User {
@@ -383,8 +385,8 @@ model HorseLocationHistory {
 
 model Expense {
   id         String          @id @default(cuid())
-  horseId    String
-  horse      Horse           @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  horseId    String?
+  horse      Horse?          @relation(fields: [horseId], references: [id], onDelete: Cascade)
   
   addedById  String
   addedBy    User            @relation(fields: [addedById], references: [id])

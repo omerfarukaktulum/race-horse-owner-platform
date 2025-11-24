@@ -95,18 +95,20 @@ export const changePasswordSchema = z.object({
 
 // Expense schemas
 export const expenseSchema = z.object({
-  horseIds: z.array(z.string()).min(1, TR.validation.required),
+  horseIds: z.array(z.string()).optional(),
   date: z.date(),
   category: z.enum([
-    'IDMAN_JOKEYI',
-    'SEYIS',
+    'YARIS_KAYIT_DECLARE',
+    'YEM_SAMAN_OT_TALAS',
     'ILAC',
-    'YEM_SAMAN_OT',
-    'EKSTRA_ILAC',
-    'YARIS_KAYIT',
+    'SEYIS',
+    'SIGORTA',
+    'MONT',
+    'IDMAN_JOKEYI',
+    'NAL_NALBANT',
+    'SARAC',
     'NAKLIYE',
     'SEZONLUK_AHIR',
-    'OZEL',
   ]),
   customName: z.string().optional(),
   amount: z.number().positive(TR.validation.amountMustBePositive),

@@ -30,7 +30,6 @@ export default function NewExpensePage() {
   // Form state
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [category, setCategory] = useState('')
-  const [customCategory, setCustomCategory] = useState('')
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
@@ -115,11 +114,6 @@ export default function NewExpensePage() {
       return
     }
 
-    if (category === 'CUSTOM' && !customCategory) {
-      toast.error('Lütfen özel kategori adı girin')
-      return
-    }
-
     if (!amount || parseFloat(amount) <= 0) {
       toast.error('Lütfen geçerli bir tutar girin')
       return
@@ -130,7 +124,7 @@ export default function NewExpensePage() {
     try {
       const formData = new FormData()
       formData.append('date', date)
-      formData.append('category', category === 'CUSTOM' ? customCategory : category)
+      formData.append('category', category)
       formData.append('amount', amount)
       formData.append('notes', notes)
       formData.append('horseIds', JSON.stringify(selectedHorses.map((h) => h.id)))
@@ -261,21 +255,6 @@ export default function NewExpensePage() {
               </select>
             </div>
 
-            {/* Custom Category Name */}
-            {category === 'OZEL' && (
-              <div className="space-y-2">
-                <Label htmlFor="customCategory">Özel Kategori Adı *</Label>
-                <Input
-                  id="customCategory"
-                  type="text"
-                  placeholder="Kategori adı girin"
-                  value={customCategory}
-                  onChange={(e) => setCustomCategory(e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-            )}
 
             {/* Amount */}
             <div className="space-y-2">
