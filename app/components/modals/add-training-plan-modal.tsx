@@ -16,6 +16,20 @@ type TrainingPlanModalMode = 'create' | 'edit'
 
 const DISTANCE_OPTIONS = ['Kenter', 'Tırıs', '200', '400', '600', '800', '1000', '1200', '1400', '1600']
 
+// Racecourse cities (same as in change-location-modal)
+const RACECOURSE_CITIES = [
+  'İstanbul Veliefendi',
+  'Adana Yeşiloba',
+  'Ankara 75. Yıl',
+  'Bursa Osmangazi',
+  'Diyarbakır',
+  'Elazığ',
+  'İzmir Şirinyer',
+  'Kocaeli Kartepe',
+  'Şanlıurfa',
+  'Antalya',
+]
+
 interface InitialTrainingPlanValues {
   planDate: string
   distance: string
@@ -49,60 +63,9 @@ export function AddTrainingPlanModal({
   const [distance, setDistance] = useState('')
   const [note, setNote] = useState('')
   const [racecourseId, setRacecourseId] = useState('')
-  const [racecourses, setRacecourses] = useState<Array<{ id: string; name: string }>>([])
-  const [isLoadingRacecourses, setIsLoadingRacecourses] = useState(false)
   const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   const isEditMode = mode === 'edit'
-
-  // Fetch racecourses when modal opens
-  useEffect(() => {
-    if (open) {
-      setIsLoadingRacecourses(true)
-      fetch('/api/racecourses', { 
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-        .then((res) => {
-          console.log('Racecourses API response status:', res.status)
-          if (!res.ok) {
-            // Check if it's a redirect (authentication issue)
-            if (res.redirected || res.status === 401 || res.status === 403) {
-              throw new Error('Authentication required')
-            }
-            throw new Error(`Failed to fetch racecourses: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then((data) => {
-          console.log('Racecourses API response data:', data)
-          if (data.racecourses && Array.isArray(data.racecourses)) {
-            const mappedRacecourses = data.racecourses.map((rc: any) => ({ 
-              id: rc.id, 
-              name: rc.name 
-            }))
-            console.log('Mapped racecourses:', mappedRacecourses, 'Count:', mappedRacecourses.length)
-            setRacecourses(mappedRacecourses)
-          } else {
-            console.warn('Invalid racecourses response structure:', data)
-            setRacecourses([])
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to fetch racecourses:', err)
-          toast.error('Hipodromlar yüklenirken bir hata oluştu: ' + err.message)
-          setRacecourses([])
-        })
-        .finally(() => {
-          setIsLoadingRacecourses(false)
-        })
-    } else {
-      // Reset racecourses when modal closes
-      setRacecourses([])
-    }
-  }, [open])
 
   // Initialize form with existing data
   useEffect(() => {
@@ -232,16 +195,16 @@ export function AddTrainingPlanModal({
               label="Hipodrom"
               value={racecourseId}
               onChange={(e) => setRacecourseId(e.target.value)}
-              disabled={isSubmitting || isLoadingRacecourses}
+              disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<MapPin className="h-4 w-4" />}
             >
-              <option value="">Hipodrom seçin...</option>
-              {racecourses.map((racecourse) => (
-                <option key={racecourse.id} value={racecourse.id}>
-                  {racecourse.name}
+              <option value="">Hipodrom Seçin</option>
+              {RACECOURSE_CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
                 </option>
               ))}
             </ModalSelect>
