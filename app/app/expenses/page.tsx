@@ -465,191 +465,192 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-4">
       {/* Filter and Add buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                hasActiveFilters
-                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              <Filter className="h-4 w-4" />
-              {hasActiveFilters && (
-                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                  {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
-                </span>
-              )}
-            </Button>
-
-            {showFilterDropdown && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
-                  <button
-                    onClick={() => setShowFilterDropdown(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Date Range Filter */}
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
-                  <div className="flex flex-wrap gap-2">
-                    {RANGE_OPTIONS.map(option => {
-                      const isActive = selectedRange === option.value
-                      return (
-                        <button
-                          key={option.value}
-                          onClick={() => {
-                            const nextValue = isActive ? null : option.value
-                            setSelectedRange(nextValue)
-                          }}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            isActive
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      )
-                    })}
-            </div>
-          </div>
-
-                {/* Category Filter */}
-                {getUniqueCategories.length > 0 && (
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
-                    <div className="flex flex-wrap gap-2">
-                      {getUniqueCategories.map((category) => (
-                        <button
-                          key={category}
-                          onClick={() => toggleCategoryFilter(category)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            categoryFilters.includes(category)
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {category}
-                        </button>
-                      ))}
-                    </div>
-              </div>
+      <div className="flex flex-col gap-2">
+        {/* First line: Filter, Search on left, Ekle on right */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
+                  </span>
                 )}
+              </Button>
 
-                {/* Added By Filter */}
-                {getUniqueAddedBy.length > 0 && (
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
-                    <div className="flex flex-wrap gap-2">
-                      {getUniqueAddedBy.map((option) => (
-                        <button
-                          key={option.value}
-                          onClick={() => toggleAddedByFilter(option.value)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            addedByFilters.includes(option.value)
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-              </div>
-                )}
+              {showFilterDropdown && (
+                <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                    <button
+                      onClick={() => setShowFilterDropdown(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
 
-                {/* Stablemate Filter (for trainers) */}
-                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  {/* Date Range Filter */}
                   <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
                     <div className="flex flex-wrap gap-2">
-                      {getUniqueStablemates.map((stablemate) => (
-                        <button
-                          key={stablemate}
-                          onClick={() => toggleStablemateFilter(stablemate)}
-                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                            stablemateFilters.includes(stablemate)
-                              ? 'bg-[#6366f1] text-white'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {stablemate}
-                        </button>
-                      ))}
+                      {RANGE_OPTIONS.map(option => {
+                        const isActive = selectedRange === option.value
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              const nextValue = isActive ? null : option.value
+                              setSelectedRange(nextValue)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
-                )}
 
-                {/* Clear Filters */}
-                {hasActiveFilters && (
-                  <button
-                    onClick={() => {
-                      clearFilters()
-                      setShowFilterDropdown(false)
-                    }}
-                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Filtreleri Temizle
-                  </button>
-                )}
+                  {/* Category Filter */}
+                  {getUniqueCategories.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
+                      <div className="flex flex-wrap gap-2">
+                        {getUniqueCategories.map((category) => (
+                          <button
+                            key={category}
+                            onClick={() => toggleCategoryFilter(category)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              categoryFilters.includes(category)
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Added By Filter */}
+                  {getUniqueAddedBy.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                      <div className="flex flex-wrap gap-2">
+                        {getUniqueAddedBy.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => toggleAddedByFilter(option.value)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              addedByFilters.includes(option.value)
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stablemate Filter (for trainers) */}
+                  {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                      <div className="flex flex-wrap gap-2">
+                        {getUniqueStablemates.map((stablemate) => (
+                          <button
+                            key={stablemate}
+                            onClick={() => toggleStablemateFilter(stablemate)}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              stablemateFilters.includes(stablemate)
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {stablemate}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clear Filters */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={() => {
+                        clearFilters()
+                        setShowFilterDropdown(false)
+                      }}
+                      className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Filtreleri Temizle
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Search Button */}
+            {!isSearchOpen ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSearchOpen(true)}
+                className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+              >
+                <Search className="h-4 w-4 text-gray-600" />
+              </Button>
+            ) : (
+              <div className="relative w-52">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="At, kategori, detay ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                  autoFocus
+                  style={{ boxShadow: 'none' }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = 'none'
+                    e.target.style.outline = 'none'
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false)
+                    setSearchQuery('')
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             )}
           </div>
-          
-          {/* Search Button */}
-          {!isSearchOpen ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSearchOpen(true)}
-              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
-            >
-              <Search className="h-4 w-4 text-gray-600" />
-            </Button>
-          ) : (
-            <div className="relative w-52">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="At, kategori, detay ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
-                autoFocus
-                style={{ boxShadow: 'none' }}
-                onFocus={(e) => {
-                  e.target.style.boxShadow = 'none'
-                  e.target.style.outline = 'none'
-                }}
-                onBlur={(e) => {
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSearchOpen(false)
-                  setSearchQuery('')
-                }}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
 
-        <div className="flex flex-col items-end gap-2">
           <Button
             size="sm"
             onClick={() => setIsAddModalOpen(true)}
@@ -657,6 +658,10 @@ export default function ExpensesPage() {
           >
             Ekle
           </Button>
+        </div>
+
+        {/* Second line: Toplam below Ekle button, right-aligned */}
+        <div className="flex justify-end">
           <div className="text-right">
             <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
             <p className="text-lg font-semibold text-indigo-600">
@@ -664,7 +669,7 @@ export default function ExpensesPage() {
             </p>
           </div>
         </div>
-              </div>
+      </div>
 
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className={hasExpenses ? 'p-0' : 'py-16 text-center'}>
