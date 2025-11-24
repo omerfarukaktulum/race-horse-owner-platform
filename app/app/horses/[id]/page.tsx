@@ -647,7 +647,7 @@ useEffect(() => {
           {/* Mobile: Expenses buttons and total */}
           {activeTab === 'expenses' && (
             <div className="sm:hidden flex flex-col gap-3 mt-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-end gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
                   <Button 
                     size="sm"
@@ -736,28 +736,54 @@ useEffect(() => {
             </div>
           )}
           {activeTab === 'notes' && (
-            <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
-              <div ref={notesFilterButtonRef} className="relative">
+            <>
+              {/* Desktop: Notes buttons */}
+              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
+                <div ref={notesFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      notesFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(notesFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(notesFilterCount)}
+                  </Button>
+                </div>
                 <Button 
                   size="sm"
-                  onClick={() => {
-                    notesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(notesFilterCount > 0)}
+                  onClick={() => setIsNoteModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(notesFilterCount)}
+                  Ekle
                 </Button>
               </div>
-              <Button 
-                size="sm"
-                onClick={() => setIsNoteModalOpen(true)}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Ekle
-              </Button>
-            </div>
+              {/* Mobile: Notes buttons */}
+              <div className="sm:hidden flex items-center justify-end gap-3 mt-4">
+                <div ref={notesFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      notesFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(notesFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(notesFilterCount)}
+                  </Button>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setIsNoteModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                >
+                  Ekle
+                </Button>
+              </div>
+            </>
           )}
           {activeTab === 'banned-medicines' && (
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
