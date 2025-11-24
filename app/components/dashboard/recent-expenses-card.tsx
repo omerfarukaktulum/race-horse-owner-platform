@@ -32,9 +32,9 @@ interface NoteData {
   horseName: string
   date: string
   note: string
-  category?: string
   addedBy: string
   createdAt?: string
+  kiloValue?: number | null
   stablemate?: {        // Eküri info (only for trainers)
     id: string
     name: string
@@ -122,7 +122,7 @@ export function RecentExpensesCard() {
             horseName: note.horse?.name || '—',
             date: note.date,
             note: note.note,
-            category: note.category,
+            kiloValue: note.kiloValue,
             addedBy: formatAddedBy(note.addedBy),
             createdAt: note.createdAt,
             stablemate: note.horse?.stablemate ? {
@@ -350,9 +350,6 @@ export function RecentExpensesCard() {
                       </>
                     ) : (
                       <>
-                        <p className="text-xs text-gray-600 mb-1">
-                          🏷️ {item.note.category || 'Not'}
-                        </p>
                         <p className="text-xs text-gray-600 mb-1 line-clamp-2">
                           📝 {formatNotePreview(item.note.note)}
                         </p>

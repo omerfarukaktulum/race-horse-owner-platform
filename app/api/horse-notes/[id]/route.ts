@@ -3,9 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi'] as const
-type NoteCategory = (typeof NOTE_CATEGORIES)[number]
-
 interface DecodedToken {
   id: string
   role: string
@@ -174,21 +171,10 @@ export async function PATCH(
       }
     }
 
-    const category = formData.get('category') as NoteCategory | null
-    if (category !== null) {
-      if (!NOTE_CATEGORIES.includes(category)) {
-        return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
-      }
-      updateData.category = category
-    }
-
     const kiloValueStr = formData.get('kiloValue') as string | null
     if (kiloValueStr !== null) {
-      const kiloValue = kiloValueStr ? parseFloat(kiloValueStr) : null
-      updateData.kiloValue = (category === 'Kilo Takibi' || category === 'Yem Takibi') ? kiloValue : null
-    } else if (category !== null && category !== 'Kilo Takibi' && category !== 'Yem Takibi') {
-      // If category is being changed away from kilo/yem categories, clear kiloValue
-      updateData.kiloValue = null
+      const parsed = kiloValueStr ? parseFloat(kiloValueStr) : null
+      updateData.kiloValue = parsed !== null && !isNaN(parsed) ? parsed : null
     }
 
     const updatedNote = await prisma.horseNote.update({

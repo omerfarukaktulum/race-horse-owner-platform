@@ -418,7 +418,6 @@ model HorseNote {
   addedBy    User     @relation(fields: [addedById], references: [id])
   
   date       DateTime
-  category   String
   note       String
   photoUrl   String?
   kiloValue  Float?
@@ -429,7 +428,6 @@ model HorseNote {
   @@index([horseId])
   @@index([addedById])
   @@index([date])
-  @@index([category])
   @@map("horse_notes")
 }
 

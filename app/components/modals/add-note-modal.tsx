@@ -11,20 +11,16 @@ import {
 } from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
-import { FileText, Users, UserRound, ListChecks, Scale } from 'lucide-react'
+import { FileText, Users, UserRound, Scale } from 'lucide-react'
 import { useAuth } from '@/lib/context/auth-context'
 import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 type NoteModalMode = 'create' | 'edit'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi']
-
 interface InitialNoteValues {
   date: string
   note: string
   photoUrl?: string | string[] | null
-  category?: NoteCategory
   kiloValue?: number | null
 }
 
@@ -57,7 +53,6 @@ export function AddNoteModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [note, setNote] = useState('')
-  const [category, setCategory] = useState<NoteCategory | ''>('')
   const [kiloValue, setKiloValue] = useState<string>('')
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([])
@@ -137,8 +132,11 @@ export function AddNoteModal({
           : new Date().toISOString().split('T')[0]
         setDate(formattedDate)
         setNote(initialNote.note || '')
-        setCategory(initialNote.category || '')
-        setKiloValue(initialNote.kiloValue ? initialNote.kiloValue.toString() : '')
+        setKiloValue(
+          initialNote.kiloValue !== null && initialNote.kiloValue !== undefined
+            ? initialNote.kiloValue.toString()
+            : ''
+        )
         const initialPhotos =
           typeof initialNote.photoUrl === 'string'
             ? (() => {
@@ -160,8 +158,8 @@ export function AddNoteModal({
       } else {
       setDate(new Date().toISOString().split('T')[0])
       setNote('')
-      setCategory('')
       setPhotos([])
+      setKiloValue('')
       setPhotoPreviews([])
       setSelectedStablemateId('')
       if (!isSingleHorseMode) {
@@ -228,29 +226,19 @@ export function AddNoteModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!category) {
-      toast.error('Lütfen bir kategori seçin')
-      return
-    }
-
     if (!note.trim()) {
       toast.error('Lütfen bir not girin')
       return
     }
 
-    // Validate kiloValue for Kilo Takibi or Yem Takibi
-    if ((category === 'Kilo Takibi' || category === 'Yem Takibi') && !kiloValue.trim()) {
-      toast.error('Lütfen kilo değeri girin')
-      return
-    }
-
-    const kiloValueNum = (category === 'Kilo Takibi' || category === 'Yem Takibi') && kiloValue.trim()
-      ? parseFloat(kiloValue.trim())
-      : null
-
-    if ((category === 'Kilo Takibi' || category === 'Yem Takibi') && (isNaN(kiloValueNum!) || kiloValueNum! <= 0)) {
-      toast.error('Lütfen geçerli bir kilo değeri girin')
-      return
+    let kiloValueNum: number | null = null
+    if (kiloValue.trim()) {
+      const parsed = parseFloat(kiloValue.trim())
+      if (isNaN(parsed) || parsed <= 0) {
+        toast.error('Lütfen geçerli bir kilo değeri girin')
+        return
+      }
+      kiloValueNum = parsed
     }
 
     setIsSubmitting(true)
@@ -266,7 +254,6 @@ export function AddNoteModal({
       const formData = new FormData()
       formData.append('date', date)
       formData.append('note', note.trim())
-      formData.append('category', category)
       if (kiloValueNum !== null) {
         formData.append('kiloValue', kiloValueNum.toString())
       }
@@ -355,9 +342,9 @@ export function AddNoteModal({
                 required
                 value={selectedHorseId}
                 onChange={(e) => {
-                  const horse = filteredHorses.find((h) => h.id === e.target.value)
-                  setSelectedHorseId(e.target.value)
-                  setSelectedHorseName(horse?.name || '')
+                    const horse = filteredHorses.find((h) => h.id === e.target.value)
+                    setSelectedHorseId(e.target.value)
+                    setSelectedHorseName(horse?.name || '')
                 }}
                 disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
                 onMouseDown={guardPointerEvent}
@@ -372,41 +359,6 @@ export function AddNoteModal({
                   </option>
                 ))}
               </ModalSelect>
-            )}
-
-            <ModalSelect
-              label="Kategori"
-              required
-              value={category}
-              onChange={(e) => setCategory(e.target.value as NoteCategory | '')}
-              disabled={isSubmitting}
-              onMouseDown={guardPointerEvent}
-              onTouchStart={guardPointerEvent}
-              onFocus={guardFocusEvent}
-              icon={<ListChecks className="h-4 w-4" />}
-            >
-              <option value="">Kategori seçin</option>
-              {NOTE_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </ModalSelect>
-
-            {(category === 'Kilo Takibi' || category === 'Yem Takibi') && (
-              <ModalInput
-                label="Kaç Kilo?"
-                required
-                id="kiloValue"
-                type="number"
-                step="0.1"
-                min="0"
-                value={kiloValue}
-                onChange={(e) => setKiloValue(e.target.value)}
-                disabled={isSubmitting}
-                placeholder="Örn: 12.5"
-                startIcon={<Scale className="h-4 w-4" />}
-              />
             )}
 
             <ModalDateField
@@ -432,6 +384,20 @@ export function AddNoteModal({
               onChange={(e) => setNote(e.target.value)}
               disabled={isSubmitting}
               rows={4}
+            />
+
+            <ModalInput
+              label="Kilo (yem miktarı, atın kilosu)"
+              id="kiloValue"
+              type="number"
+              step="0.1"
+              min="0"
+              value={kiloValue}
+              onChange={(e) => setKiloValue(e.target.value)}
+              disabled={isSubmitting}
+              placeholder="Örn: 12.5"
+              startIcon={<Scale className="h-4 w-4" />}
+              helperText="İsterseniz kilo bilgisini ekleyebilirsiniz."
             />
 
             <ModalPhotoUpload

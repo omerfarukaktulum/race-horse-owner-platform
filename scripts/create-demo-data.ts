@@ -42,9 +42,6 @@ const EXPENSE_CATEGORIES = [
   'SEZONLUK_AHIR',
 ] as const
 
-// Note categories
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim'] as const
-
 /**
  * Normalize horse name for comparison (case-insensitive, trim whitespace)
  */
@@ -315,7 +312,6 @@ async function addNotes(horses: any[], ownerUser: any) {
       const noteDate = new Date(now)
       noteDate.setDate(noteDate.getDate() - daysAgo)
 
-      const category = NOTE_CATEGORIES[Math.floor(Math.random() * NOTE_CATEGORIES.length)]
       const noteText = noteTemplates[Math.floor(Math.random() * noteTemplates.length)]
 
       const note = await prisma.horseNote.create({
@@ -323,7 +319,6 @@ async function addNotes(horses: any[], ownerUser: any) {
           horseId: horse.id,
           addedById: ownerUser.id,
           date: noteDate,
-          category,
           note: `${horse.name} için: ${noteText}`,
         },
       })

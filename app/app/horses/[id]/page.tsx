@@ -132,7 +132,6 @@ interface HorseDetail {
     id: string
     date: string
     note: string
-    category?: 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
     photoUrl?: string | string[]
     kiloValue?: number | null
     addedById: string
@@ -809,10 +808,9 @@ useEffect(() => {
           <StatisticsCharts 
             races={horse.raceHistory || []} 
             expenses={expensesData}
-            notes={horse.notes?.filter(n => n.category).map(n => ({
+            notes={horse.notes?.map((n) => ({
               id: n.id,
               date: n.date,
-              category: n.category!,
               kiloValue: n.kiloValue,
             })) || []}
             hideButtons={true}

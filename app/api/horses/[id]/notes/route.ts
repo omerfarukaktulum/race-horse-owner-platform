@@ -3,9 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi'] as const
-type NoteCategory = (typeof NOTE_CATEGORIES)[number]
-
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
@@ -30,21 +27,17 @@ export async function POST(
     const formData = await request.formData()
     const date = formData.get('date') as string
     const note = formData.get('note') as string
-    const category = formData.get('category') as NoteCategory | null
     const kiloValueStr = formData.get('kiloValue') as string | null
     const photos = formData.getAll('photos') as File[]
     
-    const kiloValue = kiloValueStr ? parseFloat(kiloValueStr) : null
+    const parsedKiloValue = kiloValueStr ? parseFloat(kiloValueStr) : null
+    const kiloValue = parsedKiloValue !== null && !isNaN(parsedKiloValue) ? parsedKiloValue : null
 
-    if (!date || !note || !category) {
+    if (!date || !note) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
-    }
-    
-    if (!NOTE_CATEGORIES.includes(category)) {
-      return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
     }
 
     // Verify horse exists and user has access
@@ -119,9 +112,8 @@ export async function POST(
         horseId,
         date: new Date(date),
         note: note.trim(),
-        category,
         photoUrl,
-        kiloValue: (category === 'Kilo Takibi' || category === 'Yem Takibi') ? kiloValue : null,
+        kiloValue: kiloValue,
         addedById: decoded.id,
       },
       include: {
@@ -228,7 +220,6 @@ export async function GET(
         id: true,
         date: true,
         note: true,
-        category: true,
         photoUrl: true,
         kiloValue: true,
         addedById: true,

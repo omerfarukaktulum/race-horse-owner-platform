@@ -12,16 +12,13 @@ import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi']
-
 interface Note {
   id: string
   date: string
   createdAt: string
   note: string
-  category?: NoteCategory
   photoUrl?: string | string[] | null
+  kiloValue?: number | null
   addedById: string
   horse: {
     id: string
@@ -77,7 +74,6 @@ export default function NotesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
-  const [categoryFilters, setCategoryFilters] = useState<NoteCategory[]>([])
   const [stablemateFilters, setStablemateFilters] = useState<string[]>([])
   const [availableStablemates, setAvailableStablemates] = useState<string[]>([])
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
@@ -218,11 +214,6 @@ export default function NotesPage() {
       })
     }
 
-    // Apply category filter
-    if (categoryFilters.length > 0) {
-      filtered = filtered.filter((note) => note.category && categoryFilters.includes(note.category))
-    }
-
     // Apply stablemate filter (for trainers)
     if (stablemateFilters.length > 0 && user?.role === 'TRAINER') {
       filtered = filtered.filter((note) => {
@@ -248,7 +239,7 @@ export default function NotesPage() {
     }
 
     return filtered
-  }, [selectedRange, addedByFilters, categoryFilters, stablemateFilters, sortedNotes, searchQuery, user?.role])
+  }, [selectedRange, addedByFilters, stablemateFilters, sortedNotes, searchQuery, user?.role])
 
   // Get unique addedBy users (by role only)
   const getUniqueAddedBy = useMemo(() => {
@@ -269,16 +260,6 @@ export default function NotesPage() {
       value: role === 'OWNER' ? 'At Sahibi' : role,
       label: roleMap[role] || role,
     }))
-  }, [sortedNotes])
-
-  const categoryOptions = useMemo(() => {
-    const available = new Set<NoteCategory>()
-    sortedNotes.forEach((note) => {
-      if (note.category && NOTE_CATEGORIES.includes(note.category)) {
-        available.add(note.category)
-      }
-    })
-    return NOTE_CATEGORIES.filter((category) => available.has(category))
   }, [sortedNotes])
 
   // Get unique stablemates (for trainers) - use API-provided list
@@ -304,12 +285,6 @@ export default function NotesPage() {
     )
   }
 
-  const toggleCategoryFilter = (category: NoteCategory) => {
-    setCategoryFilters((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
-    )
-  }
-
   const toggleStablemateFilter = (stablemate: string) => {
     setStablemateFilters((prev) =>
       prev.includes(stablemate)
@@ -321,12 +296,11 @@ export default function NotesPage() {
   const clearFilters = () => {
     setSelectedRange(null)
     setAddedByFilters([])
-    setCategoryFilters([])
     setStablemateFilters([])
   }
 
   const hasActiveFilters =
-    !!selectedRange || addedByFilters.length > 0 || categoryFilters.length > 0 || stablemateFilters.length > 0
+    !!selectedRange || addedByFilters.length > 0 || stablemateFilters.length > 0
 
   const formatAddedBy = (note: Note) => {
     if (!note.addedBy) return '-'
@@ -476,7 +450,7 @@ export default function NotesPage() {
               Filtrele
               {hasActiveFilters && (
                 <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                  {(selectedRange ? 1 : 0) + addedByFilters.length + categoryFilters.length + stablemateFilters.length}
+                  {(selectedRange ? 1 : 0) + addedByFilters.length + stablemateFilters.length}
                 </span>
               )}
             </Button>
@@ -537,31 +511,6 @@ export default function NotesPage() {
                           {option.label}
                         </button>
                       ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Category Filter */}
-                {categoryOptions.length > 0 && (
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
-                    <div className="flex flex-wrap gap-2">
-                      {categoryOptions.map((category) => {
-                        const isSelected = categoryFilters.includes(category)
-                        return (
-                          <button
-                            key={category}
-                            onClick={() => toggleCategoryFilter(category)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              isSelected
-                                ? 'bg-[#6366f1] text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        )
-                      })}
                     </div>
                   </div>
                 )}
@@ -677,9 +626,6 @@ export default function NotesPage() {
                         Eküri
                       </th>
                     )}
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Kategori
-                  </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Not
                     </th>
@@ -694,13 +640,13 @@ export default function NotesPage() {
                 <tbody className="divide-y divide-gray-200">
                 {!hasNotes ? (
                   <tr>
-                    <td colSpan={user?.role === 'TRAINER' ? 7 : 6} className="px-4 py-16 text-center text-sm text-gray-500">
+                    <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-16 text-center text-sm text-gray-500">
                       Henüz not eklenmemiş
                     </td>
                   </tr>
                 ) : filteredNotes.length === 0 ? (
                     <tr>
-                    <td colSpan={user?.role === 'TRAINER' ? 7 : 6} className="px-4 py-6 text-center text-sm text-gray-500">
+                    <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-6 text-center text-sm text-gray-500">
                         Seçilen filtrelerde not bulunamadı
                       </td>
                     </tr>
@@ -742,18 +688,16 @@ export default function NotesPage() {
                               </span>
                             </td>
                           )}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {note.category ? (
-                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
-                              {note.category}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </td>
                           <td className="px-4 py-3">
                             {note.note ? (
-                              <p className="text-sm text-gray-700">{note.note}</p>
+                              <div className="text-sm text-gray-700 space-y-1">
+                                <p>{note.note}</p>
+                                {note.kiloValue !== null && note.kiloValue !== undefined && (
+                                  <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
+                                    ⚖️ {note.kiloValue.toFixed(1)} kg
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-sm text-gray-400">-</span>
                             )}
@@ -841,7 +785,6 @@ export default function NotesPage() {
             date: editingNote.date,
             note: editingNote.note,
             photoUrl: editingNote.photoUrl,
-            category: editingNote.category,
           }}
           submitLabel="Kaydet"
         />

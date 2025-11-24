@@ -11,14 +11,10 @@ import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
 
-type NoteCategory = 'Yem Takibi' | 'Gezinti' | 'Hastalık' | 'Gelişim' | 'Kilo Takibi'
-const NOTE_CATEGORIES: NoteCategory[] = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi']
-
 interface HorseNote {
   id: string
   date: string
   note: string
-  category?: NoteCategory
   photoUrl?: string | string[]
   addedById: string
   addedBy: {
@@ -91,7 +87,6 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
-  const [categoryFilters, setCategoryFilters] = useState<NoteCategory[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
@@ -208,15 +203,8 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
       })
     }
 
-    // Apply category filter
-    if (categoryFilters.length > 0) {
-      filtered = filtered.filter(
-        (note) => note.category && categoryFilters.includes(note.category)
-      )
-    }
-
     return filtered
-  }, [selectedRange, addedByFilters, categoryFilters, sortedNotes])
+  }, [selectedRange, addedByFilters, sortedNotes])
 
   // Get unique addedBy users
   const getUniqueAddedBy = useMemo(() => {
@@ -240,16 +228,6 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
     }))
   }, [sortedNotes])
 
-  const categoryOptions = useMemo(() => {
-    const available = new Set<NoteCategory>()
-    sortedNotes.forEach((note) => {
-      if (note.category && NOTE_CATEGORIES.includes(note.category)) {
-        available.add(note.category)
-      }
-    })
-    return NOTE_CATEGORIES.filter((category) => available.has(category))
-  }, [sortedNotes])
-
   // Toggle functions
   const toggleAddedByFilter = (addedBy: string) => {
     setAddedByFilters((prev) =>
@@ -259,22 +237,13 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
     )
   }
 
-  const toggleCategoryFilter = (category: NoteCategory) => {
-    setCategoryFilters((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    )
-  }
-
   const clearFilters = () => {
     setSelectedRange(null)
     setAddedByFilters([])
-    setCategoryFilters([])
   }
 
   const activeFilterCount =
-    (selectedRange ? 1 : 0) + addedByFilters.length + categoryFilters.length
+    (selectedRange ? 1 : 0) + addedByFilters.length
   const hasActiveFilters = activeFilterCount > 0
 
   useEffect(() => {
@@ -456,32 +425,6 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                 </div>
               )}
 
-              {/* Category Filter */}
-              {categoryOptions.length > 0 && (
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
-                  <div className="flex flex-wrap gap-2">
-                    {categoryOptions.map((category) => (
-                      <button
-                        type="button"
-                        key={category}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleCategoryFilter(category)
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          categoryFilters.includes(category)
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {category}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <button
@@ -521,9 +464,6 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                         Tarih
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Kategori
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                         Not
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -537,7 +477,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                   <tbody className="divide-y divide-gray-100">
                     {filteredNotes.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">
+                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
                           Seçilen tarih aralığında not bulunamadı
                         </td>
                       </tr>
@@ -557,19 +497,19 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                 {formatDateShort(note.date)}
                               </span>
                             </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {note.category ? (
-                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
-                              {note.category}
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                            </td>
                             <td className="px-4 py-3">
-                              <span className="text-sm text-gray-800">
-                                {note.note ? note.note.replace(/\s*\n+\s*/g, ' ').trim() : '-'}
-                              </span>
+                              {note.note ? (
+                                <div className="text-sm text-gray-800 space-y-1">
+                                  <p>{note.note.replace(/\s*\n+\s*/g, ' ').trim()}</p>
+                                  {note.kiloValue !== null && note.kiloValue !== undefined && (
+                                    <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
+                                      ⚖️ {note.kiloValue.toFixed(1)} kg
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
@@ -641,7 +581,6 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                 date: editingNote.date,
                 note: editingNote.note,
                 photoUrl: editingNote.photoUrl,
-                category: editingNote.category,
               }
             : undefined
         }

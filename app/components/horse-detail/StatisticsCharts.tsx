@@ -62,7 +62,6 @@ interface ExpenseData {
 interface NoteData {
   id: string
   date: string
-  category: string
   kiloValue?: number | null
   horseId?: string
 }
@@ -1242,7 +1241,7 @@ export function StatisticsCharts({
                 { id: 'jokey' as const, label: 'Jokey', icon: Users },
                 { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
                 { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
-                { id: 'yem-kilo' as const, label: 'Yem - Kilo', icon: BarChart3 },
+                { id: 'yem-kilo' as const, label: 'Kilo Takibi', icon: BarChart3 },
               ].map(({ id, label, icon: Icon }) => {
                 const isActive = selectedCategory === id
                 return (
@@ -2148,7 +2147,7 @@ export function StatisticsCharts({
               </>
       )}
 
-            {/* Yem - Kilo Category: Weight and Feed Tracking */}
+            {/* Kilo Takibi */}
             {selectedCategory === 'yem-kilo' && (
               <>
                 {(() => {
@@ -2189,9 +2188,9 @@ export function StatisticsCharts({
                     }
                   }
                   
-                  // Filter notes for Kilo Takibi and Yem Takibi
-                  const kiloNotes = filteredNotes.filter(n => n.category === 'Kilo Takibi' && n.kiloValue !== null && n.kiloValue !== undefined)
-                  const yemNotes = filteredNotes.filter(n => n.category === 'Yem Takibi' && n.kiloValue !== null && n.kiloValue !== undefined)
+                  const kiloNotes = filteredNotes.filter(
+                    (n) => n.kiloValue !== null && n.kiloValue !== undefined
+                  )
                   
                   // Group by month for both categories
                   const groupByMonth = (notesList: NoteData[]) => {
@@ -2220,10 +2219,9 @@ export function StatisticsCharts({
                   }
                   
                   const kiloData = groupByMonth(kiloNotes)
-                  const yemData = groupByMonth(yemNotes)
                   
                   return (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       {/* Kilo Takibi Chart */}
                       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
                         <CardHeader className="pb-2">
@@ -2291,78 +2289,6 @@ export function StatisticsCharts({
                           ) : (
                             <div className="flex items-center justify-center h-[250px]">
                               <p className="text-gray-500 text-sm">Kilo Takibi verisi bulunamadı</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                      
-                      {/* Yem Takibi Chart */}
-                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                            <BarChart3 className="h-4 w-4 mr-2 text-emerald-600" />
-                            Yem Takibi {selectedRange ? (
-                              <span className="text-gray-500 font-normal ml-1">
-                                ({RANGE_OPTIONS.find(o => o.value === selectedRange)?.label})
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {yemData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={250}>
-                              <LineChart data={yemData}>
-                                <defs>
-                                  <linearGradient id="colorYem" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                <XAxis
-                                  dataKey="period"
-                                  stroke="#6b7280"
-                                  style={{ fontSize: '11px' }}
-                                  angle={-45}
-                                  textAnchor="end"
-                                  height={60}
-                                />
-                                <YAxis
-                                  stroke="#6b7280"
-                                  style={{ fontSize: '12px' }}
-                                  tickFormatter={(value) => `${value.toFixed(1)} kg`}
-                                />
-                                <Tooltip
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                                          <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
-                                          <p className="text-sm text-emerald-600 font-semibold">
-                                            {typeof payload[0].value === 'number' ? payload[0].value.toFixed(1) : '0.0'} kg
-                                          </p>
-                                        </div>
-                                      )
-                                    }
-                                    return null
-                                  }}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="average"
-                                  stroke="#10b981"
-                                  strokeWidth={3}
-                                  fill="url(#colorYem)"
-                                  dot={{ fill: '#10b981', r: 4 }}
-                                  activeDot={{ r: 6 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="flex items-center justify-center h-[250px]">
-                              <p className="text-gray-500 text-sm">Yem Takibi verisi bulunamadı</p>
                             </div>
                           )}
                         </CardContent>

@@ -16,9 +16,6 @@ const EXPENSE_CATEGORIES = [
   'OZEL',
 ] as const
 
-// Note categories
-const NOTE_CATEGORIES = ['Yem Takibi', 'Gezinti', 'Hastalık', 'Gelişim', 'Kilo Takibi'] as const
-
 // Generate random date within last 12 months
 function getRandomDateInLast12Months(): Date {
   const now = new Date()
@@ -155,6 +152,8 @@ const noteTemplates: Record<string, string[]> = {
   ],
 }
 
+const NOTE_TEMPLATE_KEYS = Object.keys(noteTemplates) as (keyof typeof noteTemplates)[]
+
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
 }
@@ -182,7 +181,6 @@ function generateExpenseSQL(
 function generateNoteSQL(
   horseId: string,
   addedById: string,
-  category: string,
   date: Date,
   note: string,
   kiloValue?: number | null
@@ -191,11 +189,10 @@ function generateNoteSQL(
   const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
   const id = generateId()
   
-  const kiloValueStr = (category === 'Kilo Takibi' || category === 'Yem Takibi') && kiloValue !== null && kiloValue !== undefined
-    ? kiloValue.toString()
-    : 'NULL'
+  const kiloValueStr =
+    kiloValue !== null && kiloValue !== undefined ? kiloValue.toString() : 'NULL'
   
-  return `INSERT INTO horse_notes (id, "horseId", "addedById", date, category, note, "kiloValue", "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${category}', '${note.replace(/'/g, "''")}', ${kiloValueStr}, '${now}', '${now}');`
+  return `INSERT INTO horse_notes (id, "horseId", "addedById", date, note, "kiloValue", "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${note.replace(/'/g, "''")}', ${kiloValueStr}, '${now}', '${now}');`
 }
 
 async function main() {
@@ -299,7 +296,6 @@ async function main() {
             generateNoteSQL(
               horse.id,
               ownerUserId,
-              'Gelişim',
               noteDate,
               getRandomElement(noteTemplates['Gelişim']),
               null
@@ -336,7 +332,7 @@ async function main() {
       // Add random notes
       for (let i = 0; i < 15; i++) {
         const date = getRandomDateInLast12Months()
-        const category = getRandomElement([...NOTE_CATEGORIES])
+        const category = getRandomElement([...NOTE_TEMPLATE_KEYS])
         let kiloValue: number | null = null
         if (category === 'Kilo Takibi') {
           // Horse weight: 350-500 kg
@@ -349,7 +345,6 @@ async function main() {
           generateNoteSQL(
             horse.id,
             ownerUserId,
-            category,
             date,
             getRandomElement(noteTemplates[category]),
             kiloValue
@@ -471,7 +466,6 @@ async function main() {
             generateNoteSQL(
               horse.id,
               trainerUserId,
-              'Gelişim',
               noteDate,
               getRandomElement(noteTemplates['Gelişim']),
               null
@@ -505,7 +499,7 @@ async function main() {
       // Add random trainer notes
       for (let i = 0; i < 10; i++) {
         const date = getRandomDateInLast12Months()
-        const category = getRandomElement([...NOTE_CATEGORIES])
+        const category = getRandomElement([...NOTE_TEMPLATE_KEYS])
         let kiloValue: number | null = null
         if (category === 'Kilo Takibi') {
           // Horse weight: 350-500 kg
@@ -518,7 +512,6 @@ async function main() {
           generateNoteSQL(
             horse.id,
             trainerUserId,
-            category,
             date,
             getRandomElement(noteTemplates[category]),
             kiloValue

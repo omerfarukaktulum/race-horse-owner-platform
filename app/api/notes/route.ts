@@ -98,7 +98,6 @@ export async function GET(request: Request) {
         date: true,
         createdAt: true,
         note: true,
-        category: true,
         photoUrl: true,
         kiloValue: true,
         addedById: true,
