@@ -636,7 +636,7 @@ useEffect(() => {
               )}
             </div>
             {activeTab === 'expenses' && (
-              <div className="text-right mt-2">
+              <div className="text-right mt-2 hidden sm:block">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
                 <p className="text-lg font-semibold text-indigo-600">
                   {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
@@ -644,6 +644,39 @@ useEffect(() => {
               </div>
             )}
           </div>
+          {/* Mobile: Expenses buttons and total */}
+          {activeTab === 'expenses' && (
+            <div className="sm:hidden flex flex-col gap-3 mt-4">
+              <div className="flex items-center gap-3">
+                <div ref={expensesFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      filterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(expensesFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(expensesFilterCount)}
+                  </Button>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setIsExpenseModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                >
+                  Ekle
+                </Button>
+              </div>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+                <p className="text-lg font-semibold text-indigo-600">
+                  {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
+                </p>
+              </div>
+            </div>
+          )}
           {activeTab === 'races' && (
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={racesFilterButtonRef} className="relative">
