@@ -770,26 +770,25 @@ export default function HorsesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
-          {/* Filter Button and Search */}
-          <div className="flex items-center gap-2">
-            <div className="relative filter-dropdown-container">
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                aria-label="Filtrele"
-                className={`border-2 font-medium px-3 h-9 md:h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                  hasActiveFilters
-                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                {hasActiveFilters && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
-            </span>
-                )}
-          </Button>
+          {/* Filter Button */}
+          <div className="relative filter-dropdown-container">
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              aria-label="Filtrele"
+              className={`border-2 font-medium px-3 h-9 md:h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
+                </span>
+              )}
+            </Button>
           
           {/* Filter Dropdown */}
           {showFilters && (
@@ -930,128 +929,126 @@ export default function HorsesPage() {
                 )}
               </div>
             )}
-            </div>
-            
-            {/* Sort Button */}
-            <div className="relative sort-dropdown-container">
-              <Button
-                variant="outline"
-                onClick={() => setShowSortDropdown(!showSortDropdown)}
-                aria-label="Sırala"
-                className={`border-2 font-medium px-3 h-9 md:h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                  sortBy
-                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
-              >
-                <ArrowUpDown className="h-4 w-4 md:mr-2" />
-                <span className="sr-only md:hidden">Sırala</span>
-                <span className="hidden md:inline">Sırala</span>
-              </Button>
-          
-              {/* Sort Dropdown */}
-              {showSortDropdown && (
-                <div className="absolute left-0 top-full mt-2 w-auto min-w-[140px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900">Sırala</h3>
-                    <button
-                      onClick={() => setShowSortDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  
-                  {/* Sort Options */}
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        setSortBy(sortBy === 'age-asc' ? null : 'age-asc')
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'age-asc'
-                          ? 'bg-[#6366f1] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span>Yaş</span>
-                      <ArrowUp className="h-4 w-4 flex-shrink-0" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortBy(sortBy === 'age-desc' ? null : 'age-desc')
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'age-desc'
-                          ? 'bg-[#6366f1] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span>Yaş</span>
-                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
-                    </button>
-                  </div>
-                  
-                  {/* Kazanç Desc */}
-                  <div className="mt-2 mb-2">
-                    <button
-                      onClick={() => {
-                        setSortBy(sortBy === 'ikramiye-desc' ? null : 'ikramiye-desc')
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        sortBy === 'ikramiye-desc'
-                          ? 'bg-[#6366f1] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <span>Kazanç</span>
-                      <ArrowDown className="h-4 w-4 flex-shrink-0" />
-                    </button>
-                  </div>
-            </div>
-          )}
-            </div>
-            
-            {/* Search Button */}
-            {!isSearchOpen ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsSearchOpen(true)}
-                className="h-9 w-9 md:h-10 md:w-10 p-0 border-gray-300 hover:bg-gray-50"
-              >
-                <Search className="h-4 w-4 text-gray-600" />
-              </Button>
-            ) : (
-              <div className="relative w-32 md:w-36">
-                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="At, origin ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex h-9 md:h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
-                  autoFocus
-                  style={{ boxShadow: 'none' }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = 'none'
-                    e.target.style.outline = 'none'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSearchOpen(false)
-                    setSearchQuery('')
-                  }}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-            </div>
-          )}
           </div>
+          
+          {/* Sort Button */}
+          <div className="relative sort-dropdown-container">
+            <Button
+              variant="outline"
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              aria-label="Sırala"
+              className={`border-2 font-medium px-3 h-9 md:h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                sortBy
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+        
+            {/* Sort Dropdown */}
+            {showSortDropdown && (
+              <div className="absolute left-0 top-full mt-2 w-auto min-w-[140px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Sırala</h3>
+                  <button
+                    onClick={() => setShowSortDropdown(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                
+                {/* Sort Options */}
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setSortBy(sortBy === 'age-asc' ? null : 'age-asc')
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      sortBy === 'age-asc'
+                        ? 'bg-[#6366f1] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <span>Yaş</span>
+                    <ArrowUp className="h-4 w-4 flex-shrink-0" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSortBy(sortBy === 'age-desc' ? null : 'age-desc')
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      sortBy === 'age-desc'
+                        ? 'bg-[#6366f1] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <span>Yaş</span>
+                    <ArrowDown className="h-4 w-4 flex-shrink-0" />
+                  </button>
+                </div>
+                
+                {/* Kazanç Desc */}
+                <div className="mt-2 mb-2">
+                  <button
+                    onClick={() => {
+                      setSortBy(sortBy === 'ikramiye-desc' ? null : 'ikramiye-desc')
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      sortBy === 'ikramiye-desc'
+                        ? 'bg-[#6366f1] text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <span>Kazanç</span>
+                    <ArrowDown className="h-4 w-4 flex-shrink-0" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-9 w-9 md:h-10 md:w-10 p-0 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+            <div className="relative w-32 md:w-36">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="At, origin ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-9 md:h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
         
         {userRole !== 'TRAINER' && (
