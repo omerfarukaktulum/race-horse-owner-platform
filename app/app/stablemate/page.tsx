@@ -9,8 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing, Plus, Minus } from 'lucide-react'
 import { formatDate } from '@/lib/utils/format'
+import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
+import { useAuth } from '@/lib/context/auth-context'
+import { useRouter } from 'next/navigation'
 
 const RACECOURSE_CITIES = [
   'İstanbul',
@@ -192,6 +195,9 @@ export default function StablematePage() {
   const [isAssignAllDialogOpen, setIsAssignAllDialogOpen] = useState(false)
   const [newlyAddedTrainerEntryId, setNewlyAddedTrainerEntryId] = useState<string | null>(null)
   const [isAssigningToAll, setIsAssigningToAll] = useState(false)
+  const [addHorseModalOpen, setAddHorseModalOpen] = useState(false)
+  const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     fetchStablemate()
@@ -775,6 +781,7 @@ export default function StablematePage() {
                 </CardDescription>
               </div>
             </div>
+            <div className="flex items-center gap-3">
               {!isEditing && (
                 <Button
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca]"
@@ -783,6 +790,28 @@ export default function StablematePage() {
                   Düzenle
                 </Button>
               )}
+              {user?.role !== 'TRAINER' && (
+                <>
+                  <Button 
+                    onClick={() => setAddHorseModalOpen(true)}
+                    aria-label={TR.horses.addHorse}
+                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
+                  >
+                    <Plus className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">{TR.horses.addHorse}</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => router.push('/app/horses')}
+                    aria-label={TR.horses.removeHorse}
+                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
+                  >
+                    <Minus className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">{TR.horses.removeHorse}</span>
+                  </Button>
+                </>
+              )}
+            </div>
               </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -1507,7 +1536,17 @@ export default function StablematePage() {
           </div>
         </DialogContent>
       </Dialog>
-        </>
+
+      {/* Add Horse Modal */}
+      <AddHorseModal
+        open={addHorseModalOpen}
+        onClose={() => setAddHorseModalOpen(false)}
+        onSuccess={() => {
+          setAddHorseModalOpen(false)
+          fetchStablemate()
+        }}
+      />
+    </>
   )
 }
 

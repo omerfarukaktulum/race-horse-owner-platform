@@ -1049,39 +1049,6 @@ export default function HorsesPage() {
             </div>
           )}
         </div>
-
-        {/* Right-aligned buttons: At Ekle and At Kaldır */}
-        {userRole !== 'TRAINER' && (
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={() => setAddHorseModalOpen(true)}
-              aria-label={TR.horses.addHorse}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 h-9 md:h-10"
-            >
-              <Plus className="h-4 w-4 md:hidden" />
-              <span className="hidden md:inline">{TR.horses.addHorse}</span>
-            </Button>
-            <Button
-              type="button"
-              disabled={horses.length === 0}
-              onClick={() => {
-                if (horses.length === 0) {
-                  toast.error('Kaldırılacak at bulunamadı')
-                  return
-                }
-                setSelectedHorsesToRemove([])
-                setRemoveModalSearchQuery('')
-                setIsRemoveModalSearchOpen(false)
-                setRemoveHorseDialogOpen(true)
-              }}
-              aria-label={TR.horses.removeHorse}
-              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white font-medium px-2 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed h-9 md:h-10"
-            >
-              <Minus className="h-4 w-4 md:hidden" />
-              <span className="hidden md:inline">{TR.horses.removeHorse}</span>
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Horses Display */}
