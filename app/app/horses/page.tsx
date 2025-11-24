@@ -715,8 +715,8 @@ export default function HorsesPage() {
               }}
             >
               <FileText className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Not Ekle</span>
-              <span className="sm:hidden">Not</span>
+              <span className="hidden sm:inline">Ekle</span>
+              <span className="sm:hidden">Ekle</span>
             </Button>
             <Button 
               size="sm"
@@ -729,8 +729,8 @@ export default function HorsesPage() {
               }}
             >
               <TurkishLira className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Gider Ekle</span>
-              <span className="sm:hidden">Gider</span>
+              <span className="hidden sm:inline">Ekle</span>
+              <span className="sm:hidden">Ekle</span>
             </Button>
             <Button 
               size="sm"
@@ -783,9 +783,7 @@ export default function HorsesPage() {
                     : 'border-gray-300 text-gray-700 hover:border-gray-400'
                 }`}
               >
-                <Filter className="h-4 w-4 md:mr-2" />
-                <span className="sr-only md:hidden">Filtrele</span>
-                <span className="hidden md:inline">Filtrele</span>
+                <Filter className="h-4 w-4" />
                 {hasActiveFilters && (
                   <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
                     {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}

@@ -425,7 +425,7 @@ export function AddNoteModal({
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  {isSubmitting ? 'Kaydediliyor...' : submitLabel || (isEditMode ? 'Kaydet' : 'Not Ekle')}
+                  {isSubmitting ? 'Kaydediliyor...' : submitLabel || (isEditMode ? 'Kaydet' : 'Ekle')}
                 </Button>
               </div>
             </div>

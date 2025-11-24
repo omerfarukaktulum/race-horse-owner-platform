@@ -16,6 +16,7 @@ interface HorseNote {
   date: string
   note: string
   photoUrl?: string | string[]
+  kiloValue?: number | null
   addedById: string
   addedBy: {
     email: string
@@ -338,14 +339,13 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
           <Button
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-4 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
               hasActiveFilters
                 ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                 : 'border-gray-300 text-gray-700 hover:border-gray-400'
             }`}
           >
-            <Filter className="h-4 w-4 mr-2" />
-            Filtrele
+            <Filter className="h-4 w-4" />
             {hasActiveFilters && (
               <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
                 {activeFilterCount}

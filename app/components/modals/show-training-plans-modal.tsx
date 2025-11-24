@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
-import { NotebookPen, Pencil, Trash2, X, Plus } from 'lucide-react'
+import { NotebookPen, Pencil, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { AddTrainingPlanModal } from './add-training-plan-modal'
 
@@ -185,11 +185,11 @@ export function ShowTrainingPlansModal({
                 {/* Add Button - Top Right */}
                 <div className="flex justify-end">
                   <Button
+                    size="sm"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="h-[42px] px-4 text-sm font-medium rounded-md bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Yeni
+                    Ekle
                   </Button>
                 </div>
                 
