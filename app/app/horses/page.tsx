@@ -1082,7 +1082,6 @@ export default function HorsesPage() {
           </Button>
         </div>
         )}
-      </div>
 
       {/* Horses Display */}
       <div className="space-y-4 mt-6">
