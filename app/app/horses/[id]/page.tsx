@@ -695,28 +695,54 @@ useEffect(() => {
             </div>
           )}
           {activeTab === 'gallops' && (
-            <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
-              <div ref={gallopsFilterButtonRef} className="relative">
-                <Button 
+            <>
+              {/* Desktop: Gallops buttons */}
+              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
+                <div ref={gallopsFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      gallopsFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(gallopsFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(gallopsFilterCount)}
+                  </Button>
+                </div>
+                <Button
                   size="sm"
-                  onClick={() => {
-                    gallopsFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(gallopsFilterCount > 0)}
+                  onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                 >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(gallopsFilterCount)}
+                  İdman Planı
                 </Button>
               </div>
-              <Button
-                size="sm"
-                onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-              >
-                İdman Planı
-              </Button>
-            </div>
+              {/* Mobile: Gallops buttons */}
+              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+                <div ref={gallopsFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      gallopsFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(gallopsFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(gallopsFilterCount)}
+                  </Button>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                >
+                  İdman Planı
+                </Button>
+              </div>
+            </>
           )}
           {activeTab === 'statistics' && (
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
@@ -786,28 +812,54 @@ useEffect(() => {
             </>
           )}
           {activeTab === 'banned-medicines' && (
-            <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
-              <div ref={bannedMedicinesFilterButtonRef} className="relative">
+            <>
+              {/* Desktop: Banned medicines buttons */}
+              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
+                <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      bannedMedicinesFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(bannedMedicinesFilterCount)}
+                  </Button>
+                </div>
                 <Button 
                   size="sm"
-                  onClick={() => {
-                    bannedMedicinesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                  onClick={() => setIsBannedMedicineModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(bannedMedicinesFilterCount)}
+                  Ekle
                 </Button>
               </div>
-              <Button 
-                size="sm"
-                onClick={() => setIsBannedMedicineModalOpen(true)}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Ekle
-              </Button>
-            </div>
+              {/* Mobile: Banned medicines buttons */}
+              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+                <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      bannedMedicinesFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                  >
+                    <Filter className="h-4 w-4" />
+                    {renderFilterBadge(bannedMedicinesFilterCount)}
+                  </Button>
+                </div>
+                <Button 
+                  size="sm"
+                  onClick={() => setIsBannedMedicineModalOpen(true)}
+                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                >
+                  Ekle
+                </Button>
+              </div>
+            </>
           )}
         </div>
 
