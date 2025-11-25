@@ -16,19 +16,10 @@ type TrainingPlanModalMode = 'create' | 'edit'
 
 const DISTANCE_OPTIONS = ['Kenter', 'Tırıs', '200', '400', '600', '800', '1000', '1200', '1400', '1600']
 
-// Racecourse cities (same as in change-location-modal)
-const RACECOURSE_CITIES = [
-  'İstanbul Veliefendi',
-  'Adana Yeşiloba',
-  'Ankara 75. Yıl',
-  'Bursa Osmangazi',
-  'Diyarbakır',
-  'Elazığ',
-  'İzmir Şirinyer',
-  'Kocaeli Kartepe',
-  'Şanlıurfa',
-  'Antalya',
-]
+interface Racecourse {
+  id: string
+  name: string
+}
 
 interface InitialTrainingPlanValues {
   planDate: string
@@ -63,9 +54,33 @@ export function AddTrainingPlanModal({
   const [distance, setDistance] = useState('')
   const [note, setNote] = useState('')
   const [racecourseId, setRacecourseId] = useState('')
+  const [racecourses, setRacecourses] = useState<Racecourse[]>([])
+  const [isLoadingRacecourses, setIsLoadingRacecourses] = useState(false)
   const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   const isEditMode = mode === 'edit'
+
+  // Fetch racecourses
+  useEffect(() => {
+    if (open) {
+      setIsLoadingRacecourses(true)
+      fetch('/api/racecourses', {
+        credentials: 'include',
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.racecourses) {
+            setRacecourses(data.racecourses)
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching racecourses:', error)
+        })
+        .finally(() => {
+          setIsLoadingRacecourses(false)
+        })
+    }
+  }, [open])
 
   // Initialize form with existing data
   useEffect(() => {
@@ -128,7 +143,7 @@ export function AddTrainingPlanModal({
           planDate,
           distance,
           note: note.trim() || null,
-          racecourseId: racecourseId || null,
+          racecourseId: racecourseId && racecourseId.trim() ? racecourseId : null,
         }),
       })
 
@@ -195,16 +210,16 @@ export function AddTrainingPlanModal({
               label="Hipodrom"
               value={racecourseId}
               onChange={(e) => setRacecourseId(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingRacecourses}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<MapPin className="h-4 w-4" />}
             >
               <option value="">Hipodrom Seçin</option>
-              {RACECOURSE_CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
+              {racecourses.map((racecourse) => (
+                <option key={racecourse.id} value={racecourse.id}>
+                  {racecourse.name}
                 </option>
               ))}
             </ModalSelect>

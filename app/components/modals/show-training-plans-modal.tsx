@@ -94,6 +94,8 @@ export function ShowTrainingPlansModal({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [planToDelete, setPlanToDelete] = useState<TrainingPlan | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -145,14 +147,17 @@ export function ShowTrainingPlansModal({
     setIsEditModalOpen(true)
   }
 
-  const handleDelete = async (planId: string) => {
-    if (!confirm('Bu idman planını silmek istediğinizden emin misiniz?')) {
-      return
-    }
+  const handleDelete = (plan: TrainingPlan) => {
+    setPlanToDelete(plan)
+    setIsDeleteDialogOpen(true)
+  }
 
-    setIsDeleting(planId)
+  const handleDeleteConfirm = async () => {
+    if (!planToDelete) return
+
+    setIsDeleting(planToDelete.id)
     try {
-      const response = await fetch(`/api/horses/${horseId}/training-plans/${planId}`, {
+      const response = await fetch(`/api/horses/${horseId}/training-plans/${planToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -163,6 +168,8 @@ export function ShowTrainingPlansModal({
       }
 
       toast.success('İdman planı silindi')
+      setIsDeleteDialogOpen(false)
+      setPlanToDelete(null)
       fetchPlans()
       onRefresh?.()
     } catch (error: any) {
@@ -199,15 +206,15 @@ export function ShowTrainingPlansModal({
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
             {isLoading ? (
-              <div className="flex justify-center items-center py-12">
+              <div className="flex justify-center items-center py-12 px-6">
                 <div className="text-gray-500">Yükleniyor...</div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="flex flex-col w-full">
                 {/* Add Button - Top Right */}
-                <div className="flex justify-end">
+                <div className="flex justify-end px-6 pt-4 pb-2 flex-shrink-0">
                   <Button
                     size="sm"
                     onClick={() => setIsAddModalOpen(true)}
@@ -218,21 +225,26 @@ export function ShowTrainingPlansModal({
                 </div>
                 
                 {plans.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="flex flex-col items-center justify-center py-12 text-center px-6">
                     <NotebookPen className="h-12 w-12 text-gray-400 mb-4" />
                     <p className="text-gray-500 text-lg">Henüz idman planı eklenmemiş</p>
                   </div>
                 ) : (
                   <>
                     {/* Mobile: Card Layout */}
-                    <div className="md:hidden space-y-3">
+                    <div className="md:hidden mb-4 flex justify-center w-full px-6">
+                      <div className="w-full">
+                        <div 
+                          className="overflow-y-auto overflow-x-hidden px-2 py-2"
+                          style={{ maxHeight: '500px' }}
+                        >
                       {plans.map((plan) => {
                         const isPast = isPastPlan(plan.planDate)
                         return (
                           <div
                             key={plan.id}
-                            className={`border-0 p-4 rounded-lg ${
-                              isPast ? 'bg-green-50/50' : 'bg-indigo-50/30'
+                            className={`bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border ${
+                              isPast ? 'bg-green-50/50' : ''
                             }`}
                             style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                           >
@@ -259,7 +271,7 @@ export function ShowTrainingPlansModal({
                                   <Pencil className="h-4 w-4" />
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(plan.id)}
+                                  onClick={() => handleDelete(plan)}
                                   disabled={isDeleting === plan.id}
                                   className="p-1.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
                                   title="Sil"
@@ -296,10 +308,12 @@ export function ShowTrainingPlansModal({
                         </div>
                         )
                       })}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Desktop: Table Layout */}
-                    <div className="hidden md:block overflow-x-auto">
+                    <div className="hidden md:block flex-1 min-h-0 overflow-y-auto overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="bg-gray-50 border-b-2 border-gray-200">
@@ -386,7 +400,7 @@ export function ShowTrainingPlansModal({
                                       <Pencil className="h-4 w-4" />
                                     </button>
                                     <button
-                                      onClick={() => handleDelete(plan.id)}
+                                      onClick={() => handleDelete(plan)}
                                       disabled={isDeleting === plan.id}
                                       className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                                       title="Sil"
@@ -444,6 +458,39 @@ export function ShowTrainingPlansModal({
           }}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+          <DialogHeader>
+            <DialogTitle>İdman Planını Sil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Bu idman planını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false)
+                  setPlanToDelete(null)
+                }}
+                disabled={isDeleting !== null}
+              >
+                İptal
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting !== null}
+              >
+                {isDeleting ? 'Siliniyor...' : 'Sil'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

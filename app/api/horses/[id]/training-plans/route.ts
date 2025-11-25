@@ -138,6 +138,22 @@ export async function POST(
       )
     }
 
+    // Validate racecourseId if provided
+    let validRacecourseId: string | null = null
+    if (racecourseId) {
+      // Check if racecourse exists
+      const racecourse = await prisma.racecourse.findUnique({
+        where: { id: racecourseId },
+      })
+      if (!racecourse) {
+        return NextResponse.json(
+          { error: 'Invalid racecourse ID' },
+          { status: 400 }
+        )
+      }
+      validRacecourseId = racecourseId
+    }
+
     // Validate date is in the future
     const selectedDate = new Date(planDate)
     const today = new Date()
@@ -208,7 +224,7 @@ export async function POST(
         planDate: new Date(planDate),
         distance,
         note: note?.trim() || null,
-        racecourseId: racecourseId || null,
+        racecourseId: validRacecourseId,
         addedById: decoded.id,
       },
       include: {
