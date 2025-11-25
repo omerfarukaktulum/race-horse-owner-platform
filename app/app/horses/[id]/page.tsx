@@ -622,41 +622,41 @@ useEffect(() => {
           <div className="hidden sm:block w-full">
             <div className="flex items-center justify-between gap-4 w-full">
               <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0 min-w-max sm:min-w-0">
-                  <TabsTrigger 
-                    value="info"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    At Bilgisi
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="pedigree"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    Pedigri
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="races"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    Koşular
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="gallops"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    İdmanlar
-                  </TabsTrigger>
-                  <TabsTrigger 
+            <TabsList className="inline-flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-gray-200/50 p-1.5 shadow-lg gap-0 min-w-max sm:min-w-0">
+            <TabsTrigger 
+              value="info"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              At Bilgisi
+            </TabsTrigger>
+            <TabsTrigger 
+              value="pedigree"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              Pedigri
+            </TabsTrigger>
+            <TabsTrigger 
+              value="races"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              Koşular
+            </TabsTrigger>
+            <TabsTrigger 
+              value="gallops"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              İdmanlar
+            </TabsTrigger>
+            <TabsTrigger 
                     value="statistics"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
                     İstatistikler
-                  </TabsTrigger>
-                  <TabsTrigger 
+            </TabsTrigger>
+            <TabsTrigger 
                     value="illnesses"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
                     Hastalıklar
                   </TabsTrigger>
                   <TabsTrigger 
@@ -664,21 +664,21 @@ useEffect(() => {
                     className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
                   >
                     Çıkıcı İlaçlar
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="expenses"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    Giderler
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="notes"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
-                  >
-                    Notlar
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="expenses"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+            >
+              Giderler
+            </TabsTrigger>
+            <TabsTrigger 
+              value="notes"
+              className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50"
+            >
+              Notlar
+            </TabsTrigger>
+          </TabsList>
+          </div>
               {activeTab === 'illnesses' && (
                 <div className="flex items-center gap-3">
                   <div ref={illnessesFilterButtonRef} className="relative">
@@ -701,7 +701,7 @@ useEffect(() => {
                   </Button>
                 </div>
               )}
-              {activeTab === 'expenses' && (
+          {activeTab === 'expenses' && (
                 <div className="flex items-center gap-3">
                   <div ref={expensesFilterButtonRef} className="relative">
                     <Button 
@@ -761,23 +761,23 @@ useEffect(() => {
             <div className="sm:hidden flex flex-col gap-3 mt-4">
               <div className="flex items-center justify-between gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      filterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(expensesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(expensesFilterCount)}
-                  </Button>
-                </div>
                 <Button 
-                  onClick={() => setIsExpenseModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  onClick={() => {
+                    filterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(expensesFilterCount > 0)}
                 >
-                  Ekle
+                    <Filter className="h-4 w-4" />
+                  {renderFilterBadge(expensesFilterCount)}
                 </Button>
+              </div>
+              <Button 
+                onClick={() => setIsExpenseModalOpen(true)}
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+              >
+                  Ekle
+              </Button>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
@@ -790,13 +790,13 @@ useEffect(() => {
           {activeTab === 'races' && (
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={racesFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      racesFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(racesFilterCount > 0)}
-                  >
+                <Button 
+                  onClick={() => {
+                    racesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(racesFilterCount > 0)}
+                >
                   <Filter className="h-4 w-4" />
                   {renderFilterBadge(racesFilterCount)}
                 </Button>
@@ -807,25 +807,25 @@ useEffect(() => {
             <>
               {/* Desktop: Gallops buttons */}
               <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
-                <div ref={gallopsFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      gallopsFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(gallopsFilterCount > 0)}
-                  >
+              <div ref={gallopsFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    gallopsFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(gallopsFilterCount > 0)}
+                >
                     <Filter className="h-4 w-4" />
-                    {renderFilterBadge(gallopsFilterCount)}
-                  </Button>
-                </div>
+                  {renderFilterBadge(gallopsFilterCount)}
+                </Button>
+              </div>
                 <Button
                   onClick={() => setIsShowTrainingPlansModalOpen(true)}
                   className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                 >
                   İdman Planı
                 </Button>
-              </div>
+            </div>
               {/* Mobile: Gallops buttons */}
               <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={gallopsFilterButtonRef} className="relative">
@@ -869,25 +869,25 @@ useEffect(() => {
             <>
               {/* Desktop: Notes buttons */}
               <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
-                <div ref={notesFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      notesFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(notesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(notesFilterCount)}
-                  </Button>
-                </div>
+              <div ref={notesFilterButtonRef} className="relative">
                 <Button 
-                  onClick={() => setIsNoteModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  onClick={() => {
+                    notesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(notesFilterCount > 0)}
                 >
-                  Ekle
+                    <Filter className="h-4 w-4" />
+                  {renderFilterBadge(notesFilterCount)}
                 </Button>
               </div>
+              <Button 
+                onClick={() => setIsNoteModalOpen(true)}
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+              >
+                  Ekle
+              </Button>
+            </div>
               {/* Mobile: Notes buttons */}
               <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={notesFilterButtonRef} className="relative">
@@ -915,26 +915,26 @@ useEffect(() => {
             <>
               {/* Desktop: Banned medicines buttons */}
               <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
-                <div ref={bannedMedicinesFilterButtonRef} className="relative">
-                  <Button 
-                    size="sm"
-                    onClick={() => {
-                      bannedMedicinesFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(bannedMedicinesFilterCount)}
-                  </Button>
-                </div>
+              <div ref={bannedMedicinesFilterButtonRef} className="relative">
                 <Button 
-                  onClick={() => setIsBannedMedicineModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                    size="sm"
+                  onClick={() => {
+                    bannedMedicinesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
                 >
-                  Ekle
+                    <Filter className="h-4 w-4" />
+                  {renderFilterBadge(bannedMedicinesFilterCount)}
                 </Button>
               </div>
+              <Button 
+                onClick={() => setIsBannedMedicineModalOpen(true)}
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+              >
+                  Ekle
+              </Button>
+            </div>
               {/* Mobile: Banned medicines buttons */}
               <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={bannedMedicinesFilterButtonRef} className="relative">
@@ -1120,6 +1120,10 @@ useEffect(() => {
           horseName={horse.name}
           open={isIllnessModalOpen}
           onClose={() => {
+            setIsIllnessModalOpen(false)
+            fetchHorse() // Refresh data
+          }}
+          onSuccess={() => {
             setIsIllnessModalOpen(false)
             fetchHorse() // Refresh data
           }}

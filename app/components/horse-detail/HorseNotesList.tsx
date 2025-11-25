@@ -92,6 +92,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
+  const highlightedNoteRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -251,6 +252,55 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   useEffect(() => {
     onActiveFiltersChange?.(activeFilterCount)
   }, [activeFilterCount, onActiveFiltersChange])
+
+  // Scroll to highlighted note when it appears
+  useEffect(() => {
+    if (!highlightNoteId) return
+    
+    // Wait for the note to be in the filtered list and the ref to be set
+    const hasHighlightedNote = filteredNotes.some(note => note.id === highlightNoteId)
+    if (!hasHighlightedNote) return
+    
+    // Use multiple attempts with increasing delays to ensure tab is active and content is rendered
+    const attemptScroll = (attempt = 0) => {
+      // Try to find element by ref first, then by data attribute as fallback
+      let element: HTMLDivElement | HTMLTableRowElement | null = highlightedNoteRowRef.current
+      
+      // Fallback: try to find by data attribute if ref isn't set yet
+      if (!element) {
+        const found = document.querySelector(`[data-note-id="${highlightNoteId}"]`)
+        if (found && (found instanceof HTMLDivElement || found instanceof HTMLTableRowElement)) {
+          element = found
+        }
+      }
+      
+      if (element) {
+        // Check if element has dimensions (is rendered)
+        const rect = element.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          // Use scrollIntoView which is more reliable and handles nested scroll containers
+          // Small delay to ensure tab content is fully rendered
+          setTimeout(() => {
+            element?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            })
+          }, 100)
+          return true
+        }
+      }
+      
+      // Retry if element not found yet or not visible (max 15 attempts with longer delays)
+      if (attempt < 15) {
+        setTimeout(() => attemptScroll(attempt + 1), 300 * (attempt + 1))
+      }
+      return false
+    }
+    
+    // Start first attempt after initial delay to allow tab switch and rendering
+    setTimeout(() => attemptScroll(), 1000)
+  }, [highlightNoteId, filteredNotes])
 
   const handleEditClick = (note: HorseNote) => {
     setEditingNote(note)
@@ -454,7 +504,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
 
       {/* Mobile: Card Layout */}
       <div className="md:hidden mt-6">
-              {!hasNotes ? (
+            {!hasNotes ? (
                 <div className="px-4 py-16 text-center text-sm text-gray-500">
                   Henüz not eklenmemiş
                 </div>
@@ -462,7 +512,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                 <div className="px-4 py-6 text-center text-sm text-gray-500">
                   Seçilen tarih aralığında not bulunamadı
                 </div>
-              ) : (
+            ) : (
                 <>
                   {filteredNotes.map((note) => {
                     const isHighlighted = highlightNoteId === note.id
@@ -470,9 +520,10 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                     return (
                       <div
                         key={note.id}
+                        data-note-id={note.id}
                         ref={isHighlighted ? (el) => {
                           if (el) {
-                            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+                            highlightedNoteRowRef.current = el
                           }
                         } : undefined}
                         className={`bg-indigo-50/30 border-0 p-4 mb-3 ${
@@ -542,55 +593,56 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className={hasNotes ? 'p-0' : 'py-16 text-center'}>
-          <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Not
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Ekleyen
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredNotes.length === 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
                     <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
-                        Seçilen tarih aralığında not bulunamadı
-                      </td>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Tarih
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Not
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Ekleyen
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        İşlem
+                      </th>
                     </tr>
-                  ) : (
-                    filteredNotes.map((note, index) => {
-                      const isStriped = index % 2 === 1
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredNotes.length === 0 ? (
+                      <tr>
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
+                          Seçilen tarih aralığında not bulunamadı
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredNotes.map((note, index) => {
+                        const isStriped = index % 2 === 1
                       const isHighlighted = highlightNoteId === note.id
-                      const attachments = getPhotoList(note.photoUrl)
-                      return (
-                        <tr
-                          key={note.id}
+                        const attachments = getPhotoList(note.photoUrl)
+                        return (
+                          <tr
+                            key={note.id}
+                            data-note-id={note.id}
                           ref={isHighlighted ? (el) => {
                             if (el) {
-                              setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+                              highlightedNoteRowRef.current = el
                             }
                           } : undefined}
-                          className={`transition-colors hover:bg-indigo-50/50 ${
+                            className={`transition-colors hover:bg-indigo-50/50 ${
                             isHighlighted
                               ? 'bg-indigo-50 text-indigo-900 rounded-xl'
                               : isStriped ? 'bg-gray-50/30' : ''
                           }`}
                         >
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {formatDateShort(note.date)}
-                            </span>
-                          </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm font-medium text-gray-900">
+                                {formatDateShort(note.date)}
+                              </span>
+                            </td>
                           <td className="px-4 py-3">
                             {note.note ? (
                               <div className="text-sm text-gray-800 space-y-1">
@@ -598,57 +650,57 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                 {note.kiloValue !== null && note.kiloValue !== undefined && (
                                   <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
                                     ⚖️ {note.kiloValue.toFixed(1)} kg
-                                  </span>
+                            </span>
                                 )}
                               </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-start gap-2">
-                              {attachments.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() => openAttachmentViewer(attachments)}
-                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                  title={`${attachments.length} ek görüntüle`}
-                                >
-                                  <Paperclip className="h-4 w-4" />
-                                </button>
-                              )}
-                              {user && note.addedById === user.id && (
-                                <>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex justify-start gap-2">
+                                {attachments.length > 0 && (
                                   <button
                                     type="button"
-                                    onClick={() => handleEditClick(note)}
-                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                    title="Düzenle"
+                                    onClick={() => openAttachmentViewer(attachments)}
+                                    className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                    title={`${attachments.length} ek görüntüle`}
                                   >
-                                    <Pencil className="h-4 w-4" />
+                                    <Paperclip className="h-4 w-4" />
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteClick(note)}
-                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                    title="Sil"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                                )}
+                                {user && note.addedById === user.id && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditClick(note)}
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                      title="Düzenle"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteClick(note)}
+                                      className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                      title="Sil"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
           </CardContent>
         </Card>
       </div>

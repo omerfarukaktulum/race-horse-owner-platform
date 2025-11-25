@@ -199,7 +199,7 @@ export function ShowTrainingPlansModal({
                     <p className="text-gray-500 text-lg">Henüz idman planı eklenmemiş</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50 border-b-2 border-gray-200">

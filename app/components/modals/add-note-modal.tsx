@@ -235,8 +235,8 @@ export function AddNoteModal({
     if (kiloValue.trim()) {
       const parsed = parseFloat(kiloValue.trim())
       if (isNaN(parsed) || parsed <= 0) {
-        toast.error('Lütfen geçerli bir kilo değeri girin')
-        return
+      toast.error('Lütfen geçerli bir kilo değeri girin')
+      return
       }
       kiloValueNum = parsed
     }
@@ -319,20 +319,20 @@ export function AddNoteModal({
               <ModalSelect
                 label="Eküri Seçin"
                 required
-                value={selectedStablemateId}
-                onChange={(e) => setSelectedStablemateId(e.target.value)}
-                disabled={isSubmitting || isLoadingStablemates}
+                  value={selectedStablemateId}
+                  onChange={(e) => setSelectedStablemateId(e.target.value)}
+                  disabled={isSubmitting || isLoadingStablemates}
                 onMouseDown={guardPointerEvent}
                 onTouchStart={guardPointerEvent}
                 onFocus={guardFocusEvent}
                 icon={<Users className="h-4 w-4" />}
-              >
-                <option value="">Eküri seçin</option>
-                {stablemates.map((stablemate) => (
-                  <option key={stablemate.id} value={stablemate.id}>
-                    {stablemate.name}
-                  </option>
-                ))}
+                >
+                  <option value="">Eküri seçin</option>
+                  {stablemates.map((stablemate) => (
+                    <option key={stablemate.id} value={stablemate.id}>
+                      {stablemate.name}
+                    </option>
+                  ))}
               </ModalSelect>
             )}
 
@@ -340,24 +340,24 @@ export function AddNoteModal({
               <ModalSelect
                 label="At Seçin"
                 required
-                value={selectedHorseId}
-                onChange={(e) => {
+                  value={selectedHorseId}
+                  onChange={(e) => {
                     const horse = filteredHorses.find((h) => h.id === e.target.value)
                     setSelectedHorseId(e.target.value)
                     setSelectedHorseName(horse?.name || '')
-                }}
-                disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
+                  }}
+                  disabled={isSubmitting || (isTrainer && !selectedStablemateId)}
                 onMouseDown={guardPointerEvent}
                 onTouchStart={guardPointerEvent}
                 onFocus={guardFocusEvent}
                 icon={<UserRound className="h-4 w-4" />}
-              >
-                <option value="">{isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}</option>
-                {filteredHorses.map((horseOption) => (
-                  <option key={horseOption.id} value={horseOption.id}>
-                    {horseOption.name}
-                  </option>
-                ))}
+                >
+                  <option value="">{isTrainer && !selectedStablemateId ? 'Önce eküri seçin' : 'At seçin'}</option>
+                  {filteredHorses.map((horseOption) => (
+                    <option key={horseOption.id} value={horseOption.id}>
+                      {horseOption.name}
+                    </option>
+                  ))}
               </ModalSelect>
             )}
 
@@ -368,7 +368,7 @@ export function AddNoteModal({
               value={date}
               onChange={(e) => setDate(e.target.value)}
               max={new Date().toISOString().split('T')[0]}
-              disabled={isSubmitting}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
@@ -377,7 +377,7 @@ export function AddNoteModal({
 
             <ModalTextarea
               label="Not"
-              required
+                required
               id="note"
               placeholder="Not Ekleyin"
               value={note}
@@ -388,14 +388,14 @@ export function AddNoteModal({
 
             <ModalInput
               label="Kilo (yem miktarı, atın kilosu)"
-              id="kiloValue"
-              type="number"
-              step="0.1"
-              min="0"
-              value={kiloValue}
-              onChange={(e) => setKiloValue(e.target.value)}
-              disabled={isSubmitting}
-              placeholder="Örn: 12.5"
+                  id="kiloValue"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={kiloValue}
+                  onChange={(e) => setKiloValue(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="Örn: 12.5"
               startIcon={<Scale className="h-4 w-4" />}
               helperText="İsterseniz kilo bilgisini ekleyebilirsiniz."
             />
@@ -403,9 +403,9 @@ export function AddNoteModal({
             <ModalPhotoUpload
               label="Fotoğraf (İsteğe Bağlı)"
               inputId="note-photo"
-              disabled={isSubmitting}
+                disabled={isSubmitting}
               previews={photoPreviews}
-              onChange={handlePhotoChange}
+                    onChange={handlePhotoChange}
               onRemove={handleRemovePhoto}
             />
 
@@ -420,8 +420,8 @@ export function AddNoteModal({
                 >
                   İptal
                 </Button>
-                <Button
-                  type="submit"
+                <Button 
+                  type="submit" 
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >

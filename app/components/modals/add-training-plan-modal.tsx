@@ -176,15 +176,15 @@ export function AddTrainingPlanModal({
             <ModalDateField
               label="Tarih"
               required
-              id="planDate"
-              value={planDate}
-              onChange={(e) => setPlanDate(e.target.value)}
+                id="planDate"
+                value={planDate}
+                onChange={(e) => setPlanDate(e.target.value)}
               min={(() => {
                 const tomorrow = new Date()
                 tomorrow.setDate(tomorrow.getDate() + 1)
                 return tomorrow.toISOString().split('T')[0]
               })()}
-              disabled={isSubmitting}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
@@ -212,48 +212,48 @@ export function AddTrainingPlanModal({
             <ModalSelect
               label="İdman Mesafesi"
               required
-              value={distance}
-              onChange={(e) => setDistance(e.target.value)}
-              disabled={isSubmitting}
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<Ruler className="h-4 w-4" />}
-            >
-              <option value="">Mesafe seçin...</option>
-              {DISTANCE_OPTIONS.map((dist) => (
-                <option key={dist} value={dist}>
-                  {dist === 'Kenter' || dist === 'Tırıs' ? dist : `${dist}m`}
-                </option>
-              ))}
+              >
+                <option value="">Mesafe seçin...</option>
+                {DISTANCE_OPTIONS.map((dist) => (
+                  <option key={dist} value={dist}>
+                    {dist === 'Kenter' || dist === 'Tırıs' ? dist : `${dist}m`}
+                  </option>
+                ))}
             </ModalSelect>
 
             <ModalTextarea
               label="Not"
-              id="note"
+                id="note"
               placeholder="İdman planı hakkında notlar..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={isSubmitting}
-              rows={4}
-            />
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                disabled={isSubmitting}
+                rows={4}
+              />
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                İptal
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !planDate || !distance}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
-              >
-                {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              İptal
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !planDate || !distance}
+              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
+            >
+              {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
+            </Button>
             </div>
           </div>
         </form>

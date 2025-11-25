@@ -114,11 +114,11 @@ export function AddBannedMedicineModal({
             return
           }
           validFiles.push(file)
-          const reader = new FileReader()
+        const reader = new FileReader()
           reader.onload = (event) => resolve((event.target?.result as string) || null)
           reader.onerror = () => resolve(null)
-          reader.readAsDataURL(file)
-        })
+        reader.readAsDataURL(file)
+    })
     )
 
     Promise.all(previewPromises).then((results) => {
@@ -233,29 +233,29 @@ export function AddBannedMedicineModal({
             <ModalSelect
               label="İlaç Adı"
               required
-              value={medicineName}
-              onChange={(e) => setMedicineName(e.target.value)}
-              disabled={isSubmitting}
+                value={medicineName}
+                onChange={(e) => setMedicineName(e.target.value)}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<Pill className="h-4 w-4" />}
-            >
-              <option value="">İlaç seçin...</option>
-              {BANNED_MEDICINES.map((med) => (
-                <option key={med} value={med}>
-                  {med}
-                </option>
-              ))}
+              >
+                <option value="">İlaç seçin...</option>
+                {BANNED_MEDICINES.map((med) => (
+                  <option key={med} value={med}>
+                    {med}
+                  </option>
+                ))}
             </ModalSelect>
 
             <ModalDateField
               label="Verilme Tarihi"
               required
-              id="givenDate"
-              value={givenDate}
-              onChange={(e) => setGivenDate(e.target.value)}
-              disabled={isSubmitting}
+                id="givenDate"
+                value={givenDate}
+                onChange={(e) => setGivenDate(e.target.value)}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
@@ -265,13 +265,13 @@ export function AddBannedMedicineModal({
             <ModalInput
               label="Bekleme Süresi (Gün)"
               required
-              id="waitDays"
-              type="number"
-              min="0"
-              value={waitDays}
-              onChange={(e) => setWaitDays(e.target.value)}
-              placeholder="Örn: 7"
-              disabled={isSubmitting}
+                id="waitDays"
+                type="number"
+                min="0"
+                value={waitDays}
+                onChange={(e) => setWaitDays(e.target.value)}
+                placeholder="Örn: 7"
+                disabled={isSubmitting}
               startIcon={<Hourglass className="h-4 w-4" />}
             />
 
@@ -279,11 +279,11 @@ export function AddBannedMedicineModal({
               label="Not"
               id="medicine-note"
               placeholder="İlaç hakkında notlar..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={isSubmitting}
-              rows={4}
-            />
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                disabled={isSubmitting}
+                rows={4}
+              />
 
             {existingPhotos.length > 0 && (
               <div className="space-y-3">
@@ -306,34 +306,34 @@ export function AddBannedMedicineModal({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+                </div>
+              )}
 
             <ModalPhotoUpload
               label="Yeni Fotoğraf Ekle"
               inputId="medicine-photo"
               disabled={isSubmitting}
               previews={photoPreviews}
-              onChange={handlePhotoChange}
+                  onChange={handlePhotoChange}
               onRemove={removePhoto}
             />
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                İptal
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !medicineName || !givenDate || !waitDays}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
-              >
-                {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              İptal
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !medicineName || !givenDate || !waitDays}
+              className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white hover:from-[#4f46e5] hover:to-[#4338ca]"
+            >
+              {isSubmitting ? 'Kaydediliyor...' : isEditMode ? 'Güncelle' : 'Kaydet'}
+            </Button>
             </div>
           </div>
         </form>

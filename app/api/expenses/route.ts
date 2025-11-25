@@ -50,59 +50,59 @@ export async function POST(request: Request) {
 
     // Verify horse ownership/assignment if horses are provided
     if (horseIds.length > 0) {
-      const horses = await prisma.horse.findMany({
-        where: { id: { in: horseIds } },
-        include: { stablemate: true },
-      })
+    const horses = await prisma.horse.findMany({
+      where: { id: { in: horseIds } },
+      include: { stablemate: true },
+    })
 
-      if (horses.length !== horseIds.length) {
-        return NextResponse.json(
-          { error: 'Some horses not found' },
-          { status: 404 }
-        )
+    if (horses.length !== horseIds.length) {
+      return NextResponse.json(
+        { error: 'Some horses not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check access rights
+    if (decoded.role === 'OWNER') {
+      // Get ownerId - check by userId if not in token
+      let ownerId = decoded.ownerId
+      
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
       }
-
-      // Check access rights
-      if (decoded.role === 'OWNER') {
-        // Get ownerId - check by userId if not in token
-        let ownerId = decoded.ownerId
-        
-        if (!ownerId) {
-          const ownerProfile = await prisma.ownerProfile.findUnique({
-            where: { userId: decoded.id },
-          })
-          ownerId = ownerProfile?.id
-        }
-        
-        if (!ownerId) {
-          return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
-        }
-        
+      
+      if (!ownerId) {
+        return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
+      }
+      
         const hasAccess = horses.every((h) => h.stablemate?.ownerId === ownerId)
-        if (!hasAccess) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-      } else if (decoded.role === 'TRAINER') {
-        // Get trainerId - check by userId if not in token
-        let trainerId = decoded.trainerId
-        
-        if (!trainerId) {
-          const trainerProfile = await prisma.trainerProfile.findUnique({
-            where: { userId: decoded.id },
-          })
-          trainerId = trainerProfile?.id
-        }
-        
-        if (!trainerId) {
-          return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
-        }
-        
-        const hasAccess = horses.every((h) => h.trainerId === trainerId)
-        if (!hasAccess) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
-      } else if (decoded.role !== 'ADMIN') {
+      if (!hasAccess) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role === 'TRAINER') {
+      // Get trainerId - check by userId if not in token
+      let trainerId = decoded.trainerId
+      
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      
+      if (!trainerId) {
+        return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
+      }
+      
+      const hasAccess = horses.every((h) => h.trainerId === trainerId)
+      if (!hasAccess) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
 
@@ -137,33 +137,33 @@ export async function POST(request: Request) {
     // If horseIds are provided, create one expense per horse
     // Otherwise, create a single expense without a horse
     if (horseIds.length > 0) {
-      const expenses = await Promise.all(
-        horseIds.map((horseId) =>
-          prisma.expense.create({
-            data: {
-              horseId,
-              date: expenseDate,
+    const expenses = await Promise.all(
+      horseIds.map((horseId) =>
+        prisma.expense.create({
+          data: {
+            horseId,
+            date: expenseDate,
               category: category as any,
-              amount: parseFloat(amount),
-              note: note || null,  // DB field is 'note' not 'notes'
-              photoUrl,
-              addedById: decoded.id,
-            },
-            include: {
-              horse: true,
-              addedBy: {
-                select: {
-                  email: true,
-                  role: true,
-                  ownerProfile: { select: { officialName: true } },
-                  trainerProfile: { select: { fullName: true } },
-                },
-              },
-            },
-          })
-        )
+            amount: parseFloat(amount),
+            note: note || null,  // DB field is 'note' not 'notes'
+            photoUrl,
+            addedById: decoded.id,
+          },
+          include: {
+            horse: true,
+        addedBy: {
+          select: {
+            email: true,
+            role: true,
+            ownerProfile: { select: { officialName: true } },
+            trainerProfile: { select: { fullName: true } },
+          },
+        },
+          },
+        })
       )
-      return NextResponse.json({ success: true, expenses })
+    )
+    return NextResponse.json({ success: true, expenses })
     } else {
       // Create expense without horse
       const expense = await prisma.expense.create({

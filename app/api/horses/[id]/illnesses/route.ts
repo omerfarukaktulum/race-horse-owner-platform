@@ -210,7 +210,7 @@ export async function GET(
     // Get illnesses with operations
     const illnesses = await prisma.horseIllness.findMany({
       where: { horseId },
-      orderBy: { startDate: 'desc' },
+      orderBy: { updatedAt: 'desc' },
       select: {
         id: true,
         startDate: true,
@@ -218,6 +218,8 @@ export async function GET(
         detail: true,
         photoUrl: true,
         addedById: true,
+        createdAt: true,
+        updatedAt: true,
         addedBy: {
           select: {
             email: true,

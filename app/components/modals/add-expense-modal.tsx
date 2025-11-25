@@ -368,20 +368,20 @@ export function AddExpenseModal({
               <ModalSelect
                 label="Eküri Seçin"
                 required
-                value={selectedStablemateId}
-                onChange={(e) => setSelectedStablemateId(e.target.value)}
-                disabled={isSubmitting || isLoadingStablemates}
+                  value={selectedStablemateId}
+                  onChange={(e) => setSelectedStablemateId(e.target.value)}
+                  disabled={isSubmitting || isLoadingStablemates}
                 onMouseDown={guardPointerEvent}
                 onTouchStart={guardPointerEvent}
                 onFocus={guardFocusEvent}
                 icon={<Users className="h-4 w-4" />}
-              >
-                <option value="">Eküri seçin</option>
-                {stablemates.map((stablemate) => (
-                  <option key={stablemate.id} value={stablemate.id}>
-                    {stablemate.name}
-                  </option>
-                ))}
+                >
+                  <option value="">Eküri seçin</option>
+                  {stablemates.map((stablemate) => (
+                    <option key={stablemate.id} value={stablemate.id}>
+                      {stablemate.name}
+                    </option>
+                  ))}
               </ModalSelect>
             )}
 
@@ -451,12 +451,12 @@ export function AddExpenseModal({
 
             <ModalDateField
               label={TR.expenses.date}
-              required
+                required
               id="expense-date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              disabled={isSubmitting}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
@@ -466,27 +466,27 @@ export function AddExpenseModal({
 
             <ModalInput
               label={`${TR.expenses.amount} (₺)`}
-              required
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              disabled={isSubmitting}
+                  required
+                id="amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled={isSubmitting}
               startIcon={<Wallet className="h-4 w-4" />}
             />
 
             <ModalTextarea
               label="Not"
               required
-              id="notes"
-              placeholder="Not Ekleyin"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isSubmitting}
-              rows={3}
+                id="notes"
+                placeholder="Not Ekleyin"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isSubmitting}
+                rows={3}
             />
 
             <ModalPhotoUpload
@@ -494,7 +494,7 @@ export function AddExpenseModal({
               inputId="expense-photo"
               disabled={isSubmitting}
               previews={photoPreviews}
-              onChange={handlePhotoChange}
+                    onChange={handlePhotoChange}
               onRemove={handleRemovePhoto}
             />
 
@@ -509,8 +509,8 @@ export function AddExpenseModal({
                 >
                   {TR.common.cancel}
                 </Button>
-                <Button
-                  type="submit"
+                <Button 
+                  type="submit" 
                   disabled={isSubmitting}
                   className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 >

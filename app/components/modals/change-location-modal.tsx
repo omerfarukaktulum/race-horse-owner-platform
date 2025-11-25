@@ -196,46 +196,46 @@ export function ChangeLocationModal({
             <ModalSelect
               label="Şehir"
               required
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              disabled={isSubmitting}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<MapPin className="h-4 w-4" />}
-            >
-              <option value="">{locationType === 'racecourse' ? 'Hipodrom Seçin' : 'Şehir Seçin'}</option>
-              {availableCities.map((cityName) => (
-                <option key={cityName} value={cityName}>
-                  {cityName}
-                </option>
-              ))}
+              >
+                <option value="">{locationType === 'racecourse' ? 'Hipodrom Seçin' : 'Şehir Seçin'}</option>
+                {availableCities.map((cityName) => (
+                  <option key={cityName} value={cityName}>
+                    {cityName}
+                  </option>
+                ))}
             </ModalSelect>
 
             <ModalDateField
               label="Başlangıç Tarihi"
               required
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              max={new Date().toISOString().split('T')[0]}
-              disabled={isSubmitting}
+                id="startDate"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
+                disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               onClick={guardPointerEvent}
-            />
+              />
 
             <ModalTextarea
               label="Not"
               required
-              id="notes"
-              placeholder="Not ekleyin"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isSubmitting}
-              rows={3}
-            />
+                id="notes"
+                placeholder="Not ekleyin"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isSubmitting}
+                rows={3}
+              />
 
             {/* Actions */}
             <div className="pt-2">

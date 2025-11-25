@@ -34,6 +34,8 @@ interface HorseIllness {
   detail?: string | null
   photoUrl?: string | string[]
   addedById: string
+  createdAt?: string
+  updatedAt?: string
   addedBy: {
     email: string
     role: string
@@ -163,10 +165,13 @@ export function HorseIllnessesTable({
     }
   }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
 
-  // Sort illnesses by startDate descending
+  // Sort illnesses by updatedAt (or createdAt) descending - latest first
   const sortedIllnesses = useMemo(() => {
     return [...(illnesses || [])].sort((a, b) => {
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      // Use updatedAt if available, otherwise createdAt, otherwise startDate as fallback
+      const dateA = a.updatedAt || a.createdAt || a.startDate
+      const dateB = b.updatedAt || b.createdAt || b.startDate
+      return new Date(dateB).getTime() - new Date(dateA).getTime()
     })
   }, [illnesses])
 
@@ -518,8 +523,214 @@ export function HorseIllnessesTable({
           })()}
         </div>
 
-        {/* Illnesses Table */}
-        <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+        {/* Mobile: Card Layout */}
+        <div className="md:hidden">
+          {!hasIllnesses ? (
+            <div className="px-4 py-16 text-center text-sm text-gray-500">
+              Henüz hastalık kaydı bulunmuyor
+            </div>
+          ) : filteredIllnesses.length === 0 ? (
+            <div className="px-4 py-6 text-center text-sm text-gray-500">
+              Filtrelere uygun hastalık kaydı bulunmuyor
+            </div>
+          ) : (
+            <>
+              {filteredIllnesses.map((illness) => {
+                const photos = getPhotoList(illness.photoUrl)
+                const canEdit = user?.id === illness.addedById || user?.role === 'ADMIN'
+                const operations = illness.operations || []
+                const isExpanded = expandedIllnesses.has(illness.id)
+                const hasOperations = operations.length > 0
+
+                return (
+                  <div
+                    key={illness.id}
+                    className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4"
+                    style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {formatDateShort(illness.startDate)}
+                          </span>
+                          {illness.endDate ? (
+                            <>
+                              <span className="text-sm font-semibold text-gray-900">
+                                - {formatDateShort(illness.endDate)}
+                              </span>
+                              <span className="text-sm font-medium text-indigo-600">(Sona erdi)</span>
+                            </>
+                          ) : (
+                            <span className="text-sm font-medium text-indigo-600">Devam ediyor</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        {photos.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => openAttachmentViewer(photos)}
+                            className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                            title={`${photos.length} ek görüntüle`}
+                          >
+                            <Paperclip className="h-4 w-4" />
+                          </button>
+                        )}
+                        {canEdit && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(illness)}
+                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                              title="Düzenle"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClick(illness)}
+                              className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                              title="Sil"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {illness.detail && (
+                      <p className="text-sm text-gray-700 mb-2 line-clamp-3 whitespace-pre-wrap">
+                        {illness.detail}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">
+                          {operations.length} müdahale
+                        </span>
+                        {hasOperations && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newExpanded = new Set(expandedIllnesses)
+                              if (isExpanded) {
+                                newExpanded.delete(illness.id)
+                              } else {
+                                newExpanded.add(illness.id)
+                              }
+                              setExpandedIllnesses(newExpanded)
+                            }}
+                            className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                            title={isExpanded ? 'Gizle' : 'Göster'}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIllnessForOperation(illness)
+                            setIsOperationModalOpen(true)
+                          }}
+                          className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                          title="Müdahale Ekle"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    {isExpanded && hasOperations && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                        {operations.map((operation, opIndex) => {
+                          const opPhotos = getPhotoList(operation.photoUrl)
+                          const canEditOp = user?.id === operation.addedById || user?.role === 'ADMIN'
+                          
+                          return (
+                            <div
+                              key={operation.id}
+                              className={`p-3 rounded-md ${
+                                opIndex % 2 === 0 ? 'bg-indigo-50/30' : 'bg-white'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 text-xs mb-1">
+                                    <span className="font-medium text-gray-700">
+                                      {formatDateShort(operation.date)}
+                                    </span>
+                                    <span className="text-gray-500">
+                                      {formatAddedByOperation(operation)}
+                                    </span>
+                                  </div>
+                                  {operation.description && (
+                                    <p className="text-sm text-gray-800 whitespace-pre-wrap">
+                                      {operation.description}
+                                    </p>
+                                  )}
+                                  {opPhotos.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {opPhotos.map((photo, idx) => (
+                                        <button
+                                          key={idx}
+                                          onClick={() => openAttachmentViewer(opPhotos, idx)}
+                                          className="relative group"
+                                        >
+                                          <img
+                                            src={photo}
+                                            alt={`Operation attachment ${idx + 1}`}
+                                            className="w-12 h-12 object-cover rounded-md border border-gray-200 hover:border-[#6366f1] transition-colors"
+                                          />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                {canEditOp && (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingOperation(operation)
+                                        setIllnessForOperation(illness)
+                                        setIsEditOperationModalOpen(true)
+                                      }}
+                                      className="p-1 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                      title="Düzenle"
+                                    >
+                                      <Pencil className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOperationToDelete(operation)
+                                        setIsDeleteOperationDialogOpen(true)
+                                      }}
+                                      className="p-1 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                      title="Sil"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-gray-100">
+                      <span className="text-xs text-gray-500">{formatAddedBy(illness)}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+        </div>
+
+        {/* Desktop: Table Layout */}
+        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
           <CardContent className={hasIllnesses ? 'p-0' : 'py-16 text-center'}>
             {!hasIllnesses ? (
               <p className="text-gray-500">Henüz hastalık kaydı bulunmuyor</p>
@@ -612,10 +823,10 @@ export function HorseIllnessesTable({
                                         }
                                         setExpandedIllnesses(newExpanded)
                                       }}
-                                      className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                       title={isExpanded ? 'Gizle' : 'Göster'}
                                     >
-                                      <Eye className="h-3.5 w-3.5" />
+                                      <Eye className="h-4 w-4" />
                                     </button>
                                   )}
                                   <button
@@ -624,10 +835,10 @@ export function HorseIllnessesTable({
                                       setIllnessForOperation(illness)
                                       setIsOperationModalOpen(true)
                                     }}
-                                    className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                     title="Müdahale Ekle"
                                   >
-                                    <Plus className="h-3.5 w-3.5" />
+                                    <Plus className="h-4 w-4" />
                                   </button>
                                 </div>
                               </td>
@@ -767,7 +978,7 @@ export function HorseIllnessesTable({
         </Card>
       </div>
 
-      {/* Add Modal */}
+      {/* Add Modal - only render when not using parent's modal */}
       {!hideButtons && (
         <AddIllnessModal
           open={isAddModalOpen}

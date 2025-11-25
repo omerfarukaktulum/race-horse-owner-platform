@@ -81,11 +81,11 @@ export function AddGallopNoteModal({
             return
           }
           validFiles.push(file)
-          const reader = new FileReader()
+        const reader = new FileReader()
           reader.onload = (event) => resolve((event.target?.result as string) || null)
           reader.onerror = () => resolve(null)
-          reader.readAsDataURL(file)
-        })
+        reader.readAsDataURL(file)
+    })
     )
 
     Promise.all(previewPromises).then((results) => {
@@ -219,41 +219,41 @@ export function AddGallopNoteModal({
               label="İdman Notu"
               id="gallop-note"
               placeholder="İdman hakkında notlarınızı buraya yazın..."
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={5}
-            />
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={5}
+              />
 
-            {existingPhotos.length > 0 && (
+                {existingPhotos.length > 0 && (
               <div className="space-y-3">
                 <p className="text-sm font-medium text-gray-700">Yüklenmiş Fotoğraflar</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {existingPhotos.map((photo, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={photo}
-                        alt={`Existing ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeExistingPhoto(index)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {existingPhotos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Existing ${index + 1}`}
+                          className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingPhoto(index)}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  </div>
+                )}
 
             <ModalPhotoUpload
               label="Yeni Fotoğraf Ekle"
               inputId="gallop-note-photo"
               disabled={isSubmitting}
               previews={photoPreviews}
-              onChange={handlePhotoChange}
+                    onChange={handlePhotoChange}
               onRemove={removePhoto}
             />
           </div>
