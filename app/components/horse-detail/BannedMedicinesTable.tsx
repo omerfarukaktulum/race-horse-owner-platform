@@ -465,20 +465,20 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                     <span className="text-base font-semibold text-gray-900">
                       {medicine.medicineName}
                     </span>
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="text-xs text-gray-600">
-                        Bekleme: {medicine.waitDays} gün
-                      </span>
-                      <span className={`text-sm font-semibold ${
-                        isExpired 
-                          ? 'text-green-600' 
-                          : remainingDays <= 3 
-                            ? 'text-red-600' 
-                            : 'text-orange-600'
-                      }`}>
-                        {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
-                      </span>
-                    </div>
+                    <span className="text-sm text-gray-600">
+                      Bekleme: {medicine.waitDays} gün
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-end mb-2">
+                    <span className={`text-sm font-semibold ${
+                      isExpired 
+                        ? 'text-green-600' 
+                        : remainingDays <= 3 
+                          ? 'text-red-600' 
+                          : 'text-orange-600'
+                    }`}>
+                      {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
+                    </span>
                   </div>
                   {medicine.note && (
                     <p className="text-sm text-gray-700 mb-2 line-clamp-2">
