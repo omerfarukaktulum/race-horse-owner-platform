@@ -940,6 +940,23 @@ useEffect(() => {
               </Button>
             </div>
           )}
+          {/* Mobile: Races buttons */}
+          {activeTab === 'races' && (
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+              <div ref={racesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    racesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(racesFilterCount > 0)}
+                >
+                  <Filter className="h-4 w-4" />
+                  {renderFilterBadge(racesFilterCount)}
+                </Button>
+              </div>
+            </div>
+          )}
           {/* Mobile: Gallops buttons */}
           {activeTab === 'gallops' && (
             <div className="sm:hidden flex items-center justify-between gap-3 mt-4">

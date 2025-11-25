@@ -570,7 +570,147 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
         })()}
       </div>
 
-    <div>
+    {/* Mobile: Card Layout */}
+    <div className="md:hidden">
+      {filteredRaces.length === 0 ? (
+        <div className="px-4 py-16 text-center text-sm text-gray-500">
+          Seçilen filtrelerde koşu bulunamadı
+        </div>
+      ) : (
+        <>
+          {filteredRaces.map((race, index) => {
+            const medal = getPositionMedal(race.position)
+            const isHighlighted = highlightRaceId === race.id
+            
+            return (
+              <div
+                key={race.id}
+                data-race-id={race.id}
+                ref={isHighlighted ? (el) => { highlightedRaceRowRef.current = el as any } : undefined}
+                className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
+                  isHighlighted
+                    ? 'rounded-2xl border-2 border-indigo-400'
+                    : 'rounded-lg'
+                }`}
+                style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatDateShort(race.raceDate)}
+                    </span>
+                    {race.city && (
+                      <span className="text-sm text-gray-700">
+                        {race.city}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {medal && <span className="text-lg">{medal}</span>}
+                    <span className="text-sm text-gray-600">Sıra:</span>
+                    <span className={`text-sm font-bold ${race.position && race.position <= 3 ? 'text-indigo-600' : 'text-gray-900'}`}>
+                      {race.position || '-'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {race.raceType && (
+                      <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium flex-shrink-0">
+                        {abbreviateRaceType(race.raceType)}
+                      </span>
+                    )}
+                    {race.distance && (
+                      <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                        {race.distance}m
+                      </span>
+                    )}
+                    {race.surface && (
+                      <span 
+                        className="px-2 py-1 rounded-md text-xs font-semibold flex-shrink-0"
+                        style={getSurfaceColor(race.surface)}
+                      >
+                        {formatSurface(race.surface)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {race.derece && (
+                      <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                        {race.derece}
+                      </span>
+                    )}
+                    {race.photoUrl && (
+                      <a
+                        href={race.photoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-md bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors flex-shrink-0"
+                        title="Foto"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+                
+                {race.jockeyName && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-700">
+                      {race.jockeyName}
+                    </span>
+                    {race.prizeMoney && parseFloat(race.prizeMoney) > 0 && (
+                      <span className="text-sm font-bold text-green-600">
+                        {formatCurrency(race.prizeMoney)}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-end mb-2">
+                  <div className="flex items-center gap-1">
+                    {getTJKDetailsUrl(race) && (
+                      <a
+                        href={getTJKDetailsUrl(race)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                        title="Koşu Detayları"
+                      >
+                        <span className="text-xs font-medium">Details</span>
+                      </a>
+                    )}
+                    {race.videoUrl && (
+                      <a
+                        href={race.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        title="Video"
+                      >
+                        <Video className="h-4 w-4" />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRaceForGallops(race)}
+                      className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-medium"
+                      title="Koşu İdmanları"
+                    >
+                      Yarış öncesi idmanlar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </>
+      )}
+    </div>
+
+    {/* Desktop: Table Layout */}
+    <div className="hidden md:block">
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -941,108 +1081,193 @@ function RaceGallopsModal({
           </div>
         </DialogHeader>
         
-        <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
           {filteredGallops.length === 0 ? (
-            <div className="text-center py-12">
-              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Bu koşu için idman verisi bulunmuyor</p>
+            <div className="flex flex-col items-center justify-center py-12 text-center px-6">
+              <Activity className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Zamanlama
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Hipodrom
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Jokey
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Pist
-                    </th>
-                    {availableDistances.map((distance) => {
-                      const isActive = selectedDistance === distance
-                      const isVisible = !selectedDistance || selectedDistance === distance
+            <>
+              {/* Mobile: Card Layout */}
+              <div className="md:hidden mb-4 flex justify-center w-full px-6">
+                <div className="w-full">
+                  <div 
+                    className="overflow-y-auto overflow-x-hidden px-2 py-2"
+                    style={{ maxHeight: '500px' }}
+                  >
+                    {filteredGallops.map((gallop) => {
+                      const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+                      const statusLabel = formatGallopStatus(gallop.status)
+                      
+                      // Get available distances for this gallop
+                      const availableDistancesForGallop = availableDistances.filter(
+                        (meter) => {
+                          const time = distances[meter]
+                          return time && time !== '-' && String(time).trim() !== ''
+                        }
+                      )
+                      
                       return (
-                        <th
-                          key={distance}
-                          onClick={() => toggleDistance(distance)}
-                          className={`px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors select-none ${
-                            isActive
-                              ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          } ${!isVisible ? 'hidden' : ''}`}
-                          title={`${distance}m filtrele`}
+                        <div
+                          key={gallop.id}
+                          className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border"
+                          style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                         >
-                          {distance}m
-                        </th>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-900">
+                                {formatDateShort(gallop.gallopDate)}
+                              </span>
+                              {gallop.racecourse && (
+                                <span className="text-sm text-gray-700">
+                                  {gallop.racecourse}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-600 font-medium">
+                              {getDaysBeforeRace(gallop.gallopDate)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {gallop.jockeyName && (
+                                <span className="text-sm text-gray-700">
+                                  {gallop.jockeyName}
+                                </span>
+                              )}
+                              {gallop.surface && (
+                                <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
+                                  {formatSurface(gallop.surface)}
+                                </span>
+                              )}
+                            </div>
+                            {statusLabel && (
+                              <span className="text-sm text-gray-700">
+                                {statusLabel}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {availableDistancesForGallop.length > 0 && (
+                            <div className="mb-2">
+                              <div className="flex flex-wrap gap-2">
+                                {availableDistancesForGallop.map((meter) => (
+                                  <div key={meter} className="flex items-center gap-1">
+                                    <span className="text-xs font-medium text-gray-600">{meter}m:</span>
+                                    <span className={`px-2 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800`}>
+                                      {getDistance(distances, meter)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Durum
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredGallops.map((gallop, index) => {
-                    const isStriped = index % 2 === 1
-                    const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
-                    const statusLabel = formatGallopStatus(gallop.status)
-                    
-                    return (
-                      <tr
-                        key={gallop.id}
-                        className={`transition-colors ${
-                          isStriped ? 'bg-gray-50' : 'bg-white'
-                        } hover:bg-indigo-50/50`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {formatDateShort(gallop.gallopDate)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-600 font-medium">
-                            {getDaysBeforeRace(gallop.gallopDate)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">{gallop.racecourse || '-'}</span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">{gallop.jockeyName || '-'}</span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {gallop.surface && (
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
-                              {formatSurface(gallop.surface)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop: Table Layout */}
+              <div className="hidden md:block overflow-x-auto px-6 py-4">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Tarih
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Zamanlama
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Hipodrom
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Jokey
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Pist
+                      </th>
+                      {availableDistances.map((distance) => {
+                        const isActive = selectedDistance === distance
+                        const isVisible = !selectedDistance || selectedDistance === distance
+                        return (
+                          <th
+                            key={distance}
+                            onClick={() => toggleDistance(distance)}
+                            className={`px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider cursor-pointer transition-colors select-none ${
+                              isActive
+                                ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            } ${!isVisible ? 'hidden' : ''}`}
+                            title={`${distance}m filtrele`}
+                          >
+                            {distance}m
+                          </th>
+                        )
+                      })}
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Durum
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {filteredGallops.map((gallop, index) => {
+                      const isStriped = index % 2 === 1
+                      const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+                      const statusLabel = formatGallopStatus(gallop.status)
+                      
+                      return (
+                        <tr
+                          key={gallop.id}
+                          className={`transition-colors ${
+                            isStriped ? 'bg-gray-50' : 'bg-white'
+                          } hover:bg-indigo-50/50`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatDateShort(gallop.gallopDate)}
                             </span>
-                          )}
-                        </td>
-                        {availableDistances.map((meter) => {
-                          const isVisible = !selectedDistance || selectedDistance === meter
-                          return (
-                            <td key={meter} className={`px-3 py-3 text-center ${!isVisible ? 'hidden' : ''}`}>
-                              <span className="text-sm font-medium text-gray-800">{getDistance(distances, meter)}</span>
-                            </td>
-                          )
-                        })}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">{statusLabel || '-'}</span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-600 font-medium">
+                              {getDaysBeforeRace(gallop.gallopDate)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-700">{gallop.racecourse || '-'}</span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-700">{gallop.jockeyName || '-'}</span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {gallop.surface && (
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
+                                {formatSurface(gallop.surface)}
+                              </span>
+                            )}
+                          </td>
+                          {availableDistances.map((meter) => {
+                            const isVisible = !selectedDistance || selectedDistance === meter
+                            return (
+                              <td key={meter} className={`px-3 py-3 text-center ${!isVisible ? 'hidden' : ''}`}>
+                                <span className="text-sm font-medium text-gray-800">{getDistance(distances, meter)}</span>
+                              </td>
+                            )
+                          })}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm text-gray-700">{statusLabel || '-'}</span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </DialogContent>
