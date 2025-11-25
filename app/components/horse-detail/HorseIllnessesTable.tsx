@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Eye, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
@@ -151,7 +151,8 @@ export function HorseIllnessesTable({
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
   const setShowFilterDropdown = hideButtons 
     ? (value: boolean | ((prev: boolean) => boolean)) => {
-        const newValue = typeof value === 'function' ? value(showFilterDropdown) : value
+        const currentValue = externalShowFilterDropdown || false
+        const newValue = typeof value === 'function' ? value(currentValue) : value
         onFilterDropdownChange?.(newValue)
       }
     : setInternalShowFilterDropdown
@@ -427,7 +428,7 @@ export function HorseIllnessesTable({
             </Button>
           )}
 
-          {showFilterDropdown && (() => {
+          {!hideButtons && showFilterDropdown && (() => {
             const dropdownContent = (
               <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
                 <div className="flex items-center justify-between mb-4">
@@ -514,14 +515,100 @@ export function HorseIllnessesTable({
                 )}
               </div>
             )
-
-            if (hideButtons && filterDropdownContainerRef?.current) {
-              return createPortal(dropdownContent, filterDropdownContainerRef.current)
-            }
-            
             return dropdownContent
           })()}
         </div>
+
+      {/* Portal dropdown for hideButtons mode */}
+      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
+        const dropdownContent = (
+          <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Filtreler</h3>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(false)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+              <div className="flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((option) => {
+                  const isActive = selectedRange === option.value
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const nextValue = isActive ? null : option.value
+                        setSelectedRange(nextValue)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Added By Filter */}
+            {getUniqueAddedBy.length > 0 && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                <div className="flex flex-wrap gap-2">
+                  {getUniqueAddedBy.map((addedBy) => (
+                    <button
+                      type="button"
+                      key={addedBy.value}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleAddedByFilter(addedBy.value)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        addedByFilters.includes(addedBy.value)
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {addedBy.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearFilters()
+                  setShowFilterDropdown(false)
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Filtreleri Temizle
+              </button>
+            )}
+          </div>
+        )
+        return createPortal(dropdownContent, filterDropdownContainerRef.current)
+      })()}
 
         {/* Mobile: Card Layout */}
         <div className="md:hidden">

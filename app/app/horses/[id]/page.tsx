@@ -679,8 +679,13 @@ useEffect(() => {
             </TabsTrigger>
           </TabsList>
           </div>
-              {activeTab === 'illnesses' && (
-                <div className="flex items-center gap-3">
+            </div>
+            
+            {/* Desktop: Filter and Action Buttons - Below Tabs, Same Line */}
+            <div className={`hidden sm:flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} justify-between mt-4`}>
+              {/* Left side: Filter buttons */}
+              <div className={`flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} gap-3`}>
+                {activeTab === 'illnesses' && (
                   <div ref={illnessesFilterButtonRef} className="relative">
                     <Button 
                       onClick={() => {
@@ -693,16 +698,79 @@ useEffect(() => {
                       {renderFilterBadge(illnessesFilterCount)}
                     </Button>
                   </div>
-                  <Button 
-                    onClick={() => setIsIllnessModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    Ekle
-                  </Button>
-                </div>
-              )}
-          {activeTab === 'expenses' && (
-                <div className="flex items-center gap-3">
+                )}
+                {activeTab === 'notes' && (
+                  <div ref={notesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        notesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(notesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(notesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'gallops' && (
+                  <div ref={gallopsFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        gallopsFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(gallopsFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(gallopsFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'races' && (
+                  <div ref={racesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        racesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(racesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(racesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'statistics' && (
+                  <div ref={statisticsFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        statisticsFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(statisticsFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(statisticsFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'banned-medicines' && (
+                  <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        bannedMedicinesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(bannedMedicinesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'expenses' && (
                   <div ref={expensesFilterButtonRef} className="relative">
                     <Button 
                       onClick={() => {
@@ -715,23 +783,61 @@ useEffect(() => {
                       {renderFilterBadge(expensesFilterCount)}
                     </Button>
                   </div>
+                )}
+              </div>
+              
+              {/* Right side: Action buttons */}
+              <div className="flex items-center gap-3">
+                {activeTab === 'illnesses' && (
                   <Button 
-                    onClick={() => setIsExpenseModalOpen(true)}
+                    onClick={() => setIsIllnessModalOpen(true)}
                     className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     Ekle
                   </Button>
-                </div>
-              )}
-            </div>
-            {activeTab === 'expenses' && (
-              <div className="text-right mt-2 hidden sm:block">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
-                <p className="text-lg font-semibold text-indigo-600">
-                  {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
-                </p>
+                )}
+                {activeTab === 'expenses' && (
+                  <div className="flex flex-col items-end gap-2">
+                    <Button 
+                      onClick={() => setIsExpenseModalOpen(true)}
+                      className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                    >
+                      Ekle
+                    </Button>
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+                      <p className="text-lg font-semibold text-indigo-600">
+                        {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {activeTab === 'notes' && (
+                  <Button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
+                {activeTab === 'gallops' && (
+                  <Button
+                    onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                  >
+                    İdman Planı
+                  </Button>
+                )}
+                {activeTab === 'banned-medicines' && (
+                  <Button 
+                    onClick={() => setIsBannedMedicineModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
           </div>
           {/* Mobile: Illnesses buttons */}
           {activeTab === 'illnesses' && (
@@ -761,23 +867,23 @@ useEffect(() => {
             <div className="sm:hidden flex flex-col gap-3 mt-4">
               <div className="flex items-center justify-between gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    filterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(expensesFilterCount > 0)}
-                >
+                  <Button 
+                    onClick={() => {
+                      filterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(expensesFilterCount > 0)}
+                  >
                     <Filter className="h-4 w-4" />
-                  {renderFilterBadge(expensesFilterCount)}
-                </Button>
-              </div>
-              <Button 
-                onClick={() => setIsExpenseModalOpen(true)}
+                    {renderFilterBadge(expensesFilterCount)}
+                  </Button>
+                </div>
+                <Button 
+                  onClick={() => setIsExpenseModalOpen(true)}
                   className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
+                >
                   Ekle
-              </Button>
+                </Button>
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
@@ -787,88 +893,9 @@ useEffect(() => {
               </div>
             </div>
           )}
-          {activeTab === 'races' && (
-            <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
-              <div ref={racesFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    racesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(racesFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(racesFilterCount)}
-                </Button>
-              </div>
-            </div>
-          )}
-          {activeTab === 'gallops' && (
-            <>
-              {/* Desktop: Gallops buttons */}
-              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
-              <div ref={gallopsFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    gallopsFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(gallopsFilterCount > 0)}
-                >
-                    <Filter className="h-4 w-4" />
-                  {renderFilterBadge(gallopsFilterCount)}
-                </Button>
-              </div>
-                <Button
-                  onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-                >
-                  İdman Planı
-                </Button>
-            </div>
-              {/* Mobile: Gallops buttons */}
-              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
-                <div ref={gallopsFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      gallopsFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(gallopsFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(gallopsFilterCount)}
-                  </Button>
-                </div>
-                <Button
-                  onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-                >
-                  İdman Planı
-                </Button>
-              </div>
-            </>
-          )}
-          {activeTab === 'statistics' && (
-            <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
-              <div ref={statisticsFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    statisticsFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(statisticsFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(statisticsFilterCount)}
-                </Button>
-              </div>
-            </div>
-          )}
+          {/* Mobile: Notes buttons */}
           {activeTab === 'notes' && (
-            <>
-              {/* Desktop: Notes buttons */}
-              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
               <div ref={notesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -877,87 +904,64 @@ useEffect(() => {
                   variant="outline"
                   className={getFilterButtonClass(notesFilterCount > 0)}
                 >
-                    <Filter className="h-4 w-4" />
+                  <Filter className="h-4 w-4" />
                   {renderFilterBadge(notesFilterCount)}
                 </Button>
               </div>
               <Button 
                 onClick={() => setIsNoteModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
               >
-                  Ekle
+                Ekle
               </Button>
             </div>
-              {/* Mobile: Notes buttons */}
-              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
-                <div ref={notesFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      notesFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(notesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(notesFilterCount)}
-                  </Button>
-                </div>
-                <Button 
-                  onClick={() => setIsNoteModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                >
-                  Ekle
-                </Button>
-              </div>
-            </>
           )}
+          {/* Mobile: Banned Medicines buttons */}
           {activeTab === 'banned-medicines' && (
-            <>
-              {/* Desktop: Banned medicines buttons */}
-              <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
               <div ref={bannedMedicinesFilterButtonRef} className="relative">
                 <Button 
-                    size="sm"
+                  size="sm"
                   onClick={() => {
                     bannedMedicinesFilterTriggerRef.current?.()
                   }}
                   variant="outline"
                   className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
                 >
-                    <Filter className="h-4 w-4" />
+                  <Filter className="h-4 w-4" />
                   {renderFilterBadge(bannedMedicinesFilterCount)}
                 </Button>
               </div>
               <Button 
                 onClick={() => setIsBannedMedicineModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
               >
-                  Ekle
+                Ekle
               </Button>
             </div>
-              {/* Mobile: Banned medicines buttons */}
-              <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
-                <div ref={bannedMedicinesFilterButtonRef} className="relative">
-                  <Button 
-                    size="sm"
-                    onClick={() => {
-                      bannedMedicinesFilterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(bannedMedicinesFilterCount)}
-                  </Button>
-                </div>
+          )}
+          {/* Mobile: Gallops buttons */}
+          {activeTab === 'gallops' && (
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+              <div ref={gallopsFilterButtonRef} className="relative">
                 <Button 
-                  onClick={() => setIsBannedMedicineModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  onClick={() => {
+                    gallopsFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(gallopsFilterCount > 0)}
                 >
-                  Ekle
+                  <Filter className="h-4 w-4" />
+                  {renderFilterBadge(gallopsFilterCount)}
                 </Button>
               </div>
-            </>
+              <Button
+                onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+              >
+                İdman Planı
+              </Button>
+            </div>
           )}
         </div>
 

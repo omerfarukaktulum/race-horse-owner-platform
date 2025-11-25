@@ -343,12 +343,13 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
     <>
       {/* Filter dropdown container and Training Plan Button - on same line */}
       <div className="flex flex-row items-center gap-2 mb-4">
-        {/* Filter Button */}
-        {!hideButtons && (
-          <div 
-            className="relative filter-dropdown-container"
-            ref={filterDropdownRef}
-          >
+        {/* Filter dropdown container - always rendered for dropdown positioning */}
+        <div 
+          className="relative filter-dropdown-container"
+          ref={filterDropdownRef}
+          style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        >
+          {!hideButtons && (
             <Button
               variant="outline"
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -361,14 +362,165 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
               <Filter className="h-4 w-4" />
               {hasActiveFilters && (
                 <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                  1
+                  {activeFilterCount}
                 </span>
               )}
             </Button>
+          )}
 
-            {showFilterDropdown && (() => {
+          {/* Filter Dropdown - inline when hideButtons is false */}
+          {!hideButtons && showFilterDropdown && (() => {
+              const dropdownContent = (
+                <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(false)
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Date Range Filter */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                    <div className="flex flex-wrap gap-2">
+                      {RANGE_OPTIONS.map((option) => {
+                        const isActive = selectedRange === option.value
+                        return (
+                          <button
+                            type="button"
+                            key={option.value}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const nextValue = isActive ? null : option.value
+                              setSelectedRange(nextValue)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {racecourseOptions.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                      <div className="flex flex-wrap gap-2">
+                        {racecourseOptions.map((racecourse) => {
+                          const isActive = selectedRacecourses.includes(racecourse)
+                          return (
+                            <button
+                              key={racecourse}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleRacecourse(racecourse)
+                              }}
+                              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                isActive
+                                  ? 'bg-[#6366f1] text-white shadow'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {racecourse}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {statusOptions.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Durum</label>
+                      <div className="flex flex-wrap gap-2">
+                        {statusOptions.map((status) => {
+                          const isActive = selectedStatuses.includes(status)
+                          return (
+                            <button
+                              key={status}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleStatus(status)
+                              }}
+                              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                isActive
+                                  ? 'bg-[#6366f1] text-white shadow'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              {formatGallopStatus(status)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Distance Filter */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+                    <div className="flex flex-wrap gap-2">
+                      {DISTANCE_OPTIONS.map((distance) => {
+                        const isActive = selectedDistance === distance
+                        return (
+                          <button
+                            key={distance}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleDistance(distance)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white shadow'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {distance}m
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Clear Filters */}
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        clearFilters()
+                        setShowFilterDropdown(false)
+                      }}
+                      className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Filtreleri Temizle
+                    </button>
+                  )}
+                </div>
+              )
+              return dropdownContent
+            })()}
+        </div>
+
+        {/* Filter Dropdown - rendered via portal when hideButtons is true */}
+        {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
           const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -511,15 +663,8 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
             </div>
           )
 
-          // Render dropdown in portal if hideButtons is true, otherwise inline
-          if (hideButtons && filterDropdownContainerRef?.current) {
-            return createPortal(dropdownContent, filterDropdownContainerRef.current)
-          }
-          
-          return dropdownContent
+          return createPortal(dropdownContent, filterDropdownContainerRef.current)
         })()}
-          </div>
-        )}
 
         {/* Training Plan Button - only visible when hideButtons is false */}
         {!hideButtons && horseId && horseName && (
@@ -534,7 +679,144 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
         )}
       </div>
 
-    <div>
+    {/* Mobile: Card Layout */}
+    <div className="md:hidden">
+      {filteredGallops.length === 0 ? (
+        <div className="px-4 py-16 text-center text-sm text-gray-500">
+          Seçilen filtrelerde idman bulunamadı
+        </div>
+      ) : (
+        <>
+          {filteredGallops.map((gallop) => {
+            const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+            const attachments = getAttachments(gallop.photoUrl)
+            const statusLabel = formatGallopStatus(gallop.status)
+            const isHighlighted = highlightGallopId === gallop.id
+            
+            // Get specific distance times
+            const getDistance = (meter: string) => {
+              const time = distances[meter]
+              if (!time) return '-'
+              
+              // Remove "0." prefix if present (e.g., "0.25.80" → "25.80")
+              const timeStr = String(time)
+              if (timeStr.startsWith('0.')) {
+                return timeStr.substring(2)
+              }
+              return timeStr
+            }
+            
+            // Get available distances for this gallop
+            const availableDistancesForGallop = DISTANCE_OPTIONS.filter(
+              (meter) => distances[meter] && distances[meter] !== '-' && String(distances[meter]).trim() !== ''
+            )
+            
+            return (
+              <div
+                key={gallop.id}
+                data-gallop-id={gallop.id}
+                ref={isHighlighted ? (el) => (highlightedRowRef.current = el as any) : undefined}
+                className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
+                  isHighlighted
+                    ? 'rounded-2xl border-2 border-indigo-400'
+                    : 'rounded-lg'
+                }`}
+                style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatDateShort(gallop.gallopDate)}
+                    </span>
+                    {gallop.racecourse && (
+                      <span className="text-sm text-gray-700">
+                        {gallop.racecourse}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    {attachments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => openAttachmentViewer(attachments)}
+                        className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        title={`${attachments.length} ek görüntüle`}
+                      >
+                        <Paperclip className="h-4 w-4" />
+                      </button>
+                    )}
+                    {gallop.note && (
+                      <button
+                        type="button"
+                        onClick={() => openNoteViewer(gallop.note!, gallop.gallopDate)}
+                        className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                        title="Notu görüntüle"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleNoteClick(gallop)}
+                      className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                      title={gallop.note ? "Düzenle" : "İdman notu ekle"}
+                    >
+                      {gallop.note ? (
+                        <Pencil className="h-4 w-4" />
+                      ) : (
+                        <span className="text-xs font-medium">Not Ekle</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {gallop.jockeyName && (
+                      <span className="text-sm text-gray-700">
+                        {gallop.jockeyName}
+                      </span>
+                    )}
+                    {gallop.surface && (
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
+                        {formatSurface(gallop.surface)}
+                      </span>
+                    )}
+                  </div>
+                  {statusLabel && (
+                    <span className="text-sm text-gray-700">
+                      {statusLabel}
+                    </span>
+                  )}
+                </div>
+                
+                {availableDistancesForGallop.length > 0 && (
+                  <div className="mb-2">
+                    <div className="flex flex-wrap gap-2">
+                      {availableDistancesForGallop.map((meter) => (
+                        <div key={meter} className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-gray-600">{meter}m:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800`}>
+                            {getDistance(meter)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {gallop.note && (
+                  <p className="text-sm text-gray-700 mb-2 line-clamp-2">{gallop.note}</p>
+                )}
+              </div>
+            )
+          })}
+        </>
+      )}
+    </div>
+
+    {/* Desktop: Table Layout */}
+    <div className="hidden md:block">
       <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
@@ -678,7 +960,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                                     <button
                                       type="button"
                                       onClick={() => openAttachmentViewer(attachments)}
-                                      className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                       title={`${attachments.length} ek görüntüle`}
                                     >
                                       <Paperclip className="h-4 w-4" />

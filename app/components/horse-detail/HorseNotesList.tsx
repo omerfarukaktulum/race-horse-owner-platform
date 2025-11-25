@@ -405,9 +405,9 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
           </Button>
         )}
 
-        {showFilterDropdown && (() => {
+        {!hideButtons && showFilterDropdown && (() => {
           const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -492,15 +492,100 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
               )}
             </div>
           )
-
-          // Render in parent's container if hideButtons is true and ref is provided
-          if (hideButtons && filterDropdownContainerRef?.current) {
-            return createPortal(dropdownContent, filterDropdownContainerRef.current)
-          }
-
           return dropdownContent
         })()}
       </div>
+
+      {/* Portal dropdown for hideButtons mode */}
+      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
+        const dropdownContent = (
+          <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Filtreler</h3>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(false)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+              <div className="flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((option) => {
+                  const isActive = selectedRange === option.value
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const nextValue = isActive ? null : option.value
+                        setSelectedRange(nextValue)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Added By Filter */}
+            {getUniqueAddedBy.length > 0 && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                <div className="flex flex-wrap gap-2">
+                  {getUniqueAddedBy.map((option) => (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleAddedByFilter(option.value)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        addedByFilters.includes(option.value)
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearFilters()
+                  setShowFilterDropdown(false)
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Filtreleri Temizle
+              </button>
+            )}
+          </div>
+        )
+        return createPortal(dropdownContent, filterDropdownContainerRef.current)
+      })()}
 
       {/* Mobile: Card Layout */}
       <div className="md:hidden mt-6">
