@@ -177,6 +177,17 @@ const noteTemplates: Record<string, string[]> = {
 
 const NOTE_TEMPLATE_KEYS = Object.keys(noteTemplates) as (keyof typeof noteTemplates)[]
 
+// Illness templates
+const illnessTemplates: string[] = [
+  'Hafif öksürük gözlemlendi. Veteriner kontrolü yapıldı. İlaç tedavisi başlatıldı.',
+  'Hafif burun akıntısı var. Dinlenme önerildi. İyileşme süreci takip ediliyor.',
+  'Ayak problemleri gözlemlendi. Veteriner müdahalesi yapıldı. İyileşme bekleniyor.',
+  'Hafif ateş tespit edildi. İlaç tedavisi uygulanıyor. Durum takip ediliyor.',
+  'Solunum yolu enfeksiyonu şüphesi. Veteriner kontrolü yapıldı. Tedavi süreci başlatıldı.',
+  'Cilt problemleri gözlemlendi. Özel bakım uygulanıyor. İyileşme süreci takip ediliyor.',
+  'Hafif sindirim sorunları. Diyet programı güncellendi. Durum normale dönüyor.',
+]
+
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
 }
@@ -219,6 +230,23 @@ function generateNoteSQL(
   return `INSERT INTO horse_notes (id, "horseId", "addedById", date, note, "kiloValue", "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${dateStr}', '${note.replace(/'/g, "''")}', ${kiloValueStr}, '${now}', '${now}');`
 }
 
+function generateIllnessSQL(
+  horseId: string,
+  addedById: string,
+  startDate: Date,
+  endDate: Date | null,
+  detail: string | null
+): string {
+  const startDateStr = startDate.toISOString().replace('T', ' ').substring(0, 19)
+  const endDateStr = endDate ? endDate.toISOString().replace('T', ' ').substring(0, 19) : 'NULL'
+  const now = new Date().toISOString().replace('T', ' ').substring(0, 19)
+  const id = generateId()
+  
+  const detailStr = detail ? `'${detail.replace(/'/g, "''")}'` : 'NULL'
+  
+  return `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES ('${id}', '${horseId}', '${addedById}', '${startDateStr}', ${endDateStr}, ${detailStr}, '${now}', '${now}');`
+}
+
 async function main() {
   console.log('Fetching database data...')
   
@@ -258,6 +286,8 @@ async function main() {
   
   const expenseSQL: string[] = []
   const noteSQL: string[] = []
+  const illnessSQL: string[] = []
+  const illnessSQL: string[] = []
   
   // Generate expenses and notes for each owner's horses
   for (const owner of owners) {
@@ -392,6 +422,28 @@ async function main() {
             date,
             getRandomElement(noteTemplates[category]),
             kiloValue
+          )
+        )
+      }
+      
+      // Add random illnesses (1-3 per horse)
+      const illnessCount = Math.floor(Math.random() * 3) + 1
+      for (let i = 0; i < illnessCount; i++) {
+        const startDate = getRandomDateInLast12Months()
+        // End date: 50% chance to have one, 1-14 days after start
+        const hasEndDate = Math.random() > 0.5
+        const endDate = hasEndDate 
+          ? new Date(startDate.getTime() + (Math.floor(Math.random() * 14) + 1) * 24 * 60 * 60 * 1000)
+          : null
+        const detail = getRandomElement(illnessTemplates)
+        
+        illnessSQL.push(
+          generateIllnessSQL(
+            horse.id,
+            ownerUserId,
+            startDate,
+            endDate,
+            detail
           )
         )
       }
@@ -562,6 +614,28 @@ async function main() {
           )
         )
       }
+      
+      // Add random illnesses (1-3 per horse)
+      const illnessCount = Math.floor(Math.random() * 3) + 1
+      for (let i = 0; i < illnessCount; i++) {
+        const startDate = getRandomDateInLast12Months()
+        // End date: 50% chance to have one, 1-14 days after start
+        const hasEndDate = Math.random() > 0.5
+        const endDate = hasEndDate 
+          ? new Date(startDate.getTime() + (Math.floor(Math.random() * 14) + 1) * 24 * 60 * 60 * 1000)
+          : null
+        const detail = getRandomElement(illnessTemplates)
+        
+        illnessSQL.push(
+          generateIllnessSQL(
+            horse.id,
+            trainerUserId,
+            startDate,
+            endDate,
+            detail
+          )
+        )
+      }
     }
   }
   
@@ -581,6 +655,9 @@ ${expenseSQL.join('\n')}
 -- Notes (${noteSQL.length} records)
 ${noteSQL.join('\n')}
 
+-- Illnesses (${illnessSQL.length} records)
+${illnessSQL.join('\n')}
+
 COMMIT;
 `
   
@@ -588,6 +665,7 @@ COMMIT;
   console.log(`\nGenerated SQL file: demo-expenses-notes.sql`)
   console.log(`Total expenses: ${expenseSQL.length}`)
   console.log(`Total notes: ${noteSQL.length}`)
+  console.log(`Total illnesses: ${illnessSQL.length}`)
 }
 
 main()

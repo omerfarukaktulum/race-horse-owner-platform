@@ -1,5 +1,5 @@
 import { MapPin, Trophy, CircleAlert } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils/format'
+import { formatCurrency, formatDateShort } from '@/lib/utils/format'
 import { useRouter } from 'next/navigation'
 
 interface HorseMetadata {
@@ -27,6 +27,12 @@ interface HorseMetadata {
   lastExpenseDate?: string
   remainingWaitDays?: number | null
   activeBannedMedicine?: { id: string; name: string } | null
+  activeIllnesses?: Array<{
+    id: string
+    detail: string
+    startDate: string
+    operationsCount: number
+  }>
   horseId?: string
 }
 
@@ -108,6 +114,36 @@ export function HorseMetadataCard({ horse }: Props) {
                     </span>
                   </div>
                 </button>
+              </div>
+            )}
+
+            {/* Active Illnesses Label */}
+            {horse.activeIllnesses && horse.activeIllnesses.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {horse.activeIllnesses.map((illness) => (
+                  <button
+                    key={illness.id}
+                    onClick={() => {
+                      if (horse.horseId) {
+                        router.push(`/app/horses/${horse.horseId}?tab=illnesses`)
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-md text-xs font-medium border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:border-orange-300 transition-colors cursor-pointer flex items-start gap-2 w-full text-left"
+                  >
+                    <CircleAlert className="h-8 w-6 flex-shrink-0" />
+                    <div className="flex flex-col flex-1">
+                      <span className="font-medium">Aktif Hastalık: {illness.detail || 'Hastalık'}</span>
+                      <div className="flex flex-wrap gap-3 mt-1">
+                        <span className="text-xs">
+                          Başlangıç: {formatDateShort(illness.startDate)}
+                        </span>
+                        <span className="text-xs">
+                          Müdahaleler: {illness.operationsCount}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             )}
             

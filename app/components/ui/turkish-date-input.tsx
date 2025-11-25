@@ -167,6 +167,10 @@ const TurkishDateInput = React.forwardRef<HTMLInputElement, TurkishDateInputProp
             border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 9999 !important;
+          }
+          .react-datepicker__portal {
+            z-index: 9999 !important;
           }
           .react-datepicker__header {
             background-color: #6366f1;

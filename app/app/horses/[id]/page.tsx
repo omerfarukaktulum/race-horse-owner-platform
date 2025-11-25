@@ -19,7 +19,9 @@ import { RaceHistoryTable } from '@/app/components/horse-detail/RaceHistoryTable
 import { GallopsTable } from '@/app/components/horse-detail/GallopsTable'
 import { HorseExpensesTable } from '@/app/components/horse-detail/HorseExpensesTable'
 import { HorseNotesList } from '@/app/components/horse-detail/HorseNotesList'
+import { HorseIllnessesTable } from '@/app/components/horse-detail/HorseIllnessesTable'
 import { BannedMedicinesTable } from '@/app/components/horse-detail/BannedMedicinesTable'
+import { AddIllnessModal } from '@/app/components/modals/add-illness-modal'
 import { formatCurrency } from '@/lib/utils/format'
 
 interface LocationHistory {
@@ -51,7 +53,7 @@ interface RaceHistory {
   photoUrl?: string
 }
 
-const HORSE_TABS = ['info', 'pedigree', 'races', 'gallops', 'banned-medicines', 'statistics', 'expenses', 'notes'] as const
+const HORSE_TABS = ['info', 'pedigree', 'races', 'gallops', 'statistics', 'illnesses', 'banned-medicines', 'expenses', 'notes'] as const
 type HorseTab = (typeof HORSE_TABS)[number]
 
 const isHorseTab = (value: string | null): value is HorseTab => {
@@ -143,6 +145,35 @@ interface HorseDetail {
       name?: string
     }
   }>
+  illnesses?: Array<{
+    id: string
+    startDate: string
+    endDate?: string | null
+    detail?: string | null
+    photoUrl?: string | string[]
+    addedById: string
+    addedBy: {
+      email: string
+      role: string
+      ownerProfile?: { officialName: string }
+      trainerProfile?: { fullName: string }
+      name?: string
+    }
+    operations?: Array<{
+      id: string
+      date: string
+      description?: string | null
+      photoUrl?: string | string[]
+      addedById: string
+      addedBy: {
+        email: string
+        role: string
+        ownerProfile?: { officialName: string }
+        trainerProfile?: { fullName: string }
+        name?: string
+      }
+    }>
+  }>
   locationHistory?: LocationHistory[]
   raceHistory?: RaceHistory[]
   gallops?: Array<{
@@ -181,6 +212,7 @@ export default function HorseDetailPage() {
   const [horse, setHorse] = useState<HorseDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [isIllnessModalOpen, setIsIllnessModalOpen] = useState(false)
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [isBannedMedicineModalOpen, setIsBannedMedicineModalOpen] = useState(false)
@@ -199,6 +231,8 @@ export default function HorseDetailPage() {
   const [statisticsFilterCount, setStatisticsFilterCount] = useState(0)
   const [expensesFilterCount, setExpensesFilterCount] = useState(0)
   const [notesFilterCount, setNotesFilterCount] = useState(0)
+  const [illnessesFilterCount, setIllnessesFilterCount] = useState(0)
+  const [showIllnessesFilter, setShowIllnessesFilter] = useState(false)
   const [bannedMedicinesFilterCount, setBannedMedicinesFilterCount] = useState(0)
   const [showBannedMedicinesFilter, setShowBannedMedicinesFilter] = useState(false)
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
@@ -233,6 +267,8 @@ export default function HorseDetailPage() {
   const bannedMedicinesFilterTriggerRef = useRef<(() => void) | null>(null)
   const expensesFilterButtonRef = useRef<HTMLDivElement>(null)
   const notesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const illnessesFilterButtonRef = useRef<HTMLDivElement>(null)
+  const illnessesFilterTriggerRef = useRef<(() => void) | null>(null)
   const statisticsFilterButtonRef = useRef<HTMLDivElement>(null)
   const racesFilterButtonRef = useRef<HTMLDivElement>(null)
   const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
@@ -351,6 +387,18 @@ useEffect(() => {
         // Don't fail the whole page if medicines fail
       }
 
+      // Fetch illnesses separately
+      try {
+        const illnessesResponse = await fetch(`/api/horses/${horseId}/illnesses`)
+        const illnessesData = await illnessesResponse.json()
+        if (illnessesResponse.ok && illnessesData.illnesses) {
+          horseData.illnesses = illnessesData.illnesses
+        }
+      } catch (illnessesError) {
+        console.error('Fetch illnesses error:', illnessesError)
+        // Don't fail the whole page if illnesses fail
+      }
+
       setHorse(horseData)
     } catch (error) {
       console.error('Fetch horse error:', error)
@@ -432,6 +480,18 @@ useEffect(() => {
     }
   }
 
+  // Find active illnesses (where endDate is null)
+  const activeIllnesses = horse.illnesses
+    ? horse.illnesses
+        .filter(illness => !illness.endDate)
+        .map(illness => ({
+          id: illness.id,
+          detail: illness.detail || '',
+          startDate: illness.startDate,
+          operationsCount: illness.operations?.length || 0,
+        }))
+    : []
+
   // Prepare metadata for card
   const horseMetadata = {
     name: horse.name,
@@ -458,6 +518,7 @@ useEffect(() => {
     lastExpenseDate,
     remainingWaitDays,
     activeBannedMedicine,
+    activeIllnesses,
     horseId: horse.id,
   }
 
@@ -523,8 +584,9 @@ useEffect(() => {
                   { id: 'pedigree' as const, label: 'Pedigri' },
                   { id: 'races' as const, label: 'Koşular' },
                   { id: 'gallops' as const, label: 'İdmanlar' },
-                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
                   { id: 'statistics' as const, label: 'İstatistikler' },
+                  { id: 'illnesses' as const, label: 'Hastalıklar' },
+                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
                   { id: 'expenses' as const, label: 'Giderler' },
                   { id: 'notes' as const, label: 'Notlar' },
                 ].map(({ id, label }, index, array) => {
@@ -585,16 +647,22 @@ useEffect(() => {
                     İdmanlar
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="banned-medicines"
-                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
-                  >
-                    Çıkıcı İlaçlar
-                  </TabsTrigger>
-                  <TabsTrigger 
                     value="statistics"
                     className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
                   >
                     İstatistikler
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="illnesses"
+                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+                  >
+                    Hastalıklar
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="banned-medicines"
+                    className="px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-md transition-all duration-300 whitespace-nowrap flex-shrink-0 data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#6366f1] data-[state=active]:to-[#4f46e5] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-gray-600 data-[state=inactive]:hover:text-gray-900 data-[state=inactive]:hover:bg-gray-50/50 data-[state=inactive]:border-r data-[state=inactive]:border-gray-300/50"
+                  >
+                    Çıkıcı İlaçlar
                   </TabsTrigger>
                   <TabsTrigger 
                     value="expenses"
@@ -610,6 +678,30 @@ useEffect(() => {
                   </TabsTrigger>
                 </TabsList>
               </div>
+              {activeTab === 'illnesses' && (
+                <div className="flex items-center gap-3">
+                  <div ref={illnessesFilterButtonRef} className="relative">
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        illnessesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(illnessesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(illnessesFilterCount)}
+                    </Button>
+                  </div>
+                  <Button 
+                    size="sm"
+                    onClick={() => setIsIllnessModalOpen(true)}
+                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                </div>
+              )}
               {activeTab === 'expenses' && (
                 <div className="flex items-center gap-3">
                   <div ref={expensesFilterButtonRef} className="relative">
@@ -644,6 +736,31 @@ useEffect(() => {
               </div>
             )}
           </div>
+          {/* Mobile: Illnesses buttons */}
+          {activeTab === 'illnesses' && (
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+              <div ref={illnessesFilterButtonRef} className="relative">
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    illnessesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(illnessesFilterCount > 0)}
+                >
+                  <Filter className="h-4 w-4" />
+                  {renderFilterBadge(illnessesFilterCount)}
+                </Button>
+              </div>
+              <Button 
+                size="sm"
+                onClick={() => setIsIllnessModalOpen(true)}
+                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+              >
+                Ekle
+              </Button>
+            </div>
+          )}
           {/* Mobile: Expenses buttons and total */}
           {activeTab === 'expenses' && (
             <div className="sm:hidden flex flex-col gap-3 mt-4">
@@ -944,6 +1061,23 @@ useEffect(() => {
           />
         </TabsContent>
 
+        <TabsContent value="illnesses" className="mt-6">
+          <HorseIllnessesTable 
+            illnesses={horse.illnesses || []}
+            horseId={horse.id}
+            horseName={horse.name}
+            onRefresh={fetchHorse}
+            hideButtons={true}
+            onFilterTriggerReady={(trigger) => {
+              illnessesFilterTriggerRef.current = trigger
+            }}
+            showFilterDropdown={showIllnessesFilter}
+            onFilterDropdownChange={setShowIllnessesFilter}
+            filterDropdownContainerRef={illnessesFilterButtonRef}
+            onActiveFiltersChange={setIllnessesFilterCount}
+          />
+        </TabsContent>
+
         <TabsContent value="expenses" className="mt-6">
           <HorseExpensesTable 
             expenses={horse.expenses || []}
@@ -993,6 +1127,18 @@ useEffect(() => {
           open={isNoteModalOpen}
           onClose={() => {
             setIsNoteModalOpen(false)
+            fetchHorse() // Refresh data
+          }}
+        />
+      )}
+
+      {isIllnessModalOpen && (
+        <AddIllnessModal
+          horseId={horse.id}
+          horseName={horse.name}
+          open={isIllnessModalOpen}
+          onClose={() => {
+            setIsIllnessModalOpen(false)
             fetchHorse() // Refresh data
           }}
         />
