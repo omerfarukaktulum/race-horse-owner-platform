@@ -451,111 +451,185 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
         })()}
       </div>
 
-        <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-          <CardContent className={hasNotes ? 'p-0' : 'py-16 text-center'}>
-            {!hasNotes ? (
-              <p className="text-gray-500">Henüz not eklenmemiş</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden mt-6">
+              {!hasNotes ? (
+                <div className="px-4 py-16 text-center text-sm text-gray-500">
+                  Henüz not eklenmemiş
+                </div>
+              ) : filteredNotes.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-gray-500">
+                  Seçilen tarih aralığında not bulunamadı
+                </div>
+              ) : (
+                <>
+                  {filteredNotes.map((note) => {
+                    const attachments = getPhotoList(note.photoUrl)
+                    return (
+                      <div
+                        key={note.id}
+                        className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3"
+                        style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {formatDateShort(note.date)}
+                          </span>
+                          <div className="flex gap-1">
+                            {attachments.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => openAttachmentViewer(attachments)}
+                                className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                title={`${attachments.length} ek görüntüle`}
+                              >
+                                <Paperclip className="h-4 w-4" />
+                              </button>
+                            )}
+                            {user && note.addedById === user.id && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditClick(note)}
+                                  className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                  title="Düzenle"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteClick(note)}
+                                  className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                  title="Sil"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {note.note && (
+                          <p className="text-sm text-gray-700 mb-2 line-clamp-3">
+                            {note.note.replace(/\s*\n+\s*/g, ' ').trim()}
+                          </p>
+                        )}
+                        {note.kiloValue !== null && note.kiloValue !== undefined && (
+                          <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold mb-2">
+                            ⚖️ {note.kiloValue.toFixed(1)} kg
+                          </span>
+                        )}
+                        <div className="pt-2 border-t border-gray-100">
+                          <span className="text-xs text-gray-500">{formatAddedBy(note)}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </>
+              )}
+      </div>
+
+      {/* Desktop: Table Layout */}
+      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+        <CardContent className={hasNotes ? 'p-0' : 'py-16 text-center'}>
+          <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Not
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Ekleyen
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      İşlem
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredNotes.length === 0 ? (
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Tarih
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Not
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Ekleyen
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        İşlem
-                      </th>
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
+                        Seçilen tarih aralığında not bulunamadı
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredNotes.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">
-                          Seçilen tarih aralığında not bulunamadı
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredNotes.map((note, index) => {
-                        const isStriped = index % 2 === 1
-                        const attachments = getPhotoList(note.photoUrl)
-                        return (
-                          <tr
-                            key={note.id}
-                            className={`transition-colors hover:bg-indigo-50/50 ${
-                              isStriped ? 'bg-gray-50/30' : ''
-                            }`}
-                          >
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-sm font-medium text-gray-900">
-                                {formatDateShort(note.date)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              {note.note ? (
-                                <div className="text-sm text-gray-800 space-y-1">
-                                  <p>{note.note.replace(/\s*\n+\s*/g, ' ').trim()}</p>
-                                  {note.kiloValue !== null && note.kiloValue !== undefined && (
-                                    <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
-                                      ⚖️ {note.kiloValue.toFixed(1)} kg
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex justify-start gap-2">
-                                {attachments.length > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => openAttachmentViewer(attachments)}
-                                    className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                    title={`${attachments.length} ek görüntüle`}
-                                  >
-                                    <Paperclip className="h-4 w-4" />
-                                  </button>
-                                )}
-                                {user && note.addedById === user.id && (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditClick(note)}
-                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                      title="Düzenle"
-                                    >
-                                      <Pencil className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteClick(note)}
-                                      className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                      title="Sil"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </>
+                  ) : (
+                    filteredNotes.map((note, index) => {
+                      const isStriped = index % 2 === 1
+                      const attachments = getPhotoList(note.photoUrl)
+                      return (
+                        <tr
+                          key={note.id}
+                          className={`transition-colors hover:bg-indigo-50/50 ${
+                            isStriped ? 'bg-gray-50/30' : ''
+                          }`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatDateShort(note.date)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {note.note ? (
+                              <div className="text-sm text-gray-800 space-y-1">
+                                <p>{note.note.replace(/\s*\n+\s*/g, ' ').trim()}</p>
+                                {note.kiloValue !== null && note.kiloValue !== undefined && (
+                                  <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
+                                    ⚖️ {note.kiloValue.toFixed(1)} kg
+                                  </span>
                                 )}
                               </div>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-700">{formatAddedBy(note)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-start gap-2">
+                              {attachments.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachmentViewer(attachments)}
+                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  title={`${attachments.length} ek görüntüle`}
+                                >
+                                  <Paperclip className="h-4 w-4" />
+                                </button>
+                              )}
+                              {user && note.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(note)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(note)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>

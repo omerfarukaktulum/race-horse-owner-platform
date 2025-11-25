@@ -612,7 +612,6 @@ export default function ExpensesPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={() => setIsSearchOpen(true)}
                 className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
               >
@@ -652,9 +651,8 @@ export default function ExpensesPage() {
           </div>
 
           <Button
-            size="sm"
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
           >
             Ekle
           </Button>
@@ -671,137 +669,228 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden">
+        {!hasExpenses ? (
+          <div className="px-4 py-16 text-center text-sm text-gray-500">
+            {TR.expenses.noExpenses}
+          </div>
+        ) : filteredExpenses.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-gray-500">
+            Seçilen filtrelerde gider bulunamadı
+          </div>
+        ) : (
+          <>
+            {filteredExpenses.map((expense) => {
+              const attachments = getAttachments(expense.photoUrl)
+              return (
+                <div
+                  key={expense.id}
+                  className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4"
+                  style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatDateShort(expense.date)}
+                            </span>
+                            <span className="text-sm font-medium text-indigo-600">
+                              {expense.horse?.name || '-'}
+                            </span>
+                          </div>
+                          {user?.role === 'TRAINER' && expense.horse?.stablemate?.name && (
+                            <span className="text-xs text-gray-500">
+                              {expense.horse.stablemate.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          {attachments.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => openAttachmentViewer(attachments)}
+                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title={`${attachments.length} ek görüntüle`}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </button>
+                          )}
+                          {user && expense.addedById === user.id && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(expense)}
+                                className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                title="Düzenle"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(expense)}
+                                className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                          {getCategoryLabel(expense)}
+                        </span>
+                        <span className="text-base font-bold text-rose-600">
+                          {formatCurrency(getAmountValue(expense.amount), expense.currency)}
+                        </span>
+                      </div>
+                      {expense.note && (
+                        <p className="text-sm text-gray-700 mb-2 line-clamp-2">{expense.note}</p>
+                      )}
+                      <div className="pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">{formatAddedBy(expense)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+      </div>
+
+      {/* Desktop: Table Layout */}
+      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className={hasExpenses ? 'p-0' : 'py-16 text-center'}>
           {!hasExpenses ? (
             <p className="text-gray-500">{TR.expenses.noExpenses}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Tarih
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    At
+                  </th>
+                  {user?.role === 'TRAINER' && (
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Eküri
+                    </th>
+                  )}
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Kategori
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Tutar
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Detay
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Ekleyen
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    İşlem
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredExpenses.length === 0 ? (
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      At
-                    </th>
-                    {user?.role === 'TRAINER' && (
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Eküri
-                      </th>
-                    )}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Kategori
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tutar
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Detay
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Ekleyen
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      İşlem
-                    </th>
+                    <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
+                      Seçilen filtrelerde gider bulunamadı
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredExpenses.length === 0 ? (
-                    <tr>
-                      <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
-                        Seçilen filtrelerde gider bulunamadı
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredExpenses.map((expense, index) => {
-                      const isStriped = index % 2 === 1
-                      const attachments = getAttachments(expense.photoUrl)
-                      return (
-                        <tr
-                          key={expense.id}
-                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50' : ''}`}
-                        >
+                ) : (
+                  filteredExpenses.map((expense, index) => {
+                    const isStriped = index % 2 === 1
+                    const attachments = getAttachments(expense.photoUrl)
+                    return (
+                      <tr
+                        key={expense.id}
+                        className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50' : ''}`}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {formatDateShort(expense.date)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            {expense.horse?.name || '-'}
+                          </span>
+                        </td>
+                        {user?.role === 'TRAINER' && (
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {formatDateShort(expense.date)}
+                            <span className="text-sm text-gray-700">
+                              {expense.horse?.stablemate?.name || '-'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {expense.horse?.name || '-'}
-                            </span>
-                          </td>
-                          {user?.role === 'TRAINER' && (
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <span className="text-sm text-gray-700">
-                                {expense.horse?.stablemate?.name || '-'}
-                              </span>
-                            </td>
+                        )}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                            {getCategoryLabel(expense)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-bold text-rose-600">
+                            {formatCurrency(getAmountValue(expense.amount), expense.currency)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {expense.note ? (
+                            <p className="text-sm text-gray-700">{expense.note}</p>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
                           )}
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
-                              {getCategoryLabel(expense)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm font-bold text-rose-600">
-                              {formatCurrency(getAmountValue(expense.amount), expense.currency)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {expense.note ? (
-                              <p className="text-sm text-gray-700">{expense.note}</p>
-                            ) : (
-                              <span className="text-sm text-gray-400">-</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-start gap-2">
+                            {attachments.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => openAttachmentViewer(attachments)}
+                                className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                title={`${attachments.length} ek görüntüle`}
+                              >
+                                <Paperclip className="h-4 w-4" />
+                              </button>
                             )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-start gap-2">
-                              {attachments.length > 0 && (
+                            {user && expense.addedById === user.id && (
+                              <>
                                 <button
                                   type="button"
-                                  onClick={() => openAttachmentViewer(attachments)}
-                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                  title={`${attachments.length} ek görüntüle`}
+                                  onClick={() => handleEditClick(expense)}
+                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                  title="Düzenle"
                                 >
-                                  <Paperclip className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4" />
                                 </button>
-                              )}
-                              {user && expense.addedById === user.id && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEditClick(expense)}
-                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                    title="Düzenle"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteClick(expense)}
-                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                    title="Sil"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteClick(expense)}
+                                  className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                  title="Sil"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
                           </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+            </div>
           )}
         </CardContent>
       </Card>

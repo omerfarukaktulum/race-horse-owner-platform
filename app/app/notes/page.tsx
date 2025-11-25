@@ -557,7 +557,6 @@ export default function NotesPage() {
             <Button
               type="button"
               variant="outline"
-              size="sm"
               onClick={() => setIsSearchOpen(true)}
               className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
             >
@@ -598,16 +597,115 @@ export default function NotesPage() {
 
         <div className="flex items-center gap-3 ml-auto">
           <Button
-            size="sm"
             onClick={handleAddNoteClick}
-            className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
           >
             Ekle
           </Button>
         </div>
       </div>
 
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden mt-6">
+            {!hasNotes ? (
+              <div className="px-4 py-16 text-center text-sm text-gray-500">
+                Henüz not eklenmemiş
+              </div>
+            ) : filteredNotes.length === 0 ? (
+              <div className="px-4 py-6 text-center text-sm text-gray-500">
+                Seçilen filtrelerde not bulunamadı
+              </div>
+            ) : (
+              <>
+                {filteredNotes.map((note) => {
+                  const isHighlighted = highlightedNoteId === note.id
+                  const attachments = getPhotoList(note.photoUrl)
+                  return (
+                    <div
+                      key={note.id}
+                      ref={
+                        isHighlighted
+                          ? (el) => {
+                              highlightedRowRef.current = el as any
+                            }
+                          : undefined
+                      }
+                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 ${
+                        isHighlighted
+                          ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
+                          : ''
+                      }`}
+                      style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatDateShort(note.date)}
+                            </span>
+                            <span className="text-sm font-medium text-indigo-600">
+                              {note.horse?.name || '-'}
+                            </span>
+                          </div>
+                          {user?.role === 'TRAINER' && note.horse?.stablemate?.name && (
+                            <span className="text-xs text-gray-500">
+                              {note.horse.stablemate.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          {attachments.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => openAttachmentViewer(attachments)}
+                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title={`${attachments.length} ek görüntüle`}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </button>
+                          )}
+                          {user && note.addedById === user.id && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(note)}
+                                className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                title="Düzenle"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(note)}
+                                className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {note.note && (
+                        <p className="text-sm text-gray-700 mb-2 line-clamp-3">{note.note}</p>
+                      )}
+                      {note.kiloValue !== null && note.kiloValue !== undefined && (
+                        <span className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-2 py-0.5 text-xs font-semibold">
+                          ⚖️ {note.kiloValue.toFixed(1)} kg
+                        </span>
+                      )}
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">{formatAddedBy(note)}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+      </div>
+
+      {/* Desktop: Table Layout */}
+      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
         <CardContent className="p-0 w-full min-w-0">
           <div className="overflow-x-auto w-full min-w-0">
             <table className="w-full min-w-full">

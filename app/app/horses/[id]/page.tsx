@@ -279,7 +279,7 @@ export default function HorseDetailPage() {
   const [showRightFade, setShowRightFade] = useState(true)
 
   const getFilterButtonClass = (hasActive: boolean) =>
-    `border-2 font-medium px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+    `border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
       hasActive
         ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
         : 'border-gray-300 text-gray-700 hover:border-gray-400'
@@ -682,7 +682,6 @@ useEffect(() => {
                 <div className="flex items-center gap-3">
                   <div ref={illnessesFilterButtonRef} className="relative">
                     <Button 
-                      size="sm"
                       onClick={() => {
                         illnessesFilterTriggerRef.current?.()
                       }}
@@ -694,9 +693,8 @@ useEffect(() => {
                     </Button>
                   </div>
                   <Button 
-                    size="sm"
                     onClick={() => setIsIllnessModalOpen(true)}
-                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     Ekle
                   </Button>
@@ -706,7 +704,6 @@ useEffect(() => {
                 <div className="flex items-center gap-3">
                   <div ref={expensesFilterButtonRef} className="relative">
                     <Button 
-                      size="sm"
                       onClick={() => {
                         filterTriggerRef.current?.()
                       }}
@@ -718,9 +715,8 @@ useEffect(() => {
                     </Button>
                   </div>
                   <Button 
-                    size="sm"
                     onClick={() => setIsExpenseModalOpen(true)}
-                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                   >
                     Ekle
                   </Button>
@@ -741,7 +737,6 @@ useEffect(() => {
             <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
               <div ref={illnessesFilterButtonRef} className="relative">
                 <Button 
-                  size="sm"
                   onClick={() => {
                     illnessesFilterTriggerRef.current?.()
                   }}
@@ -753,9 +748,8 @@ useEffect(() => {
                 </Button>
               </div>
               <Button 
-                size="sm"
                 onClick={() => setIsIllnessModalOpen(true)}
-                className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
               >
                 Ekle
               </Button>
@@ -767,7 +761,6 @@ useEffect(() => {
               <div className="flex items-center justify-between gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
                   <Button 
-                    size="sm"
                     onClick={() => {
                       filterTriggerRef.current?.()
                     }}
@@ -779,9 +772,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button 
-                  size="sm"
                   onClick={() => setIsExpenseModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Ekle
                 </Button>
@@ -797,14 +789,13 @@ useEffect(() => {
           {activeTab === 'races' && (
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={racesFilterButtonRef} className="relative">
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    racesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(racesFilterCount > 0)}
-                >
+                  <Button 
+                    onClick={() => {
+                      racesFilterTriggerRef.current?.()
+                    }}
+                    variant="outline"
+                    className={getFilterButtonClass(racesFilterCount > 0)}
+                  >
                   <Filter className="h-4 w-4" />
                   {renderFilterBadge(racesFilterCount)}
                 </Button>
@@ -817,7 +808,6 @@ useEffect(() => {
               <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
                 <div ref={gallopsFilterButtonRef} className="relative">
                   <Button 
-                    size="sm"
                     onClick={() => {
                       gallopsFilterTriggerRef.current?.()
                     }}
@@ -829,9 +819,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button
-                  size="sm"
                   onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                 >
                   İdman Planı
                 </Button>
@@ -840,7 +829,6 @@ useEffect(() => {
               <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={gallopsFilterButtonRef} className="relative">
                   <Button 
-                    size="sm"
                     onClick={() => {
                       gallopsFilterTriggerRef.current?.()
                     }}
@@ -852,9 +840,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button
-                  size="sm"
                   onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
                 >
                   İdman Planı
                 </Button>
@@ -865,7 +852,6 @@ useEffect(() => {
             <div className="flex items-center gap-3 w-full sm:w-auto sm:ml-auto mt-4 sm:mt-0">
               <div ref={statisticsFilterButtonRef} className="relative">
                 <Button 
-                  size="sm"
                   onClick={() => {
                     statisticsFilterTriggerRef.current?.()
                   }}
@@ -884,7 +870,6 @@ useEffect(() => {
               <div className="hidden sm:flex items-center gap-3 sm:ml-auto mt-4 sm:mt-0">
                 <div ref={notesFilterButtonRef} className="relative">
                   <Button 
-                    size="sm"
                     onClick={() => {
                       notesFilterTriggerRef.current?.()
                     }}
@@ -896,9 +881,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button 
-                  size="sm"
                   onClick={() => setIsNoteModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Ekle
                 </Button>
@@ -907,7 +891,6 @@ useEffect(() => {
               <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
                 <div ref={notesFilterButtonRef} className="relative">
                   <Button 
-                    size="sm"
                     onClick={() => {
                       notesFilterTriggerRef.current?.()
                     }}
@@ -919,9 +902,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button 
-                  size="sm"
                   onClick={() => setIsNoteModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Ekle
                 </Button>
@@ -946,9 +928,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button 
-                  size="sm"
                   onClick={() => setIsBannedMedicineModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Ekle
                 </Button>
@@ -969,9 +950,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 <Button 
-                  size="sm"
                   onClick={() => setIsBannedMedicineModalOpen(true)}
-                  className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                 >
                   Ekle
                 </Button>
