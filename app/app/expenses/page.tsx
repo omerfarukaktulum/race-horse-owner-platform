@@ -468,187 +468,187 @@ export default function ExpensesPage() {
       <div className="flex flex-col gap-2">
         {/* First line: Filter, Search on left, Ekle on right */}
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+        <div className="flex items-center gap-3">
+          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+                <Button
+                  variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                 className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                  hasActiveFilters
-                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
-              >
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
                 <Filter className="h-4 w-4" />
-                {hasActiveFilters && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
-                  </span>
-                )}
-              </Button>
-
-              {showFilterDropdown && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-gray-900">Filtreler</h3>
-                    <button
-                      onClick={() => setShowFilterDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Date Range Filter */}
-                  <div className="mb-4">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
-                    <div className="flex flex-wrap gap-2">
-                      {RANGE_OPTIONS.map(option => {
-                        const isActive = selectedRange === option.value
-                        return (
-                          <button
-                            key={option.value}
-                            onClick={() => {
-                              const nextValue = isActive ? null : option.value
-                              setSelectedRange(nextValue)
-                            }}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              isActive
-                                ? 'bg-[#6366f1] text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Category Filter */}
-                  {getUniqueCategories.length > 0 && (
-                    <div className="mb-4">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getUniqueCategories.map((category) => (
-                          <button
-                            key={category}
-                            onClick={() => toggleCategoryFilter(category)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              categoryFilters.includes(category)
-                                ? 'bg-[#6366f1] text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {category}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Added By Filter */}
-                  {getUniqueAddedBy.length > 0 && (
-                    <div className="mb-4">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getUniqueAddedBy.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => toggleAddedByFilter(option.value)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              addedByFilters.includes(option.value)
-                                ? 'bg-[#6366f1] text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Stablemate Filter (for trainers) */}
-                  {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
-                    <div className="mb-4">
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
-                      <div className="flex flex-wrap gap-2">
-                        {getUniqueStablemates.map((stablemate) => (
-                          <button
-                            key={stablemate}
-                            onClick={() => toggleStablemateFilter(stablemate)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                              stablemateFilters.includes(stablemate)
-                                ? 'bg-[#6366f1] text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {stablemate}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Clear Filters */}
-                  {hasActiveFilters && (
-                    <button
-                      onClick={() => {
-                        clearFilters()
-                        setShowFilterDropdown(false)
-                      }}
-                      className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                    >
-                      Filtreleri Temizle
-                    </button>
-                  )}
-                </div>
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
+                </span>
               )}
+            </Button>
+
+            {showFilterDropdown && (
+              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    onClick={() => setShowFilterDropdown(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map(option => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
             </div>
-            
-            {/* Search Button */}
-            {!isSearchOpen ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsSearchOpen(true)}
-                className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
-              >
-                <Search className="h-4 w-4 text-gray-600" />
-              </Button>
-            ) : (
-              <div className="relative w-48 sm:w-56">
-                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="At, kategori, detay ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
-                  autoFocus
-                  style={{ boxShadow: 'none' }}
-                  onFocus={(e) => {
-                    e.target.style.boxShadow = 'none'
-                    e.target.style.outline = 'none'
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.boxShadow = 'none'
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSearchOpen(false)
-                    setSearchQuery('')
-                  }}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+          </div>
+
+                {/* Category Filter */}
+                {getUniqueCategories.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Kategori</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueCategories.map((category) => (
+                        <button
+                          key={category}
+                          onClick={() => toggleCategoryFilter(category)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            categoryFilters.includes(category)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
+                    </div>
+              </div>
+                )}
+
+                {/* Added By Filter */}
+                {getUniqueAddedBy.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueAddedBy.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => toggleAddedByFilter(option.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            addedByFilters.includes(option.value)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+              </div>
+                )}
+
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          key={stablemate}
+                          onClick={() => toggleStablemateFilter(stablemate)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={() => {
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
               </div>
             )}
           </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+              <div className="relative w-48 sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="At, kategori, detay ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
 
           <Button
             onClick={() => setIsAddModalOpen(true)}
@@ -685,7 +685,7 @@ export default function ExpensesPage() {
               const attachments = getAttachments(expense.photoUrl)
               const handleCardClick = () => {
                 if (expense.horse?.id) {
-                  router.push(`/app/horses/${expense.horse.id}?tab=expenses&highlightExpense=${expense.id}`)
+                  router.push(`/app/horses/${expense.horse.id}?tab=info`)
                 }
               }
               return (
@@ -704,7 +704,7 @@ export default function ExpensesPage() {
                             <span className="text-sm font-medium text-indigo-600">
                               {expense.horse?.name || '-'}
                             </span>
-                          </div>
+            </div>
                           {user?.role === 'TRAINER' && expense.horse?.stablemate?.name && (
                             <span className="text-xs text-gray-500">
                               {expense.horse.stablemate.name}
@@ -772,7 +772,7 @@ export default function ExpensesPage() {
                 })}
               </>
             )}
-      </div>
+              </div>
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
@@ -781,131 +781,131 @@ export default function ExpensesPage() {
             <p className="text-gray-500">{TR.expenses.noExpenses}</p>
           ) : (
             <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Tarih
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    At
-                  </th>
-                  {user?.role === 'TRAINER' && (
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Eküri
-                    </th>
-                  )}
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Kategori
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Tutar
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Detay
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Ekleyen
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    İşlem
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredExpenses.length === 0 ? (
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
                   <tr>
-                    <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
-                      Seçilen filtrelerde gider bulunamadı
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      At
+                    </th>
+                    {user?.role === 'TRAINER' && (
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Eküri
+                      </th>
+                    )}
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Kategori
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tutar
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Detay
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Ekleyen
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      İşlem
+                    </th>
                   </tr>
-                ) : (
-                  filteredExpenses.map((expense, index) => {
-                    const isStriped = index % 2 === 1
-                    const attachments = getAttachments(expense.photoUrl)
-                    return (
-                      <tr
-                        key={expense.id}
-                        className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50' : ''}`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {formatDateShort(expense.date)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {expense.horse?.name || '-'}
-                          </span>
-                        </td>
-                        {user?.role === 'TRAINER' && (
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
+                        Seçilen filtrelerde gider bulunamadı
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredExpenses.map((expense, index) => {
+                      const isStriped = index % 2 === 1
+                      const attachments = getAttachments(expense.photoUrl)
+                      return (
+                        <tr
+                          key={expense.id}
+                          className={`transition-colors hover:bg-indigo-50/50 ${isStriped ? 'bg-gray-50' : ''}`}
+                        >
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm text-gray-700">
-                              {expense.horse?.stablemate?.name || '-'}
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatDateShort(expense.date)}
                             </span>
                           </td>
-                        )}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
-                            {getCategoryLabel(expense)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-bold text-rose-600">
-                            {formatCurrency(getAmountValue(expense.amount), expense.currency)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {expense.note ? (
-                            <p className="text-sm text-gray-700">{expense.note}</p>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {expense.horse?.name || '-'}
+                            </span>
+                          </td>
+                          {user?.role === 'TRAINER' && (
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className="text-sm text-gray-700">
+                                {expense.horse?.stablemate?.name || '-'}
+                              </span>
+                            </td>
                           )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-start gap-2">
-                            {attachments.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => openAttachmentViewer(attachments)}
-                                className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                title={`${attachments.length} ek görüntüle`}
-                              >
-                                <Paperclip className="h-4 w-4" />
-                              </button>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                              {getCategoryLabel(expense)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-rose-600">
+                              {formatCurrency(getAmountValue(expense.amount), expense.currency)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {expense.note ? (
+                              <p className="text-sm text-gray-700">{expense.note}</p>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
                             )}
-                            {user && expense.addedById === user.id && (
-                              <>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-start gap-2">
+                              {attachments.length > 0 && (
                                 <button
                                   type="button"
-                                  onClick={() => handleEditClick(expense)}
-                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                  title="Düzenle"
+                                  onClick={() => openAttachmentViewer(attachments)}
+                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  title={`${attachments.length} ek görüntüle`}
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Paperclip className="h-4 w-4" />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteClick(expense)}
-                                  className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                  title="Sil"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
+                              )}
+                              {user && expense.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(expense)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(expense)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
                           </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-            </div>
           )}
         </CardContent>
       </Card>

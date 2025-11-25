@@ -622,7 +622,7 @@ export default function NotesPage() {
                   const attachments = getPhotoList(note.photoUrl)
                   const handleCardClick = () => {
                     if (note.horse?.id) {
-                      router.push(`/app/horses/${note.horse.id}?tab=notes&highlightNote=${note.id}`)
+                      router.push(`/app/horses/${note.horse.id}?tab=info`)
                     }
                   }
                   return (

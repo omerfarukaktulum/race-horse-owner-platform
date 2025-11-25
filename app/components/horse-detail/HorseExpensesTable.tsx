@@ -319,8 +319,19 @@ export function HorseExpensesTable({
       })
     }
 
+    // Always include the highlighted expense, even if it would be filtered out
+    if (highlightExpenseId) {
+      const highlightedExpense = sortedExpenses.find(expense => expense.id === highlightExpenseId)
+      if (highlightedExpense && !filtered.some(expense => expense.id === highlightExpenseId)) {
+        // Add the highlighted expense to the filtered list in its correct sorted position
+        filtered = [...filtered, highlightedExpense].sort((a, b) => {
+          return new Date(b.date).getTime() - new Date(a.date).getTime()
+        })
+      }
+    }
+
     return filtered
-  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel])
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, highlightExpenseId])
 
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
@@ -418,10 +429,109 @@ export function HorseExpensesTable({
   const isEditModalVisible = isEditModalOpen && !!editingExpense
 
   useEffect(() => {
-    if (highlightExpenseId && highlightedExpenseRowRef.current) {
-      highlightedExpenseRowRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!highlightExpenseId) return
+    
+    // Check if expense exists in the full list (not just filtered)
+    const hasHighlightedExpense = sortedExpenses.some(expense => expense.id === highlightExpenseId)
+    if (!hasHighlightedExpense) return
+    
+    // Use multiple attempts with increasing delays to ensure tab is active and content is rendered
+    const attemptScroll = (attempt = 0) => {
+      // Try to find element by ref first, then by data attribute as fallback
+      let element: HTMLDivElement | HTMLTableRowElement | null = highlightedExpenseRowRef.current
+      
+      if (!element) {
+        const found = document.querySelector(`[data-expense-id="${highlightExpenseId}"]`)
+        if (found && (found instanceof HTMLDivElement || found instanceof HTMLTableRowElement)) {
+          element = found
+        }
+      }
+      
+      if (element) {
+        // Check if element has dimensions (is rendered and visible)
+        const rect = element.getBoundingClientRect()
+        const isVisible = rect.width > 0 && rect.height > 0
+        
+        if (isVisible) {
+          // Clean up observer
+          if (observer) {
+            observer.disconnect()
+            observer = null
+          }
+          if (scrollTimeout) {
+            clearTimeout(scrollTimeout)
+            scrollTimeout = null
+          }
+          
+          // Scroll to element
+          setTimeout(() => {
+            element?.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            })
+          }, 100)
+          return true
+        }
+      }
+      
+      // Retry if element not found yet or not visible (max 25 attempts)
+      if (attempt < 25) {
+        const delay = Math.min(300 * (attempt + 1), 2000) // Cap at 2 seconds
+        scrollTimeout = setTimeout(() => attemptScroll(attempt + 1), delay)
+      } else {
+        // Set up MutationObserver as fallback to watch for element appearance
+        if (!observer) {
+          observer = new MutationObserver(() => {
+            const element = document.querySelector(`[data-expense-id="${highlightExpenseId}"]`)
+            if (element) {
+              const rect = element.getBoundingClientRect()
+              if (rect.width > 0 && rect.height > 0) {
+                element.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'start',
+                  inline: 'nearest'
+                })
+                observer.disconnect()
+                observer = null
+              }
+            }
+          })
+          
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+          })
+          
+          setTimeout(() => {
+            if (observer) {
+              observer.disconnect()
+              observer = null
+            }
+          }, 10000)
+        }
+      }
+      return false
     }
-  }, [highlightExpenseId, filteredExpenses.length])
+    
+    let observer: MutationObserver | null = null
+    let scrollTimeout: NodeJS.Timeout | null = null
+    
+    // Start first attempt after initial delay to allow tab switch and rendering
+    scrollTimeout = setTimeout(() => attemptScroll(), 1500)
+    
+    // Cleanup function
+    return () => {
+      if (observer) {
+        observer.disconnect()
+        observer = null
+      }
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout)
+        scrollTimeout = null
+      }
+    }
+  }, [highlightExpenseId, sortedExpenses])
 
   return (
     <>
@@ -613,6 +723,7 @@ export function HorseExpensesTable({
               return (
                 <div
                   key={expense.id}
+                  data-expense-id={expense.id}
                   ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
                   className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                     isHighlighted
@@ -686,116 +797,117 @@ export function HorseExpensesTable({
             <p className="text-gray-500">{TR.expenses.noExpenses}</p>
           ) : (
             <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Tarih
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Kategori
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Tutar
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Detay
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    Ekleyen
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    İşlem
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredExpenses.length === 0 ? (
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
-                      Seçilen tarih aralığında gider bulunamadı
-                    </td>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tarih
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Kategori
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Tutar
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Detay
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Ekleyen
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      İşlem
+                    </th>
                   </tr>
-                ) : (
-                  filteredExpenses.map((expense, index) => {
-                    const isStriped = index % 2 === 1
-                    const isHighlighted = highlightExpenseId === expense.id
-                    const attachments = getAttachments(expense.photoUrl)
-                    return (
-                      <tr
-                        key={expense.id}
-                        ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
-                        className={`transition-colors ${
-                          isHighlighted
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
+                        Seçilen tarih aralığında gider bulunamadı
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredExpenses.map((expense, index) => {
+                      const isStriped = index % 2 === 1
+                      const isHighlighted = highlightExpenseId === expense.id
+                      const attachments = getAttachments(expense.photoUrl)
+                      return (
+                        <tr
+                          key={expense.id}
+                          data-expense-id={expense.id}
+                          ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
+                          className={`transition-colors ${
+                            isHighlighted
                             ? 'bg-indigo-50 text-indigo-900 rounded-xl'
                             : `${isStriped ? 'bg-gray-50/30' : 'bg-white'} hover:bg-indigo-50/50`
-                        }`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {formatDateShort(expense.date)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
-                            {getCategoryLabel(expense)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm font-bold text-rose-600">
-                            {formatCurrency(getAmountValue(expense.amount), expense.currency)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {expense.note ? (
-                            <p className="text-sm text-gray-700">{expense.note}</p>
-                          ) : (
-                            <span className="text-sm text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-start gap-2">
-                            {attachments.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => openAttachmentViewer(attachments)}
-                                className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
-                                title={`${attachments.length} ek görüntüle`}
-                              >
-                                <Paperclip className="h-4 w-4" />
-                              </button>
+                          }`}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {formatDateShort(expense.date)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2.5 py-0.5 text-xs font-semibold">
+                              {getCategoryLabel(expense)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold text-rose-600">
+                              {formatCurrency(getAmountValue(expense.amount), expense.currency)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {expense.note ? (
+                              <p className="text-sm text-gray-700">{expense.note}</p>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
                             )}
-                            {user && expense.addedById === user.id && (
-                              <>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm text-gray-700">{formatAddedBy(expense)}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-start gap-2">
+                              {attachments.length > 0 && (
                                 <button
                                   type="button"
-                                  onClick={() => handleEditClick(expense)}
-                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                  title="Düzenle"
+                                  onClick={() => openAttachmentViewer(attachments)}
+                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  title={`${attachments.length} ek görüntüle`}
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Paperclip className="h-4 w-4" />
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteClick(expense)}
-                                  className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
-                                  title="Sil"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+                              )}
+                              {user && expense.addedById === user.id && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditClick(expense)}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Düzenle"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteClick(expense)}
+                                    className="p-2 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-800 transition-colors shadow-sm"
+                                    title="Sil"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           )}
         </CardContent>
