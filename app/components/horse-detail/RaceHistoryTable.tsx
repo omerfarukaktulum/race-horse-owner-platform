@@ -686,18 +686,20 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                         href={race.videoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                        title="Video"
+                        className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                        title="Yarış videosu"
                       >
                         <Video className="h-4 w-4" />
+                        <span className="text-xs font-medium">Yarış videosu</span>
                       </a>
                     )}
                     <button
                       type="button"
                       onClick={() => setSelectedRaceForGallops(race)}
-                      className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-medium"
+                      className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-medium flex items-center gap-1"
                       title="Koşu İdmanları"
                     >
+                      <Activity className="h-4 w-4" />
                       Yarış öncesi idmanlar
                     </button>
                   </div>
@@ -1082,21 +1084,20 @@ function RaceGallopsModal({
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
-          {filteredGallops.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center px-6">
-              <Activity className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile: Card Layout */}
-              <div className="md:hidden mb-4 flex justify-center w-full px-6">
-                <div className="w-full">
-                  <div 
-                    className="overflow-y-auto overflow-x-hidden px-2 py-2"
-                    style={{ maxHeight: '500px' }}
-                  >
-                    {filteredGallops.map((gallop) => {
+          {/* Mobile: Card Layout */}
+          <div className="md:hidden mb-4 flex justify-center w-full px-6">
+            <div className="w-full">
+              <div 
+                className="overflow-y-auto overflow-x-hidden px-2 py-2"
+                style={{ maxHeight: '500px' }}
+              >
+                {filteredGallops.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Activity className="h-12 w-12 text-gray-400 mb-4" />
+                    <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
+                  </div>
+                ) : (
+                  filteredGallops.map((gallop) => {
                       const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
                       const statusLabel = formatGallopStatus(gallop.status)
                       
@@ -1166,13 +1167,20 @@ function RaceGallopsModal({
                           )}
                         </div>
                       )
-                    })}
-                  </div>
+                    })
+                  )}
                 </div>
               </div>
+            </div>
 
-              {/* Desktop: Table Layout */}
-              <div className="hidden md:block overflow-x-auto px-6 py-4">
+          {/* Desktop: Table Layout */}
+          {filteredGallops.length === 0 ? (
+            <div className="hidden md:flex flex-col items-center justify-center py-12 text-center px-6">
+              <Activity className="h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
+            </div>
+          ) : (
+            <div className="hidden md:block overflow-x-auto px-6 py-4">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
                     <tr>
@@ -1263,11 +1271,10 @@ function RaceGallopsModal({
                           </td>
                         </tr>
                       )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </>
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </DialogContent>
