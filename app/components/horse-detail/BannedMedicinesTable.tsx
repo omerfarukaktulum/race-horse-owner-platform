@@ -104,7 +104,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
-  const highlightedMedicineRowRef = useRef<HTMLTableRowElement | null>(null)
+  const highlightedMedicineRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
   const [editingMedicine, setEditingMedicine] = useState<BannedMedicine | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [medicineToDelete, setMedicineToDelete] = useState<BannedMedicine | null>(null)
@@ -140,12 +140,35 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
 
   // Scroll to highlighted medicine row
   useEffect(() => {
-    if (highlightBannedMedicineId && highlightedMedicineRowRef.current) {
-      // Use setTimeout to ensure the row is rendered before scrolling
-      setTimeout(() => {
-        highlightedMedicineRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }, 100)
+    if (!highlightBannedMedicineId) return
+    
+    const attemptScroll = (attempt = 0) => {
+      let element: HTMLDivElement | HTMLTableRowElement | null = highlightedMedicineRowRef.current
+      
+      if (!element) {
+        const found = document.querySelector(`[data-medicine-id="${highlightBannedMedicineId}"]`)
+        if (found && (found instanceof HTMLDivElement || found instanceof HTMLTableRowElement)) {
+          element = found
+        }
+      }
+      
+      if (element) {
+        const rect = element.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          setTimeout(() => {
+            element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 100)
+          return true
+        }
+      }
+      
+      if (attempt < 10) {
+        setTimeout(() => attemptScroll(attempt + 1), 200 * (attempt + 1))
+      }
+      return false
     }
+    
+    setTimeout(() => attemptScroll(), 500)
   }, [highlightBannedMedicineId, medicines.length])
 
   // Click outside handler
@@ -371,7 +394,109 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
         })()}
       </div>
 
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden">
+        {!hasMedicines ? (
+          <div className="px-4 py-16 text-center text-sm text-gray-500">
+            Henüz ilaç kaydı eklenmemiş
+          </div>
+        ) : filteredMedicines.length === 0 ? (
+          <div className="px-4 py-6 text-center text-sm text-gray-500">
+            Seçilen filtrelerde ilaç kaydı bulunamadı
+          </div>
+        ) : (
+          <>
+            {filteredMedicines.map((medicine) => {
+              const attachments = getPhotoList(medicine.photoUrl)
+              const remainingDays = calculateRemainingDays(medicine.givenDate, medicine.waitDays)
+              const isExpired = remainingDays === 0
+              const isHighlighted = highlightBannedMedicineId === medicine.id
+              
+              return (
+                <div
+                  key={medicine.id}
+                  data-medicine-id={medicine.id}
+                  ref={isHighlighted ? (el) => (highlightedMedicineRowRef.current = el) : undefined}
+                  className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
+                    isHighlighted
+                      ? 'rounded-2xl border-2 border-indigo-400'
+                      : 'rounded-lg'
+                  }`}
+                  style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatDateShort(medicine.givenDate)}
+                    </span>
+                    <div className="flex gap-1">
+                      {attachments.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => openAttachmentViewer(attachments)}
+                          className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          title={`${attachments.length} ek görüntüle`}
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </button>
+                      )}
+                      {user && medicine.addedById === user.id && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick(medicine)}
+                            className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                            title="Düzenle"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(medicine)}
+                            className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-base font-semibold text-gray-900">
+                      {medicine.medicineName}
+                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-xs text-gray-600">
+                        Bekleme: {medicine.waitDays} gün
+                      </span>
+                      <span className={`text-sm font-semibold ${
+                        isExpired 
+                          ? 'text-green-600' 
+                          : remainingDays <= 3 
+                            ? 'text-red-600' 
+                            : 'text-orange-600'
+                      }`}>
+                        {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
+                      </span>
+                    </div>
+                  </div>
+                  {medicine.note && (
+                    <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                      {medicine.note.replace(/\s*\n+\s*/g, ' ').trim()}
+                    </p>
+                  )}
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-xs text-gray-500">{formatAddedBy(medicine)}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </>
+        )}
+      </div>
+
+      {/* Desktop: Table Layout */}
+      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
         <CardContent className={hasMedicines ? 'p-0' : 'py-16 text-center'}>
           {!hasMedicines ? (
             <p className="text-gray-500">Henüz ilaç kaydı eklenmemiş</p>
