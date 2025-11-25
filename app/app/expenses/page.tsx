@@ -618,7 +618,7 @@ export default function ExpensesPage() {
                 <Search className="h-4 w-4 text-gray-600" />
               </Button>
             ) : (
-              <div className="relative w-52">
+              <div className="relative w-56">
                 <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                 <input
                   type="text"
