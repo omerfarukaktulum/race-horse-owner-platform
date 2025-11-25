@@ -653,37 +653,73 @@ export function HorseIllnessesTable({
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        {photos.length > 0 && (
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex gap-1">
+                          {photos.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => openAttachmentViewer(photos)}
+                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title={`${photos.length} ek görüntüle`}
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canEdit && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(illness)}
+                                className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                title="Düzenle"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(illness)}
+                                className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">
+                            {operations.length} müdahale
+                          </span>
+                          {hasOperations && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newExpanded = new Set(expandedIllnesses)
+                                if (isExpanded) {
+                                  newExpanded.delete(illness.id)
+                                } else {
+                                  newExpanded.add(illness.id)
+                                }
+                                setExpandedIllnesses(newExpanded)
+                              }}
+                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                              title={isExpanded ? 'Gizle' : 'Göster'}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => openAttachmentViewer(photos)}
-                            className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title={`${photos.length} ek görüntüle`}
+                            onClick={() => {
+                              setIllnessForOperation(illness)
+                              setIsOperationModalOpen(true)
+                            }}
+                            className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                            title="Müdahale Ekle"
                           >
-                            <Paperclip className="h-4 w-4" />
+                            <Plus className="h-4 w-4" />
                           </button>
-                        )}
-                        {canEdit && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => handleEditClick(illness)}
-                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                              title="Düzenle"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClick(illness)}
-                              className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                              title="Sil"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
+                        </div>
                       </div>
                     </div>
                     {illness.detail && (
@@ -691,42 +727,6 @@ export function HorseIllnessesTable({
                         {illness.detail}
                       </p>
                     )}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">
-                          {operations.length} müdahale
-                        </span>
-                        {hasOperations && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newExpanded = new Set(expandedIllnesses)
-                              if (isExpanded) {
-                                newExpanded.delete(illness.id)
-                              } else {
-                                newExpanded.add(illness.id)
-                              }
-                              setExpandedIllnesses(newExpanded)
-                            }}
-                            className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                            title={isExpanded ? 'Gizle' : 'Göster'}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIllnessForOperation(illness)
-                            setIsOperationModalOpen(true)
-                          }}
-                          className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                          title="Müdahale Ekle"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
                     {isExpanded && hasOperations && (
                       <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                         {operations.map((operation, opIndex) => {

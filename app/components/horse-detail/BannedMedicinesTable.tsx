@@ -433,7 +433,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                         <button
                           type="button"
                           onClick={() => openAttachmentViewer(attachments)}
-                          className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                          className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                           title={`${attachments.length} ek görüntüle`}
                         >
                           <Paperclip className="h-4 w-4" />
@@ -593,7 +593,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                                 <button
                                   type="button"
                                   onClick={() => openAttachmentViewer(attachments)}
-                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                   title={`${attachments.length} ek görüntüle`}
                                 >
                                   <Paperclip className="h-4 w-4" />
