@@ -614,10 +614,10 @@ export function HorseExpensesTable({
                 <div
                   key={expense.id}
                   ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
-                  className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4 ${
+                  className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                     isHighlighted
-                      ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
-                      : ''
+                      ? 'rounded-2xl border-2 border-indigo-400'
+                      : 'rounded-lg'
                   }`}
                   style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                 >
@@ -727,7 +727,7 @@ export function HorseExpensesTable({
                         ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
                         className={`transition-colors ${
                           isHighlighted
-                            ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'
+                            ? 'bg-indigo-50 text-indigo-900 rounded-xl'
                             : `${isStriped ? 'bg-gray-50/30' : 'bg-white'} hover:bg-indigo-50/50`
                         }`}
                       >

@@ -563,7 +563,7 @@ export default function NotesPage() {
               <Search className="h-4 w-4 text-gray-600" />
             </Button>
           ) : (
-            <div className="relative w-56">
+            <div className="relative w-48 sm:w-56">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <input
                 type="text"
@@ -620,6 +620,11 @@ export default function NotesPage() {
                 {filteredNotes.map((note) => {
                   const isHighlighted = highlightedNoteId === note.id
                   const attachments = getPhotoList(note.photoUrl)
+                  const handleCardClick = () => {
+                    if (note.horse?.id) {
+                      router.push(`/app/horses/${note.horse.id}?tab=notes&highlightNote=${note.id}`)
+                    }
+                  }
                   return (
                     <div
                       key={note.id}
@@ -630,12 +635,13 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 ${
+                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer ${
                         isHighlighted
                           ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
                           : ''
                       }`}
                       style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                      onClick={handleCardClick}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
@@ -657,7 +663,10 @@ export default function NotesPage() {
                           {attachments.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => openAttachmentViewer(attachments)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openAttachmentViewer(attachments)
+                              }}
                               className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                               title={`${attachments.length} ek görüntüle`}
                             >
@@ -668,7 +677,10 @@ export default function NotesPage() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => handleEditClick(note)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleEditClick(note)
+                                }}
                                 className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                                 title="Düzenle"
                               >
@@ -676,7 +688,10 @@ export default function NotesPage() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteClick(note)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteClick(note)
+                                }}
                                 className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
                                 title="Sil"
                               >

@@ -38,6 +38,7 @@ interface Props {
   onFilterDropdownChange?: (show: boolean) => void
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
+  highlightNoteId?: string
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -84,7 +85,7 @@ function formatAddedBy(note: HorseNote) {
   return roleLabel || profileName || 'Bilinmiyor'
 }
 
-export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange }: Props) {
+export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightNoteId }: Props) {
   const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
@@ -464,11 +465,21 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
               ) : (
                 <>
                   {filteredNotes.map((note) => {
+                    const isHighlighted = highlightNoteId === note.id
                     const attachments = getPhotoList(note.photoUrl)
                     return (
                       <div
                         key={note.id}
-                        className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3"
+                        ref={isHighlighted ? (el) => {
+                          if (el) {
+                            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+                          }
+                        } : undefined}
+                        className={`bg-indigo-50/30 border-0 p-4 mb-3 ${
+                          isHighlighted
+                            ? 'rounded-2xl border-2 border-indigo-400'
+                            : 'rounded-lg'
+                        }`}
                         style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                       >
                         <div className="flex items-start justify-between mb-2">
@@ -559,12 +570,20 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                   ) : (
                     filteredNotes.map((note, index) => {
                       const isStriped = index % 2 === 1
+                      const isHighlighted = highlightNoteId === note.id
                       const attachments = getPhotoList(note.photoUrl)
                       return (
                         <tr
                           key={note.id}
+                          ref={isHighlighted ? (el) => {
+                            if (el) {
+                              setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100)
+                            }
+                          } : undefined}
                           className={`transition-colors hover:bg-indigo-50/50 ${
-                            isStriped ? 'bg-gray-50/30' : ''
+                            isHighlighted
+                              ? 'bg-indigo-50 text-indigo-900 rounded-xl'
+                              : isStriped ? 'bg-gray-50/30' : ''
                           }`}
                         >
                           <td className="px-4 py-3 whitespace-nowrap">

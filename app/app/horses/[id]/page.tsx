@@ -242,6 +242,7 @@ export default function HorseDetailPage() {
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
   const highlightExpenseId = searchParams?.get('highlightExpense') || undefined
   const highlightBannedMedicineId = searchParams?.get('highlightBannedMedicine') || undefined
+  const highlightNoteId = searchParams?.get('highlightNote') || undefined
 
   useEffect(() => {
     const tabParam = searchParams?.get('tab')
@@ -1095,6 +1096,7 @@ useEffect(() => {
             onFilterDropdownChange={setShowNotesFilter}
             filterDropdownContainerRef={notesFilterButtonRef}
             onActiveFiltersChange={setNotesFilterCount}
+            highlightNoteId={highlightNoteId}
           />
         </TabsContent>
       </Tabs>
