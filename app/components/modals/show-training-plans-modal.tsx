@@ -73,6 +73,14 @@ function calculateDaysUntil(planDate: string): string {
   }
 }
 
+function isPastPlan(planDate: string): boolean {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const plan = new Date(planDate)
+  plan.setHours(0, 0, 0, 0)
+  return plan < today
+}
+
 export function ShowTrainingPlansModal({
   open,
   onClose,
@@ -103,9 +111,25 @@ export function ShowTrainingPlansModal({
         throw new Error('İdman planları yüklenemedi')
       }
       const data = await response.json()
-      // Sort by date ascending (future dates first)
+      // Sort: future plans first (ascending), then past plans (ascending) at the bottom
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
       const sorted = (data.plans || []).sort((a: TrainingPlan, b: TrainingPlan) => {
-        return new Date(a.planDate).getTime() - new Date(b.planDate).getTime()
+        const dateA = new Date(a.planDate)
+        dateA.setHours(0, 0, 0, 0)
+        const dateB = new Date(b.planDate)
+        dateB.setHours(0, 0, 0, 0)
+        
+        const isAPast = dateA < today
+        const isBPast = dateB < today
+        
+        // If one is past and one is future, future comes first
+        if (isAPast && !isBPast) return 1
+        if (!isAPast && isBPast) return -1
+        
+        // If both are past or both are future, sort by date ascending
+        return dateA.getTime() - dateB.getTime()
       })
       setPlans(sorted)
     } catch (error: any) {
@@ -199,100 +223,185 @@ export function ShowTrainingPlansModal({
                     <p className="text-gray-500 text-lg">Henüz idman planı eklenmemiş</p>
                   </div>
                 ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 border-b-2 border-gray-200">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Zamanlama
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Hipodrom
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Mesafe
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Not
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Ekleyen
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {plans.map((plan, index) => {
-                    const isStriped = index % 2 === 1
-                    return (
-                      <tr
-                        key={plan.id}
-                        className={`transition-colors ${
-                          isStriped ? 'bg-gray-50' : 'bg-white'
-                        } hover:bg-indigo-50/50`}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            {formatDateShort(plan.planDate)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">
-                            {calculateDaysUntil(plan.planDate)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">
-                            {plan.racecourse?.name || '-'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">
-                            {plan.distance === 'Kenter' || plan.distance === 'Tırıs' 
-                              ? plan.distance 
-                              : `${plan.distance}m`}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-sm text-gray-700">
-                            {plan.note || '-'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-sm text-gray-700">
-                            {formatAddedBy(plan)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleEdit(plan)}
-                              className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded transition-colors"
-                              title="Düzenle"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(plan.id)}
-                              disabled={isDeleting === plan.id}
-                              className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-                              title="Sil"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                  <>
+                    {/* Mobile: Card Layout */}
+                    <div className="md:hidden space-y-3">
+                      {plans.map((plan) => {
+                        const isPast = isPastPlan(plan.planDate)
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`border-0 p-4 rounded-lg ${
+                              isPast ? 'bg-green-50/50' : 'bg-indigo-50/30'
+                            }`}
+                            style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-gray-900">
+                                  {formatDateShort(plan.planDate)}
+                                </span>
+                                <span className="text-sm text-gray-700">
+                                  {calculateDaysUntil(plan.planDate)}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => handleEdit(plan)}
+                                  disabled={isPast}
+                                  className={`p-1.5 rounded-md transition-colors ${
+                                    isPast
+                                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                      : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                                  }`}
+                                  title={isPast ? 'Geçmiş planlar düzenlenemez' : 'Düzenle'}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(plan.id)}
+                                  disabled={isDeleting === plan.id}
+                                  className="p-1.5 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                                  title="Sil"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {plan.racecourse?.name && (
+                                <span className="text-sm text-gray-700">
+                                  {plan.racecourse.name}
+                                </span>
+                              )}
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                {plan.distance === 'Kenter' || plan.distance === 'Tırıs' 
+                                  ? plan.distance 
+                                  : `${plan.distance}m`}
+                              </span>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-                </div>
+                          
+                          {plan.note && (
+                            <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                              {plan.note}
+                            </p>
+                          )}
+                          
+                          <div className="pt-2 border-t border-gray-100">
+                            <span className="text-xs text-gray-500">{formatAddedBy(plan)}</span>
+                          </div>
+                        </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Desktop: Table Layout */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 border-b-2 border-gray-200">
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Tarih
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Zamanlama
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Hipodrom
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Mesafe
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Not
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              Ekleyen
+                            </th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                              İşlem
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {plans.map((plan, index) => {
+                            const isStriped = index % 2 === 1
+                            const isPast = isPastPlan(plan.planDate)
+                            return (
+                              <tr
+                                key={plan.id}
+                                className={`transition-colors ${
+                                  isPast
+                                    ? isStriped ? 'bg-green-50/50' : 'bg-green-50/30'
+                                    : isStriped ? 'bg-gray-50' : 'bg-white'
+                                } hover:bg-indigo-50/50`}
+                              >
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {formatDateShort(plan.planDate)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="text-sm text-gray-700">
+                                    {calculateDaysUntil(plan.planDate)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="text-sm text-gray-700">
+                                    {plan.racecourse?.name || '-'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="text-sm text-gray-700">
+                                    {plan.distance === 'Kenter' || plan.distance === 'Tırıs' 
+                                      ? plan.distance 
+                                      : `${plan.distance}m`}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className="text-sm text-gray-700">
+                                    {plan.note || '-'}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap">
+                                  <span className="text-sm text-gray-700">
+                                    {formatAddedBy(plan)}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-center">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={() => handleEdit(plan)}
+                                      disabled={isPast}
+                                      className={`p-1.5 rounded transition-colors ${
+                                        isPast
+                                          ? 'text-gray-400 cursor-not-allowed'
+                                          : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
+                                      }`}
+                                      title={isPast ? 'Geçmiş planlar düzenlenemez' : 'Düzenle'}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(plan.id)}
+                                      disabled={isDeleting === plan.id}
+                                      className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                                      title="Sil"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             )}
