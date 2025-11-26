@@ -566,9 +566,225 @@ useEffect(() => {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        {/* Mobile: Fixed Header (tabs + buttons) */}
+        <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
+          {/* Tabs Menu */}
+          <div className="relative w-full mb-3">
+            {/* Left fade gradient */}
+            {showLeftFade && (
+              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
+            )}
+            
+            {/* Scrollable container */}
+            <div 
+              ref={mobileTabsContainerRef}
+              className="overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              <div className="flex gap-0 min-w-max">
+                {[
+                  { id: 'info' as const, label: 'At Bilgisi' },
+                  { id: 'pedigree' as const, label: 'Pedigri' },
+                  { id: 'races' as const, label: 'Koşular' },
+                  { id: 'gallops' as const, label: 'İdmanlar' },
+                  { id: 'statistics' as const, label: 'İstatistikler' },
+                  { id: 'illnesses' as const, label: 'Hastalıklar' },
+                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
+                  { id: 'expenses' as const, label: 'Giderler' },
+                  { id: 'notes' as const, label: 'Notlar' },
+                ].map(({ id, label }, index, array) => {
+                  const isActive = activeTab === id
+                  const isFirst = index === 0
+                  const isLast = index === array.length - 1
+                  return (
+                    <button
+                      key={id}
+                      ref={isActive ? activeTabButtonRef : null}
+                      onClick={() => handleTabChange(id)}
+                      className={`px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                        isActive
+                          ? `bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md rounded-sm ${isFirst ? 'rounded-l-md' : ''} ${isLast ? 'rounded-r-md' : ''}`
+                          : 'bg-white text-gray-700 hover:bg-gray-50 border-y border-l border-gray-200 first:rounded-l-md last:rounded-r-md last:border-r'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            
+            {/* Right fade gradient */}
+            {showRightFade && (
+              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10" />
+            )}
+          </div>
+
+          {/* Filter and Action Buttons */}
+          {(activeTab === 'illnesses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'races' || activeTab === 'statistics' || activeTab === 'banned-medicines' || activeTab === 'expenses') && (
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {activeTab === 'illnesses' && (
+                  <div ref={illnessesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        illnessesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(illnessesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(illnessesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'notes' && (
+                  <div ref={notesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        notesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(notesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(notesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'gallops' && (
+                  <div ref={gallopsFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        gallopsFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(gallopsFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(gallopsFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'races' && (
+                  <div ref={racesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        racesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(racesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(racesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'statistics' && (
+                  <div ref={statisticsFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        statisticsFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(statisticsFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(statisticsFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'banned-medicines' && (
+                  <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                    <Button 
+                      size="sm"
+                      onClick={() => {
+                        bannedMedicinesFilterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(bannedMedicinesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+                {activeTab === 'expenses' && (
+                  <div ref={expensesFilterButtonRef} className="relative">
+                    <Button 
+                      onClick={() => {
+                        filterTriggerRef.current?.()
+                      }}
+                      variant="outline"
+                      className={getFilterButtonClass(expensesFilterCount > 0)}
+                    >
+                      <Filter className="h-4 w-4" />
+                      {renderFilterBadge(expensesFilterCount)}
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Right side: Action buttons */}
+              <div className="flex items-center gap-3">
+                {activeTab === 'illnesses' && (
+                  <Button 
+                    onClick={() => setIsIllnessModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
+                {activeTab === 'expenses' && (
+                  <div className="flex flex-col items-end gap-2">
+                    <Button 
+                      onClick={() => setIsExpenseModalOpen(true)}
+                      className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                    >
+                      Ekle
+                    </Button>
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
+                      <p className="text-lg font-semibold text-indigo-600">
+                        {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {activeTab === 'notes' && (
+                  <Button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
+                {activeTab === 'gallops' && (
+                  <Button
+                    onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+                  >
+                    İdman Planı
+                  </Button>
+                )}
+                {activeTab === 'banned-medicines' && (
+                  <Button 
+                    onClick={() => setIsBannedMedicineModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile: Spacer for fixed header */}
+        <div className="md:hidden h-[180px]"></div>
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Mobile: Horizontal Scrollable Buttons */}
-          <div className="sm:hidden relative w-full -mx-4 px-4">
+          {/* Desktop: Horizontal Scrollable Buttons */}
+          <div className="hidden sm:block relative w-full -mx-4 px-4">
             {/* Left fade gradient */}
             {showLeftFade && (
               <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
@@ -841,150 +1057,153 @@ useEffect(() => {
             </div>
             )}
           </div>
-          {/* Mobile: Illnesses buttons */}
-          {activeTab === 'illnesses' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
-              <div ref={illnessesFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    illnessesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(illnessesFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(illnessesFilterCount)}
-                </Button>
-              </div>
-              <Button 
-                onClick={() => setIsIllnessModalOpen(true)}
-                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Ekle
-              </Button>
-            </div>
-          )}
-          {/* Mobile: Expenses buttons and total */}
-          {activeTab === 'expenses' && (
-            <div className="sm:hidden flex flex-col gap-3 mt-0">
-              <div className="flex items-center justify-between gap-3">
-                <div ref={expensesFilterButtonRef} className="relative">
-                  <Button 
-                    onClick={() => {
-                      filterTriggerRef.current?.()
-                    }}
-                    variant="outline"
-                    className={getFilterButtonClass(expensesFilterCount > 0)}
-                  >
-                    <Filter className="h-4 w-4" />
-                    {renderFilterBadge(expensesFilterCount)}
-                  </Button>
-                </div>
-                <Button 
-                  onClick={() => setIsExpenseModalOpen(true)}
-                  className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                >
-                  Ekle
-                </Button>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
-                <p className="text-lg font-semibold text-indigo-600">
-                  {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
-                </p>
-              </div>
-            </div>
-          )}
-          {/* Mobile: Notes buttons */}
-          {activeTab === 'notes' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
-              <div ref={notesFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    notesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(notesFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(notesFilterCount)}
-                </Button>
-              </div>
-              <Button 
-                onClick={() => setIsNoteModalOpen(true)}
-                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Ekle
-              </Button>
-            </div>
-          )}
-          {/* Mobile: Banned Medicines buttons */}
-          {activeTab === 'banned-medicines' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
-              <div ref={bannedMedicinesFilterButtonRef} className="relative">
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    bannedMedicinesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(bannedMedicinesFilterCount)}
-                </Button>
-              </div>
-              <Button 
-                onClick={() => setIsBannedMedicineModalOpen(true)}
-                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-              >
-                Ekle
-              </Button>
-            </div>
-          )}
-          {/* Mobile: Races buttons */}
-          {activeTab === 'races' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
-              <div ref={racesFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    racesFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(racesFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(racesFilterCount)}
-                </Button>
-              </div>
-            </div>
-          )}
-          {/* Mobile: Gallops buttons */}
-          {activeTab === 'gallops' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
-              <div ref={gallopsFilterButtonRef} className="relative">
-                <Button 
-                  onClick={() => {
-                    gallopsFilterTriggerRef.current?.()
-                  }}
-                  variant="outline"
-                  className={getFilterButtonClass(gallopsFilterCount > 0)}
-                >
-                  <Filter className="h-4 w-4" />
-                  {renderFilterBadge(gallopsFilterCount)}
-                </Button>
-              </div>
-              <Button
-                onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-              >
-                İdman Planı
-              </Button>
-            </div>
-          )}
         </div>
 
-        <TabsContent value="info" className="mt-6">
+        {/* Mobile: Scrollable Content Area */}
+        <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+          <TabsContent value="info" className="mt-0">
+            <HorseMetadataCard horse={horseMetadata} />
+          </TabsContent>
+
+          <TabsContent value="pedigree" className="mt-0">
+            <PedigreeTree horse={pedigreeData} />
+          </TabsContent>
+
+          <TabsContent value="races" className="mt-0">
+            <RaceHistoryTable 
+              races={horse.raceHistory || []}
+              gallops={horse.gallops || []}
+              hideButtons={true}
+              onFilterTriggerReady={(trigger) => {
+                racesFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showRacesFilter}
+              onFilterDropdownChange={setShowRacesFilter}
+              filterDropdownContainerRef={racesFilterButtonRef}
+              onActiveFiltersChange={setRacesFilterCount}
+              highlightRaceId={highlightRaceId}
+            />
+          </TabsContent>
+
+          <TabsContent value="gallops" className="mt-0">
+            <GallopsTable 
+              gallops={horse.gallops || []}
+              hideButtons={true}
+              horseId={horse.id}
+              horseName={horse.name}
+              onRefresh={fetchHorse}
+              onFilterTriggerReady={(trigger) => {
+                gallopsFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showGallopsFilter}
+              onFilterDropdownChange={setShowGallopsFilter}
+              filterDropdownContainerRef={gallopsFilterButtonRef}
+              onActiveFiltersChange={setGallopsFilterCount}
+              highlightGallopId={highlightGallopId}
+            />
+          </TabsContent>
+
+          <TabsContent value="banned-medicines" className="mt-0">
+            <BannedMedicinesTable 
+              medicines={horse.bannedMedicines || []}
+              horseId={horse.id}
+              horseName={horse.name}
+              onRefresh={fetchHorse}
+              hideButtons={true}
+              onFilterTriggerReady={(trigger) => {
+                bannedMedicinesFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showBannedMedicinesFilter}
+              onFilterDropdownChange={setShowBannedMedicinesFilter}
+              filterDropdownContainerRef={bannedMedicinesFilterButtonRef}
+              onActiveFiltersChange={setBannedMedicinesFilterCount}
+              highlightBannedMedicineId={highlightBannedMedicineId}
+            />
+          </TabsContent>
+
+          <TabsContent value="statistics" className="mt-0">
+            <StatisticsCharts 
+              races={horse.raceHistory || []} 
+              expenses={expensesData}
+              notes={horse.notes?.map((n) => ({
+                id: n.id,
+                date: n.date,
+                kiloValue: n.kiloValue,
+              })) || []}
+              hideButtons={true}
+              showExpenseCategoryDistribution
+              onFilterTriggerReady={(trigger) => {
+                statisticsFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showStatisticsFilter}
+              onFilterDropdownChange={setShowStatisticsFilter}
+              filterDropdownContainerRef={statisticsFilterButtonRef}
+              onActiveFiltersChange={setStatisticsFilterCount}
+            />
+          </TabsContent>
+
+          <TabsContent value="illnesses" className="mt-0">
+            <HorseIllnessesTable 
+              illnesses={horse.illnesses || []}
+              horseId={horse.id}
+              horseName={horse.name}
+              onRefresh={fetchHorse}
+              hideButtons={true}
+              onFilterTriggerReady={(trigger) => {
+                illnessesFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showIllnessesFilter}
+              onFilterDropdownChange={setShowIllnessesFilter}
+              filterDropdownContainerRef={illnessesFilterButtonRef}
+              onActiveFiltersChange={setIllnessesFilterCount}
+            />
+          </TabsContent>
+
+          <TabsContent value="expenses" className="mt-0">
+            <HorseExpensesTable 
+              expenses={horse.expenses || []}
+              onAddExpense={() => setIsExpenseModalOpen(true)}
+              horseId={horse.id}
+              horseName={horse.name}
+              onRefresh={fetchHorse}
+              hideButtons={true}
+              onFilterTriggerReady={(trigger) => {
+                filterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showExpensesFilter}
+              onFilterDropdownChange={setShowExpensesFilter}
+              filterDropdownContainerRef={expensesFilterButtonRef}
+              onActiveFiltersChange={setExpensesFilterCount}
+              highlightExpenseId={highlightExpenseId}
+              onVisibleTotalChange={(total, currency) => {
+                setVisibleExpenseTotal(total)
+                setVisibleExpenseCurrency(currency)
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-0">
+            <HorseNotesList 
+              notes={horse.notes || []}
+              horseId={horse.id}
+              horseName={horse.name}
+              onRefresh={fetchHorse}
+              hideButtons={true}
+              onFilterTriggerReady={(trigger) => {
+                notesFilterTriggerRef.current = trigger
+              }}
+              showFilterDropdown={showNotesFilter}
+              onFilterDropdownChange={setShowNotesFilter}
+              filterDropdownContainerRef={notesFilterButtonRef}
+              onActiveFiltersChange={setNotesFilterCount}
+              highlightNoteId={highlightNoteId}
+            />
+          </TabsContent>
+        </div>
+
+        {/* Desktop: Content Area */}
+        <div className="hidden md:block">
+          <TabsContent value="info" className="mt-6">
           <HorseMetadataCard horse={horseMetadata} />
         </TabsContent>
 
@@ -1122,6 +1341,7 @@ useEffect(() => {
             highlightNoteId={highlightNoteId}
           />
         </TabsContent>
+        </div>
       </Tabs>
 
       {/* Modals */}

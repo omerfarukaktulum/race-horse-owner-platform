@@ -1074,30 +1074,30 @@ export function StatisticsCharts({
   return (
     <div className="w-full min-w-0">
       {/* Mobile: Fixed Header (filter + category buttons) */}
-      {!hideButtons && (
+        {!hideButtons && (
         <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2 bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
           {/* Filter button */}
           <div className="mb-3">
             <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
-              <Button
-                variant="outline"
-                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                  hasActiveFilters
-                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                {hasActiveFilters && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+              hasActiveFilters
+                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <Filter className="h-4 w-4" />
+            {hasActiveFilters && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
 
               {showFilterDropdown && (
-                <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -1183,38 +1183,38 @@ export function StatisticsCharts({
             </div>
               )}
             </div>
-          </div>
+      </div>
 
           {/* Category Navigation Buttons */}
           <div className="w-full overflow-x-auto pb-2 -mx-4 px-4">
-            <div className="flex gap-2 min-w-max">
-              {[
-                { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
-                { id: 'pist' as const, label: 'Pist', icon: Layers },
-                { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
-                { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
-                { id: 'jokey' as const, label: 'Jokey', icon: Users },
-                { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
-                { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
-              ].map(({ id, label, icon: Icon }) => {
-                const isActive = selectedCategory === id
-                return (
-                  <button
-                    key={id}
-                    onClick={() => setSelectedCategory(id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                      isActive
-                        ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    <span>{label}</span>
-                  </button>
-                )
-              })}
-            </div>
+          <div className="flex gap-2 min-w-max">
+            {[
+              { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
+              { id: 'pist' as const, label: 'Pist', icon: Layers },
+              { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
+              { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
+              { id: 'jokey' as const, label: 'Jokey', icon: Users },
+              { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
+              { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
+            ].map(({ id, label, icon: Icon }) => {
+              const isActive = selectedCategory === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedCategory(id)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                  <span>{label}</span>
+                </button>
+              )
+            })}
           </div>
+        </div>
         </div>
       )}
 
@@ -2415,7 +2415,7 @@ export function StatisticsCharts({
                 })()}
               </>
             )}
-          </div>
+    </div>
           
           {/* Mobile: Scrollable Content - shows same charts as desktop */}
           {!hideButtons && (
@@ -2657,7 +2657,7 @@ export function StatisticsCharts({
                         </Card>
                       )
                     })}
-                  </div>
+      </div>
                 )}
                 {/* Mesafe Category */}
                 {selectedCategory === 'mesafe' && hasRaceData && distancePerformanceData.length > 0 && (

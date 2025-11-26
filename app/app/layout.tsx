@@ -17,6 +17,7 @@ function AppNavbar() {
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
+  const [horseName, setHorseName] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -87,6 +88,35 @@ function AppNavbar() {
     fetchTrainerData()
   }, [isTrainer])
 
+  useEffect(() => {
+    const fetchHorseName = async () => {
+      // Check if we're on a horse detail page
+      const horseIdMatch = pathname?.match(/^\/app\/horses\/([^\/]+)$/)
+      if (!horseIdMatch) {
+        setHorseName(null)
+        return
+      }
+
+      const horseId = horseIdMatch[1]
+      try {
+        const response = await fetch(`/api/horses/${horseId}`, {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          if (data.horse?.name) {
+            setHorseName(data.horse.name)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching horse name:', error)
+        setHorseName(null)
+      }
+    }
+
+    fetchHorseName()
+  }, [pathname])
+
   const navItems = [
     { href: '/app/home', label: TR.nav.home, icon: Home },
     { href: '/app/horses', label: TR.nav.horses, icon: ChessKnight },
@@ -154,6 +184,12 @@ function AppNavbar() {
                 <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
                   <LayoutGrid className="h-3.5 w-3.5" />
                   {TR.nav.horses}
+                </span>
+              )}
+              {pathname?.match(/^\/app\/horses\/[^\/]+$/) && horseName && (
+                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
+                  <ChessKnight className="h-3.5 w-3.5" />
+                  {horseName}
                 </span>
               )}
             </div>
