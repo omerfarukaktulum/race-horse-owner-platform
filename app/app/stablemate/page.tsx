@@ -10,6 +10,7 @@ import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing, Plus, Minus } from 'lucide-react'
+import { ModalInput, ModalSelect } from '@/app/components/ui/modal-field'
 import { formatDate } from '@/lib/utils/format'
 import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
 import { useAuth } from '@/lib/context/auth-context'
@@ -1333,125 +1334,106 @@ export default function StablematePage() {
           }
         }}
       >
-        <DialogContent className="max-w-md bg-transparent border-none shadow-none p-0">
-          <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-2xl border border-gray-200/50 overflow-hidden">
-            <CardHeader className="text-center space-y-4">
-              <div className="flex justify-center">
-                <div className="w-14 h-14 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
-                  <Settings className="h-7 w-7 text-white" />
+        <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-indigo-50/95 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
+          <DialogHeader className="text-center sm:text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+                <Settings className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <div className="w-[240px] mx-auto">
+              <DialogTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+                Eküri Bilgilerini Güncelle
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSave()
+            }}
+          >
+            <div className="w-[260px] mx-auto space-y-5">
+              <ModalInput
+                label={TR.stablemate.name}
+                required
+                id="name"
+                type="text"
+                placeholder="Örn: Mehmet Ali Eküri"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isSaving}
+                startIcon={<Building2 className="h-4 w-4" />}
+              />
+
+              <ModalInput
+                label={TR.stablemate.foundationYear}
+                id="foundationYear"
+                type="number"
+                placeholder="Örn: 2020"
+                value={foundationYear}
+                onChange={(e) => setFoundationYear(e.target.value)}
+                min="1900"
+                max={new Date().getFullYear()}
+                disabled={isSaving}
+                startIcon={<Calendar className="h-4 w-4" />}
+                className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+
+              <ModalSelect
+                label="Konum"
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                disabled={isSaving}
+                icon={<MapPin className="h-4 w-4" />}
+              >
+                <option value="">Şehir seçin</option>
+                {RACECOURSE_CITIES.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+                {OTHER_CITIES.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </ModalSelect>
+
+              <ModalInput
+                label={TR.stablemate.website}
+                id="website"
+                type="url"
+                placeholder="https://..."
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                disabled={isSaving}
+                startIcon={<Globe className="h-4 w-4" />}
+              />
+
+              <div className="pt-2">
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isSaving}
+                    className="border-2 border-[#6366f1]/30 hover:bg-[#6366f1]/5 hover:border-[#6366f1]/50 text-[#6366f1]"
+                  >
+                    {TR.common.cancel}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] hover:from-[#5558e5] hover:to-[#4338ca] text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    {isSaving ? TR.common.loading : TR.common.save}
+                  </Button>
                 </div>
               </div>
-              <div>
-                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-                  Eküri Bilgilerini Güncelle
-                </CardTitle>
-                <CardDescription className="text-gray-600 mt-2">
-                  Eküri bilgilerinizi onboarding sırasında olduğu gibi güncelleyin.
-                </CardDescription>
-              </div>
-          </CardHeader>
-            <CardContent>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                handleSave()
-              }}
-                className="space-y-4"
-              >
-                <div className="space-y-2 flex flex-col items-center">
-                  <Label htmlFor="name" className="text-gray-700 font-medium w-full max-w-xs">
-                    {TR.stablemate.name} *
-                  </Label>
-                <Input
-                  id="name"
-                    type="text"
-                    placeholder="Örn: Mehmet Ali Eküri"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                    required
-                  disabled={isSaving}
-                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
-
-                <div className="space-y-2 flex flex-col items-center">
-                  <Label htmlFor="foundationYear" className="text-gray-700 font-medium w-full max-w-xs">
-                    {TR.stablemate.foundationYear}
-                  </Label>
-                <Input
-                  id="foundationYear"
-                  type="number"
-                  placeholder="Örn: 2020"
-                  value={foundationYear}
-                  onChange={(e) => setFoundationYear(e.target.value)}
-                    min="1900"
-                    max={new Date().getFullYear()}
-                  disabled={isSaving}
-                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
-
-                <div className="space-y-2 flex flex-col items-center">
-                  <Label htmlFor="location" className="text-gray-700 font-medium w-full max-w-xs">
-                    Konum
-                  </Label>
-                  <select
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  disabled={isSaving}
-                    className="flex h-11 w-full max-w-xs rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">Şehir seçin</option>
-                    {RACECOURSE_CITIES.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                    {OTHER_CITIES.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-              </div>
-
-                <div className="space-y-2 flex flex-col items-center">
-                  <Label htmlFor="website" className="text-gray-700 font-medium w-full max-w-xs">
-                    {TR.stablemate.website}
-                  </Label>
-                <Input
-                  id="website"
-                  type="url"
-                  placeholder="https://..."
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  disabled={isSaving}
-                    className="h-11 w-full max-w-xs border-gray-300 focus:border-[#6366f1] focus:ring-[#6366f1]"
-                />
-              </div>
-
-                <div className="flex justify-center gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                    className="h-11 rounded-2xl border-2 border-gray-200 px-6 font-semibold text-gray-700 bg-white/80"
-                >
-                  {TR.common.cancel}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                    className="h-11 rounded-2xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] px-6 font-semibold text-white shadow-lg hover:shadow-xl"
-                >
-                  {isSaving ? TR.common.loading : TR.common.save}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
