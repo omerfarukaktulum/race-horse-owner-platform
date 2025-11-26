@@ -682,6 +682,7 @@ useEffect(() => {
             </div>
             
             {/* Desktop: Filter and Action Buttons - Below Tabs, Same Line */}
+            {(activeTab === 'illnesses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'races' || activeTab === 'statistics' || activeTab === 'banned-medicines' || activeTab === 'expenses') && (
             <div className={`hidden sm:flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} justify-between mt-6`}>
               {/* Left side: Filter buttons */}
               <div className={`flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} gap-3`}>
@@ -838,6 +839,7 @@ useEffect(() => {
                 )}
               </div>
             </div>
+            )}
           </div>
           {/* Mobile: Illnesses buttons */}
           {activeTab === 'illnesses' && (
