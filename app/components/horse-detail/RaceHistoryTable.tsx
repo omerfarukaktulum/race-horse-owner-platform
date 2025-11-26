@@ -617,13 +617,13 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                 <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {race.raceType && (
-                      <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium flex-shrink-0">
+                      <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold flex-shrink-0">
                         {abbreviateRaceType(race.raceType)}
                       </span>
                     )}
                     {race.distance && (
                       <span 
-                        className="px-2 py-1 rounded-md text-xs font-medium flex-shrink-0"
+                        className="px-2 py-1 rounded-full text-xs font-semibold flex-shrink-0"
                         style={race.surface ? getSurfaceColor(race.surface) : { backgroundColor: '#f3f4f6', color: '#374151' }}
                       >
                         {race.distance}m
@@ -787,7 +787,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                       {/* Race Type - Moved here */}
                       <td className="px-4 py-3 whitespace-nowrap">
                         {race.raceType && (
-                          <span className="px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium">
+                          <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold">
                             {abbreviateRaceType(race.raceType)}
                           </span>
                         )}

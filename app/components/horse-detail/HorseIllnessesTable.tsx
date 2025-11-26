@@ -636,20 +636,21 @@ export function HorseIllnessesTable({
                     style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="inline-flex items-center gap-2 mb-1 flex-nowrap">
+                          <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                             {formatDateShort(illness.startDate)}
                           </span>
-                          {illness.endDate ? (
+                          {illness.endDate && (
                             <>
-                              <span className="text-sm font-semibold text-gray-900">
+                              <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                                 - {formatDateShort(illness.endDate)}
                               </span>
-                              <span className="text-sm font-medium text-indigo-600">(Sona erdi)</span>
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 whitespace-nowrap">Sona erdi</span>
                             </>
-                          ) : (
-                            <span className="text-sm font-medium text-indigo-600">Devam ediyor</span>
+                          )}
+                          {!illness.endDate && (
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 whitespace-nowrap">Devam ediyor</span>
                           )}
                         </div>
                       </div>
@@ -708,17 +709,19 @@ export function HorseIllnessesTable({
                               <Eye className="h-4 w-4" />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIllnessForOperation(illness)
-                              setIsOperationModalOpen(true)
-                            }}
-                            className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                            title="Müdahale Ekle"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
+                          {!illness.endDate && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIllnessForOperation(illness)
+                                setIsOperationModalOpen(true)
+                              }}
+                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                              title="Müdahale Ekle"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -881,7 +884,7 @@ export function HorseIllnessesTable({
                                   {formatDateShort(illness.endDate)}
                                 </span>
                               ) : (
-                                <span className="text-sm font-medium text-indigo-600">Devam ediyor</span>
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">Devam ediyor</span>
                               )}
                             </td>
                               <td className="px-4 py-3">
@@ -916,17 +919,19 @@ export function HorseIllnessesTable({
                                       <Eye className="h-4 w-4" />
                                     </button>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setIllnessForOperation(illness)
-                                      setIsOperationModalOpen(true)
-                                    }}
-                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                    title="Müdahale Ekle"
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </button>
+                                  {!illness.endDate && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setIllnessForOperation(illness)
+                                        setIsOperationModalOpen(true)
+                                      }}
+                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                      title="Müdahale Ekle"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                               <td className="px-4 py-3">
