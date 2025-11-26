@@ -1067,7 +1067,7 @@ function RaceGallopsModal({
                   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
                   return (
                     <p>
-                      <span className="font-semibold">Toplam {filteredGallops.length} idman {diffDays} gün içerisinde</span>
+                      <span className="font-semibold">Toplam {filteredGallops.length} idman ({diffDays} gün içerisinde)</span>
                     </p>
                   )
                 })()}
