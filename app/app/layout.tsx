@@ -144,6 +144,12 @@ function AppNavbar() {
                   {TR.nav.expenses}
                 </span>
               )}
+              {pathname === '/app/stats' && (
+                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
+                  <BarChart3 className="h-3.5 w-3.5" />
+                  {TR.nav.statistics}
+                </span>
+              )}
             </div>
           </Link>
 
