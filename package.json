@@ -19,6 +19,7 @@
     "db:studio": "prisma studio",
     "db:truncate": "./scripts/truncate-db.sh",
     "db:create-demo": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/create-demo-data.ts",
+    "db:delete-demo": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} scripts/delete-demo-data.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

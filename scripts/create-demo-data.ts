@@ -1,34 +1,28 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-import { searchTJKHorsesPlaywright } from '../lib/tjk-api'
 import { BANNED_MEDICINES } from '../lib/constants/banned-medicines'
+import * as fs from 'fs'
+import * as path from 'path'
 
 const prisma = new PrismaClient()
 
-// Test data configuration
-const OWNER_1 = {
-  email: 'emrah.karamazi@demo.com',
-  password: 'emrah123456',
-  officialName: 'EMRAH KARAMAZI',
-  officialRef: '7356',
-  stablemateName: 'Emrah Karamazi Eküri',
-  horses: ['general sherman', 'flying spice', 'viking'],
+// User email to generate data for
+const USER_EMAIL = 'omerfaruk.aktulum@gmail.com'
+
+// SQL output file
+const SQL_OUTPUT_FILE = path.join(__dirname, '../prisma/demo-data.sql')
+
+// SQL statements array
+const sqlStatements: string[] = []
+
+// Helper function to escape SQL strings
+function escapeSql(str: string | null | undefined): string {
+  if (!str) return 'NULL'
+  return `'${str.replace(/'/g, "''")}'`
 }
 
-const OWNER_2 = {
-  email: 'hayrettin.karamazi@demo.com',
-  password: 'hayrettin123456',
-  officialName: 'HAYRETTİN KARAMAZI',
-  officialRef: '1281',
-  stablemateName: 'Eküri Forması',
-  horses: ['grand rapids', 'spas'],
-}
-
-const TRAINER = {
-  email: 'engin.karatas@demo.com',
-  password: 'engin123456',
-  fullName: 'ENGİN KARATAŞ',
-  tjkTrainerId: '2400',
+// Helper function to format dates for SQL
+function formatDate(date: Date): string {
+  return date.toISOString().replace('T', ' ').substring(0, 19)
 }
 
 // Expense categories
@@ -43,240 +37,75 @@ const EXPENSE_CATEGORIES = [
 ] as const
 
 /**
- * Normalize horse name for comparison (case-insensitive, trim whitespace)
+ * Get user and their horses
  */
-function normalizeHorseName(name: string): string {
-  return name.toLowerCase().trim()
-}
-
-/**
- * Check if a horse name matches any of the target names
- */
-function matchesHorseName(horseName: string, targetNames: string[]): boolean {
-  const normalized = normalizeHorseName(horseName)
-  return targetNames.some((target) => normalizeHorseName(target) === normalized)
-}
-
-/**
- * Create owner with stablemate
- */
-async function createOwner(config: typeof OWNER_1) {
-  console.log(`\n📝 Creating owner: ${config.officialName}`)
+async function getUserAndHorses() {
+  console.log(`\n🔍 Finding user: ${USER_EMAIL}`)
   
-  // Check if owner already exists
-  const existingOwner = await prisma.ownerProfile.findFirst({
-    where: {
-      officialRef: config.officialRef,
-    },
-    include: { user: true },
-  })
-
-  if (existingOwner) {
-    console.log(`  ⚠ Owner already exists: ${existingOwner.user.email}`)
-    return existingOwner
-  }
-
-  // Create user
-  const passwordHash = await bcrypt.hash(config.password, 12)
-  const user = await prisma.user.create({
-    data: {
-      email: config.email,
-      passwordHash,
-      role: 'OWNER',
+  const user = await prisma.user.findUnique({
+    where: { email: USER_EMAIL },
+    include: {
       ownerProfile: {
-        create: {
-          officialName: config.officialName,
-          officialRef: config.officialRef,
+        include: {
           stablemate: {
-            create: {
-              name: config.stablemateName,
-              foundationYear: 2020,
-              location: 'İstanbul',
+            include: {
+              horses: true,
             },
           },
         },
       },
     },
-    include: {
-      ownerProfile: {
-        include: {
-          stablemate: true,
-        },
-      },
-    },
   })
 
-  console.log(`  ✅ Created owner: ${config.email}`)
-  console.log(`  ✅ Created stablemate: ${config.stablemateName}`)
-  
-  return user.ownerProfile!
+  if (!user) {
+    throw new Error(`User not found: ${USER_EMAIL}`)
+  }
+
+  if (!user.ownerProfile) {
+    throw new Error(`User does not have an owner profile: ${USER_EMAIL}`)
+  }
+
+  if (!user.ownerProfile.stablemate) {
+    throw new Error(`User does not have a stablemate: ${USER_EMAIL}`)
+  }
+
+  const horses = user.ownerProfile.stablemate.horses
+
+  console.log(`  ✅ Found user: ${user.email}`)
+  console.log(`  ✅ Found stablemate: ${user.ownerProfile.stablemate.name}`)
+  console.log(`  ✅ Found ${horses.length} horses`)
+
+  return { user, horses }
 }
 
 /**
- * Create trainer
+ * Get Turkish description for expense category
  */
-async function createTrainer() {
-  console.log(`\n📝 Creating trainer: ${TRAINER.fullName}`)
-  
-  // Check if trainer already exists
-  const existingTrainer = await prisma.trainerProfile.findFirst({
-    where: {
-      tjkTrainerId: TRAINER.tjkTrainerId,
-    },
-    include: { user: true },
-  })
-
-  if (existingTrainer) {
-    console.log(`  ⚠ Trainer already exists: ${existingTrainer.user.email}`)
-    return existingTrainer
+function getExpenseDescription(category: string): string {
+  const descriptions: { [key: string]: string } = {
+    'IDMAN_JOKEYI': 'İdman jokeyi ücreti',
+    'SEYIS': 'Seyis ücreti',
+    'ILAC': 'İlaç ve tedavi masrafları',
+    'YEM_SAMAN_OT_TALAS': 'Yem, saman, ot ve talaş giderleri',
+    'YARIS_KAYIT_DECLARE': 'Yarış kayıt ve deklare ücreti',
+    'NAKLIYE': 'Nakliye ve taşıma giderleri',
+    'SEZONLUK_AHIR': 'Sezonluk ahır kirası',
   }
-
-  // Create user
-  const passwordHash = await bcrypt.hash(TRAINER.password, 12)
-  const user = await prisma.user.create({
-    data: {
-      email: TRAINER.email,
-      passwordHash,
-      role: 'TRAINER',
-      trainerProfile: {
-        create: {
-          fullName: TRAINER.fullName,
-          tjkTrainerId: TRAINER.tjkTrainerId,
-          phone: '+90 555 000 0000',
-        },
-      },
-    },
-    include: {
-      trainerProfile: true,
-    },
-  })
-
-  console.log(`  ✅ Created trainer: ${TRAINER.email}`)
-  
-  return user.trainerProfile!
-}
-
-/**
- * Fetch and import horses for an owner
- */
-async function importHorses(ownerProfile: any, targetHorseNames: string[], trainerProfile: any) {
-  console.log(`\n🐴 Fetching horses for ${ownerProfile.officialName}...`)
-  console.log(`  Target horses: ${targetHorseNames.join(', ')}`)
-
-  try {
-    // Fetch horses from TJK
-    const tjkHorses = await searchTJKHorsesPlaywright(
-      ownerProfile.officialName,
-      ownerProfile.officialRef || undefined
-    )
-
-    console.log(`  📥 Fetched ${tjkHorses.length} horses from TJK`)
-
-    // Filter to only target horses
-    const filteredHorses = tjkHorses.filter((horse) =>
-      matchesHorseName(horse.name, targetHorseNames)
-    )
-
-    console.log(`  ✅ Found ${filteredHorses.length} matching horses:`)
-    filteredHorses.forEach((h) => console.log(`    - ${h.name}`))
-
-    if (filteredHorses.length === 0) {
-      console.log(`  ⚠ No matching horses found. Available horses:`)
-      tjkHorses.slice(0, 10).forEach((h) => console.log(`    - ${h.name}`))
-      return []
-    }
-
-    // Get stablemate
-    const stablemate = await prisma.stablemate.findUnique({
-      where: { ownerId: ownerProfile.id },
-    })
-
-    if (!stablemate) {
-      throw new Error('Stablemate not found')
-    }
-
-    // Create or get horses (ONLY target horses)
-    const createdHorses = []
-    for (const horse of filteredHorses) {
-      // Double-check: only process if it matches target names
-      if (!matchesHorseName(horse.name, targetHorseNames)) {
-        console.log(`  ⚠ Skipping ${horse.name} - not in target list`)
-        continue
-      }
-
-      // Check if horse already exists
-      const existing = await prisma.horse.findFirst({
-        where: {
-          stablemateId: stablemate.id,
-          externalRef: horse.externalRef,
-        },
-      })
-
-      if (existing) {
-        console.log(`  ⚠ Horse already exists: ${horse.name}`)
-        // Update trainer if needed
-        if (existing.trainerId !== trainerProfile.id) {
-          await prisma.horse.update({
-            where: { id: existing.id },
-            data: { trainerId: trainerProfile.id },
-          })
-          console.log(`  ✅ Updated trainer for: ${horse.name}`)
-        }
-        // Only add if it matches target names (double-check)
-        if (matchesHorseName(existing.name, targetHorseNames)) {
-          createdHorses.push(existing)
-        } else {
-          console.log(`  ⚠ Skipping ${existing.name} - not in target list`)
-        }
-        continue
-      }
-
-      const created = await prisma.horse.create({
-        data: {
-          stablemateId: stablemate.id,
-          name: horse.name,
-          yob: horse.yob,
-          status: horse.status === 'MARE' ? 'MARE' : horse.status === 'STALLION' ? 'STALLION' : 'RACING',
-          gender: horse.gender || undefined,
-          externalRef: horse.externalRef || undefined,
-          trainerId: trainerProfile.id,
-          sireName: horse.sire || undefined,
-          damName: horse.dam || undefined,
-        },
-      })
-
-      console.log(`  ✅ Created horse: ${horse.name}`)
-      createdHorses.push(created)
-    }
-
-    // Final verification: only return horses that match target names
-    const verifiedHorses = createdHorses.filter(horse => 
-      matchesHorseName(horse.name, targetHorseNames)
-    )
-
-    if (verifiedHorses.length !== createdHorses.length) {
-      console.log(`  ⚠ Warning: Filtered out ${createdHorses.length - verifiedHorses.length} horses that don't match target names`)
-    }
-
-    return verifiedHorses
-  } catch (error) {
-    console.error(`  ❌ Error fetching horses:`, error)
-    return []
-  }
+  return descriptions[category] || 'Genel gider'
 }
 
 /**
  * Add sample expenses to horses
  */
 async function addExpenses(horses: any[], ownerUser: any) {
-  console.log(`\n💰 Adding expenses...`)
+  console.log(`\n💰 Generating expenses SQL...`)
 
   const now = new Date()
   const expenses = []
 
   for (const horse of horses) {
-    // Add 2-3 expenses per horse
-    const numExpenses = Math.floor(Math.random() * 2) + 2
+    // Add 5-10 expenses per horse
+    const numExpenses = Math.floor(Math.random() * 6) + 5
 
     for (let i = 0; i < numExpenses; i++) {
       const daysAgo = Math.floor(Math.random() * 30) + 1
@@ -285,24 +114,16 @@ async function addExpenses(horses: any[], ownerUser: any) {
 
       const category = EXPENSE_CATEGORIES[Math.floor(Math.random() * EXPENSE_CATEGORIES.length)]
       const amount = Math.floor(Math.random() * 5000) + 500 // 500-5500 TRY
+      const description = getExpenseDescription(category)
 
-      const expense = await prisma.expense.create({
-        data: {
-          horseId: horse.id,
-          addedById: ownerUser.id,
-          date: expenseDate,
-          category,
-          amount: amount.toString(),
-          currency: 'TRY',
-          note: `Demo expense for ${horse.name} - ${category}`,
-        },
-      })
-
-      expenses.push(expense)
+      const sql = `INSERT INTO expenses (id, "horseId", "addedById", date, category, amount, currency, note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(ownerUser.id)}, '${formatDate(expenseDate)}', '${category}', '${amount}', 'TRY', ${escapeSql(description)}, NOW(), NOW());`
+      
+      sqlStatements.push(sql)
+      expenses.push({ id: 'generated', horseId: horse.id })
     }
   }
 
-  console.log(`  ✅ Added ${expenses.length} expenses`)
+  console.log(`  ✅ Generated ${expenses.length} expense SQL statements`)
   return expenses
 }
 
@@ -310,7 +131,7 @@ async function addExpenses(horses: any[], ownerUser: any) {
  * Add sample notes to horses
  */
 async function addNotes(horses: any[], ownerUser: any) {
-  console.log(`\n📝 Adding notes...`)
+  console.log(`\n📝 Generating notes SQL...`)
 
   const now = new Date()
   const notes = []
@@ -324,8 +145,8 @@ async function addNotes(horses: any[], ownerUser: any) {
   ]
 
   for (const horse of horses) {
-    // Add 1-2 notes per horse
-    const numNotes = Math.floor(Math.random() * 2) + 1
+    // Add 5-10 notes per horse
+    const numNotes = Math.floor(Math.random() * 6) + 5
 
     for (let i = 0; i < numNotes; i++) {
       const daysAgo = Math.floor(Math.random() * 14) + 1
@@ -334,20 +155,14 @@ async function addNotes(horses: any[], ownerUser: any) {
 
       const noteText = noteTemplates[Math.floor(Math.random() * noteTemplates.length)]
 
-      const note = await prisma.horseNote.create({
-        data: {
-          horseId: horse.id,
-          addedById: ownerUser.id,
-          date: noteDate,
-          note: `${horse.name} için: ${noteText}`,
-        },
-      })
-
-      notes.push(note)
+      const sql = `INSERT INTO horse_notes (id, "horseId", "addedById", date, note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(ownerUser.id)}, '${formatDate(noteDate)}', ${escapeSql(noteText)}, NOW(), NOW());`
+      
+      sqlStatements.push(sql)
+      notes.push({ id: 'generated', horseId: horse.id })
     }
   }
 
-  console.log(`  ✅ Added ${notes.length} notes`)
+  console.log(`  ✅ Generated ${notes.length} note SQL statements`)
   return notes
 }
 
@@ -355,7 +170,7 @@ async function addNotes(horses: any[], ownerUser: any) {
  * Add sample illnesses to horses
  */
 async function addIllnesses(horses: any[], ownerUser: any) {
-  console.log(`\n🏥 Adding illnesses...`)
+  console.log(`\n🏥 Generating illnesses SQL...`)
 
   const now = new Date()
   const illnesses = []
@@ -384,40 +199,35 @@ async function addIllnesses(horses: any[], ownerUser: any) {
       })()
 
       const detail = illnessDetails[Math.floor(Math.random() * illnessDetails.length)]
+      const hasOperations = !isOngoing && Math.random() > 0.5
+      const numOperations = hasOperations ? Math.floor(Math.random() * 2) + 1 : 0
 
-      const illness = await prisma.horseIllness.create({
-        data: {
-          horseId: horse.id,
-          addedById: ownerUser.id,
-          startDate,
-          endDate,
-          detail: `${horse.name} için: ${detail}`,
-        },
-      })
+      // Insert illness first
+      const illnessSql = `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(ownerUser.id)}, '${formatDate(startDate)}', ${endDate ? `'${formatDate(endDate)}'` : 'NULL'}, ${escapeSql(detail)}, NOW(), NOW());`
+      sqlStatements.push(illnessSql)
 
-      // Add 0-2 operations for some illnesses
-      if (!isOngoing && Math.random() > 0.5) {
-        const numOperations = Math.floor(Math.random() * 2) + 1
+      // Add operations using a subquery to get the latest illness ID for this horse
+      if (hasOperations && numOperations > 0) {
         for (let i = 0; i < numOperations; i++) {
           const operationDate = new Date(startDate)
           operationDate.setDate(operationDate.getDate() + (i + 1) * 2)
-
-          await prisma.horseIllnessOperation.create({
-            data: {
-              illnessId: illness.id,
-              addedById: ownerUser.id,
-              date: operationDate,
-              description: `Kontrol ve tedavi uygulaması ${i + 1}`,
-            },
-          })
+          
+          const operationSql = `INSERT INTO horse_illness_operations (id, "illnessId", "addedById", date, description, "createdAt", "updatedAt") 
+SELECT gen_random_uuid(), id, ${escapeSql(ownerUser.id)}, '${formatDate(operationDate)}', ${escapeSql(`Kontrol ve tedavi uygulaması ${i + 1}`)}, NOW(), NOW() 
+FROM horse_illnesses 
+WHERE "horseId" = ${escapeSql(horse.id)} 
+ORDER BY "createdAt" DESC 
+LIMIT 1;`
+          
+          sqlStatements.push(operationSql)
         }
       }
 
-      illnesses.push(illness)
+      illnesses.push({ id: 'generated', horseId: horse.id })
     }
   }
 
-  console.log(`  ✅ Added ${illnesses.length} illnesses`)
+  console.log(`  ✅ Generated ${illnesses.length} illness SQL statements`)
   return illnesses
 }
 
@@ -425,7 +235,7 @@ async function addIllnesses(horses: any[], ownerUser: any) {
  * Add sample banned medicines to horses
  */
 async function addBannedMedicines(horses: any[], ownerUser: any) {
-  console.log(`\n💊 Adding banned medicines...`)
+  console.log(`\n💊 Generating banned medicines SQL...`)
 
   const now = new Date()
   const medicines = []
@@ -450,22 +260,14 @@ async function addBannedMedicines(horses: any[], ownerUser: any) {
       const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
       const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
 
-      const medicine = await prisma.horseBannedMedicine.create({
-        data: {
-          horseId: horse.id,
-          addedById: ownerUser.id,
-          medicineName,
-          givenDate,
-          waitDays,
-          note: `${horse.name} için ${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`,
-        },
-      })
-
-      medicines.push(medicine)
+      const sql = `INSERT INTO horse_banned_medicines (id, "horseId", "addedById", "medicineName", "givenDate", "waitDays", note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(ownerUser.id)}, ${escapeSql(medicineName)}, '${formatDate(givenDate)}', ${waitDays}, ${escapeSql(`${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`)}, NOW(), NOW());`
+      
+      sqlStatements.push(sql)
+      medicines.push({ id: 'generated', horseId: horse.id })
     }
   }
 
-  console.log(`  ✅ Added ${medicines.length} banned medicines`)
+  console.log(`  ✅ Generated ${medicines.length} banned medicine SQL statements`)
   return medicines
 }
 
@@ -473,7 +275,7 @@ async function addBannedMedicines(horses: any[], ownerUser: any) {
  * Add sample training plans to horses
  */
 async function addTrainingPlans(horses: any[], ownerUser: any) {
-  console.log(`\n📅 Adding training plans...`)
+  console.log(`\n📅 Generating training plans SQL...`)
 
   const now = new Date()
   const plans = []
@@ -504,174 +306,75 @@ async function addTrainingPlans(horses: any[], ownerUser: any) {
       const distance = distances[Math.floor(Math.random() * distances.length)]
       const note = trainingNotes[Math.floor(Math.random() * trainingNotes.length)]
 
-      const plan = await prisma.horseTrainingPlan.create({
-        data: {
-          horseId: horse.id,
-          addedById: ownerUser.id,
-          planDate,
-          distance,
-          note: `${horse.name} için: ${note}`,
-          racecourseId: racecourse?.id || undefined,
-        },
-      })
-
-      plans.push(plan)
+      const sql = `INSERT INTO horse_training_plans (id, "horseId", "addedById", "planDate", distance, note, "racecourseId", "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(ownerUser.id)}, '${formatDate(planDate)}', ${escapeSql(distance)}, ${escapeSql(note)}, ${racecourse ? escapeSql(racecourse.id) : 'NULL'}, NOW(), NOW());`
+      
+      sqlStatements.push(sql)
+      plans.push({ id: 'generated', horseId: horse.id })
     }
   }
 
-  console.log(`  ✅ Added ${plans.length} training plans`)
+  console.log(`  ✅ Generated ${plans.length} training plan SQL statements`)
   return plans
 }
 
-/**
- * Link trainer to stablemate
- */
-async function linkTrainerToStablemate(stablemateId: string, trainerProfile: any) {
-  console.log(`\n🔗 Linking trainer to stablemate...`)
-
-  // Check if link already exists
-  const existing = await prisma.stablemateTrainer.findFirst({
-    where: {
-      stablemateId,
-      trainerProfileId: trainerProfile.id,
-    },
-  })
-
-  if (existing) {
-    console.log(`  ⚠ Trainer already linked`)
-    return existing
-  }
-
-  const link = await prisma.stablemateTrainer.create({
-    data: {
-      stablemateId,
-      trainerProfileId: trainerProfile.id,
-      trainerName: trainerProfile.fullName,
-      trainerExternalId: trainerProfile.tjkTrainerId || undefined,
-      isActive: true,
-    },
-  })
-
-  console.log(`  ✅ Linked trainer to stablemate`)
-  return link
-}
-
 async function main() {
-  console.log('🚀 Starting demo data creation...\n')
+  console.log('🚀 Starting demo data SQL generation...\n')
 
   try {
-    // Create trainer first
-    const trainerProfile = await createTrainer()
+    // Get user and their horses
+    const { user, horses } = await getUserAndHorses()
 
-    // Create owner 1
-    const owner1Profile = await createOwner(OWNER_1)
-    const owner1User = await prisma.user.findUnique({
-      where: { id: owner1Profile.userId },
-    })
-
-    if (!owner1User) {
-      throw new Error('Failed to find owner1 user')
+    if (horses.length === 0) {
+      console.log('  ⚠ No horses found for user. Exiting.')
+      return
     }
 
-    // Create owner 2
-    const owner2Profile = await createOwner(OWNER_2)
-    const owner2User = await prisma.user.findUnique({
-      where: { id: owner2Profile.userId },
-    })
+    // Add SQL header
+    sqlStatements.unshift('-- Demo data SQL script')
+    sqlStatements.unshift(`-- Generated for user: ${USER_EMAIL}`)
+    sqlStatements.unshift(`-- Generated on: ${new Date().toISOString()}`)
+    sqlStatements.unshift('-- Number of horses: ' + horses.length)
+    sqlStatements.unshift('')
+    sqlStatements.unshift('BEGIN;')
+    sqlStatements.unshift('')
 
-    if (!owner2User) {
-      throw new Error('Failed to find owner2 user')
-    }
+    // Generate expenses
+    await addExpenses(horses, user)
 
-    // Get stablemates
-    const stablemate1 = await prisma.stablemate.findUnique({
-      where: { ownerId: owner1Profile.id },
-    })
+    // Generate notes
+    await addNotes(horses, user)
 
-    if (!stablemate1) {
-      throw new Error('Failed to find stablemate1')
-    }
+    // Generate illnesses
+    await addIllnesses(horses, user)
 
-    const stablemate2 = await prisma.stablemate.findUnique({
-      where: { ownerId: owner2Profile.id },
-    })
+    // Generate banned medicines
+    await addBannedMedicines(horses, user)
 
-    if (!stablemate2) {
-      throw new Error('Failed to find stablemate2')
-    }
+    // Generate training plans
+    await addTrainingPlans(horses, user)
 
-    // Link trainer to both stablemates
-    await linkTrainerToStablemate(stablemate1.id, trainerProfile)
-    await linkTrainerToStablemate(stablemate2.id, trainerProfile)
+    // Add SQL footer
+    sqlStatements.push('')
+    sqlStatements.push('COMMIT;')
 
-    // Import horses for owner 1
-    const owner1Horses = await importHorses(owner1Profile, OWNER_1.horses, trainerProfile)
-
-    // Import horses for owner 2
-    const owner2Horses = await importHorses(owner2Profile, OWNER_2.horses, trainerProfile)
-
-    // Add expenses
-    if (owner1Horses.length > 0) {
-      await addExpenses(owner1Horses, owner1User)
-    }
-    if (owner2Horses.length > 0) {
-      await addExpenses(owner2Horses, owner2User)
-    }
-
-    // Add notes
-    if (owner1Horses.length > 0) {
-      await addNotes(owner1Horses, owner1User)
-    }
-    if (owner2Horses.length > 0) {
-      await addNotes(owner2Horses, owner2User)
-    }
-
-    // Add illnesses
-    if (owner1Horses.length > 0) {
-      await addIllnesses(owner1Horses, owner1User)
-    }
-    if (owner2Horses.length > 0) {
-      await addIllnesses(owner2Horses, owner2User)
-    }
-
-    // Add banned medicines
-    if (owner1Horses.length > 0) {
-      await addBannedMedicines(owner1Horses, owner1User)
-    }
-    if (owner2Horses.length > 0) {
-      await addBannedMedicines(owner2Horses, owner2User)
-    }
-
-    // Add training plans
-    if (owner1Horses.length > 0) {
-      await addTrainingPlans(owner1Horses, owner1User)
-    }
-    if (owner2Horses.length > 0) {
-      await addTrainingPlans(owner2Horses, owner2User)
-    }
+    // Write SQL to file
+    const sqlContent = sqlStatements.join('\n')
+    fs.writeFileSync(SQL_OUTPUT_FILE, sqlContent, 'utf-8')
 
     // Print summary
     console.log('\n' + '='.repeat(60))
-    console.log('✅ Demo data creation completed!')
+    console.log('✅ SQL script generation completed!')
     console.log('='.repeat(60))
-    console.log('\n📋 User Credentials:\n')
-    console.log('Owner 1:')
-    console.log(`  Email: ${OWNER_1.email}`)
-    console.log(`  Password: ${OWNER_1.password}`)
-    console.log(`  Name: ${OWNER_1.officialName}`)
-    console.log(`  Horses: ${owner1Horses.length} imported`)
-    console.log('\nOwner 2:')
-    console.log(`  Email: ${OWNER_2.email}`)
-    console.log(`  Password: ${OWNER_2.password}`)
-    console.log(`  Name: ${OWNER_2.officialName}`)
-    console.log(`  Horses: ${owner2Horses.length} imported`)
-    console.log('\nTrainer:')
-    console.log(`  Email: ${TRAINER.email}`)
-    console.log(`  Password: ${TRAINER.password}`)
-    console.log(`  Name: ${TRAINER.fullName}`)
+    console.log(`\n📋 Summary for ${USER_EMAIL}:`)
+    console.log(`  Horses: ${horses.length}`)
+    console.log(`  SQL statements generated: ${sqlStatements.length - 5}`) // Exclude header/footer
+    console.log(`  SQL file: ${SQL_OUTPUT_FILE}`)
+    console.log('\n' + '='.repeat(60))
+    console.log('\n💡 To apply the SQL script, run:')
+    console.log(`   psql $DATABASE_URL -f ${SQL_OUTPUT_FILE}`)
     console.log('\n' + '='.repeat(60))
   } catch (error) {
-    console.error('\n❌ Error creating demo data:', error)
+    console.error('\n❌ Error generating SQL:', error)
     throw error
   }
 }
