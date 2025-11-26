@@ -463,34 +463,23 @@ export default function ExpensesPage() {
   const isEditModalVisible = isEditModalOpen && !!editingExpense
 
   return (
-    <div className="space-y-4">
-      {/* Mobile: Fixed Header (title + buttons + total) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 py-2">
-        {/* Page Title */}
-        <div className="mb-3 pb-2.5 border-b border-gray-200/60">
-          <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#4f46e5] shadow-md">
-              <TurkishLira className="h-4 w-4 text-white" />
-            </div>
-            <span className="tracking-tight">{TR.nav.expenses}</span>
-          </h1>
-        </div>
+    <div className="w-full min-w-0 space-y-4">
+      {/* Mobile: Fixed Header (buttons) */}
+      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
       {/* Filter and Add buttons */}
-      <div className="flex flex-col gap-2">
-        {/* First line: Filter, Search on left, Ekle on right */}
-        <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
-                <Button
-                  variant="outline"
+            <Button
+              variant="outline"
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
                 hasActiveFilters
                   ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
                   : 'border-gray-300 text-gray-700 hover:border-gray-400'
               }`}
             >
-                <Filter className="h-4 w-4" />
+              <Filter className="h-4 w-4" />
               {hasActiveFilters && (
                 <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
                   {(selectedRange ? 1 : 0) + categoryFilters.length + addedByFilters.length + stablemateFilters.length}
@@ -661,6 +650,7 @@ export default function ExpensesPage() {
           )}
         </div>
 
+        <div className="flex items-center gap-3 ml-auto">
           <Button
             onClick={() => setIsAddModalOpen(true)}
             className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
@@ -668,16 +658,6 @@ export default function ExpensesPage() {
             Ekle
           </Button>
         </div>
-
-        {/* Second line: Toplam Gider below Ekle button, right-aligned */}
-        <div className="flex justify-end">
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
-            <p className="text-lg font-semibold text-indigo-600">
-              {formatCurrency(totalAmount, defaultCurrency)}
-            </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -886,11 +866,11 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Mobile: Spacer for fixed header - matches title + buttons + total height */}
-      <div className="md:hidden h-[180px]"></div>
+      {/* Mobile: Spacer for fixed header */}
+      <div className="md:hidden h-[116px]"></div>
 
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+      <div className="md:hidden fixed top-[132px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
         {!hasExpenses ? (
           <div className="px-4 py-16 text-center text-sm text-gray-500">
             {TR.expenses.noExpenses}
@@ -911,7 +891,7 @@ export default function ExpensesPage() {
               return (
                 <div
                   key={expense.id}
-                  className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4 cursor-pointer"
+                  className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer"
                   style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                   onClick={handleCardClick}
                 >

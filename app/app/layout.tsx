@@ -138,6 +138,12 @@ function AppNavbar() {
                   {TR.nav.notes}
                 </span>
               )}
+              {pathname === '/app/expenses' && (
+                <span className="text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
+                  <TurkishLira className="h-3.5 w-3.5" />
+                  {TR.nav.expenses}
+                </span>
+              )}
             </div>
           </Link>
 
