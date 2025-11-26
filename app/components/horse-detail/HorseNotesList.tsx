@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
@@ -208,6 +208,22 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
 
     return filtered
   }, [selectedRange, addedByFilters, sortedNotes])
+
+  const canManageNote = useCallback(
+    (note: HorseNote) => {
+      if (!user) return false
+      if (note.addedById === user.id) return true
+
+      const userIsOwnerOrTrainer = user.role === 'OWNER' || user.role === 'TRAINER'
+      if (!userIsOwnerOrTrainer) return false
+
+      const creatorRole = note.addedBy?.role
+      const creatorIsOwnerOrTrainer = creatorRole === 'OWNER' || creatorRole === 'TRAINER'
+
+      return creatorIsOwnerOrTrainer
+    },
+    [user]
+  )
 
   // Get unique addedBy users
   const getUniqueAddedBy = useMemo(() => {
@@ -633,7 +649,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                 <Paperclip className="h-4 w-4" />
                               </button>
                             )}
-                            {user && note.addedById === user.id && (
+                            {canManageNote(note) && (
                               <>
                                 <button
                                   type="button"
@@ -757,7 +773,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                                     <Paperclip className="h-4 w-4" />
                                   </button>
                                 )}
-                                {user && note.addedById === user.id && (
+                                {canManageNote(note) && (
                                   <>
                                     <button
                                       type="button"

@@ -334,6 +334,22 @@ export function HorseExpensesTable({
     return filtered
   }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, highlightExpenseId])
 
+  const canManageExpense = useCallback(
+    (expense: Expense) => {
+      if (!user) return false
+      if (expense.addedById === user.id) return true
+
+      const userIsOwnerOrTrainer = user.role === 'OWNER' || user.role === 'TRAINER'
+      if (!userIsOwnerOrTrainer) return false
+
+      const creatorRole = expense.addedBy?.role
+      const creatorIsOwnerOrTrainer = creatorRole === 'OWNER' || creatorRole === 'TRAINER'
+
+      return creatorIsOwnerOrTrainer
+    },
+    [user]
+  )
+
   const totalAmount = filteredExpenses.reduce((acc, expense) => acc + getAmountValue(expense.amount), 0)
   const defaultCurrency = filteredExpenses[0]?.currency || sortedExpenses[0]?.currency || 'TRY'
 
@@ -859,7 +875,7 @@ export function HorseExpensesTable({
                               <Paperclip className="h-4 w-4" />
                             </button>
                           )}
-                          {user && expense.addedById === user.id && (
+                          {canManageExpense(expense) && (
                             <>
                               <button
                                 type="button"
@@ -992,7 +1008,7 @@ export function HorseExpensesTable({
                                   <Paperclip className="h-4 w-4" />
                                 </button>
                               )}
-                              {user && expense.addedById === user.id && (
+                                {canManageExpense(expense) && (
                                 <>
                                   <button
                                     type="button"

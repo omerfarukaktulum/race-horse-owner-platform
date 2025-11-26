@@ -1087,13 +1087,14 @@ function RaceGallopsModal({
         </DialogHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
-          {/* Mobile: Card Layout */}
-          <div className="md:hidden mb-4 flex justify-center w-full px-6">
-            <div className="w-full">
-              <div 
-                className="overflow-y-auto overflow-x-hidden px-2 py-2"
-                style={{ maxHeight: '500px' }}
-              >
+          <div className="flex flex-col w-full">
+            {/* Mobile: Card Layout */}
+            <div className="md:hidden mb-4 flex justify-center w-full px-6">
+              <div className="w-full">
+                <div 
+                  className="overflow-y-auto overflow-x-hidden px-2 py-2"
+                  style={{ maxHeight: '500px' }}
+                >
                 {filteredGallops.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Activity className="h-12 w-12 text-gray-400 mb-4" />
@@ -1101,90 +1102,91 @@ function RaceGallopsModal({
                   </div>
                 ) : (
                   filteredGallops.map((gallop) => {
-                      const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
-                      const statusLabel = formatGallopStatus(gallop.status)
-                      
-                      // Get available distances for this gallop
-                      const availableDistancesForGallop = availableDistances.filter(
-                        (meter) => {
-                          const time = distances[meter]
-                          return time && time !== '-' && String(time).trim() !== ''
-                        }
-                      )
-                      
-                      return (
-                        <div
-                          key={gallop.id}
-                          className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border"
-                          style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-900">
-                                {formatDateShort(gallop.gallopDate)}
-                              </span>
-                              {gallop.racecourse && (
-                                <span className="text-sm text-gray-700">
-                                  {gallop.racecourse}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-sm text-gray-600 font-medium">
-                              {getDaysBeforeRace(gallop.gallopDate)}
+                    const distances = typeof gallop.distances === 'object' ? gallop.distances : {}
+                    const statusLabel = formatGallopStatus(gallop.status)
+                    
+                    // Get available distances for this gallop
+                    const availableDistancesForGallop = availableDistances.filter(
+                      (meter) => {
+                        const time = distances[meter]
+                        return time && time !== '-' && String(time).trim() !== ''
+                      }
+                    )
+                    
+                    return (
+                      <div
+                        key={gallop.id}
+                        className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border min-w-0 max-w-full"
+                        style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {formatDateShort(gallop.gallopDate)}
                             </span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              {gallop.jockeyName && (
-                                <span className="text-sm text-gray-700">
-                                  {gallop.jockeyName}
-                                </span>
-                              )}
-                              {gallop.surface && (
-                                <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
-                                  {formatSurface(gallop.surface)}
-                                </span>
-                              )}
-                            </div>
-                            {statusLabel && (
+                            {gallop.racecourse && (
                               <span className="text-sm text-gray-700">
-                                {statusLabel}
+                                {gallop.racecourse}
                               </span>
                             )}
                           </div>
-                          
-                          {availableDistancesForGallop.length > 0 && (
-                            <div className="mb-2">
-                              <div className="flex flex-wrap gap-2">
-                                {availableDistancesForGallop.map((meter) => (
-                                  <div key={meter} className="flex items-center gap-1">
-                                    <span className="text-xs font-medium text-gray-600">{meter}m:</span>
-                                    <span className={`px-2 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800`}>
-                                      {getDistance(distances, meter)}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
+                          <span className="text-sm text-gray-600 font-medium">
+                            {getDaysBeforeRace(gallop.gallopDate)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {gallop.jockeyName && (
+                              <span className="text-sm text-gray-700">
+                                {gallop.jockeyName}
+                              </span>
+                            )}
+                            {gallop.surface && (
+                              <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
+                                {formatSurface(gallop.surface)}
+                              </span>
+                            )}
+                          </div>
+                          {statusLabel && (
+                            <span className="text-sm text-gray-700">
+                              {statusLabel}
+                            </span>
                           )}
                         </div>
-                      )
-                    })
-                  )}
-                </div>
+                        
+                        {availableDistancesForGallop.length > 0 && (
+                          <div className="mb-2">
+                            <div className="flex flex-wrap gap-2">
+                              {availableDistancesForGallop.map((meter) => (
+                                <div key={meter} className="flex items-center gap-1">
+                                  <span className="text-xs font-medium text-gray-600">{meter}m:</span>
+                                  <span className="px-2 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800">
+                                    {getDistance(distances, meter)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
+          </div>
 
           {/* Desktop: Table Layout */}
-          {filteredGallops.length === 0 ? (
-            <div className="hidden md:flex flex-col items-center justify-center py-12 text-center px-6">
-              <Activity className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
-            </div>
-          ) : (
-            <div className="hidden md:block overflow-x-auto px-6 py-4">
-                <table className="w-full">
+          <div className="hidden md:flex flex-1 flex-col min-h-0 w-full">
+            {filteredGallops.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center px-6">
+                <Activity className="h-12 w-12 text-gray-400 mb-4" />
+                <p className="text-gray-500 text-lg">Bu koşu için idman verisi bulunmuyor</p>
+              </div>
+            ) : (
+              <div className="flex-1 overflow-auto px-6 py-4">
+                <table className="w-full min-w-max">
                   <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -1279,6 +1281,8 @@ function RaceGallopsModal({
               </table>
             </div>
           )}
+          </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
