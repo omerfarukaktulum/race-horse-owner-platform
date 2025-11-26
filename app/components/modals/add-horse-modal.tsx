@@ -383,7 +383,7 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+      <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
         {currentStep === 'select' ? (
           <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
             <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">

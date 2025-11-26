@@ -1073,7 +1073,7 @@ export default function StablematePage() {
     </div>
 
       <Dialog open={isTrainerModalOpen} onOpenChange={setIsTrainerModalOpen}>
-        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
           <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
             <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">
@@ -1180,7 +1180,7 @@ export default function StablematePage() {
       </Dialog>
 
       <Dialog open={isTrainerAssignmentOpen} onOpenChange={setIsTrainerAssignmentOpen}>
-        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
           <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
             <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-2xl flex items-center justify-center shadow-lg mx-auto">

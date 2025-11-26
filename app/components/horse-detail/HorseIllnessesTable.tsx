@@ -1155,7 +1155,7 @@ export function HorseIllnessesTable({
 
       {/* Delete Operation Confirmation Dialog */}
       <Dialog open={isDeleteOperationDialogOpen} onOpenChange={setIsDeleteOperationDialogOpen}>
-        <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <DialogContent className="w-[320px] bg-indigo-50/95 backdrop-blur-sm shadow-xl border border-gray-200/50">
           <DialogHeader>
             <DialogTitle>Müdahaleyi Sil</DialogTitle>
           </DialogHeader>
@@ -1188,7 +1188,7 @@ export function HorseIllnessesTable({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <DialogContent className="w-[320px] bg-indigo-50/95 backdrop-blur-sm shadow-xl border border-gray-200/50">
           <DialogHeader>
             <DialogTitle>Hastalığı Sil</DialogTitle>
           </DialogHeader>

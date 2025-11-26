@@ -165,7 +165,7 @@ export function AddTrainingPlanModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
+      <DialogContent className="w-[320px] max-h-[90vh] overflow-y-auto bg-indigo-50/95 backdrop-blur-sm shadow-xl border border-gray-200/50 p-4">
         <DialogHeader className="text-center sm:text-center space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">

@@ -190,7 +190,7 @@ export function ShowTrainingPlansModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-full max-w-7xl max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+        <DialogContent className="w-full max-w-7xl max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
           <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
             <div className="flex flex-col items-center space-y-4">
               <div className="flex justify-center">
@@ -461,7 +461,7 @@ export function ShowTrainingPlansModal({
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="w-[320px] bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
+        <DialogContent className="w-[320px] bg-indigo-50/95 backdrop-blur-sm shadow-xl border border-gray-200/50">
           <DialogHeader>
             <DialogTitle>İdman Planını Sil</DialogTitle>
           </DialogHeader>

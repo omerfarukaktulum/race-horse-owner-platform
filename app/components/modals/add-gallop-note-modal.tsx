@@ -194,7 +194,7 @@ export function AddGallopNoteModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[320px] max-h-[90vh] p-0 bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
+      <DialogContent className="w-[320px] max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex flex-col items-center space-y-4">
             <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
