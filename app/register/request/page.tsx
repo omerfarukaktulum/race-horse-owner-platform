@@ -6,11 +6,10 @@ import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { User, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { UserPlus, CheckCircle2 } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 
-export default function RegisterTrainerPage() {
+export default function RegisterRequestPage() {
   const [nameSurname, setNameSurname] = useState('')
   const [email, setEmail] = useState('')
   const [telephone, setTelephone] = useState('')
@@ -64,16 +63,16 @@ export default function RegisterTrainerPage() {
       <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm shadow-xl border border-gray-200/50">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
-              <User className="h-8 w-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center shadow-lg">
+              <UserPlus className="h-8 w-8 text-white" />
             </div>
           </div>
           <div>
             <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
-              Antrenör Kaydı
+              {TR.auth.register}
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Antrenör olarak kayıt olmak için bilgilerinizi doldurun
+              Kayıt olmak için bilgilerinizi doldurun
             </CardDescription>
           </div>
         </CardHeader>
