@@ -622,16 +622,11 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                       </span>
                     )}
                     {race.distance && (
-                      <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
-                        {race.distance}m
-                      </span>
-                    )}
-                    {race.surface && (
                       <span 
-                        className="px-2 py-1 rounded-md text-xs font-semibold flex-shrink-0"
-                        style={getSurfaceColor(race.surface)}
+                        className="px-2 py-1 rounded-md text-xs font-medium flex-shrink-0"
+                        style={race.surface ? getSurfaceColor(race.surface) : { backgroundColor: '#f3f4f6', color: '#374151' }}
                       >
-                        {formatSurface(race.surface)}
+                        {race.distance}m
                       </span>
                     )}
                   </div>
@@ -687,10 +682,10 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                        title="Yarış detayları"
+                        title="Koşu detayları"
                       >
                         <Video className="h-4 w-4" />
-                        <span className="text-xs font-medium">Yarış detayları</span>
+                        <span className="text-xs font-medium">Koşu detayları</span>
                       </a>
                     )}
                     <button
@@ -700,7 +695,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                       title="Koşu İdmanları"
                     >
                       <Activity className="h-4 w-4" />
-                      Yarış öncesi idmanlar
+                      Koşu öncesi idmanlar
                     </button>
                   </div>
                 </div>
@@ -1065,22 +1060,22 @@ function RaceGallopsModal({
                 Koşu İdmanları
               </DialogTitle>
               <div className="text-sm text-gray-600 mt-2 space-y-1 inline-block text-left">
-                <p>
-                  <span className="font-semibold">Yarış:</span> {formatDateShort(race.raceDate)} ({[race.city, race.raceType, race.distance ? `${race.distance}` : '', race.surface ? formatSurface(race.surface) : ''].filter(Boolean).join(' ')})
-                </p>
-                {race.position && (
+                {previousRace && (() => {
+                  const previousRaceDate = new Date(previousRace.raceDate)
+                  const currentRaceDate = new Date(race.raceDate)
+                  const diffTime = currentRaceDate.getTime() - previousRaceDate.getTime()
+                  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+                  return (
+                    <p>
+                      <span className="font-semibold">Toplam {filteredGallops.length} idman {diffDays} gün içerisinde</span>
+                    </p>
+                  )
+                })()}
+                {!previousRace && (
                   <p>
-                    <span className="font-semibold">Sonuç Sıra:</span> {race.position}
+                    <span className="font-semibold">Total {filteredGallops.length} idman</span>
                   </p>
                 )}
-                {previousRace && (
-                  <p>
-                    <span className="font-semibold">İdman Aralığı:</span> ({formatDateShort(previousRace.raceDate)} - {formatDateShort(race.raceDate)})
-                  </p>
-                )}
-                <p>
-                  <span className="font-semibold">İdman Sayısı:</span> {filteredGallops.length}
-                </p>
               </div>
             </div>
           </div>
