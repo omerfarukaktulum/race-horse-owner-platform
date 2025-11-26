@@ -88,6 +88,8 @@ interface Props {
   isGlobalStats?: boolean
   onActiveFiltersChange?: (count: number) => void
   showExpenseCategoryDistribution?: boolean
+  selectedCategory?: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'
+  onCategoryChange?: (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo') => void
 }
 
 // Distinct color palette for charts (vibrant colors)
@@ -344,6 +346,8 @@ export function StatisticsCharts({
   isGlobalStats = false,
   onActiveFiltersChange,
   showExpenseCategoryDistribution = false,
+  selectedCategory: externalSelectedCategory,
+  onCategoryChange,
 }: Props) {
   const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
@@ -578,7 +582,17 @@ export function StatisticsCharts({
   const distancePerformanceData = getDistancePerformanceData(filteredRaces)
   
   // Statistics category navigation state
-  const [selectedCategory, setSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
+  const [internalSelectedCategory, setInternalSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
+  
+  // Use prop if provided, otherwise use internal state
+  const selectedCategory = externalSelectedCategory ?? internalSelectedCategory
+  const setSelectedCategory = (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo') => {
+    if (onCategoryChange) {
+      onCategoryChange(category)
+    } else {
+      setInternalSelectedCategory(category)
+    }
+  }
   
   // City performance data - show all cities
   const cityPerformanceData = useMemo(() => {
@@ -2418,9 +2432,10 @@ export function StatisticsCharts({
     </div>
           
           {/* Mobile: Scrollable Content - shows same charts as desktop */}
-          {!hideButtons && (
-            <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
-              <div className="space-y-6">
+          {/* When hideButtons is true, render in regular div (parent handles scrolling) */}
+          {/* When hideButtons is false, render in fixed div (this component handles scrolling) */}
+          {hideButtons ? (
+            <div className="md:hidden space-y-6">
                 {/* Copy all chart categories from desktop area above */}
                 {/* Genel Category */}
                 {selectedCategory === 'genel' && (
@@ -2881,6 +2896,364 @@ export function StatisticsCharts({
                       </Card>
                     )}
                   </>
+                )}
+                {/* Gelir-Gider and Yem-Kilo categories would need to be added similarly */}
+                {(selectedCategory === 'gelir-gider' || selectedCategory === 'yem-kilo') && (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    Bu kategori için grafikler masaüstü görünümünde mevcuttur.
+                  </div>
+                )}
+            </div>
+          ) : (
+            <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+              <div className="space-y-6">
+                {/* Copy all chart categories from desktop area above */}
+                {/* Genel Category */}
+                {selectedCategory === 'genel' && (
+                  <>
+      {hasRaceData && (
+        <div className="grid grid-cols-1 gap-4">
+          {cityData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <MapPin className="h-4 w-4 mr-2 text-indigo-600" />
+                  Şehir Dağılımı
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={prepareLegendData(cityData)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {cityData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(cityData)}
+                  total={cityData.reduce((sum, item) => sum + item.value, 0)}
+                />
+              </CardContent>
+            </Card>
+          )}
+          {distanceGroupData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Ruler className="h-4 w-4 mr-2 text-indigo-600" />
+                  Mesafe Dağılımı
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={prepareLegendData(distanceGroupData)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {distanceGroupData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(distanceGroupData)}
+                  total={distanceGroupData.reduce((sum, item) => sum + item.value, 0)}
+                />
+              </CardContent>
+            </Card>
+          )}
+          {surfaceData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Layers className="h-4 w-4 mr-2 text-indigo-600" />
+                  Pist Dağılımı
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={prepareLegendData(surfaceData)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {surfaceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(surfaceData)}
+                  total={surfaceData.reduce((sum, item) => sum + item.value, 0)}
+                />
+              </CardContent>
+            </Card>
+          )}
+          {raceTypeChartData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Flag className="h-4 w-4 mr-2 text-indigo-600" />
+                  Koşu Türü
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={prepareLegendData(raceTypeChartData)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {raceTypeChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(raceTypeChartData)}
+                  total={raceTypeChartData.reduce((sum, item) => sum + item.value, 0)}
+                />
+              </CardContent>
+            </Card>
+          )}
+          {jockeyData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-indigo-600" />
+                  Jokey Dağılımı
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={prepareLegendData(jockeyData)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={70}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {jockeyData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={prepareLegendData(jockeyData)}
+                  total={jockeyData.reduce((sum, item) => sum + item.value, 0)}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+                  </>
+                )}
+                {/* Other categories - Pist */}
+                {selectedCategory === 'pist' && hasRaceData && surfacePerformanceData.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4">
+                    {surfacePerformanceData.map((surfaceData) => {
+                      const total = surfaceData['İlk 3 sıra'] + surfaceData['Tabela sonu'] + surfaceData['Tabela dışı']
+                      const pieData = [
+                        { name: 'İlk 3 sıra', value: surfaceData['İlk 3 sıra'], color: '#10b981', total },
+                        { name: 'Tabela sonu', value: surfaceData['Tabela sonu'], color: '#f59e0b', total },
+                        { name: 'Tabela dışı', value: surfaceData['Tabela dışı'], color: '#6b7280', total },
+                      ].filter(item => item.value > 0)
+                      const surfaceColors: Record<string, string> = {
+                        'Çim': '#009900',
+                        'Kum': '#996633',
+                        'Sentetik': '#d39b1e',
+                      }
+                      const surfaceColor = surfaceColors[surfaceData.surface] || '#6366f1'
+                      return (
+                        <Card key={surfaceData.surface} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                              <Trophy className="h-4 w-4 mr-2" style={{ color: surfaceColor }} />
+                              {surfaceData.surface}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <CustomLegend
+                              data={pieData.map(item => ({
+                                name: item.name,
+                                value: item.value,
+                                color: item.color,
+                                percent: (item.value / total) * 100,
+                              }))}
+                              total={total}
+                            />
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+      </div>
+                )}
+                {/* Mesafe Category */}
+                {selectedCategory === 'mesafe' && hasRaceData && distancePerformanceData.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4">
+                    {distancePerformanceData.map((distanceData) => {
+                      const total = distanceData['İlk 3 sıra'] + distanceData['Tabela sonu'] + distanceData['Tabela dışı']
+                      const pieData = [
+                        { name: 'İlk 3 sıra', value: distanceData['İlk 3 sıra'], color: '#10b981', total },
+                        { name: 'Tabela sonu', value: distanceData['Tabela sonu'], color: '#f59e0b', total },
+                        { name: 'Tabela dışı', value: distanceData['Tabela dışı'], color: '#6b7280', total },
+                      ].filter(item => item.value > 0)
+                      const distanceColors: Record<string, string> = {
+                        'Kısa Mesafe': '#3b82f6',
+                        'Orta Mesafe': '#8b5cf6',
+                        'Uzun Mesafe': '#ec4899',
+                      }
+                      const distanceColor = distanceColors[distanceData.distance] || '#6366f1'
+                      return (
+                        <Card key={distanceData.distance} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                              <Ruler className="h-4 w-4 mr-2" style={{ color: distanceColor }} />
+                              {distanceData.distance}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <CustomLegend
+                              data={pieData.map(item => ({
+                                name: item.name,
+                                value: item.value,
+                                color: item.color,
+                                percent: (item.value / total) * 100,
+                              }))}
+                              total={total}
+                            />
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
+                {/* Şehir Category */}
+                {selectedCategory === 'sehir' && hasRaceData && cityPerformanceData.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4">
+                    {cityPerformanceData.map((cityData) => {
+                      const total = cityData['İlk 3 sıra'] + cityData['Tabela sonu'] + cityData['Tabela dışı']
+                      const pieData = [
+                        { name: 'İlk 3 sıra', value: cityData['İlk 3 sıra'], color: '#10b981', total },
+                        { name: 'Tabela sonu', value: cityData['Tabela sonu'], color: '#f59e0b', total },
+                        { name: 'Tabela dışı', value: cityData['Tabela dışı'], color: '#6b7280', total },
+                      ].filter(item => item.value > 0)
+                      return (
+                        <Card key={cityData.city} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                              <MapPin className="h-4 w-4 mr-2 text-indigo-600" />
+                              {cityData.city}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <CustomLegend
+                              data={pieData.map(item => ({
+                                name: item.name,
+                                value: item.value,
+                                color: item.color,
+                                percent: (item.value / total) * 100,
+                              }))}
+                              total={total}
+                            />
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
                 )}
                 {/* Gelir-Gider and Yem-Kilo categories would need to be added similarly */}
                 {(selectedCategory === 'gelir-gider' || selectedCategory === 'yem-kilo') && (

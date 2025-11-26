@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { ArrowLeft, FileText, MapPin, Filter, Plus, NotebookPen } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, Filter, Plus, NotebookPen, BarChart3, Layers, Ruler, Users, Flag, TurkishLira } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
@@ -237,6 +237,7 @@ export default function HorseDetailPage() {
   const [showBannedMedicinesFilter, setShowBannedMedicinesFilter] = useState(false)
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
   const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
+  const [statisticsCategory, setStatisticsCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
@@ -777,10 +778,43 @@ useEffect(() => {
               </div>
             </div>
           )}
+
+          {/* Statistics Category Navigation Buttons */}
+          {activeTab === 'statistics' && (
+            <div className="w-full overflow-x-auto pb-2 -mx-4 px-4 mt-3">
+              <div className="flex gap-2 min-w-max">
+                {[
+                  { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
+                  { id: 'pist' as const, label: 'Pist', icon: Layers },
+                  { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
+                  { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
+                  { id: 'jokey' as const, label: 'Jokey', icon: Users },
+                  { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
+                  { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
+                ].map(({ id, label, icon: Icon }) => {
+                  const isActive = statisticsCategory === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setStatisticsCategory(id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                      <span>{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mobile: Spacer for fixed header */}
-        <div className="md:hidden h-[180px]"></div>
+        <div className="md:hidden h-[230px]"></div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Desktop: Horizontal Scrollable Buttons */}
@@ -1060,7 +1094,7 @@ useEffect(() => {
         </div>
 
         {/* Mobile: Scrollable Content Area */}
-        <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+        <div className="md:hidden fixed top-[246px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
           <TabsContent value="info" className="mt-0">
             <HorseMetadataCard horse={horseMetadata} />
           </TabsContent>
@@ -1132,6 +1166,8 @@ useEffect(() => {
               })) || []}
               hideButtons={true}
               showExpenseCategoryDistribution
+              selectedCategory={statisticsCategory}
+              onCategoryChange={setStatisticsCategory}
               onFilterTriggerReady={(trigger) => {
                 statisticsFilterTriggerRef.current = trigger
               }}
@@ -1274,6 +1310,8 @@ useEffect(() => {
             })) || []}
             hideButtons={true}
             showExpenseCategoryDistribution
+            selectedCategory={statisticsCategory}
+            onCategoryChange={setStatisticsCategory}
             onFilterTriggerReady={(trigger) => {
               statisticsFilterTriggerRef.current = trigger
             }}
