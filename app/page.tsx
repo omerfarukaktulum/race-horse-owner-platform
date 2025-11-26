@@ -56,8 +56,7 @@ export default function HomePage() {
           Yarış Atlarınızı Profesyonelce Yönetin
         </h2>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          EKÜRİM ile atlarınızı profesyonelce yönetin. Hastalık takibi, çıkıcı ilaç yönetimi, 
-          idman planları, gider takibi, yarış ve idman verilerini otomatik senkronize edin, 
+          Hastalık takibi, çıkıcı ilaç yönetimi, idman planları, gider takibi, yarış ve idman verilerini otomatik senkronize edin, 
           notlar tutun ve antrenörlerinizle işbirliği yapın.
         </p>
 
@@ -130,7 +129,7 @@ export default function HomePage() {
       </section>
 
         {/* Detailed Features Section */}
-        <section className="container mx-auto px-4 py-16">
+        <section className="container mx-auto px-4 pt-8 pb-16">
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
           Neden EKÜRİM?
         </h2>
@@ -316,55 +315,6 @@ export default function HomePage() {
           </Card>
         </div>
       </section>
-
-        {/* Screenshots Section */}
-        <section className="container mx-auto px-4 py-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
-            Platformu Keşfedin
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-              <Image
-                src="/screenshots/dashboard.png"
-                alt="EKÜRİM Dashboard - Son yarışlar, idmanlar ve kayıtlar"
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover"
-                unoptimized
-              />
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-              <Image
-                src="/screenshots/features.png"
-                alt="EKÜRİM Özellikler - At yönetimi ve detaylı bilgiler"
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover"
-                unoptimized
-              />
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-              <Image
-                src="/screenshots/analytics.png"
-                alt="EKÜRİM İstatistikler - Detaylı analiz ve raporlar"
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover"
-                unoptimized
-              />
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200/50 shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-              <Image
-                src="/screenshots/management.png"
-                alt="EKÜRİM Yönetim - Gider takibi ve not yönetimi"
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover"
-                unoptimized
-              />
-            </div>
-          </div>
-        </section>
 
         {/* Footer */}
         <footer className="border-t bg-white/80 backdrop-blur-sm mt-16">
