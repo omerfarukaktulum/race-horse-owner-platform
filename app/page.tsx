@@ -31,6 +31,7 @@ export default function HomePage() {
                 width={64}
                 height={64}
                 className="h-12 w-auto"
+                style={{ filter: 'brightness(0.7) contrast(1.3) saturate(1.5)' }}
                 priority
               />
               <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
