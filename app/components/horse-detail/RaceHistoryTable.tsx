@@ -1093,7 +1093,7 @@ function RaceGallopsModal({
               <div className="w-full">
                 <div 
                   className="overflow-y-auto overflow-x-hidden px-2 py-2"
-                  style={{ maxHeight: '500px' }}
+                  style={{ maxHeight: 'calc(90vh - 300px)' }}
                 >
                 {filteredGallops.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -1116,7 +1116,7 @@ function RaceGallopsModal({
                     return (
                       <div
                         key={gallop.id}
-                        className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border min-w-0 max-w-full"
+                        className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border"
                         style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                       >
                         <div className="flex items-start justify-between mb-2">
