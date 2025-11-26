@@ -475,10 +475,10 @@ export default function ExpensesPage() {
             <span className="tracking-tight">{TR.nav.expenses}</span>
           </h1>
         </div>
-        {/* Filter and Add buttons */}
-        <div className="flex flex-col gap-2">
-          {/* First line: Filter, Search on left, Ekle on right */}
-          <div className="flex items-center justify-between gap-4">
+      {/* Filter and Add buttons */}
+      <div className="flex flex-col gap-2">
+        {/* First line: Filter, Search on left, Ekle on right */}
+        <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
                 <Button
@@ -669,18 +669,18 @@ export default function ExpensesPage() {
           </Button>
         </div>
 
-          {/* Second line: Toplam Gider below Ekle button, right-aligned */}
-          <div className="flex justify-end">
-            <div className="text-right">
-              <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
-              <p className="text-lg font-semibold text-indigo-600">
-                {formatCurrency(totalAmount, defaultCurrency)}
-              </p>
+        {/* Second line: Toplam Gider below Ekle button, right-aligned */}
+        <div className="flex justify-end">
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
+            <p className="text-lg font-semibold text-indigo-600">
+              {formatCurrency(totalAmount, defaultCurrency)}
+            </p>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Desktop: Filter and Add buttons (normal layout) */}
       <div className="hidden md:flex flex-col gap-2">
         {/* First line: Filter, Search on left, Ekle on right */}
@@ -992,7 +992,7 @@ export default function ExpensesPage() {
                 })}
               </>
             )}
-        </div>
+              </div>
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">

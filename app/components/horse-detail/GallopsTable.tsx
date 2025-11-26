@@ -776,11 +776,11 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 </div>
                 
                 <div className="flex items-center gap-2 mb-2">
-                  {gallop.jockeyName && (
-                    <span className="text-sm text-gray-700">
-                      {gallop.jockeyName}
-                    </span>
-                  )}
+                    {gallop.jockeyName && (
+                      <span className="text-sm text-gray-700">
+                        {gallop.jockeyName}
+                      </span>
+                    )}
                   {statusLabel && (
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${gallop.surface ? getSurfaceColor(gallop.surface) : 'bg-blue-100 text-blue-800'}`}>
                       {statusLabel}

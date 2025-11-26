@@ -1083,13 +1083,13 @@ function RaceGallopsModal({
         
         <div className="flex-1 overflow-hidden flex flex-col min-w-0 w-full">
           <div className="flex flex-col w-full">
-            {/* Mobile: Card Layout */}
+          {/* Mobile: Card Layout */}
             <div className="md:hidden mb-4 flex justify-center w-full px-6">
               <div className="w-full">
-                <div 
+              <div 
                   className="overflow-y-auto overflow-x-hidden px-2 py-2"
                   style={{ maxHeight: 'calc(90vh - 300px)' }}
-                >
+              >
                 {filteredGallops.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Activity className="h-12 w-12 text-gray-400 mb-4" />
@@ -1276,9 +1276,9 @@ function RaceGallopsModal({
               </table>
             </div>
           )}
-          </div>
-          </div>
         </div>
+          </div>
+      </div>
       </DialogContent>
     </Dialog>
   )

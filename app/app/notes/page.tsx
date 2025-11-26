@@ -813,7 +813,7 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-1 cursor-pointer ${
+                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer ${
                         isHighlighted
                           ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
                           : ''

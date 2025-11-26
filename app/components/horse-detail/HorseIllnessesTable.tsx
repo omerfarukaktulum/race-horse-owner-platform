@@ -654,38 +654,38 @@ export function HorseIllnessesTable({
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-1">
-                        {photos.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => openAttachmentViewer(photos)}
-                            className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                            title={`${photos.length} ek görüntüle`}
-                          >
-                            <Paperclip className="h-4 w-4" />
-                          </button>
-                        )}
-                        {canEdit && (
-                          <>
+                        <div className="flex gap-1">
+                          {photos.length > 0 && (
                             <button
                               type="button"
-                              onClick={() => handleEditClick(illness)}
-                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                              title="Düzenle"
+                              onClick={() => openAttachmentViewer(photos)}
+                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              title={`${photos.length} ek görüntüle`}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Paperclip className="h-4 w-4" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClick(illness)}
-                              className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-                              title="Sil"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
+                          )}
+                          {canEdit && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleEditClick(illness)}
+                                className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
+                                title="Düzenle"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClick(illness)}
+                                className="p-1.5 rounded-md bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                                title="Sil"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                     </div>
                     {illness.detail && (
                       <p className="text-sm text-gray-700 mb-2 line-clamp-3 whitespace-pre-wrap">
@@ -694,38 +694,38 @@ export function HorseIllnessesTable({
                     )}
                     <div className="flex items-center justify-end gap-2 mb-2">
                       <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
-                        {operations.length} müdahale
-                      </span>
-                      {hasOperations && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newExpanded = new Set(expandedIllnesses)
-                            if (isExpanded) {
-                              newExpanded.delete(illness.id)
-                            } else {
-                              newExpanded.add(illness.id)
-                            }
-                            setExpandedIllnesses(newExpanded)
-                          }}
+                            {operations.length} müdahale
+                          </span>
+                          {hasOperations && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newExpanded = new Set(expandedIllnesses)
+                                if (isExpanded) {
+                                  newExpanded.delete(illness.id)
+                                } else {
+                                  newExpanded.add(illness.id)
+                                }
+                                setExpandedIllnesses(newExpanded)
+                              }}
                           className="p-1.5 rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                          title={isExpanded ? 'Gizle' : 'Göster'}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                      )}
+                              title={isExpanded ? 'Gizle' : 'Göster'}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                          )}
                       {!illness.endDate && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIllnessForOperation(illness)
-                            setIsOperationModalOpen(true)
-                          }}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIllnessForOperation(illness)
+                              setIsOperationModalOpen(true)
+                            }}
                           className="p-1.5 rounded-md bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                          title="Müdahale Ekle"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
+                            title="Müdahale Ekle"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
                       )}
                     </div>
                     {isExpanded && hasOperations && (
@@ -918,17 +918,17 @@ export function HorseIllnessesTable({
                                     </button>
                                   )}
                                   {!illness.endDate && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setIllnessForOperation(illness)
-                                        setIsOperationModalOpen(true)
-                                      }}
-                                      className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                      title="Müdahale Ekle"
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setIllnessForOperation(illness)
+                                      setIsOperationModalOpen(true)
+                                    }}
+                                    className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
+                                    title="Müdahale Ekle"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </button>
                                   )}
                                 </div>
                               </td>

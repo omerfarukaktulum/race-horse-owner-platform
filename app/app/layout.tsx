@@ -101,11 +101,11 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {isOwner && ownerOfficialRef ? (
-              <div className="h-8 w-8 flex-shrink-0 relative flex items-center justify-center">
+              <div className="h-128 w-12 flex-shrink-0 relative flex items-center justify-center">
                 <img
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
                   alt="Eküri Forması"
-                  className="h-8 w-8 object-contain"
+                  className="h-12 w-12 object-contain"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
                     const container = e.currentTarget.parentElement
@@ -122,7 +122,8 @@ function AppNavbar() {
             ) : (
               <LayoutGrid className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
             )}
-            <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5]">
+            <div className="flex flex-col">
+              <span className="font-bold text-md bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] leading-tight">
               {isOwner
                 ? stablemateName
                   ? `${stablemateName} EKÜRİSİ`
@@ -131,6 +132,13 @@ function AppNavbar() {
                 ? trainerName || 'Antrenör Paneli'
                 : 'EKÜRİM'}
             </span>
+              {pathname === '/app/notes' && (
+                <span className="text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  {TR.nav.notes}
+                </span>
+              )}
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

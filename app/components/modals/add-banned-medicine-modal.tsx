@@ -233,10 +233,10 @@ export function AddBannedMedicineModal({
               required
               id="medicineName"
               type="text"
-              value={medicineName}
-              onChange={(e) => setMedicineName(e.target.value)}
+                value={medicineName}
+                onChange={(e) => setMedicineName(e.target.value)}
               placeholder="İlaç adını girin..."
-              disabled={isSubmitting}
+                disabled={isSubmitting}
               startIcon={<Pill className="h-4 w-4" />}
             />
 
