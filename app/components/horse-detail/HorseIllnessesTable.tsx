@@ -688,7 +688,7 @@ export function HorseIllnessesTable({
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">
+                          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
                             {operations.length} müdahale
                           </span>
                           {hasOperations && (
@@ -898,7 +898,7 @@ export function HorseIllnessesTable({
                               </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-700">
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
                                     {operations.length} müdahale
                                   </span>
                                   {hasOperations && (

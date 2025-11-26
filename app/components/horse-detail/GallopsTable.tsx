@@ -342,7 +342,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   return (
     <>
       {/* Filter dropdown container and Training Plan Button - on same line */}
-      <div className="flex flex-row items-center gap-2 mb-4">
+      <div className="flex flex-row items-center gap-2">
         {/* Filter dropdown container - always rendered for dropdown positioning */}
         <div 
           className="relative filter-dropdown-container"
@@ -680,7 +680,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
       </div>
 
     {/* Mobile: Card Layout */}
-    <div className="md:hidden">
+    <div className="md:hidden -mt-4">
       {filteredGallops.length === 0 ? (
         <div className="px-4 py-16 text-center text-sm text-gray-500">
           Seçilen filtrelerde idman bulunamadı
