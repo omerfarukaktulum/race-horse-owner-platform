@@ -150,6 +150,12 @@ function AppNavbar() {
                   {TR.nav.statistics}
                 </span>
               )}
+              {pathname === '/app/horses' && (
+                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                  {TR.nav.horses}
+                </span>
+              )}
             </div>
           </Link>
 
