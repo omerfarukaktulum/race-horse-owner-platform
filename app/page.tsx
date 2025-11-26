@@ -2,7 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers, Trophy, Calendar } from 'lucide-react'
+import { TrendingUp, Users, TurkishLira, Activity, BarChart3, Database, LayoutGrid, ClipboardList, FolderOpen, List, Package, Layers, Trophy, Calendar, Heart, Pill, BookOpen, FileText, MapPin, Stethoscope, CalendarCheck } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -56,8 +56,9 @@ export default function HomePage() {
           Yarış Atlarınızı Profesyonelce Yönetin
         </h2>
         <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          EKÜRİM ile atlarınızı takip edin, giderlerinizi yönetin, yarış ve idman verilerini 
-          otomatik senkronize edin, notlar tutun ve antrenörlerinizle işbirliği yapın.
+          EKÜRİM ile atlarınızı profesyonelce yönetin. Hastalık takibi, çıkıcı ilaç yönetimi, 
+          idman planları, gider takibi, yarış ve idman verilerini otomatik senkronize edin, 
+          notlar tutun ve antrenörlerinizle işbirliği yapın.
         </p>
 
         {/* Feature Highlights - Matching driving-license style */}
@@ -106,7 +107,7 @@ export default function HomePage() {
                   <Database className="h-6 w-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-rose-600 mb-1">Otomatik</div>
-                <div className="text-sm font-bold text-rose-600">TJK Senkronizasyon</div>
+                <div className="text-sm font-bold text-rose-600">Veri Senkronizasyonu</div>
                 <div className="text-xs text-gray-700 font-bold mt-1">yarış, idman, kayıt</div>
               </div>
             </div>
@@ -175,7 +176,7 @@ export default function HomePage() {
               <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-pink-600 rounded-full flex items-center justify-center mb-3">
                 <Database className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-rose-600">TJK Entegrasyonu</CardTitle>
+              <CardTitle className="text-rose-600">Veri Entegrasyonu</CardTitle>
               <CardDescription>
                 Yarış sonuçları, idmanlar ve kayıtlar otomatik senkronize edilir
               </CardDescription>
@@ -190,6 +191,90 @@ export default function HomePage() {
               <CardTitle className="text-blue-600">Not Yönetimi</CardTitle>
               <CardDescription>
                 Atlarınız için kategorize edilmiş notlar tutun, fotoğraflarla zenginleştirin
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-red-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center mb-3">
+                <Stethoscope className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-red-600">Hastalık Takibi</CardTitle>
+              <CardDescription>
+                Atlarınızın hastalık geçmişini takip edin, operasyon kayıtları tutun ve fotoğraflarla belgelendirin
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-orange-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-amber-600 rounded-full flex items-center justify-center mb-3">
+                <Pill className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-orange-600">Çıkıcı İlaç Yönetimi</CardTitle>
+              <CardDescription>
+                Yasaklı ilaçları takip edin, bekleme sürelerini hesaplayın ve yarışa uygunluğu kontrol edin
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full flex items-center justify-center mb-3">
+                <CalendarCheck className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-purple-600">İdman Planı</CardTitle>
+              <CardDescription>
+                Atlarınız için idman planları oluşturun, takip edin ve antrenörlerinizle paylaşın
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-cyan-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center mb-3">
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-cyan-600">Pedigri Bilgileri</CardTitle>
+              <CardDescription>
+                Detaylı soy ağacı bilgileri, baba ve anne hattından 4 nesil bilgi takibi
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-green-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-3">
+                <Trophy className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-green-600">Yarış Geçmişi</CardTitle>
+              <CardDescription>
+                Tüm yarış sonuçlarınızı görüntüleyin, pozisyon, ödül ve performans analizi yapın
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-teal-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-full flex items-center justify-center mb-3">
+                <Activity className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-teal-600">İdman Kayıtları</CardTitle>
+              <CardDescription>
+                İdman performanslarını takip edin, mesafe ve zaman kayıtlarını analiz edin
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border border-violet-100/50 hover:shadow-lg transition-all duration-300">
+            <CardHeader>
+              <div className="w-12 h-12 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full flex items-center justify-center mb-3">
+                <MapPin className="h-6 w-6 text-white" />
+              </div>
+              <CardTitle className="text-violet-600">Konum Takibi</CardTitle>
+              <CardDescription>
+                Atlarınızın hipodrom ve çiftlik konumlarını takip edin, geçmiş kayıtlarını görüntüleyin
               </CardDescription>
             </CardHeader>
           </Card>
