@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 
     const body = await request.json()
 
-    // Validate input
+    // Validate stablemate input
     const validation = stablemateSchema.safeParse(body)
     if (!validation.success) {
       return NextResponse.json(
@@ -129,7 +129,7 @@ export async function POST(request: Request) {
       notifyNewRace,
     } = validation.data
 
-    // Create stablemate
+    // Create stablemate for the logged-in user
     const stablemate = await prisma.stablemate.create({
       data: {
         ownerId: user.ownerProfile.id,
@@ -138,16 +138,13 @@ export async function POST(request: Request) {
         coOwners: coOwners || [],
         location,
         website,
-        notifyHorseRegistered,
-        notifyHorseDeclared,
-        notifyNewTraining,
-        notifyNewExpense,
-        notifyNewNote,
-        notifyNewRace,
       },
     })
 
-    return NextResponse.json({ success: true, stablemate })
+    return NextResponse.json({ 
+      success: true, 
+      stablemate,
+    })
   } catch (error) {
     console.error('Create stablemate error:', error)
     return NextResponse.json(
