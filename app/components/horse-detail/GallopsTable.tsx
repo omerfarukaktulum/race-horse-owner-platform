@@ -775,21 +775,14 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {gallop.jockeyName && (
-                      <span className="text-sm text-gray-700">
-                        {gallop.jockeyName}
-                      </span>
-                    )}
-                    {gallop.surface && (
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getSurfaceColor(gallop.surface)}`}>
-                        {formatSurface(gallop.surface)}
-                      </span>
-                    )}
-                  </div>
-                  {statusLabel && (
+                <div className="flex items-center gap-2 mb-2">
+                  {gallop.jockeyName && (
                     <span className="text-sm text-gray-700">
+                      {gallop.jockeyName}
+                    </span>
+                  )}
+                  {statusLabel && (
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${gallop.surface ? getSurfaceColor(gallop.surface) : 'bg-blue-100 text-blue-800'}`}>
                       {statusLabel}
                     </span>
                   )}
@@ -811,7 +804,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 )}
                 
                 {gallop.note && (
-                  <p className="text-sm text-gray-700 mb-2 line-clamp-2">{gallop.note}</p>
+                  <p className="text-sm text-gray-700 mb-2 line-clamp-2"><span className="font-semibold">Not:</span> {gallop.note}</p>
                 )}
               </div>
             )
