@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -433,6 +433,15 @@ export default function NotesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
+      {/* Mobile: Fixed Header (title + buttons) */}
+      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 py-2">
+        {/* Page Title */}
+        <div className="mb-2">
+          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] flex items-center gap-2">
+            <FileText className="h-5 w-5 text-[#6366f1]" />
+            {TR.nav.notes}
+          </h1>
+        </div>
       {/* Filter and Add buttons */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -603,10 +612,186 @@ export default function NotesPage() {
             Ekle
           </Button>
         </div>
+        </div>
+      </div>
+      
+      {/* Desktop: Filter and Add buttons (normal layout) */}
+      <div className="hidden md:flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {(selectedRange ? 1 : 0) + addedByFilters.length + stablemateFilters.length}
+                </span>
+              )}
+            </Button>
+
+            {showFilterDropdown && (
+              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    onClick={() => setShowFilterDropdown(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map(option => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Added By Filter */}
+                {getUniqueAddedBy.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueAddedBy.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => toggleAddedByFilter(option.value)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            addedByFilters.includes(option.value)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          key={stablemate}
+                          onClick={() => toggleStablemateFilter(stablemate)}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={() => {
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+            <div className="relative w-48 sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="At, not..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 ml-auto">
+          <Button
+            onClick={handleAddNoteClick}
+            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+          >
+            Ekle
+          </Button>
+        </div>
       </div>
 
-      {/* Mobile: Card Layout */}
-      <div className="md:hidden mt-6">
+      {/* Mobile: Spacer for fixed header */}
+      <div className="md:hidden h-[140px]"></div>
+
+      {/* Mobile: Scrollable Card Layout */}
+      <div className="md:hidden fixed top-[156px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
             {!hasNotes ? (
               <div className="px-4 py-16 text-center text-sm text-gray-500">
                 Henüz not eklenmemiş
@@ -635,7 +820,7 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer ${
+                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4 cursor-pointer ${
                         isHighlighted
                           ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
                           : ''
@@ -717,7 +902,7 @@ export default function NotesPage() {
                 })}
               </>
             )}
-      </div>
+        </div>
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">

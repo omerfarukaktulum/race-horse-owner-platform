@@ -888,7 +888,7 @@ export default function ExpensesPage() {
       <div className="md:hidden h-[180px]"></div>
 
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pb-8">
+      <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
         {!hasExpenses ? (
           <div className="px-4 py-16 text-center text-sm text-gray-500">
             {TR.expenses.noExpenses}
