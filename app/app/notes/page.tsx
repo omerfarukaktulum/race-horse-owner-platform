@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -433,17 +433,8 @@ export default function NotesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      {/* Mobile: Fixed Header (title + buttons) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 py-2">
-        {/* Page Title */}
-        <div className="mb-3 pb-2.5 border-b border-gray-200/60">
-          <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#4f46e5] shadow-md">
-              <FileText className="h-4 w-4 text-white" />
-            </div>
-            <span className="tracking-tight">{TR.nav.notes}</span>
-          </h1>
-        </div>
+      {/* Mobile: Fixed Header (buttons) */}
+      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
       {/* Filter and Add buttons */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -616,7 +607,7 @@ export default function NotesPage() {
         </div>
         </div>
       </div>
-      
+
       {/* Desktop: Filter and Add buttons (normal layout) */}
       <div className="hidden md:flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -790,10 +781,10 @@ export default function NotesPage() {
       </div>
 
       {/* Mobile: Spacer for fixed header */}
-      <div className="md:hidden h-[140px]"></div>
+      <div className="md:hidden h-[116px]"></div>
 
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[156px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+      <div className="md:hidden fixed top-[132px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
             {!hasNotes ? (
               <div className="px-4 py-16 text-center text-sm text-gray-500">
                 Henüz not eklenmemiş
@@ -822,7 +813,7 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-4 cursor-pointer ${
+                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 first:mt-1 cursor-pointer ${
                         isHighlighted
                           ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
                           : ''
@@ -904,7 +895,7 @@ export default function NotesPage() {
                 })}
               </>
             )}
-        </div>
+      </div>
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
