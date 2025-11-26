@@ -682,7 +682,7 @@ useEffect(() => {
             </div>
             
             {/* Desktop: Filter and Action Buttons - Below Tabs, Same Line */}
-            <div className={`hidden sm:flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} justify-between mt-4`}>
+            <div className={`hidden sm:flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} justify-between mt-6`}>
               {/* Left side: Filter buttons */}
               <div className={`flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} gap-3`}>
                 {activeTab === 'illnesses' && (
@@ -841,7 +841,7 @@ useEffect(() => {
           </div>
           {/* Mobile: Illnesses buttons */}
           {activeTab === 'illnesses' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
               <div ref={illnessesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -864,7 +864,7 @@ useEffect(() => {
           )}
           {/* Mobile: Expenses buttons and total */}
           {activeTab === 'expenses' && (
-            <div className="sm:hidden flex flex-col gap-3 mt-4">
+            <div className="sm:hidden flex flex-col gap-3 mt-0">
               <div className="flex items-center justify-between gap-3">
                 <div ref={expensesFilterButtonRef} className="relative">
                   <Button 
@@ -895,7 +895,7 @@ useEffect(() => {
           )}
           {/* Mobile: Notes buttons */}
           {activeTab === 'notes' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
               <div ref={notesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -918,7 +918,7 @@ useEffect(() => {
           )}
           {/* Mobile: Banned Medicines buttons */}
           {activeTab === 'banned-medicines' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
               <div ref={bannedMedicinesFilterButtonRef} className="relative">
                 <Button 
                   size="sm"
@@ -942,7 +942,7 @@ useEffect(() => {
           )}
           {/* Mobile: Races buttons */}
           {activeTab === 'races' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
               <div ref={racesFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
@@ -959,7 +959,7 @@ useEffect(() => {
           )}
           {/* Mobile: Gallops buttons */}
           {activeTab === 'gallops' && (
-            <div className="sm:hidden flex items-center justify-between gap-3 mt-4">
+            <div className="sm:hidden flex items-center justify-between gap-3 mt-0">
               <div ref={gallopsFilterButtonRef} className="relative">
                 <Button 
                   onClick={() => {
