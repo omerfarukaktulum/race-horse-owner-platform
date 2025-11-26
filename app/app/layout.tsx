@@ -332,10 +332,10 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-col">
       <AppNavbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full min-w-0 pt-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full min-w-0 pt-20 pb-20">
         {children}
       </main>
-      <footer className="border-t border-gray-200 bg-white backdrop-blur-sm mt-auto">
+      <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-600">
           <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
         </div>

@@ -784,7 +784,7 @@ export default function NotesPage() {
       <div className="md:hidden h-[116px]"></div>
 
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[132px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+      <div className="md:hidden fixed top-[132px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8" style={{ bottom: '73px' }}>
             {!hasNotes ? (
               <div className="px-4 py-16 text-center text-sm text-gray-500">
                 Henüz not eklenmemiş

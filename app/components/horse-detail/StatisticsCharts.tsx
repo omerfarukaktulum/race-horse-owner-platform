@@ -2905,7 +2905,7 @@ export function StatisticsCharts({
                 )}
             </div>
           ) : (
-            <div className="md:hidden fixed top-[196px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+            <div className="md:hidden fixed top-[196px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8" style={{ bottom: '73px' }}>
               <div className="space-y-6">
                 {/* Copy all chart categories from desktop area above */}
                 {/* Genel Category */}

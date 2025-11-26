@@ -1360,7 +1360,7 @@ export default function HorsesPage() {
 
       {/* Horses Display - Mobile and Desktop */}
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[132px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8 space-y-4">
+      <div className="md:hidden fixed top-[132px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8 space-y-4" style={{ bottom: '73px' }}>
         {horses.length === 0 ? (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardContent className="py-16 text-center">

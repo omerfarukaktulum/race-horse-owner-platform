@@ -238,6 +238,8 @@ export default function HorseDetailPage() {
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
   const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
   const [statisticsCategory, setStatisticsCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
+  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(116) // Default height
+  const mobileHeaderRef = useRef<HTMLDivElement>(null)
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
@@ -251,6 +253,21 @@ export default function HorseDetailPage() {
       setActiveTab(tabParam)
     }
   }, [searchParams])
+
+  // Measure mobile header height when activeTab changes
+  useEffect(() => {
+    const measureHeader = () => {
+      if (mobileHeaderRef.current) {
+        const height = mobileHeaderRef.current.offsetHeight
+        setMobileHeaderHeight(height)
+      }
+    }
+    
+    // Measure after a short delay to ensure DOM is updated
+    const timeoutId = setTimeout(measureHeader, 100)
+    
+    return () => clearTimeout(timeoutId)
+  }, [activeTab, statisticsCategory])
 
   const handleTabChange = (value: string) => {
     if (isHorseTab(value)) {
@@ -568,7 +585,7 @@ useEffect(() => {
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         {/* Mobile: Fixed Header (tabs + buttons) */}
-        <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
+        <div ref={mobileHeaderRef} className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
           {/* Tabs Menu */}
           <div className="relative w-full mb-3">
             {/* Left fade gradient */}
@@ -621,7 +638,7 @@ useEffect(() => {
           </div>
 
           {/* Filter and Action Buttons */}
-          {(activeTab === 'illnesses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'races' || activeTab === 'statistics' || activeTab === 'banned-medicines' || activeTab === 'expenses') && (
+            {(activeTab === 'illnesses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'races' || activeTab === 'statistics' || activeTab === 'banned-medicines' || activeTab === 'expenses') && (
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {activeTab === 'illnesses' && (
@@ -777,7 +794,7 @@ useEffect(() => {
                 )}
               </div>
             </div>
-          )}
+            )}
 
           {/* Statistics Category Navigation Buttons */}
           {activeTab === 'statistics' && (
@@ -808,13 +825,13 @@ useEffect(() => {
                     </button>
                   )
                 })}
-              </div>
+          </div>
             </div>
           )}
         </div>
 
         {/* Mobile: Spacer for fixed header */}
-        <div className="md:hidden h-[230px]"></div>
+        <div className="md:hidden" style={{ height: `${mobileHeaderHeight}px` }}></div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Desktop: Horizontal Scrollable Buttons */}
@@ -936,23 +953,23 @@ useEffect(() => {
             <div className={`hidden sm:flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} justify-between mt-6`}>
               {/* Left side: Filter buttons */}
               <div className={`flex ${activeTab === 'expenses' ? 'items-start' : 'items-center'} gap-3`}>
-                {activeTab === 'illnesses' && (
-                  <div ref={illnessesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        illnessesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(illnessesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(illnessesFilterCount)}
-                    </Button>
-                  </div>
+          {activeTab === 'illnesses' && (
+              <div ref={illnessesFilterButtonRef} className="relative">
+                <Button 
+                  onClick={() => {
+                    illnessesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(illnessesFilterCount > 0)}
+                >
+                  <Filter className="h-4 w-4" />
+                  {renderFilterBadge(illnessesFilterCount)}
+                </Button>
+              </div>
                 )}
                 {activeTab === 'notes' && (
                   <div ref={notesFilterButtonRef} className="relative">
-                    <Button 
+              <Button 
                       onClick={() => {
                         notesFilterTriggerRef.current?.()
                       }}
@@ -961,26 +978,26 @@ useEffect(() => {
                     >
                       <Filter className="h-4 w-4" />
                       {renderFilterBadge(notesFilterCount)}
-                    </Button>
-                  </div>
-                )}
+              </Button>
+            </div>
+          )}
                 {activeTab === 'gallops' && (
                   <div ref={gallopsFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
+                  <Button 
+                    onClick={() => {
                         gallopsFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
+                    }}
+                    variant="outline"
                       className={getFilterButtonClass(gallopsFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
+                  >
+                    <Filter className="h-4 w-4" />
                       {renderFilterBadge(gallopsFilterCount)}
-                    </Button>
-                  </div>
+                  </Button>
+                </div>
                 )}
                 {activeTab === 'races' && (
                   <div ref={racesFilterButtonRef} className="relative">
-                    <Button 
+                <Button 
                       onClick={() => {
                         racesFilterTriggerRef.current?.()
                       }}
@@ -989,53 +1006,53 @@ useEffect(() => {
                     >
                       <Filter className="h-4 w-4" />
                       {renderFilterBadge(racesFilterCount)}
-                    </Button>
-                  </div>
-                )}
+                </Button>
+            </div>
+          )}
                 {activeTab === 'statistics' && (
                   <div ref={statisticsFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
+                <Button 
+                  onClick={() => {
                         statisticsFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
+                  }}
+                  variant="outline"
                       className={getFilterButtonClass(statisticsFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
+                >
+                  <Filter className="h-4 w-4" />
                       {renderFilterBadge(statisticsFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'banned-medicines' && (
-                  <div ref={bannedMedicinesFilterButtonRef} className="relative">
-                    <Button 
-                      size="sm"
-                      onClick={() => {
-                        bannedMedicinesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(bannedMedicinesFilterCount)}
-                    </Button>
-                  </div>
-                )}
+              </Button>
+            </div>
+          )}
+          {activeTab === 'banned-medicines' && (
+              <div ref={bannedMedicinesFilterButtonRef} className="relative">
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    bannedMedicinesFilterTriggerRef.current?.()
+                  }}
+                  variant="outline"
+                  className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
+                >
+                  <Filter className="h-4 w-4" />
+                  {renderFilterBadge(bannedMedicinesFilterCount)}
+              </Button>
+            </div>
+          )}
                 {activeTab === 'expenses' && (
                   <div ref={expensesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
+                <Button 
+                  onClick={() => {
                         filterTriggerRef.current?.()
-                      }}
-                      variant="outline"
+                  }}
+                  variant="outline"
                       className={getFilterButtonClass(expensesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
+                >
+                  <Filter className="h-4 w-4" />
                       {renderFilterBadge(expensesFilterCount)}
-                    </Button>
-                  </div>
-                )}
+                </Button>
               </div>
+                )}
+            </div>
               
               {/* Right side: Action buttons */}
               <div className="flex items-center gap-3">
@@ -1049,18 +1066,18 @@ useEffect(() => {
                 )}
                 {activeTab === 'expenses' && (
                   <div className="flex flex-col items-end gap-2">
-                    <Button 
+                <Button 
                       onClick={() => setIsExpenseModalOpen(true)}
                       className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
                     >
                       Ekle
-                    </Button>
+                </Button>
                     <div className="text-right">
                       <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
                       <p className="text-lg font-semibold text-indigo-600">
                         {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
                       </p>
-                    </div>
+              </div>
                   </div>
                 )}
                 {activeTab === 'notes' && (
@@ -1072,12 +1089,12 @@ useEffect(() => {
                   </Button>
                 )}
                 {activeTab === 'gallops' && (
-                  <Button
-                    onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-                  >
-                    İdman Planı
-                  </Button>
+              <Button
+                onClick={() => setIsShowTrainingPlansModalOpen(true)}
+                className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
+              >
+                İdman Planı
+              </Button>
                 )}
                 {activeTab === 'banned-medicines' && (
                   <Button 
@@ -1089,12 +1106,12 @@ useEffect(() => {
                 )}
               </div>
             </div>
-            )}
+          )}
           </div>
         </div>
 
         {/* Mobile: Scrollable Content Area */}
-        <div className="md:hidden fixed top-[246px] left-0 right-0 bottom-0 overflow-y-auto px-4 pt-3 pb-8">
+        <div className="md:hidden fixed left-0 right-0 overflow-y-auto px-4 pt-3" style={{ top: `${64 + mobileHeaderHeight}px`, bottom: '73px' }}>
           <TabsContent value="info" className="mt-0">
             <HorseMetadataCard horse={horseMetadata} />
           </TabsContent>
@@ -1239,7 +1256,7 @@ useEffect(() => {
 
         {/* Desktop: Content Area */}
         <div className="hidden md:block">
-          <TabsContent value="info" className="mt-6">
+        <TabsContent value="info" className="mt-6">
           <HorseMetadataCard horse={horseMetadata} />
         </TabsContent>
 
