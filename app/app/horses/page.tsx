@@ -715,8 +715,7 @@ export default function HorsesPage() {
               }}
             >
               <FileText className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Ekle</span>
-              <span className="sm:hidden">Ekle</span>
+              Not
             </Button>
             <Button 
               size="sm"
@@ -729,8 +728,7 @@ export default function HorsesPage() {
               }}
             >
               <TurkishLira className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Ekle</span>
-              <span className="sm:hidden">Ekle</span>
+              Gider
             </Button>
             <Button 
               size="sm"
@@ -743,8 +741,7 @@ export default function HorsesPage() {
               }}
             >
               <MapPin className="h-3 w-3 mr-1" />
-              <span className="hidden sm:inline">Konum Değiştir</span>
-              <span className="sm:hidden">Konum</span>
+              Konum
             </Button>
           </div>
       </Card>
@@ -772,8 +769,8 @@ export default function HorsesPage() {
       <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
         {/* Filter, Sort, Search and Add buttons */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {/* Filter Button */}
+        <div className="flex items-center gap-3">
+          {/* Filter Button */}
             <div className="relative filter-dropdown-container">
               <Button
                 variant="outline"
@@ -1051,16 +1048,7 @@ export default function HorsesPage() {
             </div>
           )}
           </div>
-          
-          {/* Add Horse Button */}
-          <Button
-            onClick={() => setAddHorseModalOpen(true)}
-            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ekle
-          </Button>
-        </div>
+          </div>
       </div>
 
       {/* Mobile: Spacer for fixed header */}
@@ -1383,23 +1371,23 @@ export default function HorsesPage() {
       {/* Desktop: Horses Grid */}
       <div className="hidden md:block space-y-4 mt-6">
         {horses.length === 0 ? (
-          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-            <CardContent className="py-16 text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <LayoutGrid className="h-8 w-8 text-white" />
-              </div>
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <LayoutGrid className="h-8 w-8 text-white" />
+                </div>
               <p className="text-gray-700 font-semibold">Atınız bulunmuyor</p>
-              <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {horses.map((horse) => (
-              <HorseCard key={horse.id} horse={horse} />
-            ))}
-          </div>
-        )}
-      </div>
+                <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+              {horses.map((horse) => (
+                <HorseCard key={horse.id} horse={horse} />
+              ))}
+            </div>
+          )}
+            </div>
 
       {/* Modals */}
       <AddExpenseModal
