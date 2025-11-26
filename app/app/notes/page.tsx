@@ -436,10 +436,12 @@ export default function NotesPage() {
       {/* Mobile: Fixed Header (title + buttons) */}
       <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 py-2">
         {/* Page Title */}
-        <div className="mb-2">
-          <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] flex items-center gap-2">
-            <FileText className="h-5 w-5 text-[#6366f1]" />
-            {TR.nav.notes}
+        <div className="mb-3 pb-2.5 border-b border-gray-200/60">
+          <h1 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-[#6366f1] to-[#4f46e5] shadow-md">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+            <span className="tracking-tight">{TR.nav.notes}</span>
           </h1>
         </div>
       {/* Filter and Add buttons */}
