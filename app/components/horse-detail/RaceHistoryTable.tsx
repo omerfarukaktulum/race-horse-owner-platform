@@ -607,7 +607,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                   </div>
                   <div className="flex items-center gap-1">
                     {medal && <span className="text-lg">{medal}</span>}
-                    <span className="text-sm text-gray-600">Sıra:</span>
+                              <span className="text-sm text-gray-600">Sıra:</span>
                     <span className={`text-sm font-bold ${race.position && race.position <= 3 ? 'text-indigo-600' : 'text-gray-900'}`}>
                       {race.position || '-'}
                     </span>
@@ -687,10 +687,10 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                        title="Yarış videosu"
+                        title="Yarış detayları"
                       >
                         <Video className="h-4 w-4" />
-                        <span className="text-xs font-medium">Yarış videosu</span>
+                        <span className="text-xs font-medium">Yarış detayları</span>
                       </a>
                     )}
                     <button
@@ -1070,7 +1070,7 @@ function RaceGallopsModal({
                 </p>
                 {race.position && (
                   <p>
-                    <span className="font-semibold">Sıra:</span> {race.position}
+                    <span className="font-semibold">Sonuç Sıra:</span> {race.position}
                   </p>
                 )}
                 {previousRace && (
@@ -1078,6 +1078,9 @@ function RaceGallopsModal({
                     <span className="font-semibold">İdman Aralığı:</span> ({formatDateShort(previousRace.raceDate)} - {formatDateShort(race.raceDate)})
                   </p>
                 )}
+                <p>
+                  <span className="font-semibold">İdman Sayısı:</span> {filteredGallops.length}
+                </p>
               </div>
             </div>
           </div>

@@ -707,9 +707,14 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
             }
             
             // Get available distances for this gallop
-            const availableDistancesForGallop = DISTANCE_OPTIONS.filter(
-              (meter) => distances[meter] && distances[meter] !== '-' && String(distances[meter]).trim() !== ''
-            )
+            // If a distance filter is selected, only show that distance
+            const availableDistancesForGallop = selectedDistance
+              ? (distances[selectedDistance] && distances[selectedDistance] !== '-' && String(distances[selectedDistance]).trim() !== ''
+                  ? [selectedDistance]
+                  : [])
+              : DISTANCE_OPTIONS.filter(
+                  (meter) => distances[meter] && distances[meter] !== '-' && String(distances[meter]).trim() !== ''
+                )
             
             return (
               <div
