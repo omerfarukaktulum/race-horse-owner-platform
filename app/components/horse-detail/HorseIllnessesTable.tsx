@@ -888,7 +888,7 @@ export function HorseIllnessesTable({
                               <td className="px-4 py-3">
                                 {illness.detail ? (
                                   <div className="text-sm text-gray-800">
-                                    <p className="whitespace-pre-wrap"><span className="font-semibold">Detay:</span> {illness.detail}</p>
+                                    <p className="whitespace-pre-wrap">{illness.detail}</p>
                                   </div>
                                 ) : (
                                   <span className="text-sm text-gray-400">-</span>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/app/components/ui/button'
 import {
-  ModalSelect,
   ModalDateField,
   ModalInput,
   ModalTextarea,
@@ -12,7 +11,6 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { Pill, X, Hourglass } from 'lucide-react'
-import { BANNED_MEDICINES } from '@/lib/constants/banned-medicines'
 import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
 
 type MedicineModalMode = 'create' | 'edit'
@@ -230,24 +228,17 @@ export function AddBannedMedicineModal({
 
         <form onSubmit={handleSubmit}>
           <div className="w-[260px] mx-auto space-y-5">
-            <ModalSelect
+            <ModalInput
               label="İlaç Adı"
               required
-                value={medicineName}
-                onChange={(e) => setMedicineName(e.target.value)}
-                disabled={isSubmitting}
-              onMouseDown={guardPointerEvent}
-              onTouchStart={guardPointerEvent}
-              onFocus={guardFocusEvent}
-              icon={<Pill className="h-4 w-4" />}
-              >
-                <option value="">İlaç seçin...</option>
-                {BANNED_MEDICINES.map((med) => (
-                  <option key={med} value={med}>
-                    {med}
-                  </option>
-                ))}
-            </ModalSelect>
+              id="medicineName"
+              type="text"
+              value={medicineName}
+              onChange={(e) => setMedicineName(e.target.value)}
+              placeholder="İlaç adını girin..."
+              disabled={isSubmitting}
+              startIcon={<Pill className="h-4 w-4" />}
+            />
 
             <ModalDateField
               label="Verilme Tarihi"

@@ -482,7 +482,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                   </div>
                   {medicine.note && (
                     <p className="text-sm text-gray-700 mb-2 line-clamp-2">
-                      {medicine.note.replace(/\s*\n+\s*/g, ' ').trim()}
+                      <span className="font-semibold">Not:</span> {medicine.note.replace(/\s*\n+\s*/g, ' ').trim()}
                     </p>
                   )}
                   <div className="pt-2 border-t border-gray-100">
