@@ -834,57 +834,6 @@ useEffect(() => {
         <div className="md:hidden" style={{ height: `${mobileHeaderHeight}px` }}></div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Desktop: Horizontal Scrollable Buttons */}
-          <div className="hidden sm:block relative w-full -mx-4 px-4">
-            {/* Left fade gradient */}
-            {showLeftFade && (
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
-            )}
-            
-            {/* Scrollable container */}
-            <div 
-              ref={mobileTabsContainerRef}
-              className="overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-            >
-              <div className="flex gap-0 min-w-max">
-                {[
-                  { id: 'info' as const, label: 'At Bilgisi' },
-                  { id: 'pedigree' as const, label: 'Pedigri' },
-                  { id: 'races' as const, label: 'Koşular' },
-                  { id: 'gallops' as const, label: 'İdmanlar' },
-                  { id: 'statistics' as const, label: 'İstatistikler' },
-                  { id: 'illnesses' as const, label: 'Hastalıklar' },
-                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
-                  { id: 'expenses' as const, label: 'Giderler' },
-                  { id: 'notes' as const, label: 'Notlar' },
-                ].map(({ id, label }, index, array) => {
-                  const isActive = activeTab === id
-                  const isFirst = index === 0
-                  const isLast = index === array.length - 1
-                  return (
-                    <button
-                      key={id}
-                      ref={isActive ? activeTabButtonRef : null}
-                      onClick={() => handleTabChange(id)}
-                      className={`px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                        isActive
-                          ? `bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md rounded-sm ${isFirst ? 'rounded-l-md' : ''} ${isLast ? 'rounded-r-md' : ''}`
-                          : 'bg-white text-gray-700 hover:bg-gray-50 border-y border-l border-gray-200 first:rounded-l-md last:rounded-r-md last:border-r'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            
-            {/* Right fade gradient */}
-            {showRightFade && (
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10" />
-            )}
-          </div>
-
           {/* Desktop: Standard TabsList */}
           <div className="hidden sm:block w-full">
             <div className="flex items-center justify-between gap-4 w-full">
