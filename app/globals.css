@@ -267,3 +267,85 @@
   background: #94a3b8;
 }
 
+/* iOS Safe Area Support for Bottom Tab Bar */
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Mobile bottom padding to account for tab bar */
+@media (max-width: 768px) {
+  main {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+  }
+  
+  /* Ensure bottom tab bar maintains column layout - prevents layout shift when browser UI hides */
+  .bottom-tab-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: translateY(0);
+    transition: transform 0.3s ease-in-out !important;
+  }
+  
+  .bottom-tab-bar.translate-y-full {
+    transform: translateY(100%) !important;
+  }
+  
+  .bottom-tab-bar > div {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    max-height: 56px !important;
+    overflow: hidden !important;
+  }
+  
+  .bottom-tab-bar a,
+  .bottom-tab-item {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    max-width: 20% !important;
+    width: auto !important;
+    overflow: hidden !important;
+  }
+  
+  .bottom-tab-bar a > div,
+  .bottom-tab-item > div {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .bottom-tab-bar a > span,
+  .bottom-tab-item > span {
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    order: 2 !important;
+  }
+  
+  .bottom-tab-bar a > div {
+    order: 1 !important;
+  }
+  
+  /* Floating Action Button (FAB) styling */
+  .fab-button {
+    transition: bottom 0.3s ease-in-out !important;
+  }
+}
+

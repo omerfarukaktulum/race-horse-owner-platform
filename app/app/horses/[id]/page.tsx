@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Button } from '@/app/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
-import { ArrowLeft, FileText, MapPin, Filter, Plus, NotebookPen, BarChart3, Layers, Ruler, Users, Flag, TurkishLira } from 'lucide-react'
+import { ArrowLeft, FileText, MapPin, Filter, Plus, NotebookPen, BarChart3, Layers, Ruler, Users, Flag, TurkishLira, Menu, X, Info, Stethoscope, Pill, Wallet } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
@@ -238,8 +238,9 @@ export default function HorseDetailPage() {
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
   const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
   const [statisticsCategory, setStatisticsCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
-  const [mobileHeaderHeight, setMobileHeaderHeight] = useState(116) // Default height
-  const mobileHeaderRef = useRef<HTMLDivElement>(null)
+  const [isTabsMenuOpen, setIsTabsMenuOpen] = useState(false)
+  const tabsMenuRef = useRef<HTMLDivElement>(null)
+  const fabButtonRef = useRef<HTMLButtonElement>(null)
   const filterTriggerRef = useRef<(() => void) | null>(null)
   const highlightGallopId = searchParams?.get('highlightGallop') || undefined
   const highlightRaceId = searchParams?.get('highlightRace') || undefined
@@ -254,20 +255,39 @@ export default function HorseDetailPage() {
     }
   }, [searchParams])
 
-  // Measure mobile header height when activeTab changes
+  // Scroll to top when activeTab changes
   useEffect(() => {
-    const measureHeader = () => {
-      if (mobileHeaderRef.current) {
-        const height = mobileHeaderRef.current.offsetHeight
-        setMobileHeaderHeight(height)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [activeTab])
+
+  // Close tabs menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement
+      if (
+        isTabsMenuOpen &&
+        tabsMenuRef.current &&
+        !tabsMenuRef.current.contains(target) &&
+        fabButtonRef.current &&
+        !fabButtonRef.current.contains(target)
+      ) {
+        setIsTabsMenuOpen(false)
       }
     }
-    
-    // Measure after a short delay to ensure DOM is updated
-    const timeoutId = setTimeout(measureHeader, 100)
-    
-    return () => clearTimeout(timeoutId)
-  }, [activeTab, statisticsCategory])
+
+    if (isTabsMenuOpen) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
+  }, [isTabsMenuOpen])
 
   const handleTabChange = (value: string) => {
     if (isHorseTab(value)) {
@@ -277,6 +297,10 @@ export default function HorseDetailPage() {
       // Keep highlight parameters if they exist
       router.replace(`/app/horses/${horseId}?${params.toString()}`, { scroll: false })
       // The useEffect will update activeTab when the URL changes
+      // Close menu on mobile after tab change
+      setIsTabsMenuOpen(false)
+      // Scroll to top when tab changes
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
   const notesFilterTriggerRef = useRef<(() => void) | null>(null)
@@ -292,10 +316,6 @@ export default function HorseDetailPage() {
   const racesFilterButtonRef = useRef<HTMLDivElement>(null)
   const gallopsFilterButtonRef = useRef<HTMLDivElement>(null)
   const bannedMedicinesFilterButtonRef = useRef<HTMLDivElement>(null)
-  const mobileTabsContainerRef = useRef<HTMLDivElement>(null)
-  const activeTabButtonRef = useRef<HTMLButtonElement>(null)
-  const [showLeftFade, setShowLeftFade] = useState(false)
-  const [showRightFade, setShowRightFade] = useState(true)
 
   const getFilterButtonClass = (hasActive: boolean) =>
     `border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
@@ -317,46 +337,6 @@ export default function HorseDetailPage() {
     }
   }, [horseId])
 
-  // Center the active tab in mobile view and update fade indicators
-  useEffect(() => {
-    const container = mobileTabsContainerRef.current
-    if (!container) return
-
-    const checkScroll = () => {
-      const { scrollLeft, scrollWidth, clientWidth } = container
-      const hasMoreContent = scrollWidth > clientWidth
-      setShowLeftFade(hasMoreContent && scrollLeft > 10)
-      setShowRightFade(hasMoreContent && scrollLeft < scrollWidth - clientWidth - 10)
-    }
-
-    // Center active tab
-    if (activeTabButtonRef.current && container) {
-      const button = activeTabButtonRef.current
-      const buttonLeft = button.offsetLeft
-      const buttonWidth = button.offsetWidth
-      const containerWidth = container.offsetWidth
-      const scrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2)
-      
-      container.scrollTo({
-        left: scrollLeft,
-        behavior: 'smooth'
-      })
-      
-      // Check scroll position after scrolling
-      setTimeout(checkScroll, 300)
-    } else {
-      checkScroll()
-    }
-
-    // Listen to scroll events
-    container.addEventListener('scroll', checkScroll)
-    window.addEventListener('resize', checkScroll)
-
-    return () => {
-      container.removeEventListener('scroll', checkScroll)
-      window.removeEventListener('resize', checkScroll)
-    }
-  }, [activeTab])
 
 
 useEffect(() => {
@@ -584,254 +564,6 @@ useEffect(() => {
 
       {/* Tabbed Content */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        {/* Mobile: Fixed Header (tabs + buttons) */}
-        <div ref={mobileHeaderRef} className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
-          {/* Tabs Menu */}
-          <div className="relative w-full mb-3">
-            {/* Left fade gradient */}
-            {showLeftFade && (
-              <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white via-white/80 to-transparent pointer-events-none z-10" />
-            )}
-            
-            {/* Scrollable container */}
-            <div 
-              ref={mobileTabsContainerRef}
-              className="overflow-x-auto pb-2 scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-            >
-              <div className="flex gap-0 min-w-max">
-                {[
-                  { id: 'info' as const, label: 'At Bilgisi' },
-                  { id: 'pedigree' as const, label: 'Pedigri' },
-                  { id: 'races' as const, label: 'Koşular' },
-                  { id: 'gallops' as const, label: 'İdmanlar' },
-                  { id: 'statistics' as const, label: 'İstatistikler' },
-                  { id: 'illnesses' as const, label: 'Hastalıklar' },
-                  { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar' },
-                  { id: 'expenses' as const, label: 'Giderler' },
-                  { id: 'notes' as const, label: 'Notlar' },
-                ].map(({ id, label }, index, array) => {
-                  const isActive = activeTab === id
-                  const isFirst = index === 0
-                  const isLast = index === array.length - 1
-                  return (
-                    <button
-                      key={id}
-                      ref={isActive ? activeTabButtonRef : null}
-                      onClick={() => handleTabChange(id)}
-                      className={`px-3 py-2 text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                        isActive
-                          ? `bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md rounded-sm ${isFirst ? 'rounded-l-md' : ''} ${isLast ? 'rounded-r-md' : ''}`
-                          : 'bg-white text-gray-700 hover:bg-gray-50 border-y border-l border-gray-200 first:rounded-l-md last:rounded-r-md last:border-r'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            
-            {/* Right fade gradient */}
-            {showRightFade && (
-              <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none z-10" />
-            )}
-          </div>
-
-          {/* Filter and Action Buttons */}
-            {(activeTab === 'illnesses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'races' || activeTab === 'statistics' || activeTab === 'banned-medicines' || activeTab === 'expenses') && (
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                {activeTab === 'illnesses' && (
-                  <div ref={illnessesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        illnessesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(illnessesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(illnessesFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'notes' && (
-                  <div ref={notesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        notesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(notesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(notesFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'gallops' && (
-                  <div ref={gallopsFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        gallopsFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(gallopsFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(gallopsFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'races' && (
-                  <div ref={racesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        racesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(racesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(racesFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'statistics' && (
-                  <div ref={statisticsFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        statisticsFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(statisticsFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(statisticsFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'banned-medicines' && (
-                  <div ref={bannedMedicinesFilterButtonRef} className="relative">
-                    <Button 
-                      size="sm"
-                      onClick={() => {
-                        bannedMedicinesFilterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(bannedMedicinesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(bannedMedicinesFilterCount)}
-                    </Button>
-                  </div>
-                )}
-                {activeTab === 'expenses' && (
-                  <div ref={expensesFilterButtonRef} className="relative">
-                    <Button 
-                      onClick={() => {
-                        filterTriggerRef.current?.()
-                      }}
-                      variant="outline"
-                      className={getFilterButtonClass(expensesFilterCount > 0)}
-                    >
-                      <Filter className="h-4 w-4" />
-                      {renderFilterBadge(expensesFilterCount)}
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              {/* Right side: Action buttons */}
-              <div className="flex items-center gap-3">
-                {activeTab === 'illnesses' && (
-                  <Button 
-                    onClick={() => setIsIllnessModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    Ekle
-                  </Button>
-                )}
-                {activeTab === 'expenses' && (
-                  <div className="flex flex-col items-end gap-2">
-                    <Button 
-                      onClick={() => setIsExpenseModalOpen(true)}
-                      className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                    >
-                      Ekle
-                    </Button>
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
-                      <p className="text-lg font-semibold text-indigo-600">
-                        {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {activeTab === 'notes' && (
-                  <Button 
-                    onClick={() => setIsNoteModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    Ekle
-                  </Button>
-                )}
-                {activeTab === 'gallops' && (
-                  <Button
-                    onClick={() => setIsShowTrainingPlansModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all whitespace-nowrap"
-                  >
-                    İdman Planı
-                  </Button>
-                )}
-                {activeTab === 'banned-medicines' && (
-                  <Button 
-                    onClick={() => setIsBannedMedicineModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    Ekle
-                  </Button>
-                )}
-              </div>
-            </div>
-            )}
-
-          {/* Statistics Category Navigation Buttons */}
-          {activeTab === 'statistics' && (
-            <div className="w-full overflow-x-auto pb-2 -mx-4 px-4 mt-3">
-              <div className="flex gap-2 min-w-max">
-                {[
-                  { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
-                  { id: 'pist' as const, label: 'Pist', icon: Layers },
-                  { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
-                  { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
-                  { id: 'jokey' as const, label: 'Jokey', icon: Users },
-                  { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
-                  { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
-                ].map(({ id, label, icon: Icon }) => {
-                  const isActive = statisticsCategory === id
-                  return (
-                    <button
-                      key={id}
-                      onClick={() => setStatisticsCategory(id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                      <span>{label}</span>
-                    </button>
-                  )
-                })}
-          </div>
-            </div>
-          )}
-        </div>
-
-        {/* Mobile: Spacer for fixed header */}
-        <div className="md:hidden" style={{ height: `${mobileHeaderHeight}px` }}></div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           {/* Desktop: Standard TabsList */}
@@ -1013,30 +745,6 @@ useEffect(() => {
                     Ekle
                   </Button>
                 )}
-                {activeTab === 'expenses' && (
-                  <div className="flex flex-col items-end gap-2">
-                <Button 
-                      onClick={() => setIsExpenseModalOpen(true)}
-                      className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                    >
-                      Ekle
-                </Button>
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Toplam</p>
-                      <p className="text-lg font-semibold text-indigo-600">
-                        {formatCurrency(visibleExpenseTotal, visibleExpenseCurrency)}
-                      </p>
-              </div>
-                  </div>
-                )}
-                {activeTab === 'notes' && (
-                  <Button 
-                    onClick={() => setIsNoteModalOpen(true)}
-                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-                  >
-                    Ekle
-                  </Button>
-                )}
                 {activeTab === 'gallops' && (
               <Button
                 onClick={() => setIsShowTrainingPlansModalOpen(true)}
@@ -1060,12 +768,12 @@ useEffect(() => {
         </div>
 
         {/* Mobile: Scrollable Content Area */}
-        <div className="md:hidden fixed left-0 right-0 overflow-y-auto px-4 pt-3" style={{ top: `${64 + mobileHeaderHeight}px`, bottom: '73px' }}>
-          <TabsContent value="info" className="mt-0">
+        <div className={`md:hidden ${activeTab === 'statistics' ? 'pt-0 pb-0' : 'pt-0 pb-8'}`} style={activeTab === 'statistics' ? {} : { paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
+          <TabsContent value="info" className="mt-4">
             <HorseMetadataCard horse={horseMetadata} />
           </TabsContent>
 
-          <TabsContent value="pedigree" className="mt-0">
+          <TabsContent value="pedigree" className="mt-4">
             <PedigreeTree horse={pedigreeData} />
           </TabsContent>
 
@@ -1073,7 +781,7 @@ useEffect(() => {
             <RaceHistoryTable 
               races={horse.raceHistory || []}
               gallops={horse.gallops || []}
-              hideButtons={true}
+              hideButtons={false}
               onFilterTriggerReady={(trigger) => {
                 racesFilterTriggerRef.current = trigger
               }}
@@ -1088,7 +796,7 @@ useEffect(() => {
           <TabsContent value="gallops" className="mt-0">
             <GallopsTable 
               gallops={horse.gallops || []}
-              hideButtons={true}
+              hideButtons={false}
               horseId={horse.id}
               horseName={horse.name}
               onRefresh={fetchHorse}
@@ -1109,7 +817,7 @@ useEffect(() => {
               horseId={horse.id}
               horseName={horse.name}
               onRefresh={fetchHorse}
-              hideButtons={true}
+              hideButtons={false}
               onFilterTriggerReady={(trigger) => {
                 bannedMedicinesFilterTriggerRef.current = trigger
               }}
@@ -1130,7 +838,7 @@ useEffect(() => {
                 date: n.date,
                 kiloValue: n.kiloValue,
               })) || []}
-              hideButtons={true}
+              hideButtons={false}
               showExpenseCategoryDistribution
               selectedCategory={statisticsCategory}
               onCategoryChange={setStatisticsCategory}
@@ -1150,7 +858,7 @@ useEffect(() => {
               horseId={horse.id}
               horseName={horse.name}
               onRefresh={fetchHorse}
-              hideButtons={true}
+              hideButtons={false}
               onFilterTriggerReady={(trigger) => {
                 illnessesFilterTriggerRef.current = trigger
               }}
@@ -1168,7 +876,7 @@ useEffect(() => {
               horseId={horse.id}
               horseName={horse.name}
               onRefresh={fetchHorse}
-              hideButtons={true}
+              hideButtons={false}
               onFilterTriggerReady={(trigger) => {
                 filterTriggerRef.current = trigger
               }}
@@ -1190,7 +898,7 @@ useEffect(() => {
               horseId={horse.id}
               horseName={horse.name}
               onRefresh={fetchHorse}
-              hideButtons={true}
+              hideButtons={false}
               onFilterTriggerReady={(trigger) => {
                 notesFilterTriggerRef.current = trigger
               }}
@@ -1199,6 +907,7 @@ useEffect(() => {
               filterDropdownContainerRef={notesFilterButtonRef}
               onActiveFiltersChange={setNotesFilterCount}
               highlightNoteId={highlightNoteId}
+              onAddNote={() => setIsNoteModalOpen(true)}
             />
           </TabsContent>
         </div>
@@ -1343,10 +1052,105 @@ useEffect(() => {
             filterDropdownContainerRef={notesFilterButtonRef}
             onActiveFiltersChange={setNotesFilterCount}
             highlightNoteId={highlightNoteId}
+            onAddNote={() => setIsNoteModalOpen(true)}
           />
         </TabsContent>
         </div>
       </Tabs>
+
+      {/* Mobile: FAB Button with Tabs Menu - Always visible, positioned at bottom when no + FAB, above + FAB on expenses/notes/gallops/banned-medicines/illnesses tabs */}
+      <div 
+        className="md:hidden fixed right-4 z-40" 
+        style={{ 
+          bottom: (activeTab === 'expenses' || activeTab === 'notes' || activeTab === 'gallops' || activeTab === 'banned-medicines' || activeTab === 'illnesses')
+            ? 'calc(var(--bottom-tab-bar-height, 73px) + 4.5rem)' // Above + FAB
+            : 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' // At bottom position
+        }}
+      >
+        {/* Tabs Menu Popover */}
+        {isTabsMenuOpen && (
+          <div
+            ref={tabsMenuRef}
+            className="absolute right-0 bottom-full mb-2 min-w-max bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl border border-gray-200/50 p-2 animate-in z-40"
+          >
+            <div className="flex flex-col gap-1">
+              {[
+                { id: 'info' as const, label: 'At Bilgisi', icon: Info },
+                { id: 'pedigree' as const, label: 'Pedigri', icon: FileText },
+                { id: 'races' as const, label: 'Koşular', icon: Flag },
+                { id: 'gallops' as const, label: 'İdmanlar', icon: Ruler },
+                { id: 'statistics' as const, label: 'İstatistikler', icon: BarChart3 },
+                { id: 'illnesses' as const, label: 'Hastalıklar', icon: Stethoscope },
+                { id: 'banned-medicines' as const, label: 'Çıkıcı İlaçlar', icon: Pill },
+                { id: 'expenses' as const, label: 'Giderler', icon: Wallet },
+                { id: 'notes' as const, label: 'Notlar', icon: NotebookPen },
+              ].map(({ id, label, icon: Icon }) => {
+                const isActive = activeTab === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => handleTabChange(id)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                    <span>{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* FAB Button */}
+        <Button
+          ref={fabButtonRef}
+          onClick={() => setIsTabsMenuOpen(!isTabsMenuOpen)}
+          className="h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+        >
+          {isTabsMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+
+      {/* Mobile: + FAB for Gallops (İdmanlar) */}
+      {activeTab === 'gallops' && (
+        <Button
+          onClick={() => setIsShowTrainingPlansModalOpen(true)}
+          className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+          style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
+        >
+          <NotebookPen className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Mobile: + FAB for Banned Medicines (Çıkıcı İlaçlar) */}
+      {activeTab === 'banned-medicines' && (
+        <Button
+          onClick={() => setIsBannedMedicineModalOpen(true)}
+          className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+          style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      )}
+
+      {/* Mobile: + FAB for Illnesses (Hastalıklar) */}
+      {activeTab === 'illnesses' && (
+        <Button
+          onClick={() => setIsIllnessModalOpen(true)}
+          className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+          style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Modals */}
       {isNoteModalOpen && (

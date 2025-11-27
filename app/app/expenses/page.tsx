@@ -83,7 +83,6 @@ export default function ExpensesPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const filterDropdownRef = useRef<HTMLDivElement>(null)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null)
@@ -227,20 +226,27 @@ export default function ExpensesPage() {
     }
   }, [attachmentViewer.open, attachmentViewer.attachments.length, showPrevAttachment, showNextAttachment])
 
+  // Close filter dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(event.target as Node)
-      ) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
   }, [showFilterDropdown])
 
   const sortedExpenses = useMemo(() => {
@@ -464,12 +470,10 @@ export default function ExpensesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      {/* Mobile: Fixed Header (buttons) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
-      {/* Filter and Add buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Mobile: Sticky Buttons */}
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+          <div className="relative filter-dropdown-container">
                 <Button
                   variant="outline"
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -488,7 +492,11 @@ export default function ExpensesPage() {
             </Button>
 
             {showFilterDropdown && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div 
+                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -649,24 +657,23 @@ export default function ExpensesPage() {
             </div>
           )}
         </div>
+        </div>
 
-        <div className="flex items-center gap-3 ml-auto">
+      {/* Floating Action Button (FAB) for Add Expense */}
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+        className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+        style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
           >
-            Ekle
+        <Plus className="h-5 w-5" />
           </Button>
-          </div>
-        </div>
-      </div>
 
       {/* Desktop: Filter and Add buttons (normal layout) */}
       <div className="hidden md:flex flex-col gap-2">
         {/* First line: Filter, Search on left, Ekle on right */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+            <div className="relative filter-dropdown-container">
               <Button
                 variant="outline"
                 onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -685,7 +692,11 @@ export default function ExpensesPage() {
               </Button>
 
               {showFilterDropdown && (
-                <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div 
+                  className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Filtreler</h3>
                     <button
@@ -866,17 +877,14 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Mobile: Spacer for fixed header */}
-      <div className="md:hidden h-[116px]"></div>
-
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[132px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8" style={{ bottom: '73px' }}>
+      <div className="md:hidden pb-8" style={{ paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
         {!hasExpenses ? (
-          <div className="px-4 py-16 text-center text-sm text-gray-500">
+          <div className="py-16 text-center text-sm text-gray-500">
             {TR.expenses.noExpenses}
           </div>
         ) : filteredExpenses.length === 0 ? (
-          <div className="px-4 py-6 text-center text-sm text-gray-500">
+          <div className="py-6 text-center text-sm text-gray-500">
             Seçilen filtrelerde gider bulunamadı
           </div>
         ) : (
@@ -891,7 +899,7 @@ export default function ExpensesPage() {
               return (
                 <div
                   key={expense.id}
-                  className="bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer"
+                  className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg cursor-pointer"
                   style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                   onClick={handleCardClick}
                 >

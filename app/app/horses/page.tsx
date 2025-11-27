@@ -109,7 +109,7 @@ export default function HorsesPage() {
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as HTMLElement
       if (showFilters && !target.closest('.filter-dropdown-container')) {
         setShowFilters(false)
@@ -120,8 +120,16 @@ export default function HorsesPage() {
     }
 
     if (showFilters || showSortDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
     }
   }, [showFilters, showSortDropdown])
 
@@ -622,7 +630,7 @@ export default function HorsesPage() {
 
     return (
       <Link href={`/app/horses/${horse.id}`}>
-        <Card className={`p-4 sm:p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-lg cursor-pointer ${cardGradient}`}>
+        <Card className={`p-4 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 cursor-pointer ${cardGradient}`} style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
           {/* Horse Name */}
           <div className="flex-1 min-w-0">
             <div className="mb-2">
@@ -764,11 +772,9 @@ export default function HorsesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Mobile: Fixed Header (buttons) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
-        {/* Filter, Sort, Search and Add buttons */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="w-full min-w-0 space-y-4">
+      {/* Mobile: Sticky Buttons */}
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           {/* Filter Button */}
             <div className="relative filter-dropdown-container">
@@ -788,11 +794,15 @@ export default function HorsesPage() {
                     {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
             </span>
                 )}
-          </Button>
+              </Button>
           
           {/* Filter Dropdown */}
           {showFilters && (
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container">
+            <div 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -1048,11 +1058,7 @@ export default function HorsesPage() {
             </div>
           )}
           </div>
-          </div>
       </div>
-
-      {/* Mobile: Spacer for fixed header */}
-      <div className="md:hidden h-[116px]"></div>
 
       {/* Desktop: Header (buttons) */}
       <div className="hidden md:flex items-center justify-between gap-4 mb-6 flex-wrap">
@@ -1075,11 +1081,15 @@ export default function HorsesPage() {
                     {categoryFilters.length + ageFilters.length + genderFilters.length + locationFilters.length + stablemateFilters.length}
             </span>
                 )}
-          </Button>
+              </Button>
           
           {/* Filter Dropdown */}
           {showFilters && (
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container">
+            <div 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -1336,19 +1346,12 @@ export default function HorsesPage() {
           )}
           </div>
           
-          {/* Add Horse Button */}
-          <Button
-            onClick={() => setAddHorseModalOpen(true)}
-            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Ekle
-          </Button>
       </div>
+      
 
       {/* Horses Display - Mobile and Desktop */}
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[132px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8 space-y-4" style={{ bottom: '73px' }}>
+      <div className="md:hidden pb-8 space-y-4" style={{ paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
         {horses.length === 0 ? (
           <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
             <CardContent className="py-16 text-center">

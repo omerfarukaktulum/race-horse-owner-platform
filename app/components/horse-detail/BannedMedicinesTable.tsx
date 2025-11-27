@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Plus, Pill } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { AddBannedMedicineModal } from '@/app/components/modals/add-banned-medicine-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from './EmptyState'
 
 interface BannedMedicine {
   id: string
@@ -298,13 +299,13 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
 
   return (
     <>
-      {/* Filter dropdown container */}
+      {/* Desktop: Filter dropdown container */}
       <div 
-        className="relative filter-dropdown-container mb-4"
+        className="hidden md:block relative filter-dropdown-container mb-4"
         ref={filterDropdownRef}
-        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        style={{ visibility: hideButtons || !hasMedicines ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
       >
-        {!hideButtons && (
+        {!hideButtons && hasMedicines && (
           <Button
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -394,12 +395,111 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
         })()}
       </div>
 
+      {/* Mobile: Filter Button */}
+      {hasMedicines && (
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div 
+            className="relative filter-dropdown-container"
+            ref={filterDropdownRef}
+          >
+            {!hideButtons && (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {!hideButtons && showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+            )}
+          </div>
+        </div>
+      </div>
+      )}
+
       {/* Mobile: Card Layout */}
       <div className="md:hidden">
         {!hasMedicines ? (
-          <div className="px-4 py-16 text-center text-sm text-gray-500">
-            Henüz ilaç kaydı eklenmemiş
-          </div>
+          <EmptyState
+            icon={Pill}
+            title="Çıkıcı ilaç kaydı bulunmuyor"
+            description="Henüz ilaç kaydı eklenmemiş."
+          />
         ) : filteredMedicines.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-gray-500">
             Seçilen filtrelerde ilaç kaydı bulunamadı
@@ -425,9 +525,20 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                   style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {formatDateShort(medicine.givenDate)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {formatDateShort(medicine.givenDate)}
+                      </span>
+                      <span className={`text-sm font-semibold ${
+                        isExpired 
+                          ? 'text-green-600' 
+                          : remainingDays <= 3 
+                            ? 'text-red-600' 
+                            : 'text-orange-600'
+                      }`}>
+                        {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
+                      </span>
+                    </div>
                     <div className="flex gap-1">
                       {attachments.length > 0 && (
                         <button
@@ -469,17 +580,6 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                       Bekleme: {medicine.waitDays} gün
                     </span>
                   </div>
-                  <div className="flex items-center justify-end mb-2">
-                    <span className={`text-sm font-semibold ${
-                      isExpired 
-                        ? 'text-green-600' 
-                        : remainingDays <= 3 
-                          ? 'text-red-600' 
-                          : 'text-orange-600'
-                    }`}>
-                      {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
-                    </span>
-                  </div>
                   {medicine.note && (
                     <p className="text-sm text-gray-700 mb-2 line-clamp-2">
                       <span className="font-semibold">Not:</span> {medicine.note.replace(/\s*\n+\s*/g, ' ').trim()}
@@ -497,9 +597,15 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasMedicines ? 'p-0' : 'py-16 text-center'}>
+        <CardContent className={hasMedicines ? 'p-0' : 'p-0'}>
           {!hasMedicines ? (
-            <p className="text-gray-500">Henüz ilaç kaydı eklenmemiş</p>
+            <div className="mt-4">
+              <EmptyState
+                icon={Pill}
+                title="Çıkıcı ilaç kaydı bulunmuyor"
+                description="Henüz ilaç kaydı eklenmemiş."
+              />
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -515,9 +621,6 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                       Bekleme Süresi
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Kalan Gün
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Not
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -531,7 +634,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                 <tbody className="divide-y divide-gray-200">
                   {filteredMedicines.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                      <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
                         Seçilen filtrelerde ilaç kaydı bulunamadı
                       </td>
                     </tr>
@@ -554,9 +657,20 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                           }`}
                         >
                           <td className={`px-4 py-3 whitespace-nowrap ${isHighlighted ? 'border-l-4 border-indigo-400 pl-[0.85rem]' : ''}`}>
-                            <span className={`text-sm font-medium ${isHighlighted ? 'text-indigo-900' : 'text-gray-900'}`}>
-                              {formatDateShort(medicine.givenDate)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm font-medium ${isHighlighted ? 'text-indigo-900' : 'text-gray-900'}`}>
+                                {formatDateShort(medicine.givenDate)}
+                              </span>
+                              <span className={`text-sm font-semibold ${
+                                isExpired 
+                                  ? 'text-green-600' 
+                                  : remainingDays <= 3 
+                                    ? 'text-red-600' 
+                                    : 'text-orange-600'
+                              }`}>
+                                {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
+                              </span>
+                            </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm text-gray-800 font-medium">
@@ -566,17 +680,6 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="text-sm text-gray-700">
                               {medicine.waitDays} gün
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <span className={`text-sm font-semibold ${
-                              isExpired 
-                                ? 'text-green-600' 
-                                : remainingDays <= 3 
-                                  ? 'text-red-600' 
-                                  : 'text-orange-600'
-                            }`}>
-                              {isExpired ? 'Süre doldu' : `${remainingDays} gün kaldı`}
                             </span>
                           </td>
                           <td className="px-4 py-3">

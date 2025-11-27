@@ -79,7 +79,6 @@ export default function NotesPage() {
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const filterDropdownRef = useRef<HTMLDivElement>(null)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null)
@@ -146,18 +145,27 @@ export default function NotesPage() {
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        filterDropdownRef.current &&
-        !filterDropdownRef.current.contains(event.target as Node)
-      ) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
   }, [showFilterDropdown])
+
 
   const sortedNotes = useMemo(() => {
     return [...notes].sort((a, b) => {
@@ -433,12 +441,10 @@ export default function NotesPage() {
 
   return (
     <div className="w-full min-w-0 space-y-4">
-      {/* Mobile: Fixed Header (buttons) */}
-      <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2">
-      {/* Filter and Add buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      {/* Mobile: Sticky Buttons */}
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+          <div className="relative filter-dropdown-container">
             <Button
               variant="outline"
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -456,8 +462,13 @@ export default function NotesPage() {
               )}
             </Button>
 
+            {/* Filter Dropdown */}
             {showFilterDropdown && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div 
+                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -596,22 +607,21 @@ export default function NotesPage() {
             </div>
           )}
         </div>
-
-        <div className="flex items-center gap-3 ml-auto">
-          <Button
-            onClick={handleAddNoteClick}
-            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-          >
-            Ekle
-          </Button>
-        </div>
-        </div>
       </div>
+      
+      {/* Floating Action Button (FAB) for Add Note */}
+      <Button
+        onClick={handleAddNoteClick}
+        className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+        style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
 
       {/* Desktop: Filter and Add buttons (normal layout) */}
       <div className="hidden md:flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+          <div className="relative filter-dropdown-container">
             <Button
               variant="outline"
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -630,7 +640,11 @@ export default function NotesPage() {
             </Button>
 
             {showFilterDropdown && (
-              <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+              <div 
+                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -781,16 +795,14 @@ export default function NotesPage() {
       </div>
 
       {/* Mobile: Spacer for fixed header */}
-      <div className="md:hidden h-[116px]"></div>
-
       {/* Mobile: Scrollable Card Layout */}
-      <div className="md:hidden fixed top-[132px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8" style={{ bottom: '73px' }}>
+      <div className="md:hidden pb-8" style={{ paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
             {!hasNotes ? (
-              <div className="px-4 py-16 text-center text-sm text-gray-500">
+              <div className="py-16 text-center text-sm text-gray-500">
                 Henüz not eklenmemiş
               </div>
             ) : filteredNotes.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-gray-500">
+              <div className="py-6 text-center text-sm text-gray-500">
                 Seçilen filtrelerde not bulunamadı
               </div>
             ) : (
@@ -813,10 +825,10 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 rounded-lg p-4 mb-3 cursor-pointer ${
+                      className={`bg-indigo-50/30 border-0 p-4 mb-3 cursor-pointer ${
                         isHighlighted
-                          ? 'ring-2 ring-indigo-300 bg-indigo-50/50'
-                          : ''
+                          ? 'rounded-2xl border-2 border-indigo-400'
+                          : 'rounded-lg'
                       }`}
                       style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                       onClick={handleCardClick}
@@ -1158,6 +1170,7 @@ export default function NotesPage() {
           )}
         </DialogContent>
       </Dialog>
+
     </div>
   )
 }

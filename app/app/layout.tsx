@@ -8,12 +8,11 @@ import { usePathname } from 'next/navigation'
 import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, UserPlus, User, FileText, ChessKnight } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 function AppNavbar() {
   const { user, signOut, isOwner, isTrainer } = useAuth()
   const pathname = usePathname()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
@@ -152,8 +151,7 @@ function AppNavbar() {
             ) : (
               <LayoutGrid className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
             )}
-            <div className="flex flex-col">
-              <span className="font-bold text-md bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] leading-tight">
+            <span className="font-bold text-md bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] leading-tight">
               {isOwner
                 ? stablemateName
                   ? `${stablemateName} EKÜRİSİ`
@@ -162,37 +160,6 @@ function AppNavbar() {
                 ? trainerName || 'Antrenör Paneli'
                 : 'EKÜRİM'}
             </span>
-              {pathname === '/app/notes' && (
-                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5" />
-                  {TR.nav.notes}
-                </span>
-              )}
-              {pathname === '/app/expenses' && (
-                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
-                  <TurkishLira className="h-3.5 w-3.5" />
-                  {TR.nav.expenses}
-                </span>
-              )}
-              {pathname === '/app/stats' && (
-                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  {TR.nav.statistics}
-                </span>
-              )}
-              {pathname === '/app/horses' && (
-                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
-                  <ChessKnight className="h-3.5 w-3.5" />
-                  {TR.nav.horses}
-                </span>
-              )}
-              {pathname?.match(/^\/app\/horses\/[^\/]+$/) && horseName && (
-                <span className="md:hidden text-sm font-semibold text-indigo-600 mt-0.5 leading-tight flex items-center gap-1.5">
-                  <ChessKnight className="h-3.5 w-3.5" />
-                  {horseName}
-                </span>
-              )}
-            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -254,77 +221,261 @@ function AppNavbar() {
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
-            <nav className="space-y-1">
-              {navItems.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
-                    className="w-full justify-start"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                  </Button>
-                </Link>
-              ))}
-              {isOwner && (
-                  <Link href="/app/stablemate">
-                    <Button
-                      variant={pathname?.startsWith('/app/stablemate') ? 'secondary' : 'ghost'}
-                      className="w-full justify-start"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      {TR.nav.stablemate}
-                    </Button>
-                  </Link>
-              )}
-              {isTrainer && (
-                <div className="border-t border-gray-200 pt-2 mt-2">
-                  <Link href="/app/trainer/account">
-                    <Button
-                      variant={pathname?.startsWith('/app/trainer/account') ? 'secondary' : 'ghost'}
-                      className="w-full justify-start"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <User className="h-4 w-4 mr-2" />
-                      Hesap
-                    </Button>
-                  </Link>
-                </div>
-              )}
-              <div className="border-t border-gray-200 pt-2 mt-2">
-                  <Button
+          {/* Mobile: Settings and Logout buttons */}
+          <div className="md:hidden flex items-center gap-2">
+            {isOwner && (
+              <Link href="/app/stablemate">
+                <Button
                   variant="ghost"
-                  className="w-full justify-start text-red-600"
-                  onClick={() => {
-                    setMobileMenuOpen(false)
-                    signOut()
-                  }}
+                  size="sm"
+                  className={`p-2 ${pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {TR.auth.signOut}
+                  <Settings className="h-5 w-5" />
                 </Button>
-              </div>
-            </nav>
+              </Link>
+            )}
+            {isTrainer && (
+              <Link href="/app/trainer/account">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`p-2 ${pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="p-2 text-gray-600 hover:text-red-600"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     </header>
+  )
+}
+
+function BottomTabBar() {
+  const pathname = usePathname()
+  const { isOwner, isTrainer } = useAuth()
+  const [isVisible, setIsVisible] = useState(true)
+  const scrollPositionsRef = useRef<Map<Element | Window, number>>(new Map())
+
+  // Update CSS variable when tab bar visibility changes
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const tabBarHeight = 56 // Height of tab bar in pixels (reduced to match icon style)
+    const padding = 8 // Small padding buffer
+    // When visible: tab bar height + padding, when hidden: just padding for safe area
+    const totalHeight = isVisible ? tabBarHeight + padding : padding
+    document.documentElement.style.setProperty('--bottom-tab-bar-height', `${totalHeight}px`)
+  }, [isVisible])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    let ticking = false
+    const SCROLL_THRESHOLD = 5 // Minimum scroll difference to trigger show/hide
+    
+    const handleScroll = (element: Element | Window) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isWindow = element === window
+          const currentScrollY = isWindow 
+            ? window.scrollY 
+            : (element as Element).scrollTop
+          
+          const lastScrollY = scrollPositionsRef.current.get(element) || 0
+          const scrollDifference = Math.abs(currentScrollY - lastScrollY)
+          
+          // Show tab bar when at top
+          if (currentScrollY < 10) {
+            setIsVisible(true)
+          } else if (scrollDifference > SCROLL_THRESHOLD) {
+            // Hide when scrolling down, show when scrolling up
+            setIsVisible(currentScrollY < lastScrollY)
+          }
+          
+          scrollPositionsRef.current.set(element, currentScrollY)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
+
+    // Handle window scroll
+    const windowScrollHandler = () => handleScroll(window)
+    window.addEventListener('scroll', windowScrollHandler, { passive: true })
+
+    // Find and handle scrollable containers (optimized to check main content areas)
+    const findScrollableContainers = () => {
+      const containers: Element[] = []
+      
+      // Check main content area first (most common scrollable container)
+      const main = document.querySelector('main')
+      if (main) {
+        const style = window.getComputedStyle(main)
+        if ((style.overflowY === 'auto' || style.overflowY === 'scroll') && main.scrollHeight > main.clientHeight) {
+          containers.push(main)
+        }
+      }
+      
+      // Check for common scrollable container patterns
+      const commonSelectors = [
+        '[class*="overflow"]',
+        '[style*="overflow"]',
+        'div[class*="scroll"]',
+      ]
+      
+      commonSelectors.forEach((selector) => {
+        try {
+          const elements = document.querySelectorAll(selector)
+          elements.forEach((el) => {
+            const style = window.getComputedStyle(el)
+            const overflowY = style.overflowY
+            const hasScroll = overflowY === 'auto' || overflowY === 'scroll'
+            
+            if (hasScroll && el.scrollHeight > el.clientHeight && !containers.includes(el)) {
+              containers.push(el)
+            }
+          })
+        } catch (e) {
+          // Ignore invalid selectors
+        }
+      })
+      
+      return containers
+    }
+
+    // Set up listeners for scrollable containers
+    const setupContainerListeners = () => {
+      const containers = findScrollableContainers()
+      const handlers: Array<{ element: Element; handler: () => void }> = []
+      
+      containers.forEach((container) => {
+        // Skip if already has a listener (avoid duplicates)
+        if (scrollPositionsRef.current.has(container)) return
+        
+        const handler = () => handleScroll(container)
+        container.addEventListener('scroll', handler, { passive: true })
+        handlers.push({ element: container, handler })
+        scrollPositionsRef.current.set(container, container.scrollTop)
+      })
+      
+      return handlers
+    }
+
+    // Initial setup
+    let containerHandlers = setupContainerListeners()
+    let setupTimeout: ReturnType<typeof setTimeout> | null = null
+    
+    // Re-setup periodically and on pathname change
+    const scheduleRescan = () => {
+      if (setupTimeout) clearTimeout(setupTimeout)
+      setupTimeout = setTimeout(() => {
+        // Clean up old handlers
+        containerHandlers.forEach(({ element, handler }) => {
+          element.removeEventListener('scroll', handler)
+        })
+        // Set up new handlers
+        containerHandlers = setupContainerListeners()
+      }, 500) // Debounce rescan
+    }
+    
+    const observer = new MutationObserver(scheduleRescan)
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    })
+    
+    // Also rescan after a delay when pathname changes
+    scheduleRescan()
+    
+    return () => {
+      window.removeEventListener('scroll', windowScrollHandler)
+      containerHandlers.forEach(({ element, handler }) => {
+        element.removeEventListener('scroll', handler)
+      })
+      observer.disconnect()
+      if (setupTimeout) clearTimeout(setupTimeout)
+      scrollPositionsRef.current.clear()
+    }
+  }, [pathname])
+
+  if (!isOwner && !isTrainer) {
+    return null
+  }
+
+  const navItems = [
+    { href: '/app/home', label: TR.nav.home, icon: Home },
+    { href: '/app/horses', label: TR.nav.horses, icon: ChessKnight },
+    { href: '/app/stats', label: TR.nav.statistics, icon: BarChart3 },
+    { href: '/app/expenses', label: TR.nav.expenses, icon: TurkishLira },
+    { href: '/app/notes', label: TR.nav.notes, icon: FileText },
+  ]
+
+  const isActive = (href: string) => {
+    if (href === '/app/home') {
+      return pathname === '/app/home'
+    }
+    return pathname?.startsWith(href)
+  }
+
+  return (
+    <nav 
+      className={`bottom-tab-bar md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] safe-area-inset-bottom transition-transform duration-300 ease-in-out ${
+        isVisible ? 'translate-y-0' : 'translate-y-full'
+      }`}
+    >
+      <div 
+        className="flex flex-row items-center justify-around h-14 min-h-[56px] px-2 pb-safe" 
+        style={{ 
+          flexDirection: 'row',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          height: '56px',
+          minHeight: '56px'
+        }}
+      >
+        {navItems.map((item) => {
+          const active = isActive(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="bottom-tab-item flex flex-col items-center justify-center flex-1 h-full min-w-0 max-w-[20%] transition-all duration-200 active:scale-95"
+              style={{ 
+                flexDirection: 'column',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px'
+              }}
+            >
+              <div className={`relative flex-shrink-0 ${active ? 'scale-105' : 'scale-100'} transition-transform duration-200`} style={{ flexShrink: 0 }}>
+                <item.icon className={`h-5 w-5 ${active ? 'text-indigo-600' : 'text-gray-500'}`} strokeWidth={active ? 2.5 : 2} />
+              </div>
+              <span 
+                className={`text-xs font-medium leading-tight text-center whitespace-nowrap overflow-hidden text-ellipsis ${active ? 'text-indigo-600 font-semibold' : 'text-gray-500'}`}
+                style={{ 
+                  display: 'block',
+                  textAlign: 'center',
+                  width: '100%'
+                }}
+              >
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
   )
 }
 
@@ -332,14 +483,17 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-col">
       <AppNavbar />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full min-w-0 pt-20 pb-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full min-w-0 pt-20 pb-20 md:pb-20">
         {children}
       </main>
-      <footer className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white z-40 shadow-sm">
+      {/* Desktop Footer */}
+      <footer className="hidden md:block fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-600">
           <p>&copy; {new Date().getFullYear()} Nordiys. Tüm hakları saklıdır.</p>
         </div>
       </footer>
+      {/* Mobile Bottom Tab Bar */}
+      <BottomTabBar />
     </div>
   )
 }

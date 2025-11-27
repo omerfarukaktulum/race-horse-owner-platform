@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Eye, Plus } from 'lucide-react'
+import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Eye, Plus, Stethoscope } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -11,6 +11,7 @@ import { AddIllnessModal } from '@/app/components/modals/add-illness-modal'
 import { AddIllnessOperationModal } from '@/app/components/modals/add-illness-operation-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from './EmptyState'
 
 interface HorseIllnessOperation {
   id: string
@@ -266,25 +267,28 @@ export function HorseIllnessesTable({
     onActiveFiltersChange?.(activeFilterCount)
   }, [activeFilterCount, onActiveFiltersChange])
 
+  // Close filter dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
-      const isInsideDropdownContent = dropdownContentRef.current?.contains(target)
-      const isInsideDropdown = filterDropdownRef.current?.contains(target)
-      const isInsidePortal = filterDropdownContainerRef?.current?.contains(target)
-      const clickedElement = event.target as HTMLElement
-      const isFilterButton = clickedElement?.closest('button')?.textContent?.includes('Filtrele') || 
-                            clickedElement?.closest('[class*="Filtrele"]')
-      
-      if (!isInsideDropdownContent && !isInsideDropdown && !isInsidePortal && !isFilterButton) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
+  }, [showFilterDropdown, setShowFilterDropdown])
 
   const handleEditClick = (illness: HorseIllness) => {
     setEditingIllness(illness)
@@ -403,9 +407,133 @@ export function HorseIllnessesTable({
   return (
     <>
       <div className="space-y-4">
-        {/* Filter dropdown container */}
+        {/* Desktop: Filter dropdown container */}
+        <div 
+          className="hidden md:block relative filter-dropdown-container"
+          ref={filterDropdownRef}
+          style={{ visibility: hideButtons || !hasIllnesses ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        >
         <div 
           className="relative filter-dropdown-container"
+          ref={filterDropdownRef}
+        >
+          {!hideButtons && hasIllnesses && (
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          )}
+
+          {!hideButtons && showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Added By Filter */}
+              {getUniqueAddedBy.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueAddedBy.map((option) => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleAddedByFilter(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          addedByFilters.includes(option.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Desktop: Filter dropdown container */}
+        <div 
+          className="hidden md:block relative filter-dropdown-container"
           ref={filterDropdownRef}
           style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
         >
@@ -428,9 +556,13 @@ export function HorseIllnessesTable({
             </Button>
           )}
 
-          {!hideButtons && showFilterDropdown && (() => {
-            const dropdownContent = (
-              <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+          {!hideButtons && showFilterDropdown && (
+              <div 
+                ref={dropdownContentRef} 
+                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
@@ -514,15 +646,17 @@ export function HorseIllnessesTable({
                   </button>
                 )}
               </div>
-            )
-            return dropdownContent
-          })()}
+          )}
         </div>
 
       {/* Portal dropdown for hideButtons mode */}
-      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
-        const dropdownContent = (
-          <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && createPortal((
+          <div 
+            ref={dropdownContentRef} 
+            className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Filtreler</h3>
               <button
@@ -606,16 +740,139 @@ export function HorseIllnessesTable({
               </button>
             )}
           </div>
-        )
-        return createPortal(dropdownContent, filterDropdownContainerRef.current)
-      })()}
+        ), filterDropdownContainerRef.current)}
+
+      {/* Mobile: Filter Button */}
+      {hasIllnesses && (
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div 
+            className="relative filter-dropdown-container"
+            ref={filterDropdownRef}
+          >
+            {!hideButtons && (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {!hideButtons && showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Added By Filter */}
+              {getUniqueAddedBy.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueAddedBy.map((addedBy) => (
+                      <button
+                        type="button"
+                        key={addedBy.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleAddedByFilter(addedBy.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          addedByFilters.includes(addedBy.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {addedBy.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )}
+          </div>
+        </div>
+      </div>
+      )}
 
         {/* Mobile: Card Layout */}
-        <div className="md:hidden">
+        <div className="md:hidden mt-4">
           {!hasIllnesses ? (
-            <div className="px-4 py-16 text-center text-sm text-gray-500">
-              Henüz hastalık kaydı bulunmuyor
-            </div>
+            <EmptyState
+              icon={Stethoscope}
+              title="Hastalık kaydı bulunmuyor"
+              description="Henüz hastalık kaydı eklenmemiş."
+            />
           ) : filteredIllnesses.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-gray-500">
               Filtrelere uygun hastalık kaydı bulunmuyor
@@ -819,9 +1076,15 @@ export function HorseIllnessesTable({
 
         {/* Desktop: Table Layout */}
         <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-          <CardContent className={hasIllnesses ? 'p-0' : 'py-16 text-center'}>
+          <CardContent className={hasIllnesses ? 'p-0' : 'p-0'}>
             {!hasIllnesses ? (
-              <p className="text-gray-500">Henüz hastalık kaydı bulunmuyor</p>
+              <div className="mt-4">
+                <EmptyState
+                  icon={Stethoscope}
+                  title="Hastalık kaydı bulunmuyor"
+                  description="Henüz hastalık kaydı eklenmemiş."
+                />
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -1066,6 +1329,7 @@ export function HorseIllnessesTable({
             )}
           </CardContent>
         </Card>
+      </div>
       </div>
 
       {/* Add Modal - only render when not using parent's modal */}

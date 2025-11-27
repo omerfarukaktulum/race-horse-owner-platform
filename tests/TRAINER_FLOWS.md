@@ -45,3 +45,5 @@ Manual regression checklist to verify the new trainer collaboration experience.
 
 Document test results (pass/fail, date, tester) alongside this checklist for future releases.
 
+
+

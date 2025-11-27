@@ -69,15 +69,6 @@ export async function POST(request: Request) {
       { expiresIn: '90d' }
     )
 
-    // Set cookie
-    cookies().set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 90 * 24 * 60 * 60, // 90 days
-      path: '/',
-    })
-
     const userData = {
       id: user.id,
       email: user.email,
@@ -86,10 +77,31 @@ export async function POST(request: Request) {
       trainerId: user.trainerProfile?.id,
     }
 
-    return NextResponse.json({
+    // Create response and set cookie explicitly in response headers
+    const response = NextResponse.json({
       success: true,
       user: userData,
     })
+
+    // Set cookie in response headers to ensure it's properly set
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 90 * 24 * 60 * 60, // 90 days
+      path: '/',
+    })
+
+    // Also set via cookies() for compatibility
+    cookies().set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 90 * 24 * 60 * 60, // 90 days
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('Sign in error:', error)
     return NextResponse.json(
@@ -98,6 +110,8 @@ export async function POST(request: Request) {
     )
   }
 }
+
+
 
 
 

@@ -6,12 +6,13 @@ import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
 import { formatGallopStatus } from '@/lib/utils/gallops'
-import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText, NotebookPen } from 'lucide-react'
+import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText, NotebookPen, Ruler } from 'lucide-react'
 import { AddGallopNoteModal } from '@/app/components/modals/add-gallop-note-modal'
 import { ShowTrainingPlansModal } from '@/app/components/modals/show-training-plans-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from './EmptyState'
 
 interface Gallop {
   id: string
@@ -110,24 +111,28 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
     }
   }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
 
-  // Click outside handler
+  // Close filter dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
-
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as HTMLElement
-      const isInsideTrigger = filterDropdownRef.current?.contains(target)
-      const isInsideDropdown = dropdownContentRef.current?.contains(target)
-      const isInsidePortalContainer = filterDropdownContainerRef?.current?.contains(target)
-
-      if (!isInsideTrigger && !isInsideDropdown && !isInsidePortalContainer) {
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
+  }, [showFilterDropdown, setShowFilterDropdown])
 
   // Sort gallops by date (most recent first)
   const sortedGallops = useMemo(() => {
@@ -310,11 +315,13 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
 
   if (gallops.length === 0) {
     return (
-      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-        <CardContent className="py-16 text-center">
-          <p className="text-gray-500">Henüz idman verisi bulunmuyor</p>
-        </CardContent>
-      </Card>
+      <div className="mt-4">
+        <EmptyState
+          icon={Ruler}
+          title="İdman kaydı bulunmuyor"
+          description="Henüz idman kaydı eklenmemiş."
+        />
+      </div>
     )
   }
   
@@ -341,13 +348,12 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   
   return (
     <>
-      {/* Filter dropdown container and Training Plan Button - on same line */}
-      <div className="flex flex-row items-center gap-2">
+      {/* Desktop: Filter dropdown container and Training Plan Button - on same line */}
+      <div className="hidden md:flex flex-row items-center gap-2">
         {/* Filter dropdown container - always rendered for dropdown positioning */}
         <div 
           className="relative filter-dropdown-container"
           ref={filterDropdownRef}
-          style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
         >
           {!hideButtons && (
             <Button
@@ -369,9 +375,13 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
           )}
 
           {/* Filter Dropdown - inline when hideButtons is false */}
-          {!hideButtons && showFilterDropdown && (() => {
-              const dropdownContent = (
-                <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+          {!hideButtons && showFilterDropdown && (
+                <div 
+                  ref={dropdownContentRef} 
+                  className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-gray-900">Filtreler</h3>
                     <button
@@ -512,15 +522,17 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                     </button>
                   )}
                 </div>
-              )
-              return dropdownContent
-            })()}
+          )}
         </div>
 
         {/* Filter Dropdown - rendered via portal when hideButtons is true */}
-        {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
-          const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+        {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && createPortal((
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -661,10 +673,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                 </button>
               )}
             </div>
-          )
-
-          return createPortal(dropdownContent, filterDropdownContainerRef.current)
-        })()}
+        ), filterDropdownContainerRef.current)}
 
         {/* Training Plan Button - only visible when hideButtons is false */}
         {!hideButtons && horseId && horseName && (
@@ -679,8 +688,187 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
         )}
       </div>
 
-    {/* Mobile: Card Layout */}
-    <div className="md:hidden -mt-4">
+      {/* Mobile: Filter Button */}
+      <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div 
+            className="relative filter-dropdown-container"
+            ref={filterDropdownRef}
+          >
+            {!hideButtons && (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 whitespace-nowrap ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {/* Filter Dropdown - inline when hideButtons is false */}
+            {!hideButtons && showFilterDropdown && (
+              <div 
+                ref={dropdownContentRef} 
+                className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Date Range Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map((option) => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          type="button"
+                          key={option.value}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {racecourseOptions.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                    <div className="flex flex-wrap gap-2">
+                      {racecourseOptions.map((racecourse) => {
+                        const isActive = selectedRacecourses.includes(racecourse)
+                        return (
+                          <button
+                            key={racecourse}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleRacecourse(racecourse)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white shadow'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {racecourse}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {statusOptions.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Durum</label>
+                    <div className="flex flex-wrap gap-2">
+                      {statusOptions.map((status) => {
+                        const isActive = selectedStatuses.includes(status)
+                        return (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleStatus(status)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white shadow'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {formatGallopStatus(status)}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Distance Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+                  <div className="flex flex-wrap gap-2">
+                    {DISTANCE_OPTIONS.map((distance) => {
+                      const isActive = selectedDistance === distance
+                      return (
+                        <button
+                          key={distance}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleDistance(distance)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {distance}m
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden">
       {filteredGallops.length === 0 ? (
         <div className="px-4 py-16 text-center text-sm text-gray-500">
           Seçilen filtrelerde idman bulunamadı

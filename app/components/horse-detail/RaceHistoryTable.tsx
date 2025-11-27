@@ -7,8 +7,9 @@ import { Button } from '@/app/components/ui/button'
 import { formatDateShort, formatCurrency } from '@/lib/utils/format'
 import { abbreviateRaceType } from '@/lib/utils/chart-data'
 import { formatGallopStatus } from '@/lib/utils/gallops'
-import { Video, Image as ImageIcon, Medal, Filter, X, Activity } from 'lucide-react'
+import { Video, Image as ImageIcon, Medal, Filter, X, Activity, Flag } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
+import { EmptyState } from './EmptyState'
 
 interface RaceHistory {
   id: string
@@ -114,24 +115,28 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
     }
   }, [onFilterTriggerReady, showFilterDropdown, setShowFilterDropdown])
 
-  // Click outside handler
+  // Close filter dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
-
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as HTMLElement
-      const isInsideTrigger = filterDropdownRef.current?.contains(target)
-      const isInsideDropdown = dropdownContentRef.current?.contains(target)
-      const isInsidePortalContainer = filterDropdownContainerRef?.current?.contains(target)
-
-      if (!isInsideTrigger && !isInsideDropdown && !isInsidePortalContainer) {
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, filterDropdownContainerRef, setShowFilterDropdown])
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
+  }, [showFilterDropdown, setShowFilterDropdown])
 
   // Sort races by date (most recent first)
   const sortedRaces = useMemo(() => {
@@ -283,15 +288,12 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
 
   if (races.length === 0) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
-          Koşu Geçmişi
-        </h2>
-        <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-          <CardContent className="py-16 text-center">
-            <p className="text-gray-500">Henüz koşu geçmişi bulunmuyor</p>
-          </CardContent>
-        </Card>
+      <div className="mt-4">
+        <EmptyState
+          icon={Flag}
+          title="Koşu geçmişi bulunmuyor"
+          description="Henüz koşu kaydı eklenmemiş."
+        />
       </div>
     )
   }
@@ -359,34 +361,42 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
   
   return (
     <>
-      {/* Filter dropdown container - always rendered for dropdown positioning */}
+      {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
       <div 
-        className="relative filter-dropdown-container"
+        className="hidden md:block relative filter-dropdown-container"
         ref={filterDropdownRef}
-        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        style={{ visibility: hideButtons || races.length === 0 ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
       >
-        {!hideButtons && (
-          <Button
-            variant="outline"
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
-          >
-            <Filter className="h-4 w-4" />
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                1
-              </span>
-            )}
-          </Button>
-        )}
+        <div 
+          className="relative filter-dropdown-container"
+          ref={filterDropdownRef}
+        >
+          {!hideButtons && races.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  1
+                </span>
+              )}
+            </Button>
+          )}
 
-        {showFilterDropdown && (() => {
-          const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+          {showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -559,16 +569,428 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
                 </button>
               )}
             </div>
-          )
-
-          // Render dropdown in portal if hideButtons is true, otherwise inline
-          if (hideButtons && filterDropdownContainerRef?.current) {
-            return createPortal(dropdownContent, filterDropdownContainerRef.current)
-          }
-          
-          return dropdownContent
-        })()}
+          )}
+        </div>
       </div>
+
+      {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
+      <div 
+        className="hidden md:block relative filter-dropdown-container"
+        ref={filterDropdownRef}
+        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+      >
+        {!hideButtons && (
+          <Button
+            variant="outline"
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+              hasActiveFilters
+                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                : 'border-gray-300 text-gray-700 hover:border-gray-400'
+            }`}
+          >
+            <Filter className="h-4 w-4" />
+            {hasActiveFilters && (
+              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                1
+              </span>
+            )}
+          </Button>
+        )}
+
+        {showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Racecourse Filter */}
+              {racecourseOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                  <div className="flex flex-wrap gap-2">
+                    {racecourseOptions.map((racecourse) => {
+                      const isActive = selectedRacecourses.includes(racecourse)
+                      return (
+                        <button
+                          key={racecourse}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleRacecourse(racecourse)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {racecourse}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Result Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Sonuç</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: 'ilk-3', label: 'İlk 3 Sıra' },
+                    { value: 'tabela-sonu', label: 'Tabela Sonu' },
+                    { value: 'tabela-disi', label: 'Tabela Dışı' },
+                  ].map((option) => {
+                    const isActive = selectedResults.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleResult(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {surfaceOptions.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Pist Türü</label>
+                  <div className="flex flex-wrap gap-2">
+                    {surfaceOptions.map((surface) => {
+                      const isActive = selectedSurfaces.includes(surface)
+                      return (
+                        <button
+                          key={surface}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleSurface(surface)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white shadow'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {surface}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+                <div className="flex flex-wrap gap-2">
+                  {DISTANCE_GROUPS.map((group) => {
+                    const isActive = selectedDistanceGroups.includes(group.value)
+                    return (
+                      <button
+                        key={group.value}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleDistanceGroup(group.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                        title={group.description}
+                      >
+                        {group.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+        )}
+      </div>
+
+    {/* Mobile: Filter Button */}
+    {races.length > 0 && (
+    <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        <div 
+          className="relative filter-dropdown-container"
+          ref={filterDropdownRef}
+        >
+          {!hideButtons && (
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  1
+                </span>
+              )}
+            </Button>
+          )}
+
+          {showFilterDropdown && (
+          <div 
+            ref={dropdownContentRef} 
+            className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900">Filtreler</h3>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowFilterDropdown(false)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+              <div className="flex flex-wrap gap-2">
+                {RANGE_OPTIONS.map((option) => {
+                  const isActive = selectedRange === option.value
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const nextValue = isActive ? null : option.value
+                        setSelectedRange(nextValue)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[#6366f1] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Racecourse Filter */}
+            {racecourseOptions.length > 0 && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Hipodrom</label>
+                <div className="flex flex-wrap gap-2">
+                  {racecourseOptions.map((racecourse) => {
+                    const isActive = selectedRacecourses.includes(racecourse)
+                    return (
+                      <button
+                        key={racecourse}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleRacecourse(racecourse)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {racecourse}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Result Filter */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Sonuç</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'ilk-3', label: 'İlk 3 Sıra' },
+                  { value: 'tabela-sonu', label: 'Tabela Sonu' },
+                  { value: 'tabela-disi', label: 'Tabela Dışı' },
+                ].map((option) => {
+                  const isActive = selectedResults.includes(option.value)
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleResult(option.value)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[#6366f1] text-white shadow'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {surfaceOptions.length > 0 && (
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Pist Türü</label>
+                <div className="flex flex-wrap gap-2">
+                  {surfaceOptions.map((surface) => {
+                    const isActive = selectedSurfaces.includes(surface)
+                    return (
+                      <button
+                        key={surface}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSurface(surface)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white shadow'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {surface}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Mesafe</label>
+              <div className="flex flex-wrap gap-2">
+                {DISTANCE_GROUPS.map((group) => {
+                  const isActive = selectedDistanceGroups.includes(group.value)
+                  return (
+                    <button
+                      key={group.value}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleDistanceGroup(group.value)
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-[#6366f1] text-white shadow'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      title={group.description}
+                    >
+                      {group.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  clearFilters()
+                  setShowFilterDropdown(false)
+                }}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Filtreleri Temizle
+              </button>
+            )}
+          </div>
+        )}
+        </div>
+      </div>
+    </div>
+    )}
 
     {/* Mobile: Card Layout */}
     <div className="md:hidden">

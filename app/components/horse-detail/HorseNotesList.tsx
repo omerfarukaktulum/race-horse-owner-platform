@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Plus, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from './EmptyState'
 
 interface HorseNote {
   id: string
@@ -39,6 +40,7 @@ interface Props {
   filterDropdownContainerRef?: React.RefObject<HTMLDivElement>
   onActiveFiltersChange?: (count: number) => void
   highlightNoteId?: string
+  onAddNote?: () => void
 }
 
 const ROLE_MAP: Record<string, string> = {
@@ -85,7 +87,7 @@ function formatAddedBy(note: HorseNote) {
   return roleLabel || profileName || 'Bilinmiyor'
 }
 
-export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightNoteId }: Props) {
+export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButtons = false, onFilterTriggerReady, showFilterDropdown: externalShowFilterDropdown, onFilterDropdownChange, filterDropdownContainerRef, onActiveFiltersChange, highlightNoteId, onAddNote }: Props) {
   const { user } = useAuth()
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
@@ -128,33 +130,28 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
 
   const hasNotes = (notes?.length || 0) > 0
 
+  // Close filter dropdown when clicking outside
   useEffect(() => {
-    if (!showFilterDropdown) return
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node
-      
-      // Check if click is inside the dropdown content itself
-      const isInsideDropdownContent = dropdownContentRef.current?.contains(target)
-      
-      // Check if click is inside the dropdown container (when not using portal)
-      const isInsideDropdown = filterDropdownRef.current?.contains(target)
-      
-      // Check if click is inside the portal container (when using portal)
-      const isInsidePortal = filterDropdownContainerRef?.current?.contains(target)
-      
-      // Check if click is on the filter button itself
-      const clickedElement = event.target as HTMLElement
-      const isFilterButton = clickedElement?.closest('button')?.textContent?.includes('Filtrele') || 
-                            clickedElement?.closest('[class*="Filtrele"]')
-      
-      // Only close if click is outside all dropdown areas and not on the button
-      if (!isInsideDropdownContent && !isInsideDropdown && !isInsidePortal && !isFilterButton) {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as HTMLElement
+      if (showFilterDropdown && !target.closest('.filter-dropdown-container')) {
         setShowFilterDropdown(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showFilterDropdown, filterDropdownContainerRef])
+
+    if (showFilterDropdown) {
+      // Use a small timeout to avoid immediate closure when opening
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside as any)
+        document.addEventListener('touchstart', handleClickOutside as any)
+      }, 0)
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside as any)
+        document.removeEventListener('touchstart', handleClickOutside as any)
+      }
+    }
+  }, [showFilterDropdown, setShowFilterDropdown])
 
   const sortedNotes = useMemo(() => {
     return [...(notes || [])].sort(
@@ -396,13 +393,13 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   return (
     <>
       <div className="space-y-4">
-      {/* Filter dropdown container - always rendered for dropdown positioning */}
+      {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
       <div 
-        className="relative filter-dropdown-container"
+        className="hidden md:block relative filter-dropdown-container"
         ref={filterDropdownRef}
-        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        style={{ visibility: hideButtons || !hasNotes ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
       >
-        {!hideButtons && (
+        {!hideButtons && hasNotes && (
           <Button
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -421,9 +418,13 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
           </Button>
         )}
 
-        {!hideButtons && showFilterDropdown && (() => {
-          const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+        {!hideButtons && showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-gray-900">Filtreler</h3>
                 <button
@@ -507,15 +508,17 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                 </button>
               )}
             </div>
-          )
-          return dropdownContent
-        })()}
+          )}
       </div>
 
       {/* Portal dropdown for hideButtons mode */}
-      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && (() => {
-        const dropdownContent = (
-          <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100]">
+      {hideButtons && showFilterDropdown && filterDropdownContainerRef?.current && createPortal((
+          <div 
+            ref={dropdownContentRef} 
+            className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900">Filtreler</h3>
               <button
@@ -599,16 +602,137 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
               </button>
             )}
           </div>
-        )
-        return createPortal(dropdownContent, filterDropdownContainerRef.current)
-      })()}
+        ), filterDropdownContainerRef.current)}
+
+      {/* Mobile: Filter Button */}
+      <div className="md:hidden pt-0 pb-0 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div 
+            className="relative filter-dropdown-container"
+            ref={filterDropdownRef}
+          >
+            {!hideButtons && hasNotes && (
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            )}
+
+            {!hideButtons && showFilterDropdown && (
+            <div 
+              ref={dropdownContentRef} 
+              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-[100] filter-dropdown-container"
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="mb-4">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                <div className="flex flex-wrap gap-2">
+                  {RANGE_OPTIONS.map((option) => {
+                    const isActive = selectedRange === option.value
+                    return (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const nextValue = isActive ? null : option.value
+                          setSelectedRange(nextValue)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Added By Filter */}
+              {getUniqueAddedBy.length > 0 && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Ekleyen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getUniqueAddedBy.map((option) => (
+                      <button
+                        type="button"
+                        key={option.value}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleAddedByFilter(option.value)
+                        }}
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                          addedByFilters.includes(option.value)
+                            ? 'bg-[#6366f1] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    clearFilters()
+                    setShowFilterDropdown(false)
+                  }}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )}
+          </div>
+        </div>
+      </div>
 
       {/* Mobile: Card Layout */}
-      <div className="md:hidden mt-6">
+      <div className="md:hidden mt-4">
             {!hasNotes ? (
-                <div className="px-4 py-16 text-center text-sm text-gray-500">
-                  Henüz not eklenmemiş
-                </div>
+                <EmptyState
+                  icon={FileText}
+                  title="Not bulunmuyor"
+                  description="Henüz not eklenmemiş."
+                />
               ) : filteredNotes.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-gray-500">
                   Seçilen tarih aralığında not bulunamadı
@@ -693,7 +817,16 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasNotes ? 'p-0' : 'py-16 text-center'}>
+        <CardContent className={hasNotes ? 'p-0' : 'p-0'}>
+          {!hasNotes ? (
+            <div className="mt-4">
+              <EmptyState
+                icon={FileText}
+                title="Not bulunmuyor"
+                description="Henüz not eklenmemiş."
+              />
+            </div>
+          ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -802,6 +935,7 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
                   </tbody>
                 </table>
               </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -910,6 +1044,17 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button (FAB) for Add Note */}
+      {onAddNote && (
+        <Button
+          onClick={onAddNote}
+          className="md:hidden fixed right-4 z-40 h-12 w-12 rounded-full bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0 fab-button"
+          style={{ bottom: 'calc(var(--bottom-tab-bar-height, 73px) + 1rem)' }}
+        >
+          <Plus className="h-5 w-5" />
+        </Button>
+      )}
     </>
   )
 }

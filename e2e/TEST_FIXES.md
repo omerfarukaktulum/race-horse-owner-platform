@@ -79,3 +79,5 @@ If tests still fail:
 3. Verify database is accessible
 4. Check authentication cookies are being set
 
+
+

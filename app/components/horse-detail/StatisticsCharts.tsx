@@ -9,6 +9,7 @@ import { Button } from '@/app/components/ui/button'
 import { MapPin, Ruler, Layers, Users, TurkishLira, Flag, Filter, X, Trophy, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from './EmptyState'
 import {
   getCityDistribution,
   getSurfaceDistribution,
@@ -1085,150 +1086,161 @@ export function StatisticsCharts({
     (enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0) ||
     (isGlobalStats && categoryHorseDistributions.length > 0)
   
+  // Return empty state early if no race data and on genel category
+  if (!hasRaceData && selectedCategory === 'genel') {
+    return (
+      <div className="mt-4">
+        <EmptyState
+          icon={BarChart3}
+          title="İstatistik bulunmuyor"
+          description="Bu atın henüz koşu kaydı bulunmamaktadır."
+        />
+      </div>
+    )
+  }
+  
   return (
     <div className="w-full min-w-0">
-      {/* Mobile: Fixed Header (filter + category buttons) */}
-        {!hideButtons && (
-        <div className="md:hidden fixed top-16 left-0 right-0 z-40 px-4 pt-6 pb-2 bg-gradient-to-br from-indigo-50 via-white to-indigo-50">
+      {/* Mobile: Filter Button and Tabs */}
+      {!hideButtons && hasRaceData && (
+        <div className="md:hidden mt-4 pb-0 flex items-center gap-3">
           {/* Filter button */}
-          <div className="mb-3">
-            <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
-          >
-            <Filter className="h-4 w-4" />
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
+          <div className="relative filter-dropdown-container flex-shrink-0" ref={filterDropdownRef}>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
 
-              {showFilterDropdown && (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Filtreler</h3>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFilterDropdown(false)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Date Range Filter */}
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
-                <div className="flex flex-wrap gap-2">
-                  {RANGE_OPTIONS.map((option) => {
-                    const isActive = selectedRange === option.value
-                    return (
-                      <button
-                        type="button"
-                        key={option.value}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          const nextValue = isActive ? null : option.value
-                          setSelectedRange(nextValue)
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    )
-                  })}
+            {showFilterDropdown && (
+              <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-              </div>
 
-              {/* Stablemate Filter (for trainers) */}
-              {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                {/* Date Range Filter */}
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
                   <div className="flex flex-wrap gap-2">
-                    {getUniqueStablemates.map((stablemate) => (
-                      <button
-                        type="button"
-                        key={stablemate}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleStablemateFilter(stablemate)
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          stablemateFilters.includes(stablemate)
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {stablemate}
-                      </button>
-                    ))}
+                    {RANGE_OPTIONS.map((option) => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          type="button"
+                          key={option.value}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              )}
 
-              {/* Clear Filters */}
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    clearFilters()
-                    setShowFilterDropdown(false)
-                  }}
-                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Filtreleri Temizle
-                </button>
-              )}
-            </div>
-              )}
-            </div>
-      </div>
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          type="button"
+                          key={stablemate}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleStablemateFilter(stablemate)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Category Navigation Buttons */}
-          <div className="w-full overflow-x-auto pb-2 -mx-4 px-4">
-          <div className="flex gap-2 min-w-max">
-            {[
-              { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
-              { id: 'pist' as const, label: 'Pist', icon: Layers },
-              { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
-              { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
-              { id: 'jokey' as const, label: 'Jokey', icon: Users },
-              { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
-              { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
-            ].map(({ id, label, icon: Icon }) => {
-              const isActive = selectedCategory === id
-              return (
-                <button
-                  key={id}
-                  onClick={() => setSelectedCategory(id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                  <span>{label}</span>
-                </button>
-              )
-            })}
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Category Navigation Tabs - Scrollable */}
+          <div className="flex-1 overflow-x-auto -mx-4 px-4">
+            <div className="flex gap-2 min-w-max">
+              {[
+                { id: 'genel' as const, label: 'Genel', icon: BarChart3 },
+                { id: 'pist' as const, label: 'Pist', icon: Layers },
+                { id: 'mesafe' as const, label: 'Mesafe', icon: Ruler },
+                { id: 'sehir' as const, label: 'Şehir', icon: MapPin },
+                { id: 'jokey' as const, label: 'Jokey', icon: Users },
+                { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
+                { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
+              ].map(({ id, label, icon: Icon }) => {
+                const isActive = selectedCategory === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setSelectedCategory(id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                    <span>{label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -1236,9 +1248,9 @@ export function StatisticsCharts({
       <div 
         className="hidden md:block relative filter-dropdown-container"
         ref={filterDropdownRef}
-        style={{ visibility: hideButtons ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        style={{ visibility: hideButtons || !hasRaceData ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
       >
-        {!hideButtons && (
+        {!hideButtons && hasRaceData && (
           <Button
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
@@ -1355,11 +1367,11 @@ export function StatisticsCharts({
       </div>
 
       {/* Mobile: Spacer for fixed header */}
-      {!hideButtons && <div className="md:hidden h-[180px]"></div>}
-
+      <>
       {/* Statistics Navigation Sidebar and Content */}
       <div className={`flex flex-col md:flex-row gap-6 ${hideButtons ? 'mt-6' : 'md:mt-6'}`}>
         {/* Left Sidebar Navigation - Desktop Only */}
+        {hasRaceData && (
         <div className="hidden md:block flex-shrink-0">
           <div className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-lg p-4 sticky top-4 min-w-fit">
             <nav className="space-y-1">
@@ -1392,6 +1404,7 @@ export function StatisticsCharts({
             </nav>
           </div>
         </div>
+        )}
 
         {/* Main Content Area */}
         <div className="flex-1 min-w-0 w-full">
@@ -2905,7 +2918,7 @@ export function StatisticsCharts({
                 )}
             </div>
           ) : (
-            <div className="md:hidden fixed top-[196px] left-0 right-0 overflow-y-auto px-4 pt-3 pb-8" style={{ bottom: '73px' }}>
+            <div className="md:hidden mt-4">
               <div className="space-y-6">
                 {/* Copy all chart categories from desktop area above */}
                 {/* Genel Category */}
@@ -3255,8 +3268,260 @@ export function StatisticsCharts({
                     })}
                   </div>
                 )}
-                {/* Gelir-Gider and Yem-Kilo categories would need to be added similarly */}
-                {(selectedCategory === 'gelir-gider' || selectedCategory === 'yem-kilo') && (
+                {/* Jokey Category */}
+                {selectedCategory === 'jokey' && hasRaceData && jockeyPerformanceData.length > 0 && (
+                  <div className="grid grid-cols-1 gap-4">
+                    {jockeyPerformanceData.map((jockeyData) => {
+                      const total = jockeyData['İlk 3 sıra'] + jockeyData['Tabela sonu'] + jockeyData['Tabela dışı']
+                      const pieData = [
+                        { name: 'İlk 3 sıra', value: jockeyData['İlk 3 sıra'], color: '#10b981', total },
+                        { name: 'Tabela sonu', value: jockeyData['Tabela sonu'], color: '#f59e0b', total },
+                        { name: 'Tabela dışı', value: jockeyData['Tabela dışı'], color: '#6b7280', total },
+                      ].filter(item => item.value > 0)
+                      
+                      return (
+                        <Card key={jockeyData.jockey} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                              <Users className="h-4 w-4 mr-2 text-indigo-600" />
+                              {jockeyData.jockey}
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={200}>
+                              <PieChart>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  labelLine={false}
+                                  outerRadius={70}
+                                  fill="#8884d8"
+                                  dataKey="value"
+                                >
+                                  {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip content={<CustomTooltip />} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                            <CustomLegend
+                              data={pieData.map(item => ({
+                                name: item.name,
+                                value: item.value,
+                                color: item.color,
+                                percent: (item.value / total) * 100,
+                              }))}
+                              total={total}
+                            />
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                )}
+                {/* Koşu Türü Category */}
+                {selectedCategory === 'kosu-turu' && (
+                  <>
+                    {raceTypePerformanceData.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-4">
+                        {raceTypePerformanceData.map((typeData, index) => {
+                          const total =
+                            typeData['İlk 3 sıra'] + typeData['Tabela sonu'] + typeData['Tabela dışı']
+                          const pieData = [
+                            { name: 'İlk 3 sıra', value: typeData['İlk 3 sıra'], color: '#10b981', total },
+                            { name: 'Tabela sonu', value: typeData['Tabela sonu'], color: '#f59e0b', total },
+                            { name: 'Tabela dışı', value: typeData['Tabela dışı'], color: '#9ca3af', total },
+                          ].filter((item) => item.value > 0)
+
+                          return (
+                            <Card key={typeData.name} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                                  <Flag className="h-4 w-4 mr-2 text-indigo-600" />
+                                  {typeData.name}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ResponsiveContainer width="100%" height={200}>
+                                  <PieChart>
+                                    <Pie
+                                      data={pieData}
+                                      cx="50%"
+                                      cy="50%"
+                                      labelLine={false}
+                                      outerRadius={70}
+                                      dataKey="value"
+                                    >
+                                      {pieData.map((entry, idx) => (
+                                        <Cell key={`${typeData.name}-${idx}`} fill={entry.color} />
+                                      ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                  </PieChart>
+                                </ResponsiveContainer>
+                                <CustomLegend
+                                  data={pieData.map((item) => ({
+                                    name: item.name,
+                                    value: item.value,
+                                    color: item.color,
+                                    percent: total > 0 ? (item.value / total) * 100 : 0,
+                                  }))}
+                                  total={total}
+                                />
+                              </CardContent>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                        <CardContent className="py-16 text-center text-sm text-gray-500">
+                          Koşu türü verisi bulunamadı
+                        </CardContent>
+                      </Card>
+                    )}
+                  </>
+                )}
+                {/* Gelir-Gider Category */}
+                {selectedCategory === 'gelir-gider' && (
+                  <>
+                    <div className="grid grid-cols-1 gap-4">
+                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                            <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                            {getEarningsChartData.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {getEarningsChartData.data.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                              <LineChart data={getEarningsChartData.data}>
+                                <defs>
+                                  <linearGradient id="colorEarningsMobile" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                <XAxis
+                                  dataKey="period"
+                                  stroke="#6b7280"
+                                  style={{ fontSize: '11px' }}
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={60}
+                                />
+                                <YAxis
+                                  stroke="#6b7280"
+                                  style={{ fontSize: '12px' }}
+                                  tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                                />
+                                <Tooltip
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                                          <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                                          <p className="text-sm text-emerald-600 font-semibold">
+                                            ₺{payload[0].value?.toLocaleString('tr-TR')}
+                                          </p>
+                                        </div>
+                                      )
+                                    }
+                                    return null
+                                  }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="earnings"
+                                  stroke="#10b981"
+                                  strokeWidth={3}
+                                  fill="url(#colorEarningsMobile)"
+                                  dot={{ fill: '#10b981', r: 4 }}
+                                  activeDot={{ r: 6 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex items-center justify-center h-[250px]">
+                              <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                            <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                            {getExpensesChartData.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {getExpensesChartData.data.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={250}>
+                              <LineChart data={getExpensesChartData.data}>
+                                <defs>
+                                  <linearGradient id="colorExpensesMobile" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                <XAxis
+                                  dataKey="period"
+                                  stroke="#6b7280"
+                                  style={{ fontSize: '11px' }}
+                                  angle={-45}
+                                  textAnchor="end"
+                                  height={60}
+                                />
+                                <YAxis
+                                  stroke="#6b7280"
+                                  style={{ fontSize: '12px' }}
+                                  tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                                />
+                                <Tooltip
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      return (
+                                        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                                          <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                                          <p className="text-sm text-red-600 font-semibold">
+                                            ₺{payload[0].value?.toLocaleString('tr-TR')}
+                                          </p>
+                                        </div>
+                                      )
+                                    }
+                                    return null
+                                  }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="expenses"
+                                  stroke="#ef4444"
+                                  strokeWidth={3}
+                                  fill="url(#colorExpensesMobile)"
+                                  dot={{ fill: '#ef4444', r: 4 }}
+                                  activeDot={{ r: 6 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          ) : (
+                            <div className="flex items-center justify-center h-[250px]">
+                              <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+                {/* Yem-Kilo category */}
+                {selectedCategory === 'yem-kilo' && (
                   <div className="text-center py-8 text-gray-500 text-sm">
                     Bu kategori için grafikler masaüstü görünümünde mevcuttur.
                   </div>
@@ -3266,6 +3531,7 @@ export function StatisticsCharts({
           )}
         </div>
       </div>
+      </>
     </div>
   )
 }

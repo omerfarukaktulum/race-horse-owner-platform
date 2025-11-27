@@ -37,10 +37,40 @@ export default function SignInPage() {
         throw new Error(data.error || 'Giriş başarısız')
       }
 
+      // Verify the cookie is set by checking auth status
+      // This ensures the cookie is available before redirecting
+      let cookieVerified = false
+      let retries = 0
+      const maxRetries = 5
+
+      while (!cookieVerified && retries < maxRetries) {
+        try {
+          const verifyResponse = await fetch('/api/auth/me', {
+            credentials: 'include',
+            cache: 'no-store',
+          })
+
+          if (verifyResponse.ok) {
+            cookieVerified = true
+            break
+          }
+        } catch (verifyError) {
+          console.error('Cookie verification error:', verifyError)
+        }
+
+        retries++
+        if (!cookieVerified && retries < maxRetries) {
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      }
+
+      if (!cookieVerified) {
+        throw new Error('Kimlik doğrulama başarısız. Lütfen tekrar deneyin.')
+      }
+
       // Use window.location for hard redirect to ensure cookie is included
-      setTimeout(() => {
-        window.location.href = '/app/home'
-      }, 500)
+      window.location.href = '/app/home'
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Giriş başarısız'
       toast.error(message)
