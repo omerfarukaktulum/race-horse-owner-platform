@@ -274,7 +274,7 @@ export default function NewExpensePage() {
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">{TR.expenses.notes}</Label>
+              <Label htmlFor="notes">{TR.expenses.note}</Label>
               <textarea
                 id="notes"
                 placeholder="İsteğe bağlı notlar"
