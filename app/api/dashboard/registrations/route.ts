@@ -157,11 +157,11 @@ export async function GET(request: Request) {
       
       return {
         id: `reg-${index}`,
-        horseName: reg.horse.name,
-        ...(decoded.role === 'TRAINER' && reg.horse.stablemate ? {
+        horseName: reg.horse?.name || 'Unknown',
+        ...(decoded.role === 'TRAINER' && reg.horse?.stablemate ? {
           stablemate: {
-            id: reg.horse.stablemate.id,
-            name: reg.horse.stablemate.name,
+            id: reg.horse.stablemate?.id || '',
+            name: reg.horse.stablemate?.name || '',
           },
         } : {}),
         raceDate: formattedDate,
@@ -171,7 +171,7 @@ export async function GET(request: Request) {
         raceType: reg.raceType || undefined,
         type: reg.type === 'Deklare' ? ('DEKLARE' as const) : ('KAYIT' as const),
         jockeyName: reg.jockeyName || undefined,
-        tjkUrl: buildTjkUrl(reg.horse.externalRef),
+        tjkUrl: buildTjkUrl(reg.horse?.externalRef || null),
       }
     })
 

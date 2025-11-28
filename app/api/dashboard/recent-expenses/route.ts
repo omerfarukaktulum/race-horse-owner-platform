@@ -120,8 +120,8 @@ export async function GET(request: Request) {
       horseName: expense.horse?.name || (expense.horseId ? horseMap.get(expense.horseId) : null) || 'Unknown',
       ...(decoded.role === 'TRAINER' && expense.horse?.stablemate ? {
         stablemate: {
-          id: expense.horse.stablemate.id,
-          name: expense.horse.stablemate.name,
+          id: expense.horse.stablemate?.id || '',
+          name: expense.horse.stablemate?.name || '',
         },
       } : {}),
       date: expense.date.toISOString(),

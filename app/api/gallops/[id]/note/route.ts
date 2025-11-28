@@ -57,7 +57,7 @@ export async function PATCH(
         ownerId = ownerProfile?.id
       }
       
-      if (!ownerId || gallop.horse.stablemate.ownerId !== ownerId) {
+      if (!ownerId || gallop.horse?.stablemate?.ownerId !== ownerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
@@ -70,7 +70,7 @@ export async function PATCH(
         trainerId = trainerProfile?.id
       }
       
-      if (!trainerId || gallop.horse.trainerId !== trainerId) {
+      if (!trainerId || gallop.horse?.trainerId !== trainerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role !== 'ADMIN') {
@@ -172,7 +172,7 @@ export async function DELETE(
         ownerId = ownerProfile?.id
       }
       
-      if (!ownerId || gallop.horse.stablemate.ownerId !== ownerId) {
+      if (!ownerId || gallop.horse?.stablemate?.ownerId !== ownerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
@@ -185,7 +185,7 @@ export async function DELETE(
         trainerId = trainerProfile?.id
       }
       
-      if (!trainerId || gallop.horse.trainerId !== trainerId) {
+      if (!trainerId || gallop.horse?.trainerId !== trainerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role !== 'ADMIN') {

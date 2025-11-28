@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     const headers = ['Tarih', 'At', 'Kategori', 'Tutar', 'Not']
     const rows = expenses.map((expense) => [
       new Date(expense.date).toLocaleDateString('tr-TR'),
-      expense.horse.name,
+      expense.horse?.name || 'Unknown',
       expense.category,
       expense.amount.toString(),
       expense.notes || '',

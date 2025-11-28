@@ -138,11 +138,11 @@ export async function GET(request: Request) {
       return {
         id: gallop.id,
         horseId: gallop.horseId,
-        horseName: gallop.horse.name,
-        ...(decoded.role === 'TRAINER' && gallop.horse.stablemate ? {
+        horseName: gallop.horse?.name || 'Unknown',
+        ...(decoded.role === 'TRAINER' && gallop.horse?.stablemate ? {
           stablemate: {
-            id: gallop.horse.stablemate.id,
-            name: gallop.horse.stablemate.name,
+            id: gallop.horse.stablemate?.id || '',
+            name: gallop.horse.stablemate?.name || '',
           },
         } : {}),
         date: formattedDate,

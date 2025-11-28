@@ -189,7 +189,7 @@ export async function GET(request: Request) {
         })
         trainerNotes.forEach((note) => {
           if (note.horse?.stablemate?.name) {
-            stablemateSet.add(note.horse.stablemate.name)
+            stablemateSet.add(note.horse.stablemate?.name)
           }
         })
         

@@ -164,11 +164,11 @@ export async function GET(request: Request) {
         raceId: race.id,
         horseId: race.horseId,
         date: formattedDate,
-        horseName: race.horse.name,
-        ...(decoded.role === 'TRAINER' && race.horse.stablemate ? {
+        horseName: race.horse?.name || 'Unknown',
+        ...(decoded.role === 'TRAINER' && race.horse?.stablemate ? {
           stablemate: {
-            id: race.horse.stablemate.id,
-            name: race.horse.stablemate.name,
+            id: race.horse.stablemate?.id || '',
+            name: race.horse.stablemate?.name || '',
           },
         } : {}),
         city: race.city || '',

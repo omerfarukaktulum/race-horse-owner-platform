@@ -63,7 +63,7 @@ export async function POST(
         ownerId = ownerProfile?.id
       }
       
-      if (!ownerId || illness.horse.stablemate.ownerId !== ownerId) {
+      if (!ownerId || illness.horse?.stablemate?.ownerId !== ownerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
@@ -76,7 +76,7 @@ export async function POST(
         trainerId = trainerProfile?.id
       }
       
-      if (!trainerId || illness.horse.trainerId !== trainerId) {
+      if (!trainerId || illness.horse?.trainerId !== trainerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role !== 'ADMIN') {
@@ -183,7 +183,7 @@ export async function GET(
         ownerId = ownerProfile?.id
       }
       
-      if (!ownerId || illness.horse.stablemate.ownerId !== ownerId) {
+      if (!ownerId || illness.horse?.stablemate?.ownerId !== ownerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
@@ -196,7 +196,7 @@ export async function GET(
         trainerId = trainerProfile?.id
       }
       
-      if (!trainerId || illness.horse.trainerId !== trainerId) {
+      if (!trainerId || illness.horse?.trainerId !== trainerId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role !== 'ADMIN') {

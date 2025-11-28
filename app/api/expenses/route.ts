@@ -388,7 +388,7 @@ export async function GET(request: Request) {
         })
         trainerExpenses.forEach((expense) => {
           if (expense.horse?.stablemate?.name) {
-            stablemateSet.add(expense.horse.stablemate.name)
+            stablemateSet.add(expense.horse.stablemate?.name)
           }
         })
         
