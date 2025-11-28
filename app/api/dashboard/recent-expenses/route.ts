@@ -117,7 +117,7 @@ export async function GET(request: Request) {
     const expensesWithHorses = recentExpenses.map((expense) => ({
       id: expense.id,
       horseId: expense.horseId,
-      horseName: expense.horse?.name || horseMap.get(expense.horseId) || 'Unknown',
+      horseName: expense.horse?.name || (expense.horseId ? horseMap.get(expense.horseId) : null) || 'Unknown',
       ...(decoded.role === 'TRAINER' && expense.horse?.stablemate ? {
         stablemate: {
           id: expense.horse.stablemate.id,
