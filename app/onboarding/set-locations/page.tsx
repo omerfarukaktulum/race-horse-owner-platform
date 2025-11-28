@@ -204,7 +204,7 @@ export default function SetLocationsPage() {
             </CardDescription>
             {horses.length > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Konum seçtikten sonra "Devam Et" butonuna tıklayın
+                Konum seçtikten sonra &quot;Devam Et&quot; butonuna tıklayın
               </p>
             )}
           </div>

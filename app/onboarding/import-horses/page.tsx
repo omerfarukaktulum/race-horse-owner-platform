@@ -452,7 +452,7 @@ export default function ImportHorsesPage() {
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Download className="h-10 w-10 text-gray-400" />
               </div>
-              <p className="text-gray-700 font-medium mb-2">TJK'da kayıtlı atınız bulunamadı.</p>
+              <p className="text-gray-700 font-medium mb-2">TJK&apos;da kayıtlı atınız bulunamadı.</p>
               <p className="text-sm text-gray-500">Manuel olarak at ekleyebilirsiniz.</p>
             </div>
           ) : horses.length === 0 ? (

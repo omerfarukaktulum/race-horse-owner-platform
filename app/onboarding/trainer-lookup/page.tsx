@@ -106,7 +106,7 @@ export default function TrainerLookupPage() {
               Antrenör Adınızı Bulun
             </CardTitle>
             <CardDescription className="text-gray-600 mt-2">
-              Lütfen TJK'daki resmi antrenör adınızı yazın
+              Lütfen TJK&apos;daki resmi antrenör adınızı yazın
             </CardDescription>
           </div>
         </CardHeader>
