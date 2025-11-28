@@ -6,10 +6,10 @@ import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { Input } from '@/app/components/ui/input'
-import { Plus, Minus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, UserPlus } from 'lucide-react'
+import { Plus, Minus, LayoutGrid, FileText, Filter, X, TurkishLira, MapPin, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, UserPlus, CircleAlert } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
 import { toast } from 'sonner'
-import { formatDate, formatCurrency, getRelativeTime } from '@/lib/utils/format'
+import { formatCurrency, getRelativeTime } from '@/lib/utils/format'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { ChangeLocationModal } from '@/app/components/modals/change-location-modal'
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
@@ -46,6 +46,19 @@ interface HorseData {
     amount: number
     currency: string
     createdAt: Date
+  }>
+  illnesses?: Array<{
+    id: string
+    detail?: string | null
+    startDate: string
+    endDate?: string | null
+    operations?: Array<{ id: string }>
+  }>
+  bannedMedicines?: Array<{
+    id: string
+    medicineName: string
+    givenDate: string
+    waitDays: number
   }>
 }
 
@@ -322,21 +335,31 @@ export default function HorsesPage() {
     }
     
     // Apply sorting
+    const sortWithPriority = (compareFn: (a: HorseData, b: HorseData) => number) => {
+      return filtered.sort((a, b) => {
+        const priorityComparison = compareByAlertPriority(a, b)
+        if (priorityComparison !== 0) {
+          return priorityComparison
+        }
+        return compareFn(a, b)
+      })
+    }
+
     if (sortBy) {
       if (sortBy === 'age-asc') {
-        filtered = filtered.sort((a, b) => {
+        filtered = sortWithPriority((a, b) => {
           const ageA = a.yob ? currentYear - a.yob : 999
           const ageB = b.yob ? currentYear - b.yob : 999
           return ageA - ageB
         })
       } else if (sortBy === 'age-desc') {
-        filtered = filtered.sort((a, b) => {
+        filtered = sortWithPriority((a, b) => {
           const ageA = a.yob ? currentYear - a.yob : 999
           const ageB = b.yob ? currentYear - b.yob : 999
           return ageB - ageA
         })
       } else if (sortBy === 'ikramiye-desc') {
-        filtered = filtered.sort((a, b) => {
+        filtered = sortWithPriority((a, b) => {
           // Use totalEarnings (Toplam Kazanç) for "Kazanç" sorting, fallback to prizeMoney if not available
           const getEarnings = (horse: HorseData): number => {
             if (horse.totalEarnings) {
@@ -354,19 +377,19 @@ export default function HorsesPage() {
       }
     } else {
       // Default sort: by age ascending (youngest first), then alphabetically by name
-      filtered = filtered.sort((a, b) => {
-      const ageA = a.yob ? currentYear - a.yob : 999
-      const ageB = b.yob ? currentYear - b.yob : 999
-      
-      // First sort by age
-      if (ageA !== ageB) {
-        return ageA - ageB
-      }
-      
-      // If ages are the same, sort alphabetically by name
-      return a.name.localeCompare(b.name, 'tr')
-    })
-  }
+      filtered = sortWithPriority((a, b) => {
+        const ageA = a.yob ? currentYear - a.yob : 999
+        const ageB = b.yob ? currentYear - b.yob : 999
+
+        // First sort by age
+        if (ageA !== ageB) {
+          return ageA - ageB
+        }
+
+        // If ages are the same, sort alphabetically by name
+        return a.name.localeCompare(b.name, 'tr')
+      })
+    }
     
     return filtered
   }
@@ -561,6 +584,59 @@ export default function HorsesPage() {
 
   const hasActiveFilters = categoryFilters.length > 0 || ageFilters.length > 0 || genderFilters.length > 0 || locationFilters.length > 0 || stablemateFilters.length > 0
 
+  const calculateRemainingDays = (givenDate?: string, waitDays?: number) => {
+    if (!givenDate || !waitDays) return 0
+    const given = new Date(givenDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    given.setHours(0, 0, 0, 0)
+    const daysSinceGiven = Math.floor((today.getTime() - given.getTime()) / (1000 * 60 * 60 * 24))
+    return Math.max(0, waitDays - daysSinceGiven)
+  }
+
+  const getActiveIllnessesForHorse = (horse: HorseData) =>
+    (horse.illnesses ?? [])
+      .filter((illness) => !illness.endDate)
+      .map((illness) => ({
+        id: illness.id,
+        detail: illness.detail || '',
+        startDate: illness.startDate,
+        operationsCount: illness.operations?.length || 0,
+      }))
+
+  const getActiveBannedMedicineForHorse = (horse: HorseData) => {
+    if (!horse.bannedMedicines || horse.bannedMedicines.length === 0) return null
+    const medicinesWithRemaining = horse.bannedMedicines
+      .map((medicine) => ({
+        id: medicine.id,
+        name: medicine.medicineName,
+        remainingDays: calculateRemainingDays(medicine.givenDate, medicine.waitDays),
+      }))
+      .filter((medicine) => medicine.remainingDays > 0)
+
+    if (medicinesWithRemaining.length === 0) return null
+
+    return medicinesWithRemaining.reduce((max, medicine) =>
+      medicine.remainingDays > max.remainingDays ? medicine : max
+    )
+  }
+
+  const getHorseAlertPriority = (horse: HorseData) => {
+    const hasIllness = getActiveIllnessesForHorse(horse).length > 0
+    const hasBannedMedicine = !!getActiveBannedMedicineForHorse(horse)
+    if (hasIllness && hasBannedMedicine) return 2
+    if (hasIllness || hasBannedMedicine) return 1
+    return 0
+  }
+
+  const compareByAlertPriority = (a: HorseData, b: HorseData) => {
+    const priorityDiff = getHorseAlertPriority(b) - getHorseAlertPriority(a)
+    if (priorityDiff !== 0) {
+      return priorityDiff
+    }
+    return 0
+  }
+
   const HorseCard = ({ horse }: { horse: HorseData }) => {
     const age = horse.yob ? new Date().getFullYear() - horse.yob : null
 
@@ -628,15 +704,33 @@ export default function HorsesPage() {
       return null
     })()
 
+    const activeIllnesses = getActiveIllnessesForHorse(horse)
+    const primaryIllness = activeIllnesses[0]
+    const activeBannedMedicine = getActiveBannedMedicineForHorse(horse)
+
     return (
       <Link href={`/app/horses/${horse.id}`}>
         <Card className={`p-4 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 cursor-pointer ${cardGradient}`} style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}>
           {/* Horse Name */}
           <div className="flex-1 min-w-0">
-            <div className="mb-2">
+            <div className="flex items-start justify-between gap-3 mb-2">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-1">
                   {horse.name}
               </h3>
+              <div className="flex flex-wrap items-center justify-end gap-1.5 min-w-fit">
+                {primaryIllness && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-700 border border-orange-200 whitespace-nowrap">
+                    <CircleAlert className="h-3 w-3" />
+                    Aktif Hastalık
+                  </span>
+                )}
+                {activeBannedMedicine && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap">
+                    <CircleAlert className="h-3 w-3" />
+                    Çıkıcı İlaç
+                  </span>
+                )}
+              </div>
             </div>
             
             {/* Origin Information - Separate Line */}
@@ -649,7 +743,7 @@ export default function HorsesPage() {
                 </p>
               </div>
             )}
-            
+
             {/* All Labels Side by Side - Second Line */}
             <div className="flex items-center gap-2 flex-wrap mb-3">
               {age !== null && (
@@ -799,15 +893,16 @@ export default function HorsesPage() {
           {/* Filter Dropdown */}
           {showFilters && (
             <div 
-              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              className="absolute left-0 top-full mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between mb-4">
+                <div className="relative mb-4 pr-6">
                   <h3 className="font-semibold text-gray-900">Filtreler</h3>
                   <button
                     onClick={() => setShowFilters(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="absolute right-0 top-0 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                    aria-label="Filtreleri kapat"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -959,11 +1054,12 @@ export default function HorsesPage() {
               {/* Sort Dropdown */}
               {showSortDropdown && (
                 <div className="absolute left-0 top-full mt-2 w-auto min-w-[140px] bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 sort-dropdown-container">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="relative mb-4 pr-6">
                     <h3 className="font-semibold text-gray-900">Sırala</h3>
                     <button
                       onClick={() => setShowSortDropdown(false)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="absolute right-0 top-0 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                      aria-label="Sıralama kapat"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1086,7 +1182,7 @@ export default function HorsesPage() {
           {/* Filter Dropdown */}
           {showFilters && (
             <div 
-              className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
+              className="absolute left-0 top-full mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 filter-dropdown-container"
               onMouseDown={(e) => e.stopPropagation()}
               onTouchStart={(e) => e.stopPropagation()}
             >

@@ -868,10 +868,11 @@ export function HorseIllnessesTable({
         {/* Mobile: Card Layout */}
         <div className="md:hidden mt-4">
           {!hasIllnesses ? (
-            <EmptyState
+              <EmptyState
               icon={Stethoscope}
               title="Hastalık kaydı bulunmuyor"
               description="Henüz hastalık kaydı eklenmemiş."
+                variant="inline"
             />
           ) : filteredIllnesses.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-gray-500">
@@ -1075,17 +1076,17 @@ export function HorseIllnessesTable({
         </div>
 
         {/* Desktop: Table Layout */}
-        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-          <CardContent className={hasIllnesses ? 'p-0' : 'p-0'}>
-            {!hasIllnesses ? (
-              <div className="mt-4">
-                <EmptyState
-                  icon={Stethoscope}
-                  title="Hastalık kaydı bulunmuyor"
-                  description="Henüz hastalık kaydı eklenmemiş."
-                />
-              </div>
-            ) : (
+        {!hasIllnesses ? (
+          <div className="hidden md:block mt-4">
+            <EmptyState
+              icon={Stethoscope}
+              title="Hastalık kaydı bulunmuyor"
+              description="Henüz hastalık kaydı eklenmemiş."
+            />
+          </div>
+        ) : (
+          <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+            <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -1326,9 +1327,9 @@ export function HorseIllnessesTable({
                   </tbody>
                 </table>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
       </div>
 

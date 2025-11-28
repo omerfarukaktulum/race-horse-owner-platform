@@ -121,6 +121,12 @@ export async function GET(request: Request) {
           take: 1,
           orderBy: { startDate: 'desc' },
         },
+        illnesses: {
+          include: {
+            operations: true,
+          },
+        },
+        bannedMedicines: true,
       },
       orderBy: { createdAt: 'desc' },
     })

@@ -596,17 +596,17 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
       </div>
 
       {/* Desktop: Table Layout */}
-      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasMedicines ? 'p-0' : 'p-0'}>
-          {!hasMedicines ? (
-            <div className="mt-4">
-              <EmptyState
-                icon={Pill}
-                title="Çıkıcı ilaç kaydı bulunmuyor"
-                description="Henüz ilaç kaydı eklenmemiş."
-              />
-            </div>
-          ) : (
+      {!hasMedicines ? (
+        <div className="hidden md:block mt-4">
+          <EmptyState
+            icon={Pill}
+            title="Çıkıcı ilaç kaydı bulunmuyor"
+            description="Henüz ilaç kaydı eklenmemiş."
+          />
+        </div>
+      ) : (
+        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -731,9 +731,9 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                 </tbody>
               </table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
 
       {isEditModalOpen && (

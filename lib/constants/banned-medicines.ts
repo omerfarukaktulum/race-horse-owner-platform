@@ -62,6 +62,6 @@ export const BANNED_MEDICINES = [
   'Sedatives',
   'Diazepam',
   'Midazolam',
-  'Diğer Yasaklı Maddeler',
+  'Diğer Yasaklı/Çıkıcı Maddeler',
 ]
 
