@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       expense.horse?.name || 'Unknown',
       expense.category,
       expense.amount.toString(),
-      expense.notes || '',
+      expense.note || '',
     ])
 
     const csvContent = [
