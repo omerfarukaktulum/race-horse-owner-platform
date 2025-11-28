@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { locationType, city, startDate, notes } = body
+    const { locationType, city, startDate } = body
 
     if (!locationType || !city) {
       return NextResponse.json(
@@ -140,7 +140,6 @@ export async function POST(request: Request) {
           farmId,
           startDate: new Date(startDate),
           endDate: null,
-          notes: notes && notes.trim() ? notes.trim() : null,
         },
       })
 
