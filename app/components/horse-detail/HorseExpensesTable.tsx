@@ -100,7 +100,7 @@ export function HorseExpensesTable({
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
-  const highlightedExpenseRowRef = useRef<HTMLTableRowElement | null>(null)
+  const highlightedExpenseRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown

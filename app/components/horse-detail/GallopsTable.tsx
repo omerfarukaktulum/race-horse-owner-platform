@@ -70,7 +70,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
-  const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
+  const highlightedRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
   const [selectedGallopForNote, setSelectedGallopForNote] = useState<Gallop | null>(null)
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [isShowTrainingPlansModalOpen, setIsShowTrainingPlansModalOpen] = useState(false)
@@ -908,7 +908,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
               <div
                 key={gallop.id}
                 data-gallop-id={gallop.id}
-                ref={isHighlighted ? (el) => { highlightedRowRef.current = el as any } : undefined}
+                ref={isHighlighted ? (el) => { highlightedRowRef.current = el } : undefined}
                 className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                   isHighlighted
                     ? 'rounded-2xl border-2 border-indigo-400'

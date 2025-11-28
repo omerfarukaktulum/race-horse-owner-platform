@@ -95,7 +95,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
   const [selectedRaceForGallops, setSelectedRaceForGallops] = useState<RaceHistory | null>(null)
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
-  const highlightedRaceRowRef = useRef<HTMLTableRowElement | null>(null)
+  const highlightedRaceRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
   
   // Use external control when hideButtons is true, otherwise use internal state
   const showFilterDropdown = hideButtons ? (externalShowFilterDropdown || false) : internalShowFilterDropdown
@@ -1008,7 +1008,7 @@ export function RaceHistoryTable({ races, gallops = [], hideButtons = false, onF
               <div
                 key={race.id}
                 data-race-id={race.id}
-                ref={isHighlighted ? (el) => { highlightedRaceRowRef.current = el as any } : undefined}
+                ref={isHighlighted ? (el) => { highlightedRaceRowRef.current = el } : undefined}
                 className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                   isHighlighted
                     ? 'rounded-2xl border-2 border-indigo-400'
