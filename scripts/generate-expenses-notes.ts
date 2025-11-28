@@ -287,7 +287,6 @@ async function main() {
   const expenseSQL: string[] = []
   const noteSQL: string[] = []
   const illnessSQL: string[] = []
-  const illnessSQL: string[] = []
   
   // Generate expenses and notes for each owner's horses
   for (const owner of owners) {
