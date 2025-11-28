@@ -22,15 +22,15 @@ import type {
 } from './types'
 
 /**
- * Map notification type to database field name
+ * Map notification type to database field name (with notify prefix)
  */
-const NOTIFICATION_FIELD_MAP: Record<NotificationType, keyof NotificationSettings> = {
-  horseRegistered: 'horseRegistered',
-  horseDeclared: 'horseDeclared',
-  newTraining: 'newTraining',
-  newExpense: 'newExpense',
-  newNote: 'newNote',
-  newRace: 'newRace',
+const NOTIFICATION_FIELD_MAP: Record<NotificationType, 'notifyHorseRegistered' | 'notifyHorseDeclared' | 'notifyNewTraining' | 'notifyNewExpense' | 'notifyNewNote' | 'notifyNewRace'> = {
+  horseRegistered: 'notifyHorseRegistered',
+  horseDeclared: 'notifyHorseDeclared',
+  newTraining: 'notifyNewTraining',
+  newExpense: 'notifyNewExpense',
+  newNote: 'notifyNewNote',
+  newRace: 'notifyNewRace',
 }
 
 /**
