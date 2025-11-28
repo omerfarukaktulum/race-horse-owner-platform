@@ -75,7 +75,7 @@ export async function GET(request: Request) {
       .map((horse) => ({
         id: horse.id,
         name: horse.name,
-        totalSpend: horse.expenses.reduce((sum, exp) => sum + exp.amount, 0),
+        totalSpend: horse.expenses.reduce((sum, exp) => sum + Number(exp.amount), 0),
         expenseCount: horse._count.expenses,
       }))
       .sort((a, b) => b.totalSpend - a.totalSpend)
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
     // Calculate average monthly spend per horse
     const totalSpend = horses.reduce(
       (sum, horse) =>
-        sum + horse.expenses.reduce((s, exp) => s + exp.amount, 0),
+        sum + horse.expenses.reduce((s, exp) => s + Number(exp.amount), 0),
       0
     )
     const avgMonthlySpendPerHorse = horses.length > 0 ? totalSpend / horses.length / 3 : 0 // 3 months
