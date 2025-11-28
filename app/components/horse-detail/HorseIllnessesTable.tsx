@@ -89,13 +89,13 @@ function getPhotoList(photoUrl?: string | string[] | null) {
   return [photoUrl].filter(Boolean)
 }
 
-function formatAddedBy(illness: HorseIllness) {
-  if (!illness.addedBy) return '-'
-  const roleLabel = ROLE_MAP[illness.addedBy.role] || illness.addedBy.role || ''
+function formatAddedBy(item: HorseIllness | HorseIllnessOperation) {
+  if (!item.addedBy) return '-'
+  const roleLabel = ROLE_MAP[item.addedBy.role] || item.addedBy.role || ''
   const profileName =
-    illness.addedBy.ownerProfile?.officialName ||
-    illness.addedBy.trainerProfile?.fullName ||
-    illness.addedBy.name
+    item.addedBy.ownerProfile?.officialName ||
+    item.addedBy.trainerProfile?.fullName ||
+    item.addedBy.name
 
   if (roleLabel && profileName) {
     return `${roleLabel} (${profileName})`
