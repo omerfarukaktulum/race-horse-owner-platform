@@ -503,8 +503,10 @@ export function HorseExpensesTable({
                   block: 'start',
                   inline: 'nearest'
                 })
-                observer.disconnect()
-                observer = null
+                if (observer) {
+                  observer.disconnect()
+                  observer = null
+                }
               }
             }
           })
