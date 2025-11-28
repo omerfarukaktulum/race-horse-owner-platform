@@ -516,7 +516,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                 <div
                   key={medicine.id}
                   data-medicine-id={medicine.id}
-                  ref={isHighlighted ? (el) => (highlightedMedicineRowRef.current = el) : undefined}
+                  ref={isHighlighted ? (el) => { highlightedMedicineRowRef.current = el } : undefined}
                   className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                     isHighlighted
                       ? 'rounded-2xl border-2 border-indigo-400'
@@ -649,7 +649,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                       return (
                         <tr
                           key={medicine.id}
-                          ref={isHighlighted ? (el) => (highlightedMedicineRowRef.current = el) : undefined}
+                          ref={isHighlighted ? (el) => { highlightedMedicineRowRef.current = el } : undefined}
                           className={`relative transition-colors ${
                             isHighlighted
                               ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'

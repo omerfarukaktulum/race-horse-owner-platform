@@ -908,7 +908,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
               <div
                 key={gallop.id}
                 data-gallop-id={gallop.id}
-                ref={isHighlighted ? (el) => (highlightedRowRef.current = el as any) : undefined}
+                ref={isHighlighted ? (el) => { highlightedRowRef.current = el as any } : undefined}
                 className={`bg-indigo-50/30 border-0 p-4 mb-3 first:mt-4 ${
                   isHighlighted
                     ? 'rounded-2xl border-2 border-indigo-400'
@@ -1077,7 +1077,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                   return (
                     <tr
                       key={gallop.id}
-                      ref={isHighlighted ? (el) => (highlightedRowRef.current = el) : undefined}
+                      ref={isHighlighted ? (el) => { highlightedRowRef.current = el } : undefined}
                       className={`relative transition-colors ${
                         isHighlighted
                           ? 'bg-indigo-50 text-indigo-900 animate-pulse-once'

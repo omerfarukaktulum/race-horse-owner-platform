@@ -1155,7 +1155,7 @@ export function HorseExpensesTable({
                 <div
                   key={expense.id}
                   data-expense-id={expense.id}
-                  ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
+                  ref={isHighlighted ? (el) => { highlightedExpenseRowRef.current = el } : undefined}
                   className={`bg-indigo-50/30 border-0 p-4 mb-3 ${
                     isHighlighted
                       ? 'rounded-2xl border-2 border-indigo-400'
@@ -1273,7 +1273,7 @@ export function HorseExpensesTable({
                         <tr
                           key={expense.id}
                           data-expense-id={expense.id}
-                          ref={isHighlighted ? (el) => (highlightedExpenseRowRef.current = el) : undefined}
+                          ref={isHighlighted ? (el) => { highlightedExpenseRowRef.current = el } : undefined}
                           className={`transition-colors ${
                             isHighlighted
                             ? 'bg-indigo-50 text-indigo-900 rounded-xl'
