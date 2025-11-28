@@ -10,6 +10,16 @@ export interface User {
   role: 'OWNER' | 'TRAINER' | 'ADMIN'
   ownerId?: string
   trainerId?: string
+  ownerProfile?: {
+    id: string
+    officialName: string
+    officialRef?: string | null
+  } | null
+  trainerProfile?: {
+    id: string
+    fullName: string
+    phone?: string | null
+  } | null
 }
 
 export interface AuthContextType {
