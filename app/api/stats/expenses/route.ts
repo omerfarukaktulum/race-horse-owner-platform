@@ -64,25 +64,25 @@ export async function GET(request: Request) {
       })
 
       // Total by month
-      monthlyTotals[month] = (monthlyTotals[month] || 0) + expense.amount
+      monthlyTotals[month] = (monthlyTotals[month] || 0) + Number(expense.amount)
 
       // Category by month
       if (!categoryByMonth[month]) {
         categoryByMonth[month] = {}
       }
       categoryByMonth[month][expense.category] =
-        (categoryByMonth[month][expense.category] || 0) + expense.amount
+        (categoryByMonth[month][expense.category] || 0) + Number(expense.amount)
     })
 
     // Current year total
     const currentYear = new Date().getFullYear()
     const currentYearTotal = expenses
       .filter((exp) => new Date(exp.date).getFullYear() === currentYear)
-      .reduce((sum, exp) => sum + exp.amount, 0)
+      .reduce((sum, exp) => sum + Number(exp.amount), 0)
 
     // Category totals
     const categoryTotals = expenses.reduce((acc, expense) => {
-      acc[expense.category] = (acc[expense.category] || 0) + expense.amount
+      acc[expense.category] = (acc[expense.category] || 0) + Number(expense.amount)
       return acc
     }, {} as Record<string, number>)
 
