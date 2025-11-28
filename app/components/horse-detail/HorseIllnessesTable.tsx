@@ -75,7 +75,7 @@ const RANGE_OPTIONS: { value: RangeKey; label: string }[] = [
   { value: 'thisYear', label: 'Bu Yıl' },
 ]
 
-function getPhotoList(photoUrl?: string | string[]) {
+function getPhotoList(photoUrl?: string | string[] | null) {
   if (!photoUrl) return []
   if (Array.isArray(photoUrl)) return photoUrl.filter(Boolean)
   try {
