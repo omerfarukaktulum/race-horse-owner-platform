@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Button } from '@/app/components/ui/button'
 import { MapPin, Ruler, Layers, Users, TurkishLira, Flag, Filter, X, Trophy, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react'
 import { TR } from '@/lib/constants/tr'
+import { HORSE_REQUIRED_CATEGORIES } from '@/lib/constants/expense-categories'
 import { useAuth } from '@/lib/context/auth-context'
 import { EmptyState } from './EmptyState'
 import {
@@ -89,8 +90,8 @@ interface Props {
   isGlobalStats?: boolean
   onActiveFiltersChange?: (count: number) => void
   showExpenseCategoryDistribution?: boolean
-  selectedCategory?: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'
-  onCategoryChange?: (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo') => void
+  selectedCategory?: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider'
+  onCategoryChange?: (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider') => void
 }
 
 // Distinct color palette for charts (vibrant colors)
@@ -583,11 +584,11 @@ export function StatisticsCharts({
   const distancePerformanceData = getDistancePerformanceData(filteredRaces)
   
   // Statistics category navigation state
-  const [internalSelectedCategory, setInternalSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
+  const [internalSelectedCategory, setInternalSelectedCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider'>('genel')
   
   // Use prop if provided, otherwise use internal state
   const selectedCategory = externalSelectedCategory ?? internalSelectedCategory
-  const setSelectedCategory = (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo') => {
+  const setSelectedCategory = (category: 'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider') => {
     if (onCategoryChange) {
       onCategoryChange(category)
     } else {
@@ -1053,6 +1054,8 @@ export function StatisticsCharts({
 
   const categoryHorseDistributions = useMemo(() => {
     if (!isGlobalStats) return []
+    // Only show charts for categories that are attached to horses: MONT, NAKLIYE, ILAC
+    const allowedCategories = HORSE_REQUIRED_CATEGORIES
     const categoryMap: Record<string, { total: number; horses: Record<string, number> }> = {}
 
     filteredExpenses.forEach((expense) => {
@@ -1061,6 +1064,9 @@ export function StatisticsCharts({
       if (!amount || Number.isNaN(amount)) return
       const category = expense.category || 'Diğer'
       const horseName = expense.horseName || 'Belirsiz At'
+
+      // Only process allowed categories (MONT, NAKLIYE, ILAC)
+      if (!category || !allowedCategories.includes(category as typeof allowedCategories[number])) return
 
       if (!categoryMap[category]) {
         categoryMap[category] = { total: 0, horses: {} }
@@ -1383,7 +1389,6 @@ export function StatisticsCharts({
                 { id: 'jokey' as const, label: 'Jokey', icon: Users },
                 { id: 'kosu-turu' as const, label: 'Koşu Türü', icon: Flag },
                 { id: 'gelir-gider' as const, label: 'Gelir-Gider', icon: TurkishLira },
-                { id: 'yem-kilo' as const, label: 'Kilo Takibi', icon: BarChart3 },
               ].map(({ id, label, icon: Icon }) => {
                 const isActive = selectedCategory === id
                 return (
@@ -2291,157 +2296,6 @@ export function StatisticsCharts({
               </>
       )}
 
-            {/* Kilo Takibi */}
-            {selectedCategory === 'yem-kilo' && (
-              <>
-                {(() => {
-                  // Apply date range filter to notes
-                  let filteredNotes = notes
-                  
-                  if (selectedRange) {
-                    const now = new Date()
-                    let startDate: Date | null = null
-
-                    switch (selectedRange) {
-                      case 'lastWeek':
-                        startDate = new Date(now)
-                        startDate.setDate(startDate.getDate() - 7)
-                        break
-                      case 'lastMonth':
-                        startDate = new Date(now)
-                        startDate.setMonth(startDate.getMonth() - 1)
-                        break
-                      case 'last3Months':
-                        startDate = new Date(now)
-                        startDate.setMonth(startDate.getMonth() - 3)
-                        break
-                      case 'last6Months':
-                        startDate = new Date(now)
-                        startDate.setMonth(startDate.getMonth() - 6)
-                        break
-                      case 'thisYear':
-                        startDate = new Date(now.getFullYear(), 0, 1)
-                        break
-                    }
-
-                    if (startDate) {
-                      filteredNotes = filteredNotes.filter(note => {
-                        const noteDate = new Date(note.date)
-                        return noteDate >= startDate!
-                      })
-                    }
-                  }
-                  
-                  const kiloNotes = filteredNotes.filter(
-                    (n) => n.kiloValue !== null && n.kiloValue !== undefined
-                  )
-                  
-                  // Group by month for both categories
-                  const groupByMonth = (notesList: NoteData[]) => {
-                    const grouped: Record<string, { total: number; count: number }> = {}
-                    notesList.forEach(note => {
-                      const date = new Date(note.date)
-                      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-                      if (!grouped[monthKey]) {
-                        grouped[monthKey] = { total: 0, count: 0 }
-                      }
-                      if (note.kiloValue) {
-                        grouped[monthKey].total += note.kiloValue
-                        grouped[monthKey].count += 1
-                      }
-                    })
-                    const sorted = Object.entries(grouped)
-                      .map(([month, data]) => ({
-                        period: month,
-                        average: data.count > 0 ? data.total / data.count : 0,
-                        total: data.total,
-                      }))
-                      .sort((a, b) => a.period.localeCompare(b.period))
-                    
-                    // If no date range selected, show last 12 months, otherwise show all filtered months
-                    return selectedRange ? sorted : sorted.slice(-12)
-                  }
-                  
-                  const kiloData = groupByMonth(kiloNotes)
-                  
-                  return (
-                    <div className="grid grid-cols-1 gap-4">
-                      {/* Kilo Takibi Chart */}
-                      <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
-                            <BarChart3 className="h-4 w-4 mr-2 text-indigo-600" />
-                            Kilo Takibi {selectedRange ? (
-                              <span className="text-gray-500 font-normal ml-1">
-                                ({RANGE_OPTIONS.find(o => o.value === selectedRange)?.label})
-                              </span>
-                            ) : (
-                              <span className="text-gray-500 font-normal ml-1">(Son 12 Ay)</span>
-                            )}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {kiloData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={250}>
-                              <LineChart data={kiloData}>
-                                <defs>
-                                  <linearGradient id="colorKilo" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                                <XAxis
-                                  dataKey="period"
-                                  stroke="#6b7280"
-                                  style={{ fontSize: '11px' }}
-                                  angle={-45}
-                                  textAnchor="end"
-                                  height={60}
-                                />
-                                <YAxis
-                                  stroke="#6b7280"
-                                  style={{ fontSize: '12px' }}
-                                  tickFormatter={(value) => `${value.toFixed(1)} kg`}
-                                />
-                                <Tooltip
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      return (
-                                        <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
-                                          <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
-                                          <p className="text-sm text-indigo-600 font-semibold">
-                                            {typeof payload[0].value === 'number' ? payload[0].value.toFixed(1) : '0.0'} kg
-                                          </p>
-                                        </div>
-                                      )
-                                    }
-                                    return null
-                                  }}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="average"
-                                  stroke="#6366f1"
-                                  strokeWidth={3}
-                                  fill="url(#colorKilo)"
-                                  dot={{ fill: '#6366f1', r: 4 }}
-                                  activeDot={{ r: 6 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="flex items-center justify-center h-[250px]">
-                              <p className="text-gray-500 text-sm">Kilo Takibi verisi bulunamadı</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )
-                })()}
-              </>
-            )}
     </div>
           
           {/* Mobile: Scrollable Content - shows same charts as desktop */}
@@ -2910,8 +2764,8 @@ export function StatisticsCharts({
                     )}
                   </>
                 )}
-                {/* Gelir-Gider and Yem-Kilo categories would need to be added similarly */}
-                {(selectedCategory === 'gelir-gider' || selectedCategory === 'yem-kilo') && (
+                {/* Gelir-Gider category would need to be added similarly */}
+                {selectedCategory === 'gelir-gider' && (
                   <div className="text-center py-8 text-gray-500 text-sm">
                     Bu kategori için grafikler masaüstü görünümünde mevcuttur.
                   </div>
@@ -3519,12 +3373,6 @@ export function StatisticsCharts({
                       </Card>
                     </div>
                   </>
-                )}
-                {/* Yem-Kilo category */}
-                {selectedCategory === 'yem-kilo' && (
-                  <div className="text-center py-8 text-gray-500 text-sm">
-                    Bu kategori için grafikler masaüstü görünümünde mevcuttur.
-                  </div>
                 )}
               </div>
             </div>

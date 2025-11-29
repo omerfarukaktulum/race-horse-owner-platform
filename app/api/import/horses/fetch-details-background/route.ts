@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminPrismaClient } from '@/lib/admin-prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 import { fetchTJKHorseGallops } from '@/lib/tjk-gallops-scraper'
 import { fetchTJKPedigree } from '@/lib/tjk-pedigree-scraper'
+import { verifyAdminAndGetTargetUserId } from '@/lib/admin-helper'
 
 // This endpoint starts the detail fetch in the background without blocking
 export async function POST(request: Request) {
@@ -21,6 +23,12 @@ export async function POST(request: Request) {
       role: string
     }
 
+    // Check if admin mode (admin creating account for target user)
+    const { isAdmin } = await verifyAdminAndGetTargetUserId()
+    
+    // Use admin Prisma client if in admin mode (respects database switch preference)
+    const prismaClient = isAdmin ? getAdminPrismaClient() : prisma
+
     const body = await request.json()
     const { horseIds } = body
 
@@ -36,7 +44,7 @@ export async function POST(request: Request) {
     ;(async () => {
       let stablemateIds: string[] = []
       try {
-        const horses = await prisma.horse.findMany({
+        const horses = await prismaClient.horse.findMany({
           where: {
             id: { in: horseIds },
             externalRef: { not: null },
@@ -52,7 +60,7 @@ export async function POST(request: Request) {
 
         // Verify ownership
         const ownerProfile = decoded.role === 'OWNER' 
-          ? await prisma.ownerProfile.findUnique({
+          ? await prismaClient.ownerProfile.findUnique({
               where: { userId: decoded.id },
             })
           : null
@@ -66,12 +74,12 @@ export async function POST(request: Request) {
         stablemateIds = [...new Set(horses.map(h => h.stablemate.id))]
         for (const stablemateId of stablemateIds) {
           try {
-            await prisma.stablemate.update({
+            await prismaClient.stablemate.update({
               where: { id: stablemateId },
               data: {
                 dataFetchStatus: 'IN_PROGRESS',
                 dataFetchStartedAt: new Date(),
-              },
+              } as any,
             })
           } catch (error) {
             // Ignore if field doesn't exist yet (migration not run)
@@ -98,7 +106,7 @@ export async function POST(request: Request) {
             }
 
             // Get current horse data to preserve existing pedigree if it's more complete
-            const currentHorse = await prisma.horse.findUnique({
+            const currentHorse = await prismaClient.horse.findUnique({
               where: { id: horse.id },
               select: { sireName: true, damName: true },
             })
@@ -114,7 +122,7 @@ export async function POST(request: Request) {
                detailData.damName.length > (currentHorse.damName?.length || 0))
 
             // Update horse with detailed data (same logic as stream endpoint)
-            await prisma.horse.update({
+            await prismaClient.horse.update({
               where: { id: horse.id },
               data: {
                 handicapPoints: detailData.handicapPoints,
@@ -150,11 +158,11 @@ export async function POST(request: Request) {
 
             // Update race history
             if (detailData.races && detailData.races.length > 0) {
-              await prisma.horseRaceHistory.deleteMany({
+              await prismaClient.horseRaceHistory.deleteMany({
                 where: { horseId: horse.id },
               })
 
-              await prisma.horseRaceHistory.createMany({
+              await prismaClient.horseRaceHistory.createMany({
                 data: detailData.races.map((race) => {
                   let raceDate = new Date()
                   if (race.raceDate && race.raceDate.match(/\d{2}\.\d{2}\.\d{4}/)) {
@@ -195,11 +203,11 @@ export async function POST(request: Request) {
 
             // Update registrations
             if (detailData.registrations && detailData.registrations.length > 0) {
-              await prisma.horseRegistration.deleteMany({
+              await prismaClient.horseRegistration.deleteMany({
                 where: { horseId: horse.id },
               })
 
-              await prisma.horseRegistration.createMany({
+              await prismaClient.horseRegistration.createMany({
                 data: detailData.registrations.map((reg) => {
                   let raceDate = new Date()
                   if (reg.raceDate && reg.raceDate.match(/\d{2}\.\d{2}\.\d{4}/)) {
@@ -233,11 +241,11 @@ export async function POST(request: Request) {
               const gallopsData = await fetchTJKHorseGallops(horse.externalRef!, horse.name)
               
               if (gallopsData && gallopsData.length > 0) {
-                await prisma.horseGallop.deleteMany({
+                await prismaClient.horseGallop.deleteMany({
                   where: { horseId: horse.id },
                 })
 
-                await prisma.horseGallop.createMany({
+                await prismaClient.horseGallop.createMany({
                   data: gallopsData.map((gallop) => {
                     let gallopDate = new Date()
                     if (gallop.date && gallop.date.match(/\d{2}\.\d{2}\.\d{4}/)) {
@@ -308,7 +316,7 @@ export async function POST(request: Request) {
                 if (pedigreeData.damDamSire) updateData.damDamSire = pedigreeData.damDamSire
                 if (pedigreeData.damDamDam) updateData.damDamDam = pedigreeData.damDamDam
                 
-                await prisma.horse.update({
+                await prismaClient.horse.update({
                   where: { id: horse.id },
                   data: updateData,
                 })
@@ -330,7 +338,7 @@ export async function POST(request: Request) {
           } catch (error: any) {
             console.error(`[Background Fetch] Error processing horse ${horse.name}:`, error.message)
             
-            await prisma.horse.update({
+            await prismaClient.horse.update({
               where: { id: horse.id },
               data: {
                 dataFetchError: error.message || 'Unknown error',
@@ -344,12 +352,12 @@ export async function POST(request: Request) {
         // Update status to COMPLETED for all stablemates
         for (const stablemateId of stablemateIds) {
           try {
-            await prisma.stablemate.update({
+            await prismaClient.stablemate.update({
               where: { id: stablemateId },
               data: {
                 dataFetchStatus: 'COMPLETED',
                 dataFetchCompletedAt: new Date(),
-              },
+              } as any,
             })
           } catch (error) {
             // Ignore if field doesn't exist yet
@@ -363,12 +371,12 @@ export async function POST(request: Request) {
         if (stablemateIds.length > 0) {
           for (const stablemateId of stablemateIds) {
             try {
-              await prisma.stablemate.update({
+              await prismaClient.stablemate.update({
                 where: { id: stablemateId },
                 data: {
                   dataFetchStatus: 'FAILED',
                   dataFetchCompletedAt: new Date(),
-                },
+                } as any,
               })
               } catch (updateError) {
               // Ignore if field doesn't exist yet

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminPrismaClient } from '@/lib/admin-prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
@@ -31,8 +32,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Use admin Prisma client if in admin mode (respects database switch preference)
+    const prismaClient = isAdmin ? getAdminPrismaClient() : prisma
+
     // Get stablemate for effective user
-    const user = await prisma.user.findUnique({
+    const user = await prismaClient.user.findUnique({
       where: { id: effectiveUserId },
       include: {
         ownerProfile: {
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
     const createdHorses = await Promise.all(
       horses.map((horse: any) => {
         console.log('[Import Horses API] Creating horse:', horse.name, 'with externalRef:', horse.externalRef)
-        return prisma.horse.create({
+        return prismaClient.horse.create({
           data: {
             stablemateId: user.ownerProfile!.stablemate!.id,
             name: horse.name,

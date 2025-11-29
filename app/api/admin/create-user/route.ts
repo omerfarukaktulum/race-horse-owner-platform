@@ -45,9 +45,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (role !== 'OWNER' && role !== 'TRAINER') {
+    if (role !== 'OWNER' && role !== 'TRAINER' && role !== 'ADMIN') {
       return NextResponse.json(
-        { error: 'Geçersiz rol. Sadece OWNER veya TRAINER olabilir' },
+        { error: 'Geçersiz rol. Sadece OWNER, TRAINER veya ADMIN olabilir' },
         { status: 400 }
       )
     }

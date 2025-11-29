@@ -94,7 +94,8 @@ export default function AdminImportHorsesPage() {
       }
 
       // Fetch existing horses to check which ones are already imported
-      const existingHorsesResponse = await fetch('/api/horses', {
+      // Use admin endpoint which respects database switch preference
+      const existingHorsesResponse = await fetch('/api/admin/horses', {
         credentials: 'include',
       })
       const existingHorsesData = await existingHorsesResponse.json()
