@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
@@ -286,11 +287,14 @@ export default function TrainerAccountPage() {
                       className="rounded-md border border-gray-100 bg-white px-3 py-2 shadow-sm flex items-center gap-3"
                     >
                       {stablemate.ownerOfficialRef ? (
-                        <div className="w-10 h-10 rounded-xl border border-gray-200 overflow-hidden flex-shrink-0 bg-white">
-                          <img
+                        <div className="w-10 h-10 rounded-xl border border-gray-200 overflow-hidden flex-shrink-0 bg-white relative">
+                          <Image
                             src={`https://medya-cdn.tjk.org/formaftp/${stablemate.ownerOfficialRef}.jpg`}
                             alt={`${stablemate.name} forması`}
-                            className="w-full h-full object-contain"
+                            width={40}
+                            height={40}
+                            className="object-contain"
+                            loading="lazy"
                             onError={(e) => {
                               e.currentTarget.style.display = 'none'
                               const fallback = e.currentTarget.parentElement?.querySelector('.fallback-icon')
@@ -298,8 +302,9 @@ export default function TrainerAccountPage() {
                                 fallback.style.display = 'flex'
                               }
                             }}
+                            unoptimized
                           />
-                          <div className="fallback-icon hidden w-full h-full items-center justify-center">
+                          <div className="fallback-icon hidden w-full h-full items-center justify-center absolute inset-0">
                             <div className="rounded-lg bg-indigo-100 p-2 text-indigo-600">
                               <Building2 className="h-4 w-4" />
                             </div>

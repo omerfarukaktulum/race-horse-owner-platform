@@ -98,6 +98,8 @@ export function HorseExpensesTable({
   const [categoryFilters, setCategoryFilters] = useState<string[]>([])
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
   const highlightedExpenseRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
@@ -314,6 +316,27 @@ export function HorseExpensesTable({
       })
     }
 
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter((expense) => {
+        // Search in category (Kategori)
+        const categoryLabel = getCategoryLabel(expense)
+        if (categoryLabel.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in custom name
+        if (expense.customName && expense.customName.toLowerCase().includes(query)) {
+          return true
+        }
+        // Search in detail (Detay/note)
+        if (expense.note && expense.note.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
+    }
+
     // Always include the highlighted expense, even if it would be filtered out
     if (highlightExpenseId) {
       const highlightedExpense = sortedExpenses.find(expense => expense.id === highlightExpenseId)
@@ -326,7 +349,7 @@ export function HorseExpensesTable({
     }
 
     return filtered
-  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, highlightExpenseId])
+  }, [selectedRange, categoryFilters, addedByFilters, sortedExpenses, getCategoryLabel, highlightExpenseId, searchQuery])
 
   const canManageExpense = useCallback(
     (expense: Expense) => {
@@ -550,9 +573,8 @@ export function HorseExpensesTable({
     <>
       {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
       <div 
-        className="hidden md:block relative filter-dropdown-container"
-        ref={filterDropdownRef}
-        style={{ visibility: hideButtons || !hasExpenses ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        className="hidden md:flex items-center gap-3"
+        style={{ visibility: hideButtons || !hasExpenses ? 'hidden' : 'visible' }}
       >
         <div 
           className="relative filter-dropdown-container"
@@ -839,6 +861,52 @@ export function HorseExpensesTable({
                 </button>
               )}
             </div>
+        )}
+        
+        {/* Search Button */}
+        {!hideButtons && hasExpenses && (
+          <>
+            {!isSearchOpen ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsSearchOpen(true)}
+                className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+              >
+                <Search className="h-4 w-4 text-gray-600" />
+              </Button>
+            ) : (
+              <div className="relative w-48 sm:w-56">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Kategori, detay ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                  autoFocus
+                  style={{ boxShadow: 'none' }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = 'none'
+                    e.target.style.outline = 'none'
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false)
+                    setSearchQuery('')
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -1132,6 +1200,48 @@ export function HorseExpensesTable({
             </div>
           )}
           </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+            <div className="relative w-48 sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Kategori, detay ..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
       )}

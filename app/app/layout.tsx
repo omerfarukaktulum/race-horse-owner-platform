@@ -5,6 +5,7 @@ import { ErrorProvider } from '@/lib/context/error-context'
 import { useAuth } from '@/lib/context/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, UserPlus, User, FileText, ChessKnight } from 'lucide-react'
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
@@ -137,11 +138,13 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {isOwner && !isLoadingData && ownerOfficialRef ? (
-              <div className="h-128 w-12 flex-shrink-0 relative flex items-center justify-center">
-                <img
+              <div className="h-12 w-12 flex-shrink-0 relative flex items-center justify-center">
+                <Image
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
                   alt="Eküri Forması"
-                  className="h-12 w-12 object-contain"
+                  width={48}
+                  height={48}
+                  className="object-contain"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
                     const container = e.currentTarget.parentElement
@@ -150,8 +153,9 @@ function AppNavbar() {
                       if (icon) icon.style.display = 'block'
                     }
                   }}
+                  unoptimized
                 />
-                <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden" />
+                <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden absolute" />
               </div>
             ) : isOwner && isLoadingData ? (
               <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { Button } from '@/app/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Checkbox } from '@/app/components/ui/checkbox'
@@ -510,10 +511,13 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                           />
                           {ownerRef && (
                             <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
-                              <img
+                              <Image
                                 src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                                 alt="Eküri Forması"
-                                className="w-full h-full object-contain"
+                                width={48}
+                                height={48}
+                                className="object-contain"
+                                loading="lazy"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none'
                                   const container = e.currentTarget.parentElement
@@ -522,8 +526,9 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
                                     if (icon) icon.style.display = 'block'
                                   }
                                 }}
+                                unoptimized
                               />
-                              <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
+                              <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden absolute" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
@@ -1223,10 +1224,13 @@ export default function StablematePage() {
                             >
                               {ownerRef && (
                                 <div className="flex-shrink-0 w-12 h-12 rounded border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center relative">
-                                  <img
+                                  <Image
                                     src={`https://medya-cdn.tjk.org/formaftp/${ownerRef}.jpg`}
                                     alt="Eküri Forması"
-                                    className="w-full h-full object-contain"
+                                    width={48}
+                                    height={48}
+                                    className="object-contain"
+                                    loading="lazy"
                                     onError={(e) => {
                                       e.currentTarget.style.display = 'none'
                                       const container = e.currentTarget.parentElement
@@ -1235,9 +1239,10 @@ export default function StablematePage() {
                                         if (icon) icon.style.display = 'block'
                                       }
                                     }}
+                                    unoptimized
                                   />
-                                  <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden" />
-                      </div>
+                                  <UserPlus className="w-8 h-8 text-[#6366f1] fallback-icon hidden absolute" />
+                                </div>
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">

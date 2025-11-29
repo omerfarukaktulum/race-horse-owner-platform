@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Filter, Pencil, Trash2, Image, X, ChevronLeft, ChevronRight, Plus, FileText } from 'lucide-react'
+import { Filter, Pencil, Trash2, Image, X, ChevronLeft, ChevronRight, Plus, FileText, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -92,6 +92,8 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   const [selectedRange, setSelectedRange] = useState<RangeKey | null>(null)
   const [addedByFilters, setAddedByFilters] = useState<string[]>([])
   const [internalShowFilterDropdown, setInternalShowFilterDropdown] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const filterDropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContentRef = useRef<HTMLDivElement>(null)
   const highlightedNoteRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null)
@@ -203,8 +205,20 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
       })
     }
 
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      filtered = filtered.filter((note) => {
+        // Search in note text (Not)
+        if (note.note && note.note.toLowerCase().includes(query)) {
+          return true
+        }
+        return false
+      })
+    }
+
     return filtered
-  }, [selectedRange, addedByFilters, sortedNotes])
+  }, [selectedRange, addedByFilters, sortedNotes, searchQuery])
 
   const canManageNote = useCallback(
     (note: HorseNote) => {
@@ -395,28 +409,31 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
       <div className="space-y-4">
       {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
       <div 
-        className="hidden md:block relative filter-dropdown-container"
-        ref={filterDropdownRef}
-        style={{ visibility: hideButtons || !hasNotes ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
+        className="hidden md:flex items-center gap-3"
+        style={{ visibility: hideButtons || !hasNotes ? 'hidden' : 'visible' }}
       >
-        {!hideButtons && hasNotes && (
-          <Button
-            variant="outline"
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
-          >
-            <Filter className="h-4 w-4" />
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-        )}
+        <div 
+          className="relative filter-dropdown-container"
+          ref={filterDropdownRef}
+        >
+          {!hideButtons && hasNotes && (
+            <Button
+              variant="outline"
+              onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+              className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                hasActiveFilters
+                  ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                  : 'border-gray-300 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="h-4 w-4" />
+              {hasActiveFilters && (
+                <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          )}
 
         {!hideButtons && showFilterDropdown && (
             <div 
@@ -509,6 +526,53 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
               )}
             </div>
           )}
+        </div>
+        
+        {/* Search Button */}
+        {!hideButtons && hasNotes && (
+          <>
+            {!isSearchOpen ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsSearchOpen(true)}
+                className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+              >
+                <Search className="h-4 w-4 text-gray-600" />
+              </Button>
+            ) : (
+              <div className="relative w-48 sm:w-56">
+                <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Not..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                  autoFocus
+                  style={{ boxShadow: 'none' }}
+                  onFocus={(e) => {
+                    e.target.style.boxShadow = 'none'
+                    e.target.style.outline = 'none'
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchOpen(false)
+                    setSearchQuery('')
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Portal dropdown for hideButtons mode */}
@@ -722,6 +786,48 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
             </div>
           )}
           </div>
+          
+          {/* Search Button */}
+          {!isSearchOpen ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsSearchOpen(true)}
+              className="h-10 w-10 p-0 border-2 border-gray-300 hover:bg-gray-50"
+            >
+              <Search className="h-4 w-4 text-gray-600" />
+            </Button>
+          ) : (
+            <div className="relative w-48 sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Not..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex h-10 w-full pl-8 pr-8 text-sm border-2 border-[#6366f1] bg-indigo-50 text-gray-900 rounded-lg shadow-md focus:border-[#6366f1] focus:outline-none transition-all duration-300 placeholder:text-gray-500 placeholder:text-sm"
+                autoFocus
+                style={{ boxShadow: 'none' }}
+                onFocus={(e) => {
+                  e.target.style.boxShadow = 'none'
+                  e.target.style.outline = 'none'
+                }}
+                onBlur={(e) => {
+                  e.target.style.boxShadow = 'none'
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
