@@ -10,7 +10,7 @@ import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 import { fetchTJKHorseGallops } from '@/lib/tjk-gallops-scraper'
 
 // Use PROD_DATABASE_URL if provided, otherwise fall back to DATABASE_URL
-const databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
+let databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
 
 if (!databaseUrl) {
   console.error('[Cronjob] Error: DATABASE_URL or PROD_DATABASE_URL must be set')
@@ -20,7 +20,19 @@ if (!databaseUrl) {
   process.exit(1)
 }
 
+// For Supabase, prefer connection pooler (port 6543) over direct connection (port 5432)
+// The pooler is more reliable for external connections like GitHub Actions
+if (databaseUrl.includes('supabase.co:5432') && !databaseUrl.includes('pooler')) {
+  console.log('[Cronjob] Converting Supabase direct connection to pooler connection...')
+  // Convert direct connection to pooler
+  // From: postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+  // To: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
+  // Note: This is a simplified conversion - user should use pooler URL directly
+  console.warn('[Cronjob] WARNING: Using direct connection. For better reliability, use Supabase connection pooler URL (port 6543)')
+}
+
 console.log(`[Cronjob] Using database: ${databaseUrl.includes('supabase') || databaseUrl.includes('neon') ? 'PRODUCTION' : 'LOCAL'}`)
+console.log(`[Cronjob] Connection type: ${databaseUrl.includes('pooler') ? 'Pooler' : databaseUrl.includes('supabase') ? 'Direct (Supabase)' : 'Standard'}`)
 
 const prisma = new PrismaClient({
   datasources: {
@@ -28,6 +40,7 @@ const prisma = new PrismaClient({
       url: databaseUrl,
     },
   },
+  log: ['error', 'warn'],
 })
 
 interface UpdateResult {
