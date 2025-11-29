@@ -1566,7 +1566,7 @@ function RaceGallopsModal({
                             )}
                           </div>
                           {statusLabel && (
-                            <span className="text-sm text-gray-700">
+                            <span className="px-2 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800">
                               {statusLabel}
                             </span>
                           )}

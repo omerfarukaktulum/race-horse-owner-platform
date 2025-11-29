@@ -228,3 +228,31 @@ export function newRaceTemplate(data: NewRaceEmailData): string {
   return baseTemplate('Yeni Yarış Sonucu', content)
 }
 
+/**
+ * Registration notification email template (for admin)
+ */
+export function registrationNotificationTemplate(data: {
+  email: string
+  role: 'OWNER' | 'TRAINER'
+  userId: string
+  registeredAt: Date
+}): string {
+  const roleLabel = data.role === 'OWNER' ? 'At Sahibi' : 'Antrenör'
+  const content = `
+    <p>Yeni bir kullanıcı kayıt başvurusu yaptı:</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>E-posta:</strong> ${data.email}</p>
+      <p style="margin: 5px 0;"><strong>Rol:</strong> ${roleLabel}</p>
+      <p style="margin: 5px 0;"><strong>Kullanıcı ID:</strong> ${data.userId}</p>
+      <p style="margin: 5px 0;"><strong>Kayıt Tarihi:</strong> ${formatDate(data.registeredAt)}</p>
+    </div>
+    
+    <p style="margin-top: 20px; color: #666; font-size: 14px;">
+      Lütfen admin panelinden kullanıcı hesabını yapılandırın.
+    </p>
+  `
+
+  return baseTemplate('Yeni Kayıt Başvurusu', content)
+}
+

@@ -17,11 +17,16 @@ function AppNavbar() {
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
   const [horseName, setHorseName] = useState<string | null>(null)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!isOwner) return
+      if (!isOwner) {
+        setIsLoadingData(false)
+        return
+      }
       
+      setIsLoadingData(true)
       try {
         // Fetch user data to get officialRef
         const userResponse = await fetch('/api/auth/me', {
@@ -48,6 +53,8 @@ function AppNavbar() {
         }
       } catch (error) {
         console.error('Error fetching user/stablemate data:', error)
+      } finally {
+        setIsLoadingData(false)
       }
     }
 
@@ -129,7 +136,7 @@ function AppNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
-            {isOwner && ownerOfficialRef ? (
+            {isOwner && !isLoadingData && ownerOfficialRef ? (
               <div className="h-128 w-12 flex-shrink-0 relative flex items-center justify-center">
                 <img
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
@@ -146,6 +153,10 @@ function AppNavbar() {
                 />
                 <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden" />
               </div>
+            ) : isOwner && isLoadingData ? (
+              <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center">
+                <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              </div>
             ) : isTrainer ? (
               <User className="h-6 w-6 text-[#6366f1] flex-shrink-0" />
             ) : (
@@ -153,7 +164,9 @@ function AppNavbar() {
             )}
             <span className="font-bold text-md bg-clip-text text-transparent bg-gradient-to-r from-[#6366f1] to-[#4f46e5] leading-tight">
               {isOwner
-                ? stablemateName
+                ? isLoadingData
+                  ? 'Yükleniyor...'
+                  : stablemateName
                   ? `${stablemateName} EKÜRİSİ`
                   : 'EKÜRİM'
                 : isTrainer

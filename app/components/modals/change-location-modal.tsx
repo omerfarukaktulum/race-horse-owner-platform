@@ -24,19 +24,10 @@ interface ChangeLocationModalProps {
   onSuccess?: () => void
 }
 
+import { RACECOURSES } from '@/lib/constants/racecourses'
+
 // Racecourse cities (specific cities for racecourses)
-const RACECOURSE_CITIES = [
-  'İstanbul Veliefendi',
-  'Adana Yeşiloba',
-  'Ankara 75. Yıl',
-  'Bursa Osmangazi',
-  'Diyarbakır',
-  'Elazığ',
-  'İzmir Şirinyer',
-  'Kocaeli Kartepe',
-  'Şanlıurfa',
-  'Antalya',
-]
+const RACECOURSE_CITIES = RACECOURSES
 
 // Common Turkish cities (for farms)
 const TURKISH_CITIES = [

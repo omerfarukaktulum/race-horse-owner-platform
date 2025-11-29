@@ -214,7 +214,7 @@ export function ShowTrainingPlansModal({
             ) : (
               <div className="flex flex-col w-full">
                 {/* Add Button - Top Right */}
-                <div className="flex justify-end px-6 pt-4 pb-2 flex-shrink-0">
+                <div className="flex justify-end px-6 pt-4 pb-2 flex-shrink-0" style={{ paddingRight: 'calc(1.5rem + 0.5rem)' }}>
                   <Button
                     size="sm"
                     onClick={() => setIsAddModalOpen(true)}
@@ -236,7 +236,7 @@ export function ShowTrainingPlansModal({
                       <div className="w-full">
                         <div 
                           className="overflow-y-auto overflow-x-hidden px-2 py-2"
-                          style={{ maxHeight: '500px' }}
+                          style={{ maxHeight: '500px', scrollbarGutter: 'stable' }}
                         >
                       {plans.map((plan) => {
                         const isPast = isPastPlan(plan.planDate)
@@ -251,7 +251,7 @@ export function ShowTrainingPlansModal({
                                 <span className="text-sm font-semibold text-gray-900">
                                   {formatDateShort(plan.planDate)}
                                 </span>
-                                <span className="text-sm text-gray-700">
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                   {calculateDaysUntil(plan.planDate)}
                                 </span>
                               </div>
@@ -357,7 +357,7 @@ export function ShowTrainingPlansModal({
                                   </span>
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
-                                  <span className="text-sm text-gray-700">
+                                  <span className="px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800">
                                     {calculateDaysUntil(plan.planDate)}
                                   </span>
                                 </td>

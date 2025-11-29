@@ -11,15 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { toast } from 'sonner'
 import { NotebookPen, MapPin, Ruler } from 'lucide-react'
 import { useModalInteractionGuard } from '@/app/hooks/use-modal-interaction-guard'
+import { RACECOURSES } from '@/lib/constants/racecourses'
 
 type TrainingPlanModalMode = 'create' | 'edit'
 
 const DISTANCE_OPTIONS = ['Kenter', 'Tırıs', '200', '400', '600', '800', '1000', '1200', '1400', '1600']
-
-interface Racecourse {
-  id: string
-  name: string
-}
 
 interface InitialTrainingPlanValues {
   planDate: string
@@ -54,33 +50,9 @@ export function AddTrainingPlanModal({
   const [distance, setDistance] = useState('')
   const [note, setNote] = useState('')
   const [racecourseId, setRacecourseId] = useState('')
-  const [racecourses, setRacecourses] = useState<Racecourse[]>([])
-  const [isLoadingRacecourses, setIsLoadingRacecourses] = useState(false)
   const { guardPointerEvent, guardFocusEvent } = useModalInteractionGuard(open)
 
   const isEditMode = mode === 'edit'
-
-  // Fetch racecourses
-  useEffect(() => {
-    if (open) {
-      setIsLoadingRacecourses(true)
-      fetch('/api/racecourses', {
-        credentials: 'include',
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.racecourses) {
-            setRacecourses(data.racecourses)
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching racecourses:', error)
-        })
-        .finally(() => {
-          setIsLoadingRacecourses(false)
-        })
-    }
-  }, [open])
 
   // Initialize form with existing data
   useEffect(() => {
@@ -210,16 +182,16 @@ export function AddTrainingPlanModal({
               label="Hipodrom"
               value={racecourseId}
               onChange={(e) => setRacecourseId(e.target.value)}
-              disabled={isSubmitting || isLoadingRacecourses}
+              disabled={isSubmitting}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
               icon={<MapPin className="h-4 w-4" />}
             >
               <option value="">Hipodrom Seçin</option>
-              {racecourses.map((racecourse) => (
-                <option key={racecourse.id} value={racecourse.id}>
-                  {racecourse.name}
+              {RACECOURSES.map((racecourse) => (
+                <option key={racecourse} value={racecourse}>
+                  {racecourse}
                 </option>
               ))}
             </ModalSelect>

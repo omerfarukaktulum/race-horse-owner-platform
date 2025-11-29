@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { authRateLimiter, getClientIp } from '@/lib/rate-limit'
 import { registerTrainerSchema } from '@/lib/validation/schemas'
+import { sendEmail } from '@/lib/email/service'
+import { registrationNotificationTemplate } from '@/lib/email/templates'
 
 export async function POST(request: Request) {
   try {
@@ -62,6 +64,27 @@ export async function POST(request: Request) {
         trainerProfile: true,
       },
     })
+
+    // Send registration notification email to admin
+    const registrationEmailReceiver = process.env.REGISTRATION_EMAIL_RECEIVER
+    if (registrationEmailReceiver) {
+      try {
+        await sendEmail({
+          to: registrationEmailReceiver,
+          from: process.env.RESEND_FROM_EMAIL || 'notifications@ekurim.com.tr',
+          subject: 'Yeni Antrenör Kayıt Başvurusu',
+          html: registrationNotificationTemplate({
+            email: user.email,
+            role: 'TRAINER',
+            userId: user.id,
+            registeredAt: new Date(),
+          }),
+        })
+      } catch (emailError) {
+        // Log error but don't fail registration
+        console.error('Failed to send registration notification email:', emailError)
+      }
+    }
 
     return NextResponse.json({
       success: true,

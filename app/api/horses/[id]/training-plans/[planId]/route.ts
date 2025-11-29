@@ -35,20 +35,25 @@ export async function PATCH(
       )
     }
 
-    // Validate racecourseId if provided
+    // Validate racecourseId if provided (now accepts name, finds or creates racecourse)
     let validRacecourseId: string | null = null
-    if (racecourseId) {
-      // Check if racecourse exists
-      const racecourse = await prisma.racecourse.findUnique({
-        where: { id: racecourseId },
+    if (racecourseId && racecourseId.trim()) {
+      // racecourseId is now the racecourse name from the hardcoded list
+      const racecourseName = racecourseId.trim()
+      
+      // Find or create racecourse by name
+      let racecourse = await prisma.racecourse.findUnique({
+        where: { name: racecourseName },
       })
+      
       if (!racecourse) {
-        return NextResponse.json(
-          { error: 'Invalid racecourse ID' },
-          { status: 400 }
-        )
+        // Create racecourse if it doesn't exist
+        racecourse = await prisma.racecourse.create({
+          data: { name: racecourseName },
+        })
       }
-      validRacecourseId = racecourseId
+      
+      validRacecourseId = racecourse.id
     }
 
     // Validate date is in the future
