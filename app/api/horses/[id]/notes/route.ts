@@ -150,7 +150,7 @@ export async function POST(
         noteDate: horseNote.date,
         note: horseNote.note,
         kiloValue: horseNote.kiloValue || undefined,
-      })
+      } as any)
     } catch (error) {
       // Log but don't fail the request if notification fails
       console.error('Failed to send note notification:', error)

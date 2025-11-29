@@ -174,7 +174,7 @@ export async function POST(request: Request) {
               amount: Number(expense.amount),
               currency: expense.currency,
               note: expense.note || undefined,
-            })
+            } as any)
           } catch (error) {
             // Log but don't fail the request if notification fails
             console.error('Failed to send expense notification:', error)
