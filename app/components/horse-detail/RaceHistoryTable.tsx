@@ -1533,7 +1533,7 @@ function RaceGallopsModal({
                     return (
                       <div
                         key={gallop.id}
-                        className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg w-full box-border"
+                        className="bg-white border-0 p-4 mb-3 rounded-lg w-full box-border"
                         style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                       >
                         <div className="flex items-start justify-between mb-2">
