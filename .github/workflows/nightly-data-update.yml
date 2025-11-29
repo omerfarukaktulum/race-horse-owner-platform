@@ -36,7 +36,7 @@ jobs:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
       - name: Run nightly data update
-        run: npm run cronjob:nightly
+        run: npx tsx scripts/nightly-data-update.ts
         env:
           PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           NODE_ENV: production
