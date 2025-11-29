@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
 import { formatGallopStatus } from '@/lib/utils/gallops'
-import { Filter, X, Plus, Pencil, Trash2, Paperclip, ChevronLeft, ChevronRight, Eye, FileText, NotebookPen, Ruler } from 'lucide-react'
+import { Filter, X, Plus, Pencil, Trash2, Image, ChevronLeft, ChevronRight, Eye, FileText, NotebookPen, Ruler } from 'lucide-react'
 import { AddGallopNoteModal } from '@/app/components/modals/add-gallop-note-modal'
 import { ShowTrainingPlansModal } from '@/app/components/modals/show-training-plans-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
@@ -935,7 +935,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                         className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                         title={`${attachments.length} ek görüntüle`}
                       >
-                        <Paperclip className="h-4 w-4" />
+                        <Image className="h-4 w-4" />
                       </button>
                     )}
                     {gallop.note && (
@@ -1149,7 +1149,7 @@ export function GallopsTable({ gallops, hideButtons = false, onFilterTriggerRead
                                       className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                       title={`${attachments.length} ek görüntüle`}
                                     >
-                                      <Paperclip className="h-4 w-4" />
+                                      <Image className="h-4 w-4" />
                                     </button>
                                   )}
                                   <button

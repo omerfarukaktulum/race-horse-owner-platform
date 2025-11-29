@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Filter, Pencil, Trash2, Paperclip, X, ChevronLeft, ChevronRight, Eye, Plus, Stethoscope } from 'lucide-react'
+import { Filter, Pencil, Trash2, Image, X, ChevronLeft, ChevronRight, Eye, Plus, Stethoscope } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -917,10 +917,10 @@ export function HorseIllnessesTable({
                             <button
                               type="button"
                               onClick={() => openAttachmentViewer(photos)}
-                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                               title={`${photos.length} ek görüntüle`}
                             >
-                              <Paperclip className="h-4 w-4" />
+                              <Image className="h-4 w-4" />
                             </button>
                           )}
                           {canEdit && (
@@ -1208,7 +1208,7 @@ export function HorseIllnessesTable({
                                       className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
                                       title={`${photos.length} ek görüntüle`}
                                     >
-                                      <Paperclip className="h-4 w-4" />
+                                      <Image className="h-4 w-4" />
                                     </button>
                                   )}
                                   {canEdit && (
@@ -1278,7 +1278,7 @@ export function HorseIllnessesTable({
                                                         className="w-16 h-16 object-cover rounded-md border border-gray-200 hover:border-[#6366f1] transition-colors"
                                                       />
                                                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-md transition-colors flex items-center justify-center">
-                                                        <Paperclip className="h-3 w-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                        <Image className="h-3 w-3 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                                       </div>
                                                     </button>
                                                   ))}

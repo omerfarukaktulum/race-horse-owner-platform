@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Paperclip, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -871,10 +871,10 @@ export default function NotesPage() {
                                 e.stopPropagation()
                                 openAttachmentViewer(attachments)
                               }}
-                              className="p-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                              className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                               title={`${attachments.length} ek görüntüle`}
                             >
-                              <Paperclip className="h-4 w-4" />
+                              <Image className="h-4 w-4" />
                             </button>
                           )}
                           {user && note.addedById === user.id && (
@@ -1038,10 +1038,10 @@ export default function NotesPage() {
                                 <button
                                   type="button"
                                   onClick={() => openAttachmentViewer(attachments)}
-                                  className="p-2 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors shadow-sm"
+                                  className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
                                   title={`${attachments.length} ek görüntüle`}
                                 >
-                                  <Paperclip className="h-4 w-4" />
+                                  <Image className="h-4 w-4" />
                                 </button>
                               )}
                               {user && note.addedById === user.id && (
