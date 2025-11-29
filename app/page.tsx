@@ -214,7 +214,7 @@ export default function HomePage() {
               </div>
               <CardTitle className="text-orange-600">Çıkıcı İlaç Yönetimi</CardTitle>
               <CardDescription>
-                Yasaklı ilaçları takip edin, bekleme sürelerini hesaplayın ve yarışa uygunluğu kontrol edin
+                Yasaklı/Çıkıcı ilaçları takip edin, bekleme sürelerini hesaplayın ve yarışa uygunluğu kontrol edin
               </CardDescription>
             </CardHeader>
           </Card>
@@ -286,7 +286,7 @@ export default function HomePage() {
               </div>
               <CardTitle className="text-purple-600">Aktif Dashboard</CardTitle>
               <CardDescription>
-                Son yarışlar, idmanlar, kayıtlar ve giderler tek bakışta
+                Son koşular, idmanlar, kayıtlar ve giderler tek bakışta
               </CardDescription>
             </CardHeader>
           </Card>

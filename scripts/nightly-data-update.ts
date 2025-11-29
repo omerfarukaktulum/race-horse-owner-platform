@@ -303,6 +303,40 @@ async function updateRaceHistory(horseId: string, newRaces: any[]): Promise<numb
       skipDuplicates: true,
     })
     console.log(`[Cronjob] ✓ Inserted ${racesToInsert.length} new races (${newRaces.length - racesToInsert.length} already existed)`)
+
+    // Queue notifications for new races
+    const horse = await prisma.horse.findUnique({
+      where: { id: horseId },
+      select: {
+        name: true,
+        stablemateId: true,
+        trainerId: true,
+      },
+    })
+
+    if (horse) {
+      for (const race of racesToInsert) {
+        await prisma.notificationQueue.create({
+          data: {
+            type: 'newRace',
+            horseId,
+            stablemateId: horse.stablemateId,
+            trainerId: horse.trainerId || null,
+            data: {
+              horseId,
+              horseName: horse.name,
+              raceDate: race.raceDate,
+              city: race.city,
+              position: race.position,
+              prizeMoney: race.prizeMoney ? parseFloat(race.prizeMoney) : null,
+              raceName: race.raceName,
+            },
+            status: 'PENDING',
+          },
+        })
+      }
+      console.log(`[Cronjob] ✓ Queued ${racesToInsert.length} newRace notifications`)
+    }
   } else {
     console.log(`[Cronjob] ✓ No new races to insert (all ${newRaces.length} races already exist in database)`)
   }
@@ -416,18 +450,55 @@ async function updateRegistrations(
     console.log(`[Cronjob] ✓ Deleted ${regsToDelete.length} registrations/declarations that no longer exist in TJK`)
   }
 
-  // Step 4: Update KAYIT → DEKLARE
-  for (const update of regsToUpdate) {
-    await prisma.horseRegistration.update({
-      where: { id: update.id },
-      data: update.data,
-    })
-  }
-  if (regsToUpdate.length > 0) {
-    console.log(`[Cronjob] ✓ Updated ${regsToUpdate.length} registrations from KAYIT to DEKLARE`)
+  // Step 4: Update KAYIT → DEKLARE and queue notifications
+  const horse = await prisma.horse.findUnique({
+    where: { id: horseId },
+    select: {
+      name: true,
+      stablemateId: true,
+      trainerId: true,
+    },
+  })
+
+  if (horse) {
+    for (const update of regsToUpdate) {
+      await prisma.horseRegistration.update({
+        where: { id: update.id },
+        data: update.data,
+      })
+
+      // Get the updated registration to queue notification
+      const updatedReg = await prisma.horseRegistration.findUnique({
+        where: { id: update.id },
+      })
+
+      if (updatedReg) {
+        await prisma.notificationQueue.create({
+          data: {
+            type: 'horseDeclared',
+            horseId,
+            stablemateId: horse.stablemateId,
+            trainerId: horse.trainerId || null,
+            data: {
+              horseId,
+              horseName: horse.name,
+              raceDate: updatedReg.raceDate,
+              city: updatedReg.city,
+              distance: updatedReg.distance,
+              jockeyName: updatedReg.jockeyName,
+            },
+            status: 'PENDING',
+          },
+        })
+      }
+    }
+    if (regsToUpdate.length > 0) {
+      console.log(`[Cronjob] ✓ Updated ${regsToUpdate.length} registrations from KAYIT to DEKLARE`)
+      console.log(`[Cronjob] ✓ Queued ${regsToUpdate.length} horseDeclared notifications`)
+    }
   }
 
-  // Step 5: Insert new registrations
+  // Step 5: Insert new registrations and queue notifications
   if (regsToInsert.length > 0) {
     await prisma.horseRegistration.createMany({
       data: regsToInsert,
@@ -436,6 +507,31 @@ async function updateRegistrations(
     const declarations = regsToInsert.filter((r) => r.type === 'DEKLARE').length
     const registrations = regsToInsert.filter((r) => r.type === 'KAYIT').length
     console.log(`[Cronjob] ✓ Inserted ${regsToInsert.length} new registrations/declarations (${declarations} declarations, ${registrations} registrations)`)
+
+    // Queue notifications for new registrations/declarations
+    if (horse) {
+      for (const reg of regsToInsert) {
+        await prisma.notificationQueue.create({
+          data: {
+            type: reg.type === 'DEKLARE' ? 'horseDeclared' : 'horseRegistered',
+            horseId,
+            stablemateId: horse.stablemateId,
+            trainerId: horse.trainerId || null,
+            data: {
+              horseId,
+              horseName: horse.name,
+              raceDate: reg.raceDate,
+              city: reg.city,
+              distance: reg.distance,
+              ...(reg.type === 'DEKLARE' && reg.jockeyName ? { jockeyName: reg.jockeyName } : {}),
+            },
+            status: 'PENDING',
+          },
+        })
+      }
+      console.log(`[Cronjob] ✓ Queued ${regsToInsert.length} registration/declaration notifications`)
+    }
+
     return { declarations, registrations }
   } else {
     console.log(`[Cronjob] ✓ No new registrations/declarations to insert`)
@@ -507,6 +603,38 @@ async function updateGallops(horseId: string, newGallops: any[]): Promise<number
       skipDuplicates: true,
     })
     console.log(`[Cronjob] ✓ Inserted ${gallopsToInsert.length} new gallops (${newGallops.length - gallopsToInsert.length} already existed)`)
+
+    // Queue notifications for new gallops
+    const horse = await prisma.horse.findUnique({
+      where: { id: horseId },
+      select: {
+        name: true,
+        stablemateId: true,
+        trainerId: true,
+      },
+    })
+
+    if (horse) {
+      for (const gallop of gallopsToInsert) {
+        await prisma.notificationQueue.create({
+          data: {
+            type: 'newTraining',
+            horseId,
+            stablemateId: horse.stablemateId,
+            trainerId: horse.trainerId || null,
+            data: {
+              horseId,
+              horseName: horse.name,
+              gallopDate: gallop.gallopDate,
+              racecourse: gallop.racecourse,
+              distances: gallop.distances,
+            },
+            status: 'PENDING',
+          },
+        })
+      }
+      console.log(`[Cronjob] ✓ Queued ${gallopsToInsert.length} newTraining notifications`)
+    }
   } else {
     console.log(`[Cronjob] ✓ No new gallops to insert (all ${newGallops.length} gallops already exist in database)`)
   }

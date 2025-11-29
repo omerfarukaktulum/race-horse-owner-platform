@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "tsx --tsconfig tsconfig.json scripts/run-migration-build.ts || true",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

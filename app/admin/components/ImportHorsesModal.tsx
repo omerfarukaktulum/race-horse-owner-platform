@@ -291,7 +291,7 @@ export default function ImportHorsesModal({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Atları İçe Aktar</DialogTitle>
           <p className="text-sm text-gray-600 mt-1">
-            {ownerName} için TJK'dan atları yükleyin
+            {ownerName} için TJK&apos;dan atları yükleyin
           </p>
         </DialogHeader>
 
@@ -339,7 +339,7 @@ export default function ImportHorsesModal({
           {!isLoading && horses.length === 0 && (
             <Card>
               <CardContent className="pt-6 text-center text-gray-500">
-                TJK'da kayıtlı at bulunamadı
+                TJK&apos;da kayıtlı at bulunamadı
               </CardContent>
             </Card>
           )}

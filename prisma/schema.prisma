@@ -102,6 +102,7 @@ model TrainerProfile {
   
   horses Horse[]
   stablemateLinks StablemateTrainer[]
+  notificationQueue NotificationQueue[]
 
   @@index([userId])
   @@index([tjkTrainerId])
@@ -136,6 +137,7 @@ model Stablemate {
   
   horses Horse[]
   trainers StablemateTrainer[]
+  notificationQueue NotificationQueue[]
 
   @@index([ownerId])
   @@map("stablemates")
@@ -274,6 +276,7 @@ model Horse {
   illnesses HorseIllness[]
   bannedMedicines HorseBannedMedicine[]
   trainingPlans HorseTrainingPlan[]
+  notificationQueue NotificationQueue[]
 
   @@index([stablemateId])
   @@index([trainerId])
@@ -564,5 +567,42 @@ model Session {
 
   @@index([userId])
   @@map("sessions")
+}
+
+enum NotificationQueueType {
+  horseRegistered
+  horseDeclared
+  newTraining
+  newRace
+}
+
+enum NotificationQueueStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model NotificationQueue {
+  id           String                  @id @default(cuid())
+  type         NotificationQueueType
+  horseId      String
+  horse        Horse                   @relation(fields: [horseId], references: [id], onDelete: Cascade)
+  stablemateId String
+  stablemate   Stablemate              @relation(fields: [stablemateId], references: [id], onDelete: Cascade)
+  trainerId    String?
+  trainer      TrainerProfile?         @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+  data         Json                    // Notification-specific data
+  status       NotificationQueueStatus  @default(PENDING)
+  retryCount   Int                     @default(0)
+  error        String?
+  createdAt    DateTime                @default(now())
+  processedAt  DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([horseId])
+  @@index([stablemateId])
+  @@map("notification_queue")
 }
 

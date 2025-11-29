@@ -81,7 +81,7 @@ export function RecentRacesCard() {
       setError(null)
 
       console.log('[RecentRacesCard] Fetching races...')
-      const response = await fetch('/api/dashboard/recent-races?limit=10')
+      const response = await fetch('/api/dashboard/recent-races?limit=5')
       console.log('[RecentRacesCard] Response status:', response.status)
       
       if (!response.ok) {
@@ -193,7 +193,7 @@ export function RecentRacesCard() {
             <div 
               ref={scrollRef}
               className="overflow-y-auto space-y-3 -mx-6 px-6" 
-              style={{ maxHeight: '600px' }}
+              style={{ maxHeight: '280px' }}
             >
               {races.map((race, index) => (
               <div

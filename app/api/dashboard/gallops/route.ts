@@ -124,7 +124,7 @@ export async function GET(request: Request) {
       orderBy: {
         gallopDate: 'desc',
       },
-      take: 20, // Limit to 20 most recent gallops
+      take: 10, // Limit to 5 most recent gallops
     })
 
     console.log('[Gallops API] Found', gallops.length, 'gallops')

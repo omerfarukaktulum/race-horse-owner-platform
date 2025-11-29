@@ -91,8 +91,8 @@ export function RecentExpensesCard() {
         setError(null)
 
         const [expensesResponse, notesResponse] = await Promise.all([
-          fetch('/api/dashboard/recent-expenses?limit=10'),
-          fetch('/api/notes?limit=10'),
+          fetch('/api/dashboard/recent-expenses?limit=5'),
+          fetch('/api/notes?limit=5'),
         ])
 
         if (!expensesResponse.ok) {
@@ -280,7 +280,7 @@ export function RecentExpensesCard() {
             <div 
               ref={scrollRef}
               className="overflow-y-auto space-y-3 -mx-6 px-6" 
-              style={{ maxHeight: '600px' }}
+              style={{ maxHeight: '400px' }}
             >
               {combinedItems.map((item) => {
                 const isExpense = item.type === 'expense'

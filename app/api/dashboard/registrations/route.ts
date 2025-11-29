@@ -137,6 +137,7 @@ export async function GET(request: Request) {
       orderBy: {
         raceDate: 'asc',
       },
+      take: 10, // Limit to 5 most recent registrations
     })
 
     console.log('[Registrations API] Found', registrations.length, 'registrations/declarations')

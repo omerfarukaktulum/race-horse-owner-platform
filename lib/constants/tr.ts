@@ -137,10 +137,10 @@ export const TR = {
   },
   
   dashboard: {
-    registrations: 'Kayıtlar & Deklareler',
-    gallops: 'İdmanlar',
-    recentRaces: 'Son Yarışlar',
-    recentExpenses: 'Giderler & Notlar',
+    registrations: 'Son Kayıtlar & Deklareler',
+    gallops: 'Son İdmanlar',
+    recentRaces: 'Son Koşular',
+    recentExpenses: 'Son Giderler & Notlar',
     kayit: 'Kayıt',
     deklare: 'Deklare',
     lastXDays: 'Son {days} Gün',

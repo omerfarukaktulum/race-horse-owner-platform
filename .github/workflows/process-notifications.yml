@@ -1,0 +1,55 @@
+name: Process Notification Queue
+
+on:
+  schedule:
+    # Run every day at 6 AM Sweden time (CET/CEST)
+    # Winter (CET = UTC+1): 6 AM CET = 5 AM UTC
+    # Summer (CEST = UTC+2): 6 AM CEST = 4 AM UTC
+    # Using 5 AM UTC to cover both (will be 6 AM in winter, 7 AM in summer - close enough)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Allow manual triggering (use this to test immediately)
+
+jobs:
+  process-notifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: Production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Process notification queue
+        run: npx tsx --tsconfig tsconfig.json scripts/process-notification-queue.ts
+        working-directory: .
+        env:
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          NODE_ENV: production
+        continue-on-error: true # Don't fail the workflow if some notifications fail
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-logs
+          path: |
+            *.log
+            logs/
+          retention-days: 7
+

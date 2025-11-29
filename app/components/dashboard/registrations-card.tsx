@@ -192,7 +192,7 @@ export function RegistrationsCard() {
             <div 
               ref={scrollRef}
               className="overflow-y-auto space-y-3 -mx-6 px-6" 
-              style={{ maxHeight: '600px' }}
+              style={{ maxHeight: '280px' }}
             >
               {registrations.map((registration) => (
               <div

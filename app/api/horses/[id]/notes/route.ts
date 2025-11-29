@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
+import { sendHorseNotification } from '@/lib/email/notifications'
 
 export async function POST(
   request: Request,
@@ -117,6 +118,11 @@ export async function POST(
         addedById: decoded.id,
       },
       include: {
+        horse: {
+          select: {
+            name: true,
+          },
+        },
         addedBy: {
           select: {
             email: true,
@@ -135,6 +141,20 @@ export async function POST(
         },
       },
     })
+
+    // Send immediate notification for new note
+    try {
+      await sendHorseNotification('newNote', horseId, {
+        horseId,
+        horseName: horseNote.horse.name,
+        noteDate: horseNote.date,
+        note: horseNote.note,
+        kiloValue: horseNote.kiloValue || undefined,
+      })
+    } catch (error) {
+      // Log but don't fail the request if notification fails
+      console.error('Failed to send note notification:', error)
+    }
 
     return NextResponse.json({ success: true, note: horseNote })
   } catch (error) {

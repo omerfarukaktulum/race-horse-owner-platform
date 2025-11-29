@@ -208,7 +208,7 @@ export function GallopsCard() {
             <div 
               ref={scrollRef}
               className="overflow-y-auto space-y-3 -mx-6 px-6" 
-              style={{ maxHeight: '600px' }}
+              style={{ maxHeight: '280px' }}
             >
             {gallops.map((gallop, index) => {
               const distanceEntries = Object.entries(gallop.distances || {})

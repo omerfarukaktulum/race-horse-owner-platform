@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
+import { sendHorseNotification } from '@/lib/email/notifications'
 
 export async function POST(request: Request) {
   try {
@@ -138,8 +139,8 @@ export async function POST(request: Request) {
     // Otherwise, create a single expense without a horse
     if (horseIds.length > 0) {
     const expenses = await Promise.all(
-      horseIds.map((horseId) =>
-        prisma.expense.create({
+      horseIds.map(async (horseId) => {
+        const expense = await prisma.expense.create({
           data: {
             horseId,
             date: expenseDate,
@@ -161,7 +162,27 @@ export async function POST(request: Request) {
         },
           },
         })
-      )
+
+        // Send immediate notification for new expense
+        if (expense.horse) {
+          try {
+            await sendHorseNotification('newExpense', horseId, {
+              horseId,
+              horseName: expense.horse.name,
+              expenseDate: expense.date,
+              category: expense.category,
+              amount: Number(expense.amount),
+              currency: expense.currency,
+              note: expense.note || undefined,
+            })
+          } catch (error) {
+            // Log but don't fail the request if notification fails
+            console.error('Failed to send expense notification:', error)
+          }
+        }
+
+        return expense
+      })
     )
     return NextResponse.json({ success: true, expenses })
     } else {
