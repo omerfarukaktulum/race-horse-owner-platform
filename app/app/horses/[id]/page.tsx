@@ -360,45 +360,8 @@ useEffect(() => {
         throw new Error(data.error || 'At yüklenemedi')
       }
 
-      const horseData = data.horse
-
-      // Fetch notes separately
-      try {
-        const notesResponse = await fetch(`/api/horses/${horseId}/notes`)
-        const notesData = await notesResponse.json()
-        if (notesResponse.ok && notesData.notes) {
-          horseData.notes = notesData.notes
-        }
-      } catch (notesError) {
-        console.error('Fetch notes error:', notesError)
-        // Don't fail the whole page if notes fail
-      }
-
-      // Fetch banned medicines separately
-      try {
-        const medicinesResponse = await fetch(`/api/horses/${horseId}/banned-medicines`)
-        const medicinesData = await medicinesResponse.json()
-        if (medicinesResponse.ok && medicinesData.medicines) {
-          horseData.bannedMedicines = medicinesData.medicines
-        }
-      } catch (medicinesError) {
-        console.error('Fetch banned medicines error:', medicinesError)
-        // Don't fail the whole page if medicines fail
-      }
-
-      // Fetch illnesses separately
-      try {
-        const illnessesResponse = await fetch(`/api/horses/${horseId}/illnesses`)
-        const illnessesData = await illnessesResponse.json()
-        if (illnessesResponse.ok && illnessesData.illnesses) {
-          horseData.illnesses = illnessesData.illnesses
-        }
-      } catch (illnessesError) {
-        console.error('Fetch illnesses error:', illnessesError)
-        // Don't fail the whole page if illnesses fail
-      }
-
-      setHorse(horseData)
+      // All data (notes, illnesses, banned medicines) is now included in the main query
+      setHorse(data.horse)
     } catch (error) {
       console.error('Fetch horse error:', error)
       toast.error('At yüklenirken bir hata oluştu')

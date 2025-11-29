@@ -58,7 +58,7 @@ export async function GET(
             },
           },
           orderBy: { date: 'desc' },
-          take: 10,
+          take: 200, // Increased from 10 to show more expenses
         },
         locationHistory: {
           include: {
@@ -85,6 +85,72 @@ export async function GET(
           },
           orderBy: { gallopDate: 'desc' },
           take: 100, // Latest 100 gallops
+        },
+        // Include notes, illnesses, and banned medicines in single query
+        notes: {
+          include: {
+            addedBy: {
+              select: {
+                email: true,
+                role: true,
+                ownerProfile: {
+                  select: {
+                    officialName: true,
+                  },
+                },
+                trainerProfile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { date: 'desc' },
+          take: 200, // Limit notes to prevent loading too many
+        },
+        illnesses: {
+          include: {
+            operations: true,
+            addedBy: {
+              select: {
+                email: true,
+                role: true,
+                ownerProfile: {
+                  select: {
+                    officialName: true,
+                  },
+                },
+                trainerProfile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { startDate: 'desc' },
+        },
+        bannedMedicines: {
+          include: {
+            addedBy: {
+              select: {
+                email: true,
+                role: true,
+                ownerProfile: {
+                  select: {
+                    officialName: true,
+                  },
+                },
+                trainerProfile: {
+                  select: {
+                    fullName: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { givenDate: 'desc' },
         },
       },
     })

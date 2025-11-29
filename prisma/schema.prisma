@@ -317,6 +317,7 @@ model HorseRaceHistory {
 
   @@index([horseId])
   @@index([raceDate])
+  @@index([horseId, raceDate(sort: Desc)]) // Composite index for common query pattern
   @@map("horse_race_history")
 }
 
@@ -340,6 +341,7 @@ model HorseRegistration {
 
   @@index([horseId])
   @@index([raceDate])
+  @@index([horseId, raceDate(sort: Asc)]) // Composite index for common query pattern
   @@map("horse_registrations")
 }
 
@@ -365,6 +367,7 @@ model HorseGallop {
 
   @@index([horseId])
   @@index([gallopDate])
+  @@index([horseId, gallopDate(sort: Desc)]) // Composite index for common query pattern
   @@map("horse_gallops")
 }
 
@@ -420,6 +423,7 @@ model Expense {
   @@index([addedById])
   @@index([date])
   @@index([category])
+  @@index([horseId, createdAt(sort: Desc)]) // Composite index for recent expenses queries
   @@map("expenses")
 }
 

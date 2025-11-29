@@ -33,21 +33,11 @@ export async function GET(request: Request) {
     let horseIds: string[] = []
 
     if (decoded.role === 'OWNER') {
-      let ownerId = decoded.ownerId
-      if (!ownerId) {
-        const ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { userId: decoded.id },
-        })
-        ownerId = ownerProfile?.id
-      }
-
-      if (!ownerId) {
-        console.log('[Gallops API] No owner profile found')
-        return NextResponse.json({ gallops: [] })
-      }
-
+      // Optimized: Single query to get owner profile with stablemate and horses
       const ownerProfile = await prisma.ownerProfile.findUnique({
-        where: { id: ownerId },
+        where: decoded.ownerId 
+          ? { id: decoded.ownerId }
+          : { userId: decoded.id },
         select: {
           stablemate: {
             select: {

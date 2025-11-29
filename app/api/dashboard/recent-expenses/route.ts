@@ -32,25 +32,24 @@ export async function GET(request: Request) {
     let horses: Array<{ id: string; name: string }> = []
 
     if (decoded.role === 'OWNER') {
-      let ownerId = decoded.ownerId
-      if (!ownerId) {
-        const ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { userId: decoded.id },
-        })
-        ownerId = ownerProfile?.id
-      }
+      // Optimized: Single query to get owner profile with stablemate and horses
+      const ownerProfile = await prisma.ownerProfile.findUnique({
+        where: decoded.ownerId 
+          ? { id: decoded.ownerId }
+          : { userId: decoded.id },
+        select: {
+          stablemate: {
+            select: {
+              horses: {
+                select: { id: true, name: true },
+              },
+            },
+          },
+        },
+      })
 
-      if (ownerId) {
-        const stablemate = await prisma.stablemate.findUnique({
-          where: { ownerId },
-          select: { id: true },
-        })
-        if (stablemate?.id) {
-          horses = await prisma.horse.findMany({
-            where: { stablemateId: stablemate.id },
-            select: { id: true, name: true },
-          })
-        }
+      if (ownerProfile?.stablemate) {
+        horses = ownerProfile.stablemate.horses
       }
     } else if (decoded.role === 'TRAINER') {
       let trainerId = decoded.trainerId

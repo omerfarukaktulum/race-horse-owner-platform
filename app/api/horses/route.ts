@@ -25,27 +25,21 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const skip = (page - 1) * limit
 
     // Build query based on role
     let where: any = {}
 
     if (decoded.role === 'OWNER') {
-      // Get owner profile - check by userId if ownerId not in token (for users who just completed onboarding)
-      let ownerProfile
-      
-      if (decoded.ownerId) {
-        ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { id: decoded.ownerId },
-          include: { stablemate: true },
-        })
-      } else {
-        // Token doesn't have ownerId yet, check by userId
-        console.log('[Horses API] No ownerId in token, checking by userId')
-        ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { userId: decoded.id },
-          include: { stablemate: true },
-        })
-      }
+      // Optimized: Single query regardless of whether ownerId is in token
+      const ownerProfile = await prisma.ownerProfile.findUnique({
+        where: decoded.ownerId 
+          ? { id: decoded.ownerId }
+          : { userId: decoded.id },
+        include: { stablemate: true },
+      })
 
       console.log('[Horses API] Owner profile:', {
         hasOwnerProfile: !!ownerProfile,
@@ -121,15 +115,33 @@ export async function GET(request: Request) {
           take: 1,
           orderBy: { startDate: 'desc' },
         },
+        // Only fetch basic illness/banned medicine counts for list view (not full details)
         illnesses: {
-          include: {
-            operations: true,
+          select: {
+            id: true,
+            detail: true,
+            startDate: true,
+            endDate: true,
           },
+          take: 1, // Just need to know if horse has illnesses
         },
-        bannedMedicines: true,
+        bannedMedicines: {
+          select: {
+            id: true,
+            medicineName: true,
+            givenDate: true,
+            waitDays: true,
+          },
+          take: 1, // Just need to know if horse has banned medicines
+        },
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     })
+
+    // Get total count for pagination
+    const totalCount = await prisma.horse.count({ where })
 
     console.log('[Horses API] Found', horses.length, 'horses')
     const horsesWithExternalRef = horses.filter(h => h.externalRef)
@@ -155,7 +167,16 @@ export async function GET(request: Request) {
       }
     })
 
-    return NextResponse.json({ horses: horsesWithLocation })
+    return NextResponse.json({ 
+      horses: horsesWithLocation,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + horsesWithLocation.length < totalCount,
+      },
+    })
   } catch (error) {
     console.error('Get horses error:', error)
     return NextResponse.json(
