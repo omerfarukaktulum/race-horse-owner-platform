@@ -433,8 +433,14 @@ export default function NotesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-500">{TR.common.loading}</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+          </div>
+          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+          <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
+        </div>
       </div>
     )
   }
@@ -797,7 +803,15 @@ export default function NotesPage() {
       {/* Mobile: Spacer for fixed header */}
       {/* Mobile: Scrollable Card Layout */}
       <div className="md:hidden pb-8" style={{ paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
-            {!hasNotes ? (
+            {isLoading ? (
+              <div className="py-16 text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                </div>
+                <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+                <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
+              </div>
+            ) : !hasNotes ? (
               <div className="py-16 text-center text-sm text-gray-500">
                 Henüz not eklenmemiş
               </div>
@@ -939,7 +953,19 @@ export default function NotesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                {!hasNotes ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-6 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                          <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                        </div>
+                        <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+                        <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : !hasNotes ? (
                   <tr>
                     <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-16 text-center text-sm text-gray-500">
                       Henüz not eklenmemiş

@@ -879,7 +879,15 @@ export default function ExpensesPage() {
 
       {/* Mobile: Scrollable Card Layout */}
       <div className="md:hidden pb-8" style={{ paddingBottom: 'calc(5rem + var(--bottom-tab-bar-height, 73px))' }}>
-        {!hasExpenses ? (
+        {isLoading ? (
+          <div className="py-16 text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+            </div>
+            <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+            <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+          </div>
+        ) : !hasExpenses ? (
           <div className="py-16 text-center text-sm text-gray-500">
             {TR.expenses.noExpenses}
           </div>
@@ -984,8 +992,16 @@ export default function ExpensesPage() {
 
       {/* Desktop: Table Layout */}
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasExpenses ? 'p-0' : 'py-16 text-center'}>
-          {!hasExpenses ? (
+        <CardContent className={hasExpenses ? 'p-0' : isLoading ? 'py-16 text-center' : 'py-16 text-center'}>
+          {isLoading ? (
+            <div className="py-16 text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+              </div>
+              <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+              <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+            </div>
+          ) : !hasExpenses ? (
             <p className="text-gray-500">{TR.expenses.noExpenses}</p>
           ) : (
             <div className="overflow-x-auto">
@@ -1021,10 +1037,25 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredExpenses.length === 0 ? (
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                          </div>
+                          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+                          <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filteredExpenses.length === 0 ? (
                     <tr>
                       <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
-                        Seçilen filtrelerde gider bulunamadı
+                        {hasExpenses 
+                          ? 'Seçilen filtrelerde gider bulunamadı'
+                          : TR.expenses.noExpenses
+                        }
                       </td>
                     </tr>
                   ) : (
