@@ -737,6 +737,22 @@ useEffect(() => {
               
               {/* Right side: Action buttons */}
               <div className="flex items-center gap-3">
+                {activeTab === 'expenses' && (
+                  <Button 
+                    onClick={() => setIsExpenseModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
+                {activeTab === 'notes' && (
+                  <Button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+                  >
+                    Ekle
+                  </Button>
+                )}
                 {activeTab === 'illnesses' && (
                   <Button 
                     onClick={() => setIsIllnessModalOpen(true)}

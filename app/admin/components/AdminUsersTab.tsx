@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
 import { Button } from '@/app/components/ui/button'
-import { Trash2, FolderX, Sparkles, UserPlus } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog'
+import { Input } from '@/app/components/ui/input'
+import { Label } from '@/app/components/ui/label'
+import { Trash2, FolderX, Sparkles, UserPlus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import ImportHorsesModal from './ImportHorsesModal'
 
@@ -43,6 +46,9 @@ export default function AdminUsersTab() {
     ownerName: string
     ownerRef: string
   } | null>(null)
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [editEmail, setEditEmail] = useState('')
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -80,6 +86,56 @@ export default function AdminUsersTab() {
         return 'bg-green-100 text-green-700'
       default:
         return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const handleEditEmail = (user: User) => {
+    setEditingUserId(user.id)
+    setEditEmail(user.email)
+  }
+
+  const handleUpdateEmail = async () => {
+    if (!editingUserId) return
+
+    if (!editEmail.trim()) {
+      toast.error('E-posta adresi boş olamaz')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(editEmail.trim())) {
+      toast.error('Geçersiz e-posta formatı')
+      return
+    }
+
+    setIsUpdatingEmail(true)
+
+    try {
+      const response = await fetch(`/api/admin/users/${editingUserId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email: editEmail.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'E-posta güncellenemedi')
+      }
+
+      toast.success('E-posta adresi başarıyla güncellendi')
+      setEditingUserId(null)
+      setEditEmail('')
+      fetchUsers() // Refresh users list
+    } catch (error: any) {
+      console.error('Update email error:', error)
+      toast.error(error.message || 'E-posta güncellenirken bir hata oluştu')
+    } finally {
+      setIsUpdatingEmail(false)
     }
   }
 
@@ -270,6 +326,14 @@ export default function AdminUsersTab() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleEditEmail(user)}
+                      className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200 h-7 w-7 p-0"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleDelete(user.id, user.email)}
                       disabled={deletingUserId === user.id}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-7 w-7 p-0"
@@ -435,6 +499,47 @@ export default function AdminUsersTab() {
           ))
         )}
       </div>
+
+      {/* Edit Email Dialog */}
+      <Dialog open={editingUserId !== null} onOpenChange={(open) => !open && setEditingUserId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>E-posta Adresini Güncelle</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="edit-email">Yeni E-posta Adresi</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                placeholder="ornek@email.com"
+                disabled={isUpdatingEmail}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingUserId(null)
+                setEditEmail('')
+              }}
+              disabled={isUpdatingEmail}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={handleUpdateEmail}
+              disabled={isUpdatingEmail || !editEmail.trim()}
+            >
+              {isUpdatingEmail ? 'Güncelleniyor...' : 'Güncelle'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Import Horses Modal */}
       {selectedOwnerForImport && (

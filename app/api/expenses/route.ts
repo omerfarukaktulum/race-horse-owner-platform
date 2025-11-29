@@ -166,6 +166,13 @@ export async function POST(request: Request) {
         // Send immediate notification for new expense
         if (expense.horse) {
           try {
+            // Get the name and role of the user who added the expense
+            const addedByRole = expense.addedBy?.role || 'OWNER'
+            const addedByName = expense.addedBy?.ownerProfile?.officialName 
+              || expense.addedBy?.trainerProfile?.fullName 
+              || expense.addedBy?.email 
+              || 'Sistem'
+
             await sendHorseNotification('newExpense', horseId, {
               horseId,
               horseName: expense.horse.name,
@@ -174,6 +181,8 @@ export async function POST(request: Request) {
               amount: Number(expense.amount),
               currency: expense.currency,
               note: expense.note || undefined,
+              addedByName,
+              addedByRole,
             } as any)
           } catch (error) {
             // Log but don't fail the request if notification fails

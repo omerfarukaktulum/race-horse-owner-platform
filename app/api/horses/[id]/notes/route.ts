@@ -144,12 +144,21 @@ export async function POST(
 
     // Send immediate notification for new note
     try {
+      // Get the name and role of the user who added the note
+      const addedByRole = horseNote.addedBy?.role || 'OWNER'
+      const addedByName = horseNote.addedBy?.ownerProfile?.officialName 
+        || horseNote.addedBy?.trainerProfile?.fullName 
+        || horseNote.addedBy?.email 
+        || 'Sistem'
+
       await sendHorseNotification('newNote', horseId, {
         horseId,
         horseName: horseNote.horse.name,
         noteDate: horseNote.date,
         note: horseNote.note,
         kiloValue: horseNote.kiloValue || undefined,
+        addedByName,
+        addedByRole,
       } as any)
     } catch (error) {
       // Log but don't fail the request if notification fails

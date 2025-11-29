@@ -170,6 +170,11 @@ export async function sendNotificationToOwner(
           user: {
             select: {
               email: true,
+              ownerProfile: {
+                select: {
+                  officialName: true,
+                },
+              },
             },
           },
         },
@@ -193,12 +198,15 @@ export async function sendNotificationToOwner(
     return { success: false, error: 'Owner email not found' }
   }
 
+  // Get owner's actual name (officialName from ownerProfile)
+  const ownerName = stablemate.owner?.user?.ownerProfile?.officialName || stablemate.owner?.user?.email || 'Değerli Kullanıcı'
+
   // Prepare email data with recipient
   const emailData = {
     ...data,
     recipient: {
       email,
-      name: stablemate.owner?.user?.email, // Can be enhanced with actual name if available
+      name: ownerName,
     },
   }
 
@@ -236,12 +244,22 @@ export async function sendNotificationToOwner(
   }
 
   // Send email
-  return sendEmail({
+  const result = await sendEmail({
     to: email,
     from: process.env.RESEND_FROM_EMAIL || 'notifications@ekurim.com.tr',
     subject,
     html,
   })
+
+  if (result.success) {
+    console.log(`📧 Notification sent to owner (${type}):`, {
+      stablemateId,
+      email,
+      messageId: result.messageId,
+    })
+  }
+
+  return result
 }
 
 /**
@@ -329,13 +347,24 @@ export async function sendNotificationToTrainer(
       return { success: false, error: 'Unknown notification type' }
   }
 
-  // Send email
-  return sendEmail({
+  // Send email - always use RESEND_FROM_EMAIL from environment
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'notifications@ekurim.com.tr'
+  const result = await sendEmail({
     to: email,
-    from: process.env.RESEND_FROM_EMAIL || 'notifications@ekurim.com.tr',
+    from: fromEmail,
     subject,
     html,
   })
+
+  if (result.success) {
+    console.log(`📧 Notification sent to trainer (${type}):`, {
+      trainerId,
+      email,
+      messageId: result.messageId,
+    })
+  }
+
+  return result
 }
 
 /**

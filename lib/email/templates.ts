@@ -6,6 +6,7 @@ import type {
   NewNoteEmailData,
   NewRaceEmailData,
 } from './types'
+import { TR } from '@/lib/constants/tr'
 
 /**
  * Format date for email display
@@ -15,8 +16,6 @@ function formatDate(date: Date): string {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   }).format(date)
 }
 
@@ -50,7 +49,7 @@ function baseTemplate(title: string, content: string): string {
     ${content}
   </div>
   <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666; text-align: center;">
-    <p>Bu e-posta ${process.env.NEXT_PUBLIC_APP_URL || 'ekurim.com.tr'} tarafından otomatik olarak gönderilmiştir.</p>
+    <p>Bu e-posta Ekurim.com.tr tarafından otomatik olarak gönderilmiştir.</p>
     <p>Bildirim ayarlarınızı değiştirmek için uygulamaya giriş yapabilirsiniz.</p>
   </div>
 </body>
@@ -72,6 +71,7 @@ export function horseRegisteredTemplate(data: HorseRegisteredEmailData): string 
       ${data.raceDate ? `<p style="margin: 5px 0;"><strong>Yarış Tarihi:</strong> ${formatDate(data.raceDate)}</p>` : ''}
       ${data.city ? `<p style="margin: 5px 0;"><strong>Şehir:</strong> ${data.city}</p>` : ''}
       ${data.distance ? `<p style="margin: 5px 0;"><strong>Mesafe:</strong> ${data.distance} m</p>` : ''}
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">
@@ -100,6 +100,7 @@ export function horseDeclaredTemplate(data: HorseDeclaredEmailData): string {
       ${data.city ? `<p style="margin: 5px 0;"><strong>Şehir:</strong> ${data.city}</p>` : ''}
       ${data.distance ? `<p style="margin: 5px 0;"><strong>Mesafe:</strong> ${data.distance} m</p>` : ''}
       ${data.jockeyName ? `<p style="margin: 5px 0;"><strong>Jokey:</strong> ${data.jockeyName}</p>` : ''}
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">
@@ -127,6 +128,7 @@ export function newTrainingTemplate(data: NewTrainingEmailData): string {
       ${data.distance ? `<p style="margin: 5px 0;"><strong>Mesafe/Tip:</strong> ${data.distance}</p>` : ''}
       ${data.racecourse ? `<p style="margin: 5px 0;"><strong>Hipodrom:</strong> ${data.racecourse}</p>` : ''}
       ${data.note ? `<p style="margin: 5px 0;"><strong>Not:</strong> ${data.note}</p>` : ''}
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">
@@ -151,9 +153,10 @@ export function newExpenseTemplate(data: NewExpenseEmailData): string {
     
     <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
       <p style="margin: 5px 0;"><strong>Tarih:</strong> ${formatDate(data.expenseDate)}</p>
-      <p style="margin: 5px 0;"><strong>Kategori:</strong> ${data.category}</p>
+      <p style="margin: 5px 0;"><strong>Kategori:</strong> ${TR.expenseCategories[data.category as keyof typeof TR.expenseCategories] || data.category}</p>
       <p style="margin: 5px 0;"><strong>Tutar:</strong> ${formatCurrency(data.amount, data.currency)}</p>
       ${data.note ? `<p style="margin: 5px 0;"><strong>Not:</strong> ${data.note}</p>` : ''}
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">
@@ -181,6 +184,7 @@ export function newNoteTemplate(data: NewNoteEmailData): string {
       ${data.kiloValue ? `<p style="margin: 5px 0;"><strong>Kilo:</strong> ${data.kiloValue} kg</p>` : ''}
       <p style="margin: 5px 0;"><strong>Not:</strong></p>
       <p style="margin: 10px 0; padding: 10px; background-color: #ffffff; border-left: 3px solid #007bff;">${data.note}</p>
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">
@@ -210,6 +214,7 @@ export function newRaceTemplate(data: NewRaceEmailData): string {
       ${data.distance ? `<p style="margin: 5px 0;"><strong>Mesafe:</strong> ${data.distance} m</p>` : ''}
       ${data.surface ? `<p style="margin: 5px 0;"><strong>Pist:</strong> ${data.surface}</p>` : ''}
       ${data.prizeMoney ? `<p style="margin: 5px 0;"><strong>İkramiye:</strong> ${formatCurrency(data.prizeMoney)}</p>` : ''}
+      ${data.addedByName ? `<p style="margin: 5px 0;"><strong>Ekleyen:</strong> ${data.addedByRole === 'TRAINER' ? 'Antrenör' : data.addedByRole === 'SYSTEM' ? 'Sistem' : `At Sahibi (${data.addedByName})`}</p>` : ''}
     </div>
     
     <p style="margin-top: 20px;">

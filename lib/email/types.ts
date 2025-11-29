@@ -46,6 +46,8 @@ export interface HorseRegisteredEmailData extends BaseEmailData {
   raceDate?: Date
   city?: string
   distance?: number
+  addedByName?: string // Name of the user who added the registration
+  addedByRole?: string // Role of the user who added the registration (OWNER or TRAINER)
 }
 
 /**
@@ -57,6 +59,8 @@ export interface HorseDeclaredEmailData extends BaseEmailData {
   city?: string
   distance?: number
   jockeyName?: string
+  addedByName?: string // Name of the user who added the declaration
+  addedByRole?: string // Role of the user who added the declaration (OWNER or TRAINER)
 }
 
 /**
@@ -67,6 +71,8 @@ export interface NewTrainingEmailData extends BaseEmailData {
   distance?: string
   racecourse?: string
   note?: string
+  addedByName?: string // Name of the user who added the training
+  addedByRole?: string // Role of the user who added the training (OWNER or TRAINER)
 }
 
 /**
@@ -78,6 +84,8 @@ export interface NewExpenseEmailData extends BaseEmailData {
   amount: number
   currency?: string
   note?: string
+  addedByName?: string // Name of the user who added the expense
+  addedByRole?: string // Role of the user who added the expense (OWNER or TRAINER)
 }
 
 /**
@@ -87,6 +95,8 @@ export interface NewNoteEmailData extends BaseEmailData {
   noteDate: Date
   note: string
   kiloValue?: number
+  addedByName?: string // Name of the user who added the note
+  addedByRole?: string // Role of the user who added the note (OWNER or TRAINER)
 }
 
 /**
@@ -99,6 +109,8 @@ export interface NewRaceEmailData extends BaseEmailData {
   distance?: number
   surface?: string
   prizeMoney?: number
+  addedByName?: string // Name of the user/system who added the race
+  addedByRole?: string // Role of the user/system who added the race (OWNER, TRAINER, or SYSTEM)
 }
 
 /**

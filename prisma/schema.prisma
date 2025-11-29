@@ -401,7 +401,7 @@ model Expense {
   horse      Horse?          @relation(fields: [horseId], references: [id], onDelete: Cascade)
   
   addedById  String
-  addedBy    User            @relation(fields: [addedById], references: [id])
+  addedBy    User            @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   date       DateTime
   category   ExpenseCategory
@@ -429,7 +429,7 @@ model HorseNote {
   horse      Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
   
   addedById  String
-  addedBy    User     @relation(fields: [addedById], references: [id])
+  addedBy    User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   date       DateTime
   note       String
@@ -451,7 +451,7 @@ model HorseIllness {
   horse      Horse    @relation(fields: [horseId], references: [id], onDelete: Cascade)
   
   addedById  String
-  addedBy    User     @relation(fields: [addedById], references: [id])
+  addedBy    User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   startDate  DateTime
   endDate    DateTime?
@@ -475,7 +475,7 @@ model HorseIllnessOperation {
   illness    HorseIllness @relation(fields: [illnessId], references: [id], onDelete: Cascade)
   
   addedById  String
-  addedBy    User     @relation(fields: [addedById], references: [id])
+  addedBy    User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   date       DateTime
   description String?
@@ -502,7 +502,7 @@ model HorseBannedMedicine {
   photoUrl     String? // Photo URL(s) - can be JSON array or single string
   
   addedById    String
-  addedBy      User    @relation(fields: [addedById], references: [id])
+  addedBy      User    @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -525,7 +525,7 @@ model HorseTrainingPlan {
   racecourse  Racecourse? @relation(fields: [racecourseId], references: [id], onDelete: SetNull)
   
   addedById   String
-  addedBy     User     @relation(fields: [addedById], references: [id])
+  addedBy     User     @relation(fields: [addedById], references: [id], onDelete: Cascade)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
