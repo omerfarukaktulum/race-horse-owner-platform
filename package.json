@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "tsx --tsconfig tsconfig.json scripts/run-migration-build.ts || true",
+    "prebuild": "npx prisma migrate deploy || true",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
