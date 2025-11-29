@@ -10,7 +10,7 @@ import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
 import { fetchTJKHorseGallops } from '@/lib/tjk-gallops-scraper'
 
 // Use PROD_DATABASE_URL if provided, otherwise fall back to DATABASE_URL
-let databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
+const databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
 
 if (!databaseUrl) {
   console.error('[Cronjob] Error: DATABASE_URL or PROD_DATABASE_URL must be set')
@@ -20,19 +20,7 @@ if (!databaseUrl) {
   process.exit(1)
 }
 
-// For Supabase, prefer connection pooler (port 6543) over direct connection (port 5432)
-// The pooler is more reliable for external connections like GitHub Actions
-if (databaseUrl.includes('supabase.co:5432') && !databaseUrl.includes('pooler')) {
-  console.log('[Cronjob] Converting Supabase direct connection to pooler connection...')
-  // Convert direct connection to pooler
-  // From: postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
-  // To: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
-  // Note: This is a simplified conversion - user should use pooler URL directly
-  console.warn('[Cronjob] WARNING: Using direct connection. For better reliability, use Supabase connection pooler URL (port 6543)')
-}
-
 console.log(`[Cronjob] Using database: ${databaseUrl.includes('supabase') || databaseUrl.includes('neon') ? 'PRODUCTION' : 'LOCAL'}`)
-console.log(`[Cronjob] Connection type: ${databaseUrl.includes('pooler') ? 'Pooler' : databaseUrl.includes('supabase') ? 'Direct (Supabase)' : 'Standard'}`)
 
 const prisma = new PrismaClient({
   datasources: {
@@ -40,7 +28,6 @@ const prisma = new PrismaClient({
       url: databaseUrl,
     },
   },
-  log: ['error', 'warn'],
 })
 
 interface UpdateResult {
@@ -311,71 +298,140 @@ async function updateRaceHistory(horseId: string, newRaces: any[]): Promise<numb
 }
 
 /**
- * Update registrations and declarations (delta)
+ * Update registrations and declarations (delta + lifecycle management)
+ * Handles:
+ * 1. Adding new registrations/declarations
+ * 2. Updating KAYIT → DEKLARE when jockey is declared
+ * 3. Removing registrations/declarations that became races
  */
 async function updateRegistrations(
   horseId: string,
   newRegistrations: any[]
 ): Promise<{ registrations: number; declarations: number }> {
-  if (!newRegistrations || newRegistrations.length === 0) {
-    console.log(`[Cronjob] No registrations/declarations found from TJK, skipping`)
-    return { registrations: 0, declarations: 0 }
-  }
+  console.log(`[Cronjob] Processing registrations/declarations for horse ${horseId}...`)
 
-  console.log(`[Cronjob] Found ${newRegistrations.length} registrations/declarations from TJK, checking against database...`)
-
-  // Get existing registrations from database
+  // Get existing registrations from database (full records for updates/deletes)
   const existingRegs = await prisma.horseRegistration.findMany({
     where: { horseId },
-    select: {
-      raceDate: true,
-      city: true,
-      distance: true,
-      type: true,
-    },
   })
 
   console.log(`[Cronjob] Found ${existingRegs.length} existing registrations/declarations in database`)
 
-  // Create a set of existing registration keys
-  const existingKeys = new Set(
-    existingRegs.map((r) => {
+  // Get existing races to check if registrations became races
+  const existingRaces = await prisma.horseRaceHistory.findMany({
+    where: { horseId },
+    select: {
+      raceDate: true,
+      raceName: true,
+      city: true,
+    },
+  })
+
+  // Create a set of race keys (to detect if registration became a race)
+  const raceKeys = new Set(
+    existingRaces.map((r) => {
       const date = r.raceDate.toISOString().split('T')[0]
-      return `${date}-${r.city || ''}-${r.distance || ''}-${r.type || ''}`
+      return `${date}-${r.raceName || ''}-${r.city || ''}`
     })
   )
 
-  // Filter new registrations
-  const regsToInsert = newRegistrations
-    .filter((reg) => {
-      const dateParts = reg.raceDate.split('.')
-      if (dateParts.length !== 3) return false
+  // Create a map of existing registrations by key (date + city + distance)
+  const existingRegsMap = new Map<string, typeof existingRegs[0]>()
+  existingRegs.forEach((reg) => {
+    const date = reg.raceDate.toISOString().split('T')[0]
+    const key = `${date}-${reg.city || ''}-${reg.distance || ''}`
+    existingRegsMap.set(key, reg)
+  })
 
-      const date = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`)
-      if (isNaN(date.getTime())) return false
+  // Process new registrations from TJK
+  const regsToInsert: any[] = []
+  const regsToUpdate: Array<{ id: string; data: any }> = []
+  const regsToDelete: string[] = []
 
-      const dateKey = date.toISOString().split('T')[0]
-      const key = `${dateKey}-${reg.city || ''}-${reg.distance || ''}-${reg.type || ''}`
-      return !existingKeys.has(key)
+  // Step 1: Check existing registrations - delete those that became races
+  for (const existingReg of existingRegs) {
+    const date = existingReg.raceDate.toISOString().split('T')[0]
+    const raceKey = `${date}-${existingReg.city || ''}-${existingReg.distance || ''}`
+    
+    // Check if this registration became a race (exists in race history)
+    const becameRace = Array.from(raceKeys).some((rk) => {
+      // Match by date and city (race name might differ slightly)
+      return rk.startsWith(`${date}-`) && rk.includes(`-${existingReg.city || ''}`)
     })
-    .map((reg) => {
+
+    if (becameRace) {
+      console.log(`[Cronjob] Registration/declaration became a race, will delete: ${date} ${existingReg.city}`)
+      regsToDelete.push(existingReg.id)
+    }
+  }
+
+  // Step 2: Process new registrations from TJK
+  if (newRegistrations && newRegistrations.length > 0) {
+    console.log(`[Cronjob] Found ${newRegistrations.length} registrations/declarations from TJK`)
+
+    for (const reg of newRegistrations) {
       const dateParts = reg.raceDate.split('.')
+      if (dateParts.length !== 3) continue
+
       const raceDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`)
+      if (isNaN(raceDate.getTime())) continue
 
-      return {
-        horseId,
-        raceDate,
-        city: reg.city || null,
-        distance: reg.distance || null,
-        surface: reg.surface || null,
-        surfaceType: reg.surfaceType || null,
-        raceType: reg.raceType || null,
-        type: reg.type === 'Deklare' ? 'DEKLARE' : 'KAYIT',
-        jockeyName: reg.jockeyName || null,
-        jockeyId: reg.jockeyId || null,
+      const dateKey = raceDate.toISOString().split('T')[0]
+      const key = `${dateKey}-${reg.city || ''}-${reg.distance || ''}`
+      const newType = reg.type === 'Deklare' ? 'DEKLARE' : 'KAYIT'
+
+      const existingReg = existingRegsMap.get(key)
+
+      if (!existingReg) {
+        // New registration - insert
+        regsToInsert.push({
+          horseId,
+          raceDate,
+          city: reg.city || null,
+          distance: reg.distance || null,
+          surface: reg.surface || null,
+          surfaceType: reg.surfaceType || null,
+          raceType: reg.raceType || null,
+          type: newType,
+          jockeyName: reg.jockeyName || null,
+          jockeyId: reg.jockeyId || null,
+        })
+      } else if (existingReg.type === 'KAYIT' && newType === 'DEKLARE') {
+        // KAYIT became DEKLARE - update
+        console.log(`[Cronjob] Updating KAYIT to DEKLARE: ${dateKey} ${reg.city}`)
+        regsToUpdate.push({
+          id: existingReg.id,
+          data: {
+            type: 'DEKLARE',
+            jockeyName: reg.jockeyName || null,
+            jockeyId: reg.jockeyId || null,
+          },
+        })
       }
-    })
+      // If it's already DEKLARE and still DEKLARE, or already exists, skip
+    }
+  }
 
+  // Step 3: Delete registrations that became races
+  if (regsToDelete.length > 0) {
+    await prisma.horseRegistration.deleteMany({
+      where: { id: { in: regsToDelete } },
+    })
+    console.log(`[Cronjob] ✓ Deleted ${regsToDelete.length} registrations/declarations that became races`)
+  }
+
+  // Step 4: Update KAYIT → DEKLARE
+  for (const update of regsToUpdate) {
+    await prisma.horseRegistration.update({
+      where: { id: update.id },
+      data: update.data,
+    })
+  }
+  if (regsToUpdate.length > 0) {
+    console.log(`[Cronjob] ✓ Updated ${regsToUpdate.length} registrations from KAYIT to DEKLARE`)
+  }
+
+  // Step 5: Insert new registrations
   if (regsToInsert.length > 0) {
     await prisma.horseRegistration.createMany({
       data: regsToInsert,
@@ -383,10 +439,10 @@ async function updateRegistrations(
     })
     const declarations = regsToInsert.filter((r) => r.type === 'DEKLARE').length
     const registrations = regsToInsert.filter((r) => r.type === 'KAYIT').length
-    console.log(`[Cronjob] ✓ Inserted ${regsToInsert.length} new registrations/declarations (${declarations} declarations, ${registrations} registrations, ${newRegistrations.length - regsToInsert.length} already existed)`)
+    console.log(`[Cronjob] ✓ Inserted ${regsToInsert.length} new registrations/declarations (${declarations} declarations, ${registrations} registrations)`)
     return { declarations, registrations }
   } else {
-    console.log(`[Cronjob] ✓ No new registrations/declarations to insert (all ${newRegistrations.length} already exist in database)`)
+    console.log(`[Cronjob] ✓ No new registrations/declarations to insert`)
     return { declarations: 0, registrations: 0 }
   }
 }
