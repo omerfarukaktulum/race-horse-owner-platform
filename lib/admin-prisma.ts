@@ -11,13 +11,12 @@ export function clearAdminPrismaCache() {
   console.log(`[Admin Prisma] Clearing cache (${prismaClients.size} clients)`)
   // Disconnect all existing clients
   for (const [url, client] of prismaClients.entries()) {
-    console.log(`[Admin Prisma] Disconnecting client for URL: ${url.substring(0, 30)}...`)
     client.$disconnect().catch((err) => {
       console.error(`[Admin Prisma] Error disconnecting client:`, err)
     })
   }
   prismaClients.clear()
-  console.log('[Admin Prisma] ✅ Cache cleared - all clients disconnected and removed')
+  console.log('[Admin Prisma] Cache cleared - all clients disconnected and removed')
 }
 
 /**
@@ -33,20 +32,13 @@ export function getAdminPrismaClient(): PrismaClient {
   const isProd = databaseUrl.includes('supabase') || databaseUrl.includes('neon') || databaseUrl.includes('pooler.supabase.com')
   const dbType = isLocal ? 'LOCAL' : isProd ? 'PROD' : 'UNKNOWN'
   
-  console.log(`[Admin Prisma] 🔍 Database URL analysis:`)
-  console.log(`  - Type: ${dbType}`)
-  console.log(`  - URL length: ${databaseUrl.length}`)
-  console.log(`  - Is local: ${isLocal}`)
-  console.log(`  - Is prod: ${isProd}`)
-  console.log(`  - URL preview: ${databaseUrl.substring(0, 50)}...`)
-  
   // Return cached client if exists
   if (prismaClients.has(databaseUrl)) {
-    console.log('[Admin Prisma] ✅ Using cached client for this URL')
+    console.log('[Admin Prisma] Using cached client')
     return prismaClients.get(databaseUrl)!
   }
   
-  console.log('[Admin Prisma] 🆕 Creating NEW Prisma client with URL')
+  console.log(`[Admin Prisma] Creating new Prisma client (type: ${dbType})`)
   
   // Create new client with the selected database URL
   const client = new PrismaClient({
@@ -59,7 +51,7 @@ export function getAdminPrismaClient(): PrismaClient {
   
   // Cache it
   prismaClients.set(databaseUrl, client)
-  console.log(`[Admin Prisma] 💾 Cached client. Total cached clients: ${prismaClients.size}`)
+  console.log(`[Admin Prisma] Cached client. Total cached clients: ${prismaClients.size}`)
   
   return client
 }

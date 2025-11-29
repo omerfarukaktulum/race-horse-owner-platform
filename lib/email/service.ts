@@ -14,11 +14,7 @@ function getResendClient(): Resend | null {
   const apiKeyRaw = process.env.RESEND_API_KEY
   const apiKey = apiKeyRaw?.trim().replace(/^["']|["']$/g, '') // Remove quotes if present
   
-  console.log('🔍 Checking RESEND_API_KEY:', {
-    raw: apiKeyRaw ? apiKeyRaw.substring(0, 15) + '...' : 'NOT SET',
-    processed: apiKey ? apiKey.substring(0, 15) + '...' : 'NOT SET',
-    length: apiKey?.length || 0,
-  })
+  // API key validation (no sensitive data logged)
   
   if (!apiKey) {
     console.warn('RESEND_API_KEY is not set. Email sending is disabled.')
@@ -30,20 +26,19 @@ function getResendClient(): Resend | null {
     resend = null
     cachedApiKey = apiKey
     actualApiKeyUsed = apiKey // Store the actual key being used
-    console.log('🔄 API key changed, clearing cache. New key:', apiKey.substring(0, 15) + '...')
+    // API key changed, clearing cache
   }
 
   if (!resend) {
     // Validate API key format (should start with 're_')
     if (!apiKey.startsWith('re_')) {
-      console.error('❌ Invalid Resend API key format. API keys should start with "re_"')
-      console.error('   Key received:', apiKey.substring(0, 20) + '...')
+      console.error('[Email Service] Invalid Resend API key format. API keys should start with "re_"')
       return null
     }
     
     resend = new Resend(apiKey)
     actualApiKeyUsed = apiKey
-    console.log('✅ Resend client initialized with API key:', apiKey.substring(0, 15) + '...')
+    // Resend client initialized
   }
 
   return resend
@@ -75,9 +70,7 @@ export async function sendEmail(params: {
     const fromEmail = envFromEmail && envFromEmail.length > 0 ? envFromEmail : params.from
 
     if (!envFromEmail || envFromEmail.length === 0) {
-      console.warn('⚠️ RESEND_FROM_EMAIL not set in environment, using params.from:', params.from)
-    } else {
-      console.log('✅ Using RESEND_FROM_EMAIL from environment:', envFromEmail)
+      console.warn('[Email Service] RESEND_FROM_EMAIL not set in environment, using params.from')
     }
 
     // Format from email with display name "Ekürim"
@@ -94,12 +87,7 @@ export async function sendEmail(params: {
     })
 
     if (result.error) {
-      console.error('❌ Resend email error:', result.error)
-      console.error('🔑 API Key actually used (first 15 chars):', actualApiKeyUsed?.substring(0, 15) + '...' || 'NOT SET')
-      console.error('🔑 API Key from process.env (first 15 chars):', process.env.RESEND_API_KEY?.substring(0, 15) + '...' || 'NOT SET')
-      console.error('📧 From email used:', fromEmail)
-      console.error('📧 RESEND_FROM_EMAIL env var:', process.env.RESEND_FROM_EMAIL || 'NOT SET')
-      console.error('📧 To email:', params.to)
+      console.error('[Email Service] Resend email error:', result.error)
       
       // Provide more helpful error messages
       const error = result.error as any
@@ -120,11 +108,9 @@ export async function sendEmail(params: {
       }
     }
 
-    // Log successful email send
-    console.log('✅ Email sent successfully:', {
+    // Log successful email send (no sensitive data)
+    console.log('[Email Service] Email sent successfully:', {
       messageId: result.data?.id,
-      to: Array.isArray(params.to) ? params.to.join(', ') : params.to,
-      from: fromEmail,
       subject: params.subject,
     })
 

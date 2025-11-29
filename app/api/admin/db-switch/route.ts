@@ -97,9 +97,7 @@ export async function POST(request: Request) {
       path: '/',
     })
 
-    console.log(`[DB Switch] Switched to ${preference} database. Cookie set.`)
-    console.log(`[DB Switch] PROD_DATABASE_URL exists: ${!!process.env.PROD_DATABASE_URL}`)
-    console.log(`[DB Switch] DATABASE_URL exists: ${!!process.env.DATABASE_URL}`)
+    console.log(`[DB Switch] Switched to ${preference} database`)
 
     return response
   } catch (error: any) {

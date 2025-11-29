@@ -31,14 +31,7 @@ export async function GET(request: Request) {
     const isProdUrl = actualDbUrl === process.env.PROD_DATABASE_URL
     const isLocalUrl = actualDbUrl === process.env.DATABASE_URL
 
-    console.log('[DB Status] Cookie preference:', currentPreference)
-    console.log('[DB Status] Cookie exists:', !!dbPreference)
-    console.log('[DB Status] PROD_DATABASE_URL exists:', hasProdDb)
-    console.log('[DB Status] Using PROD URL:', isProdUrl)
-    console.log('[DB Status] Using LOCAL URL:', isLocalUrl)
-    console.log('[DB Status] Actual URL length:', actualDbUrl.length)
-    console.log('[DB Status] DATABASE_URL length:', process.env.DATABASE_URL?.length || 0)
-    console.log('[DB Status] PROD_DATABASE_URL length:', process.env.PROD_DATABASE_URL?.length || 0)
+    // Database status retrieved
 
     return NextResponse.json({
       type: dbInfo.type,

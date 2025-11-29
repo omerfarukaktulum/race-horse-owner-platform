@@ -13,23 +13,16 @@ export function getAdminDatabaseUrl(): string {
   const preferenceValue = dbPreference?.value
   const hasProdDb = !!process.env.PROD_DATABASE_URL
   
-  console.log(`[Admin DB Helper] Cookie preference: "${preferenceValue}" (exists: ${!!dbPreference})`)
-  console.log(`[Admin DB Helper] PROD_DATABASE_URL exists: ${hasProdDb}`)
-  console.log(`[Admin DB Helper] DATABASE_URL length: ${process.env.DATABASE_URL?.length || 0}`)
-  console.log(`[Admin DB Helper] PROD_DATABASE_URL length: ${process.env.PROD_DATABASE_URL?.length || 0}`)
-  
   // If admin selected prod and PROD_DATABASE_URL is configured, use it
   if (preferenceValue === 'prod' && hasProdDb) {
     const prodUrl = process.env.PROD_DATABASE_URL!
-    console.log('[Admin DB Helper] ✅ Using PROD_DATABASE_URL')
-    console.log(`[Admin DB Helper] PROD URL preview: ${prodUrl.substring(0, 30)}...`)
+    console.log('[Admin DB Helper] Using PROD_DATABASE_URL')
     return prodUrl
   }
   
   // Default to DATABASE_URL (local or default)
   const defaultUrl = process.env.DATABASE_URL || ''
-  console.log('[Admin DB Helper] ⚠️ Using DATABASE_URL (default)')
-  console.log(`[Admin DB Helper] Default URL preview: ${defaultUrl.substring(0, 30)}...`)
+  console.log('[Admin DB Helper] Using DATABASE_URL (default)')
   return defaultUrl
 }
 

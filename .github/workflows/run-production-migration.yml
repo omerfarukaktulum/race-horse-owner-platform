@@ -28,8 +28,8 @@ jobs:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
       - name: Run production migration
-        run: npx tsx --tsconfig tsconfig.json scripts/run-production-migration.ts
+        run: npx prisma migrate deploy
         env:
-          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           NODE_ENV: production
 

@@ -252,9 +252,8 @@ export async function sendNotificationToOwner(
   })
 
   if (result.success) {
-    console.log(`📧 Notification sent to owner (${type}):`, {
+    console.log(`[Email Notifications] Notification sent to owner (${type}):`, {
       stablemateId,
-      email,
       messageId: result.messageId,
     })
   }
@@ -357,9 +356,8 @@ export async function sendNotificationToTrainer(
   })
 
   if (result.success) {
-    console.log(`📧 Notification sent to trainer (${type}):`, {
+    console.log(`[Email Notifications] Notification sent to trainer (${type}):`, {
       trainerId,
-      email,
       messageId: result.messageId,
     })
   }

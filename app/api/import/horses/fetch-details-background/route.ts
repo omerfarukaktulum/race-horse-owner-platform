@@ -321,12 +321,12 @@ export async function POST(request: Request) {
                   data: updateData,
                 })
                 
-                console.log(`[Background Fetch] ✓ Stored pedigree data for ${horse.name} - Gen2: ${!!updateData.sireName && !!updateData.damName}, Gen3: ${[updateData.sireSire, updateData.sireDam, updateData.damSire, updateData.damDam].filter(Boolean).length}, Gen4: ${[updateData.sireSireSire, updateData.sireSireDam, updateData.sireDamSire, updateData.sireDamDam, updateData.damSireSire, updateData.damSireDam, updateData.damDamSire, updateData.damDamDam].filter(Boolean).length}`)
+                // Stored pedigree data
               } else {
-                console.log(`[Background Fetch] ⚠ No pedigree data returned for ${horse.name}`)
+                // No pedigree data returned
               }
             } catch (pedigreeError: any) {
-              console.error(`[Background Fetch] ✗ Error fetching pedigree for ${horse.name}:`, pedigreeError.message)
+              console.error(`[Background Fetch] Error fetching pedigree:`, pedigreeError.message)
               console.error(`[Background Fetch] Pedigree error stack:`, pedigreeError.stack)
               // Don't fail the whole process if pedigree fails
             }
