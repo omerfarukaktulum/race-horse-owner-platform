@@ -237,7 +237,7 @@ export default function HorseDetailPage() {
   const [showBannedMedicinesFilter, setShowBannedMedicinesFilter] = useState(false)
   const [visibleExpenseTotal, setVisibleExpenseTotal] = useState(0)
   const [visibleExpenseCurrency, setVisibleExpenseCurrency] = useState('TRY')
-  const [statisticsCategory, setStatisticsCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider' | 'yem-kilo'>('genel')
+  const [statisticsCategory, setStatisticsCategory] = useState<'genel' | 'pist' | 'mesafe' | 'sehir' | 'jokey' | 'kosu-turu' | 'gelir-gider'>('genel')
   const [isTabsMenuOpen, setIsTabsMenuOpen] = useState(false)
   const tabsMenuRef = useRef<HTMLDivElement>(null)
   const fabButtonRef = useRef<HTMLButtonElement>(null)
