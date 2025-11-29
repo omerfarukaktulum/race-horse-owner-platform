@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl removed - using pooled connection for migrations (Supabase transaction pooler supports DDL)
 }
 
 enum Role {

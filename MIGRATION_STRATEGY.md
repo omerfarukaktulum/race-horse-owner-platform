@@ -2,12 +2,12 @@
 
 ## Overview
 
-Database migrations are automatically executed during Vercel deployments via the `prebuild` script.
+Database migrations are automatically executed during Vercel deployments via the `prebuild` script. We use Supabase's **transaction pooler** (pooled connection) which supports DDL operations, so no direct connection is needed.
 
 ## How It Works
 
 1. **During Vercel Build**: The `prebuild` script runs before `next build`
-2. **Migration Execution**: `npx prisma migrate deploy` applies pending migrations
+2. **Migration Execution**: `npx prisma migrate deploy` applies pending migrations using pooled connection
 3. **Automatic**: No manual intervention needed - migrations run with every deployment
 4. **Build Safety**: If migrations fail, the build fails - this prevents deploying with broken migrations
 
@@ -15,24 +15,20 @@ Database migrations are automatically executed during Vercel deployments via the
 
 ### Vercel Environment Variables
 
-Make sure these are set in your Vercel project settings:
+Make sure this is set in your Vercel project settings:
 
-- `DATABASE_URL` - Pooled connection string (for app queries)
-- `DIRECT_URL` - Direct connection string (required for migrations)
+- `DATABASE_URL` - Pooled connection string (transaction mode)
 
-**Important**: Supabase requires `DIRECT_URL` for migrations because pooled connections don't support DDL operations.
+**Important**: We use Supabase's **transaction pooler** (port 6543) which supports DDL operations like migrations. No direct connection needed!
 
 ### Supabase Connection Strings
 
-**Pooled (DATABASE_URL)**:
+**Transaction Pooler (DATABASE_URL)**:
 ```
 postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
 ```
 
-**Direct (DIRECT_URL)**:
-```
-postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
-```
+**Note**: Use the **Transaction** mode connection string from Supabase (not Session mode). Transaction mode supports DDL operations like migrations.
 
 ## Migration Process
 
@@ -40,15 +36,15 @@ postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
 
 Migrations run automatically during Vercel deployments:
 
-1. Push code to GitHub
+1. Push code to GitHub (including migration files)
 2. Vercel triggers build
 3. `prebuild` script runs: `npx prisma generate && npx prisma migrate deploy`
-4. Migrations are applied to production database
+4. Migrations are applied to production database using pooled connection
 5. Build continues
 
 ### Manual (If Needed)
 
-If you need to run migrations manually (e.g., before deployment):
+If you need to run migrations manually:
 
 **Option 1: Via GitHub Actions**
 - Go to Actions → "Run Production Migration"
@@ -77,15 +73,15 @@ npx prisma migrate deploy
 
 **Solutions**:
 1. Check Vercel build logs for specific error message
-2. Verify `DIRECT_URL` is set in Vercel environment variables (most common issue)
-3. Test migration locally with production connection:
+2. Verify `DATABASE_URL` is set in Vercel environment variables
+3. Ensure you're using **Transaction** mode connection string (not Session mode)
+4. Test migration locally with production connection:
    ```bash
-   export DATABASE_URL="your-prod-connection"
-   export DIRECT_URL="your-prod-direct-connection"
+   export DATABASE_URL="your-prod-pooled-connection"
    npx prisma migrate deploy
    ```
-4. If migration has issues, apply manually via Supabase SQL Editor first
-5. Once fixed, push again and build will succeed
+5. If migration has issues, apply manually via Supabase SQL Editor first
+6. Once fixed, push again and build will succeed
 
 ### Migrations Not Running
 
