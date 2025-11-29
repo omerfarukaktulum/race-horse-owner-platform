@@ -28,10 +28,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browsers
-        uses: microsoft/playwright-github-action@v1
-        with:
-          browsers: chromium
-          install-deps: true
+        run: npx playwright install chromium --with-deps
 
       - name: Generate Prisma Client
         run: npx prisma generate
