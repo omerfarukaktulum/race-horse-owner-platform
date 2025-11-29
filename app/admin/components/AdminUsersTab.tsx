@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
 import { Button } from '@/app/components/ui/button'
-import { Trash2, FolderX, Sparkles } from 'lucide-react'
+import { Trash2, FolderX, Sparkles, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import ImportHorsesModal from './ImportHorsesModal'
 
 interface User {
   id: string
@@ -14,6 +15,7 @@ interface User {
   createdAt: string
   ownerProfile?: {
     officialName: string
+    officialRef: string | null
     subscriptionStatus: string | null
     stablemate: {
       name: string
@@ -35,6 +37,12 @@ export default function AdminUsersTab() {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [deletingResourcesUserId, setDeletingResourcesUserId] = useState<string | null>(null)
   const [generatingDemoDataUserId, setGeneratingDemoDataUserId] = useState<string | null>(null)
+  const [importHorsesModalOpen, setImportHorsesModalOpen] = useState(false)
+  const [selectedOwnerForImport, setSelectedOwnerForImport] = useState<{
+    userId: string
+    ownerName: string
+    ownerRef: string
+  } | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -288,6 +296,26 @@ export default function AdminUsersTab() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => {
+                              if (user.ownerProfile?.officialRef) {
+                                setSelectedOwnerForImport({
+                                  userId: user.id,
+                                  ownerName: user.ownerProfile.officialName,
+                                  ownerRef: user.ownerProfile.officialRef,
+                                })
+                                setImportHorsesModalOpen(true)
+                              } else {
+                                toast.error('TJK ID bulunamadı. Lütfen önce sahip profilini oluşturun.')
+                              }
+                            }}
+                            className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200 h-6 px-2 text-xs"
+                          >
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            At Ekle
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() =>
                               handleGenerateDemoData(
                                 user.id,
@@ -407,6 +435,20 @@ export default function AdminUsersTab() {
           ))
         )}
       </div>
+
+      {/* Import Horses Modal */}
+      {selectedOwnerForImport && (
+        <ImportHorsesModal
+          open={importHorsesModalOpen}
+          onOpenChange={setImportHorsesModalOpen}
+          userId={selectedOwnerForImport.userId}
+          ownerName={selectedOwnerForImport.ownerName}
+          ownerRef={selectedOwnerForImport.ownerRef}
+          onSuccess={() => {
+            fetchUsers()
+          }}
+        />
+      )}
     </div>
   )
 }
