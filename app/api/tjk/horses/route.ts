@@ -46,8 +46,8 @@ export async function GET(request: Request) {
         console.log('[TJK Horses API] No horses found for owner')
       }
     } catch (playwrightError: any) {
-      console.error('[TJK Horses API] Playwright error:', playwrightError.message)
-      console.error('[TJK Horses API] Stack:', playwrightError.stack)
+      console.error('[TJK Horses API] Playwright error:', playwrightError?.message || playwrightError)
+      console.error('[TJK Horses API] Stack:', playwrightError?.stack || 'No stack trace')
       // Return empty array on error (user can manually add horses)
       horses = []
     }

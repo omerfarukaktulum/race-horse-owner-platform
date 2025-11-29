@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky install",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && (npx playwright install chromium --with-deps || echo 'Playwright browser installation skipped')",
     "db:seed": "ts-node --compiler-options {\\\"module\\\":\\\"CommonJS\\\"} prisma/seed.ts",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
