@@ -20,10 +20,24 @@ function AppNavbar() {
   const [horseName, setHorseName] = useState<string | null>(null)
   const [isLoadingData, setIsLoadingData] = useState(true)
 
+  // Clear all state when user logs out
+  useEffect(() => {
+    if (!user) {
+      setStablemateName(null)
+      setOwnerOfficialRef(null)
+      setTrainerName(null)
+      setHorseName(null)
+      setIsLoadingData(false)
+    }
+  }, [user])
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isOwner) {
         setIsLoadingData(false)
+        // Clear state when user is not an owner
+        setStablemateName(null)
+        setOwnerOfficialRef(null)
         return
       }
       
@@ -54,6 +68,9 @@ function AppNavbar() {
         }
       } catch (error) {
         console.error('Error fetching user/stablemate data:', error)
+        // Clear state on error
+        setStablemateName(null)
+        setOwnerOfficialRef(null)
       } finally {
         setIsLoadingData(false)
       }
@@ -77,7 +94,11 @@ function AppNavbar() {
 
   useEffect(() => {
     const fetchTrainerData = async () => {
-      if (!isTrainer) return
+      if (!isTrainer) {
+        // Clear state when user is not a trainer
+        setTrainerName(null)
+        return
+      }
 
       try {
         const response = await fetch('/api/trainer/account', {
@@ -89,6 +110,8 @@ function AppNavbar() {
         }
       } catch (error) {
         console.error('Error fetching trainer account data:', error)
+        // Clear state on error
+        setTrainerName(null)
       }
     }
 
@@ -138,7 +161,7 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {isOwner && !isLoadingData && ownerOfficialRef ? (
-              <div className="h-12 w-12 flex-shrink-0 relative flex items-center justify-center">
+              <div className="h-12 w-12 flex-shrink-0 relative flex items-center justify-center -mt-2">
                 <Image
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
                   alt="Eküri Forması"
@@ -158,7 +181,7 @@ function AppNavbar() {
                 <UserPlus className="h-8 w-8 text-[#6366f1] fallback-icon hidden absolute" />
               </div>
             ) : isOwner && isLoadingData ? (
-              <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center">
+              <div className="h-12 w-12 flex-shrink-0 flex items-center justify-center -mt-0.5">
                 <div className="h-8 w-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
               </div>
             ) : isTrainer ? (
@@ -239,15 +262,16 @@ function AppNavbar() {
           </div>
 
           {/* Mobile: Settings and Logout buttons */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="md:hidden flex items-center gap-3">
             {isOwner && (
               <Link href="/app/stablemate">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`p-2 ${pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <Settings className="h-5 w-5" />
+                  <span className="text-xs font-medium">Eküri</span>
                 </Button>
               </Link>
             )}
@@ -256,9 +280,10 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`p-2 ${pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <User className="h-5 w-5" />
+                  <span className="text-xs font-medium">Hesap</span>
                 </Button>
               </Link>
             )}
@@ -266,9 +291,10 @@ function AppNavbar() {
               variant="ghost"
               size="sm"
               onClick={signOut}
-              className="p-2 text-gray-600 hover:text-red-600"
+              className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 hover:text-red-600"
             >
               <LogOut className="h-5 w-5" />
+              <span className="text-xs font-medium">Çıkış</span>
             </Button>
           </div>
         </div>
