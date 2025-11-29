@@ -67,9 +67,15 @@ export async function POST(request: Request) {
 
     // Send registration notification email to admin
     const registrationEmailReceiver = process.env.REGISTRATION_EMAIL_RECEIVER
+    console.log('[Registration] Checking email notification...')
+    console.log('[Registration] REGISTRATION_EMAIL_RECEIVER:', registrationEmailReceiver ? 'SET' : 'NOT SET')
+    console.log('[Registration] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL ? 'SET' : 'NOT SET')
+    console.log('[Registration] RESEND_API_KEY:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET')
+    
     if (registrationEmailReceiver) {
       try {
-        await sendEmail({
+        console.log('[Registration] Attempting to send email to:', registrationEmailReceiver)
+        const emailResult = await sendEmail({
           to: registrationEmailReceiver,
           from: process.env.RESEND_FROM_EMAIL || 'notifications@ekurim.com.tr',
           subject: 'Yeni Antrenör Kayıt Başvurusu',
@@ -80,10 +86,18 @@ export async function POST(request: Request) {
             registeredAt: new Date(),
           }),
         })
+        console.log('[Registration] Email send result:', emailResult)
+        if (emailResult.success) {
+          console.log('[Registration] ✅ Email sent successfully, messageId:', emailResult.messageId)
+        } else {
+          console.error('[Registration] ❌ Email send failed:', emailResult.error)
+        }
       } catch (emailError) {
         // Log error but don't fail registration
-        console.error('Failed to send registration notification email:', emailError)
+        console.error('[Registration] ❌ Exception while sending email:', emailError)
       }
+    } else {
+      console.warn('[Registration] ⚠️ REGISTRATION_EMAIL_RECEIVER not set, skipping email notification')
     }
 
     return NextResponse.json({

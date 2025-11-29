@@ -234,22 +234,25 @@ export function newRaceTemplate(data: NewRaceEmailData): string {
 export function registrationNotificationTemplate(data: {
   email: string
   role: 'OWNER' | 'TRAINER'
-  userId: string
+  userId?: string
   registeredAt: Date
+  nameSurname?: string
+  telephone?: string
 }): string {
   const roleLabel = data.role === 'OWNER' ? 'At Sahibi' : 'Antrenör'
   const content = `
     <p>Yeni bir kullanıcı kayıt başvurusu yaptı:</p>
     
     <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      ${data.nameSurname ? `<p style="margin: 5px 0;"><strong>Ad Soyad:</strong> ${data.nameSurname}</p>` : ''}
       <p style="margin: 5px 0;"><strong>E-posta:</strong> ${data.email}</p>
+      ${data.telephone ? `<p style="margin: 5px 0;"><strong>Telefon:</strong> ${data.telephone}</p>` : ''}
       <p style="margin: 5px 0;"><strong>Rol:</strong> ${roleLabel}</p>
-      <p style="margin: 5px 0;"><strong>Kullanıcı ID:</strong> ${data.userId}</p>
-      <p style="margin: 5px 0;"><strong>Kayıt Tarihi:</strong> ${formatDate(data.registeredAt)}</p>
+      <p style="margin: 5px 0;"><strong>Başvuru Tarihi:</strong> ${formatDate(data.registeredAt)}</p>
     </div>
     
     <p style="margin-top: 20px; color: #666; font-size: 14px;">
-      Lütfen admin panelinden kullanıcı hesabını yapılandırın.
+      Lütfen admin panelinden kullanıcı hesabını oluşturun ve yapılandırın.
     </p>
   `
 

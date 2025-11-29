@@ -21,11 +21,37 @@ export default function RegisterTrainerPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
+    try {
+      console.log('[Registration Page] Sending registration request for trainer:', email)
+      
+      const response = await fetch('/api/auth/registration-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          email,
+          nameSurname,
+          telephone,
+          role: 'TRAINER',
+        }),
+      })
 
-    setIsSubmitted(true)
-    setIsLoading(false)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Başvuru gönderilemedi')
+      }
+
+      console.log('[Registration Page] Registration request sent successfully')
+      setIsSubmitted(true)
+    } catch (error: any) {
+      console.error('[Registration Page] Registration request error:', error)
+      toast.error(error.message || 'Başvuru gönderilirken bir hata oluştu')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isSubmitted) {
