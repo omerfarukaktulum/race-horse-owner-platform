@@ -311,71 +311,123 @@ async function updateRaceHistory(horseId: string, newRaces: any[]): Promise<numb
 }
 
 /**
- * Update registrations and declarations (delta)
+ * Update registrations and declarations (sync with TJK)
+ * - Deletes registrations/declarations that no longer exist in TJK (became races or cancelled)
+ * - Updates KAYIT → DEKLARE when jockey is declared
+ * - Inserts new registrations/declarations
  */
 async function updateRegistrations(
   horseId: string,
   newRegistrations: any[]
 ): Promise<{ registrations: number; declarations: number }> {
-  if (!newRegistrations || newRegistrations.length === 0) {
-    console.log(`[Cronjob] No registrations/declarations found from TJK, skipping`)
-    return { registrations: 0, declarations: 0 }
-  }
+  console.log(`[Cronjob] Syncing registrations/declarations for horse ${horseId}...`)
 
-  console.log(`[Cronjob] Found ${newRegistrations.length} registrations/declarations from TJK, checking against database...`)
-
-  // Get existing registrations from database
+  // Get existing registrations from database (full records for updates/deletes)
   const existingRegs = await prisma.horseRegistration.findMany({
     where: { horseId },
-    select: {
-      raceDate: true,
-      city: true,
-      distance: true,
-      type: true,
-    },
   })
 
   console.log(`[Cronjob] Found ${existingRegs.length} existing registrations/declarations in database`)
+  console.log(`[Cronjob] Found ${newRegistrations?.length || 0} registrations/declarations from TJK`)
 
-  // Create a set of existing registration keys
-  const existingKeys = new Set(
-    existingRegs.map((r) => {
-      const date = r.raceDate.toISOString().split('T')[0]
-      return `${date}-${r.city || ''}-${r.distance || ''}-${r.type || ''}`
-    })
-  )
-
-  // Filter new registrations
-  const regsToInsert = newRegistrations
-    .filter((reg) => {
+  // Create a map of TJK registrations by key (date + city + distance)
+  const tjkRegsMap = new Map<string, any>()
+  if (newRegistrations && newRegistrations.length > 0) {
+    for (const reg of newRegistrations) {
       const dateParts = reg.raceDate.split('.')
-      if (dateParts.length !== 3) return false
+      if (dateParts.length !== 3) continue
 
-      const date = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`)
-      if (isNaN(date.getTime())) return false
-
-      const dateKey = date.toISOString().split('T')[0]
-      const key = `${dateKey}-${reg.city || ''}-${reg.distance || ''}-${reg.type || ''}`
-      return !existingKeys.has(key)
-    })
-    .map((reg) => {
-      const dateParts = reg.raceDate.split('.')
       const raceDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`)
+      if (isNaN(raceDate.getTime())) continue
 
-      return {
-        horseId,
+      const dateKey = raceDate.toISOString().split('T')[0]
+      const key = `${dateKey}-${reg.city || ''}-${reg.distance || ''}`
+      tjkRegsMap.set(key, {
+        ...reg,
         raceDate,
-        city: reg.city || null,
-        distance: reg.distance || null,
-        surface: reg.surface || null,
-        surfaceType: reg.surfaceType || null,
-        raceType: reg.raceType || null,
+        dateKey,
         type: reg.type === 'Deklare' ? 'DEKLARE' : 'KAYIT',
-        jockeyName: reg.jockeyName || null,
-        jockeyId: reg.jockeyId || null,
-      }
-    })
+      })
+    }
+  }
 
+  // Create a map of existing registrations by key
+  const existingRegsMap = new Map<string, typeof existingRegs[0]>()
+  existingRegs.forEach((reg) => {
+    const date = reg.raceDate.toISOString().split('T')[0]
+    const key = `${date}-${reg.city || ''}-${reg.distance || ''}`
+    existingRegsMap.set(key, reg)
+  })
+
+  const regsToInsert: any[] = []
+  const regsToUpdate: Array<{ id: string; data: any }> = []
+  const regsToDelete: string[] = []
+
+  // Step 1: Find registrations to delete (exist in DB but not in TJK - became races or cancelled)
+  for (const existingReg of existingRegs) {
+    const date = existingReg.raceDate.toISOString().split('T')[0]
+    const key = `${date}-${existingReg.city || ''}-${existingReg.distance || ''}`
+    
+    if (!tjkRegsMap.has(key)) {
+      // This registration/declaration no longer exists in TJK - delete it
+      console.log(`[Cronjob] Registration/declaration no longer in TJK, will delete: ${date} ${existingReg.city} (${existingReg.type})`)
+      regsToDelete.push(existingReg.id)
+    }
+  }
+
+  // Step 2: Process TJK registrations - insert new or update existing
+  for (const [key, tjkReg] of tjkRegsMap.entries()) {
+    const existingReg = existingRegsMap.get(key)
+
+    if (!existingReg) {
+      // New registration - insert
+      regsToInsert.push({
+        horseId,
+        raceDate: tjkReg.raceDate,
+        city: tjkReg.city || null,
+        distance: tjkReg.distance || null,
+        surface: tjkReg.surface || null,
+        surfaceType: tjkReg.surfaceType || null,
+        raceType: tjkReg.raceType || null,
+        type: tjkReg.type,
+        jockeyName: tjkReg.jockeyName || null,
+        jockeyId: tjkReg.jockeyId || null,
+      })
+    } else if (existingReg.type === 'KAYIT' && tjkReg.type === 'DEKLARE') {
+      // KAYIT became DEKLARE - update
+      console.log(`[Cronjob] Updating KAYIT to DEKLARE: ${tjkReg.dateKey} ${tjkReg.city}`)
+      regsToUpdate.push({
+        id: existingReg.id,
+        data: {
+          type: 'DEKLARE',
+          jockeyName: tjkReg.jockeyName || null,
+          jockeyId: tjkReg.jockeyId || null,
+        },
+      })
+    }
+    // If it's already DEKLARE and still DEKLARE, or already KAYIT and still KAYIT, no change needed
+  }
+
+  // Step 3: Delete registrations that no longer exist in TJK
+  if (regsToDelete.length > 0) {
+    await prisma.horseRegistration.deleteMany({
+      where: { id: { in: regsToDelete } },
+    })
+    console.log(`[Cronjob] ✓ Deleted ${regsToDelete.length} registrations/declarations that no longer exist in TJK`)
+  }
+
+  // Step 4: Update KAYIT → DEKLARE
+  for (const update of regsToUpdate) {
+    await prisma.horseRegistration.update({
+      where: { id: update.id },
+      data: update.data,
+    })
+  }
+  if (regsToUpdate.length > 0) {
+    console.log(`[Cronjob] ✓ Updated ${regsToUpdate.length} registrations from KAYIT to DEKLARE`)
+  }
+
+  // Step 5: Insert new registrations
   if (regsToInsert.length > 0) {
     await prisma.horseRegistration.createMany({
       data: regsToInsert,
@@ -383,10 +435,10 @@ async function updateRegistrations(
     })
     const declarations = regsToInsert.filter((r) => r.type === 'DEKLARE').length
     const registrations = regsToInsert.filter((r) => r.type === 'KAYIT').length
-    console.log(`[Cronjob] ✓ Inserted ${regsToInsert.length} new registrations/declarations (${declarations} declarations, ${registrations} registrations, ${newRegistrations.length - regsToInsert.length} already existed)`)
+    console.log(`[Cronjob] ✓ Inserted ${regsToInsert.length} new registrations/declarations (${declarations} declarations, ${registrations} registrations)`)
     return { declarations, registrations }
   } else {
-    console.log(`[Cronjob] ✓ No new registrations/declarations to insert (all ${newRegistrations.length} already exist in database)`)
+    console.log(`[Cronjob] ✓ No new registrations/declarations to insert`)
     return { declarations: 0, registrations: 0 }
   }
 }
