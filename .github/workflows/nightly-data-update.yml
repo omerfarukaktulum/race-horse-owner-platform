@@ -1,0 +1,57 @@
+name: Nightly TJK Data Update
+
+on:
+  schedule:
+    # Run every day at 2 AM Sweden time (CET/CEST)
+    # Winter (CET = UTC+1): 2 AM CET = 1 AM UTC
+    # Summer (CEST = UTC+2): 2 AM CEST = 0 AM UTC
+    # Using 1 AM UTC to cover both (will be 2 AM in winter, 3 AM in summer - close enough)
+    - cron: '0 1 * * *'
+  workflow_dispatch: # Allow manual triggering (use this to test immediately)
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        uses: microsoft/playwright-github-action@v1
+        with:
+          browsers: chromium
+          install-deps: true
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+
+      - name: Run nightly data update
+        run: npm run cronjob:nightly
+        env:
+          PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          NODE_ENV: production
+        continue-on-error: true # Don't fail the workflow if some horses fail
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cronjob-logs
+          path: |
+            *.log
+            logs/
+          retention-days: 7
+
