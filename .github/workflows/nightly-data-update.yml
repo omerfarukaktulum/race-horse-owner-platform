@@ -13,6 +13,7 @@ jobs:
   update-data:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment: Production
     
     steps:
       - name: Checkout code
