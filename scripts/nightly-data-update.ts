@@ -14,6 +14,9 @@ const databaseUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL
 
 if (!databaseUrl) {
   console.error('[Cronjob] Error: DATABASE_URL or PROD_DATABASE_URL must be set')
+  console.error('[Cronjob] PROD_DATABASE_URL:', process.env.PROD_DATABASE_URL ? 'SET (hidden)' : 'NOT SET')
+  console.error('[Cronjob] DATABASE_URL:', process.env.DATABASE_URL ? 'SET (hidden)' : 'NOT SET')
+  console.error('[Cronjob] Please ensure PROD_DATABASE_URL secret is configured in GitHub Actions')
   process.exit(1)
 }
 
