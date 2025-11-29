@@ -152,6 +152,14 @@ export function AddHorseModal({ open, onClose, onSuccess }: Props) {
       const response = await fetch(tjkUrl)
       const data = await response.json()
 
+      // Check for browser unavailable error (Vercel/serverless limitation)
+      if (data.error === 'BROWSER_UNAVAILABLE' || data.message) {
+        toast.warning(data.message || 'Otomatik at yükleme şu anda kullanılamıyor. Lütfen atları manuel olarak ekleyin.')
+        setHorses([])
+        setIsLoading(false)
+        return
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Atlar yüklenemedi')
       }

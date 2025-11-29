@@ -87,6 +87,15 @@ export default function ImportHorsesPage() {
       const data = await response.json()
       console.log('Step 9: TJK API response data:', JSON.stringify(data, null, 2))
 
+      // Check for browser unavailable error (Vercel/serverless limitation)
+      if (data.error === 'BROWSER_UNAVAILABLE' || data.message) {
+        console.log('Step 10: Browser unavailable - showing manual entry option')
+        toast.warning(data.message || 'Otomatik at yükleme şu anda kullanılamıyor. Lütfen atları manuel olarak ekleyin.')
+        setHorses([])
+        setIsLoading(false)
+        return
+      }
+
       if (!response.ok) {
         console.error('Step 10: FAILED - Response not OK')
         throw new Error(data.error || 'Atlar yüklenemedi')

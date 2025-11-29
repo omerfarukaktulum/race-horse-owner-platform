@@ -46,9 +46,26 @@ export async function GET(request: Request) {
         console.log('[TJK Horses API] No horses found for owner')
       }
     } catch (playwrightError: any) {
-      console.error('[TJK Horses API] Playwright error:', playwrightError?.message || playwrightError)
+      const errorMessage = playwrightError?.message || String(playwrightError)
+      console.error('[TJK Horses API] Playwright error:', errorMessage)
       console.error('[TJK Horses API] Stack:', playwrightError?.stack || 'No stack trace')
-      // Return empty array on error (user can manually add horses)
+      
+      // Check if it's a browser not found error (Vercel/serverless issue)
+      if (errorMessage.includes('Executable doesn\'t exist') || 
+          errorMessage.includes('browserType.launch') ||
+          errorMessage.includes('chromium_headless_shell')) {
+        console.error('[TJK Horses API] Browser not available - likely Vercel serverless limitation')
+        return NextResponse.json(
+          { 
+            horses: [],
+            error: 'BROWSER_UNAVAILABLE',
+            message: 'Tarayıcı otomasyonu şu anda kullanılamıyor. Lütfen atları manuel olarak ekleyin.'
+          },
+          { status: 200 } // Return 200 so frontend can handle gracefully
+        )
+      }
+      
+      // Return empty array on other errors (user can manually add horses)
       horses = []
     }
 
