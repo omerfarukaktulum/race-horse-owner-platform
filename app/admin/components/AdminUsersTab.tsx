@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
 import { Button } from '@/app/components/ui/button'
-import { Trash2 } from 'lucide-react'
+import { Trash2, FolderX, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface User {
@@ -33,6 +33,8 @@ export default function AdminUsersTab() {
   const [isLoading, setIsLoading] = useState(true)
   const [filterRole, setFilterRole] = useState('')
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [deletingResourcesUserId, setDeletingResourcesUserId] = useState<string | null>(null)
+  const [generatingDemoDataUserId, setGeneratingDemoDataUserId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -103,6 +105,79 @@ export default function AdminUsersTab() {
       toast.error(message)
     } finally {
       setDeletingUserId(null)
+    }
+  }
+
+  const handleDeleteResources = async (userId: string, userEmail: string, ownerName: string) => {
+    const confirmed = window.confirm(
+      `"${ownerName}" (${userEmail}) için tüm kaynakları silmek istediğinize emin misiniz?\n\nBu işlem şunları silecektir:\n- Tüm idmanlar (gallops)\n- Tüm yarış geçmişi\n- Tüm giderler (expenses)\n- Tüm notlar\n- Tüm hastalık kayıtları\n- Tüm yasaklı ilaçlar\n- Tüm antrenman planları\n- Tüm kayıtlar (registrations)\n- Tüm konum geçmişi\n- Tüm diğer ilgili veriler\n\nKorunacaklar:\n- Kullanıcı hesabı\n- Sahip profili\n- Eküri bilgisi\n- Atlar (horses)\n\nBu işlem geri alınamaz!`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingResourcesUserId(userId)
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/resources`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Kaynaklar silinemedi')
+      }
+
+      const deletedCount = data.deleted?.total || 0
+      toast.success(
+        data.message ||
+          `Başarıyla ${deletedCount} kayıt silindi (idmanlar, yarışlar, giderler, notlar, vb.). Atlar korundu.`
+      )
+      fetchUsers()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Kaynaklar silinirken bir hata oluştu'
+      toast.error(message)
+    } finally {
+      setDeletingResourcesUserId(null)
+    }
+  }
+
+  const handleGenerateDemoData = async (userId: string, userEmail: string, ownerName: string) => {
+    const confirmed = window.confirm(
+      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 5-10 gider (expenses)\n- Her at için 5-10 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses)\n- Bazı atlar için yasaklı ilaç kayıtları (banned medicines)\n- Her at için 1-3 antrenman planı (training plans)\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setGeneratingDemoDataUserId(userId)
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}/generate-demo-data`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Demo veri oluşturulamadı')
+      }
+
+      const total = data.total || 0
+      toast.success(
+        `Demo veri başarıyla oluşturuldu! ${total} kayıt eklendi (${data.created?.expenses || 0} gider, ${data.created?.notes || 0} not, ${data.created?.illnesses || 0} hastalık, vb.)`
+      )
+      fetchUsers()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Demo veri oluşturulurken bir hata oluştu'
+      toast.error(message)
+    } finally {
+      setGeneratingDemoDataUserId(null)
     }
   }
 
@@ -209,6 +284,58 @@ export default function AdminUsersTab() {
                           <span className="font-medium text-xs">Eküri:</span>{' '}
                           <span className="text-gray-700">{user.ownerProfile.stablemate.name}</span>
                         </p>
+                        <div className="pt-1 flex items-center gap-2 flex-wrap">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleGenerateDemoData(
+                                user.id,
+                                user.email,
+                                user.ownerProfile!.officialName
+                              )
+                            }
+                            disabled={generatingDemoDataUserId === user.id}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 h-6 px-2 text-xs"
+                          >
+                            {generatingDemoDataUserId === user.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></div>
+                                Oluşturuluyor...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                Demo Veri Oluştur
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleDeleteResources(
+                                user.id,
+                                user.email,
+                                user.ownerProfile!.officialName
+                              )
+                            }
+                            disabled={deletingResourcesUserId === user.id}
+                            className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200 h-6 px-2 text-xs"
+                          >
+                            {deletingResourcesUserId === user.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-orange-600 mr-1"></div>
+                                Siliniyor...
+                              </>
+                            ) : (
+                              <>
+                                <FolderX className="h-3 w-3 mr-1" />
+                                Kaynakları Sil
+                              </>
+                            )}
+                          </Button>
+                        </div>
                         {user.ownerProfile.stablemate?.dataFetchStatus && (
                           <div className="flex items-center gap-2 flex-wrap pt-1">
                             <span className="font-medium text-xs">Veri Yükleme:</span>
