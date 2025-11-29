@@ -968,7 +968,7 @@ export default function ExpensesPage() {
                               <Image className="h-4 w-4" />
                             </button>
                           )}
-                          {user && expense.addedById === user.id && (
+                          {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                             <>
                               <button
                                 type="button"
@@ -1144,7 +1144,7 @@ export default function ExpensesPage() {
                                   <Image className="h-4 w-4" />
                                 </button>
                               )}
-                              {user && expense.addedById === user.id && (
+                              {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                                 <>
                                   <button
                                     type="button"

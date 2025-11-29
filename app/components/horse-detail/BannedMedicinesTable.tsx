@@ -550,7 +550,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                           <Image className="h-4 w-4" />
                         </button>
                       )}
-                      {user && medicine.addedById === user.id && (
+                      {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                         <>
                           <button
                             type="button"
@@ -702,7 +702,7 @@ export function BannedMedicinesTable({ medicines, horseId, horseName, onRefresh,
                                   <Image className="h-4 w-4" />
                                 </button>
                               )}
-                              {user && medicine.addedById === user.id && (
+                              {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                                 <>
                                   <button
                                     type="button"

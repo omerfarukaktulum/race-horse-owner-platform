@@ -354,15 +354,8 @@ export function HorseExpensesTable({
   const canManageExpense = useCallback(
     (expense: Expense) => {
       if (!user) return false
-      if (expense.addedById === user.id) return true
-
-      const userIsOwnerOrTrainer = user.role === 'OWNER' || user.role === 'TRAINER'
-      if (!userIsOwnerOrTrainer) return false
-
-      const creatorRole = expense.addedBy?.role
-      const creatorIsOwnerOrTrainer = creatorRole === 'OWNER' || creatorRole === 'TRAINER'
-
-      return creatorIsOwnerOrTrainer
+      // Allow OWNER and TRAINER to manage any expense
+      return user.role === 'OWNER' || user.role === 'TRAINER'
     },
     [user]
   )

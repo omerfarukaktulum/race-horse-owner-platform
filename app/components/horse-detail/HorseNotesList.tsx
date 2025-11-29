@@ -223,15 +223,8 @@ export function HorseNotesList({ notes, horseId, horseName, onRefresh, hideButto
   const canManageNote = useCallback(
     (note: HorseNote) => {
       if (!user) return false
-      if (note.addedById === user.id) return true
-
-      const userIsOwnerOrTrainer = user.role === 'OWNER' || user.role === 'TRAINER'
-      if (!userIsOwnerOrTrainer) return false
-
-      const creatorRole = note.addedBy?.role
-      const creatorIsOwnerOrTrainer = creatorRole === 'OWNER' || creatorRole === 'TRAINER'
-
-      return creatorIsOwnerOrTrainer
+      // Allow OWNER and TRAINER to manage any note
+      return user.role === 'OWNER' || user.role === 'TRAINER'
     },
     [user]
   )

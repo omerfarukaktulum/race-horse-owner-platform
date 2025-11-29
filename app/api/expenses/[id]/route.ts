@@ -73,6 +73,7 @@ async function getExpenseWithRelations(expenseId: string) {
 
 function canModifyExpense(decoded: DecodedToken, expense: any) {
   if (decoded.role === 'ADMIN') return true
+  // Allow OWNER and TRAINER to modify any expense for their horses
   if (decoded.role === 'OWNER') {
     return expense.horse?.stablemate?.ownerId === decoded.ownerId
   }

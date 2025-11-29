@@ -74,8 +74,14 @@ async function getHorseIllness(illnessId: string) {
 
 function canModifyIllness(decoded: DecodedToken, illness: any) {
   if (decoded.role === 'ADMIN') return true
-  // Only the creator can modify the illness
-  return illness.addedById === decoded.id
+  // Allow OWNER and TRAINER to modify any illness for their horses
+  if (decoded.role === 'OWNER') {
+    return illness.horse?.stablemate?.ownerId === decoded.ownerId
+  }
+  if (decoded.role === 'TRAINER') {
+    return illness.horse?.trainerId === decoded.trainerId
+  }
+  return false
 }
 
 export async function DELETE(

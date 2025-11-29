@@ -904,7 +904,7 @@ export default function NotesPage() {
                               <Image className="h-4 w-4" />
                             </button>
                           )}
-                          {user && note.addedById === user.id && (
+                          {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                             <>
                               <button
                                 type="button"
@@ -1072,7 +1072,7 @@ export default function NotesPage() {
                                   <Image className="h-4 w-4" />
                                 </button>
                               )}
-                              {user && note.addedById === user.id && (
+                              {user && (user.role === 'OWNER' || user.role === 'TRAINER') && (
                                 <>
                                   <button
                                     type="button"

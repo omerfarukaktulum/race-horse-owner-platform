@@ -1,4 +1,7 @@
-name: Run Production Migration
+name: Run Production Migration (Backup)
+
+# NOTE: Migrations now run automatically during Vercel deployments via prebuild script.
+# This workflow is kept as a backup option for manual migrations if needed.
 
 on:
   workflow_dispatch: # Manual trigger only
@@ -31,5 +34,6 @@ jobs:
         run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
           NODE_ENV: production
 

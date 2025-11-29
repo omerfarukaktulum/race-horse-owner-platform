@@ -78,7 +78,14 @@ async function getHorseIllnessOperation(operationId: string) {
 
 function canModifyOperation(decoded: DecodedToken, operation: any) {
   if (decoded.role === 'ADMIN') return true
-  return operation.addedById === decoded.id
+  // Allow OWNER and TRAINER to modify any operation for their horses
+  if (decoded.role === 'OWNER') {
+    return operation.illness?.horse?.stablemate?.ownerId === decoded.ownerId
+  }
+  if (decoded.role === 'TRAINER') {
+    return operation.illness?.horse?.trainerId === decoded.trainerId
+  }
+  return false
 }
 
 export async function DELETE(

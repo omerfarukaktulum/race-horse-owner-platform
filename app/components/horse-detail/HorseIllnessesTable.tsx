@@ -882,7 +882,7 @@ export function HorseIllnessesTable({
             <>
               {filteredIllnesses.map((illness) => {
                 const photos = getPhotoList(illness.photoUrl)
-                const canEdit = user?.id === illness.addedById || user?.role === 'ADMIN'
+                const canEdit = (user?.role === 'OWNER' || user?.role === 'TRAINER' || user?.role === 'ADMIN')
                 const operations = illness.operations || []
                 const isExpanded = expandedIllnesses.has(illness.id)
                 const hasOperations = operations.length > 0
@@ -990,7 +990,7 @@ export function HorseIllnessesTable({
                       <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                         {operations.map((operation, opIndex) => {
                           const opPhotos = getPhotoList(operation.photoUrl)
-                          const canEditOp = user?.id === operation.addedById || user?.role === 'ADMIN'
+                          const canEditOp = (user?.role === 'OWNER' || user?.role === 'TRAINER' || user?.role === 'ADMIN')
                           
                           return (
                             <div
@@ -1122,7 +1122,7 @@ export function HorseIllnessesTable({
                       filteredIllnesses.map((illness, index) => {
                         const isStriped = index % 2 === 1
                         const photos = getPhotoList(illness.photoUrl)
-                        const canEdit = user?.id === illness.addedById || user?.role === 'ADMIN'
+                        const canEdit = (user?.role === 'OWNER' || user?.role === 'TRAINER' || user?.role === 'ADMIN')
                         const operations = illness.operations || []
                         const isExpanded = expandedIllnesses.has(illness.id)
                         const hasOperations = operations.length > 0
@@ -1240,7 +1240,7 @@ export function HorseIllnessesTable({
                                   <div className="pl-8 space-y-2 border-l-2 border-indigo-200">
                                     {operations.map((operation, opIndex) => {
                                       const opPhotos = getPhotoList(operation.photoUrl)
-                                      const canEditOp = user?.id === operation.addedById || user?.role === 'ADMIN'
+                                      const canEditOp = (user?.role === 'OWNER' || user?.role === 'TRAINER' || user?.role === 'ADMIN')
                                       
                                       return (
                                         <div

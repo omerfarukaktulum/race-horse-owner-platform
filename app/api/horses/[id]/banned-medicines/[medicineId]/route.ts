@@ -52,8 +52,30 @@ export async function PATCH(
       )
     }
 
-    // Check access rights - only the person who added it or admin can edit
-    if (decoded.role !== 'ADMIN' && medicine.addedById !== decoded.id) {
+    // Check access rights - allow OWNER and TRAINER to edit any banned medicine for their horses
+    if (decoded.role === 'OWNER') {
+      let ownerId = decoded.ownerId
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      if (!ownerId || medicine.horse?.stablemate?.ownerId !== ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      if (!trainerId || medicine.horse?.trainerId !== trainerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -169,8 +191,30 @@ export async function DELETE(
       )
     }
 
-    // Check access rights - only the person who added it or admin can delete
-    if (decoded.role !== 'ADMIN' && medicine.addedById !== decoded.id) {
+    // Check access rights - allow OWNER and TRAINER to delete any banned medicine for their horses
+    if (decoded.role === 'OWNER') {
+      let ownerId = decoded.ownerId
+      if (!ownerId) {
+        const ownerProfile = await prisma.ownerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        ownerId = ownerProfile?.id
+      }
+      if (!ownerId || medicine.horse?.stablemate?.ownerId !== ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role === 'TRAINER') {
+      let trainerId = decoded.trainerId
+      if (!trainerId) {
+        const trainerProfile = await prisma.trainerProfile.findUnique({
+          where: { userId: decoded.id },
+        })
+        trainerId = trainerProfile?.id
+      }
+      if (!trainerId || medicine.horse?.trainerId !== trainerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
