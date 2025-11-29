@@ -17,7 +17,8 @@ interface Note {
   date: string
   createdAt: string
   note: string
-  photoUrl?: string | string[] | null
+  photoUrl?: string | string[] | null // Only present when fetched on-demand
+  hasPhoto?: boolean // Flag indicating if note has photos (from list)
   kiloValue?: number | null
   addedById: string
   horse: {
@@ -361,8 +362,33 @@ export default function NotesPage() {
     }
   }
 
-  const openAttachmentViewer = (attachments: string[], startIndex = 0) => {
+  const openAttachmentViewer = async (note: Note, startIndex = 0) => {
+    // If photoUrl is already loaded, use it
+    let attachments = getPhotoList(note.photoUrl)
+    
+    // If hasPhoto is true but photoUrl is not loaded, fetch it
+    if (note.hasPhoto && !attachments.length) {
+      try {
+        const response = await fetch(`/api/horse-notes/${note.id}`, {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          attachments = getPhotoList(data.photoUrl)
+          // Update the note in state with the fetched photoUrl
+          setNotes(prev => prev.map(n => 
+            n.id === note.id ? { ...n, photoUrl: data.photoUrl } : n
+          ))
+        }
+      } catch (error) {
+        console.error('Failed to fetch note photoUrl:', error)
+        toast.error('Fotoğraflar yüklenirken hata oluştu')
+        return
+      }
+    }
+    
     if (!attachments.length) return
+    
     setAttachmentViewer({
       open: true,
       attachments,
@@ -824,6 +850,7 @@ export default function NotesPage() {
                 {filteredNotes.map((note) => {
                   const isHighlighted = highlightedNoteId === note.id
                   const attachments = getPhotoList(note.photoUrl)
+                  const hasAttachments = note.hasPhoto || attachments.length > 0
                   const handleCardClick = () => {
                     if (note.horse?.id) {
                       router.push(`/app/horses/${note.horse.id}?tab=info`)
@@ -864,15 +891,15 @@ export default function NotesPage() {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          {attachments.length > 0 && (
+                          {hasAttachments && (
                             <button
                               type="button"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation()
-                                openAttachmentViewer(attachments)
+                                await openAttachmentViewer(note)
                               }}
                               className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                              title={`${attachments.length} ek görüntüle`}
+                              title={attachments.length > 0 ? `${attachments.length} ek görüntüle` : 'Ek görüntüle'}
                             >
                               <Image className="h-4 w-4" />
                             </button>
@@ -982,6 +1009,7 @@ export default function NotesPage() {
                     const isStriped = index % 2 === 1
                     const isHighlighted = highlightedNoteId === note.id
                     const attachments = getPhotoList(note.photoUrl)
+                    const hasAttachments = note.hasPhoto || attachments.length > 0
                     return (
                       <tr
                         key={note.id}
@@ -1034,12 +1062,12 @@ export default function NotesPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-start gap-2">
-                              {attachments.length > 0 && (
+                              {hasAttachments && (
                                 <button
                                   type="button"
-                                  onClick={() => openAttachmentViewer(attachments)}
+                                  onClick={async () => await openAttachmentViewer(note)}
                                   className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                  title={`${attachments.length} ek görüntüle`}
+                                  title={attachments.length > 0 ? `${attachments.length} ek görüntüle` : 'Ek görüntüle'}
                                 >
                                   <Image className="h-4 w-4" />
                                 </button>

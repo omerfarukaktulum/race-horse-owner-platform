@@ -87,6 +87,69 @@ function canModifyNote(decoded: DecodedToken, note: any) {
   return false
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authResult = await getAuthenticatedUser()
+    if ('error' in authResult) return authResult.error
+    const { decoded } = authResult
+
+    if (!['OWNER', 'TRAINER', 'ADMIN'].includes(decoded.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const note = await prisma.horseNote.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        photoUrl: true,
+        horse: {
+          select: {
+            id: true,
+            stablemate: {
+              select: {
+                ownerId: true,
+              },
+            },
+            trainerId: true,
+          },
+        },
+      },
+    })
+
+    if (!note) {
+      return NextResponse.json(
+        { error: 'Note not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check access
+    if (decoded.role === 'OWNER') {
+      if (note.horse?.stablemate?.ownerId !== decoded.ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role === 'TRAINER') {
+      if (note.horse?.trainerId !== decoded.trainerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      photoUrl: note.photoUrl 
+    })
+  } catch (error) {
+    console.error('Get note photoUrl error:', error)
+    return NextResponse.json(
+      { error: 'Failed to get note photoUrl' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

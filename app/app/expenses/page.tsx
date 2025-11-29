@@ -21,7 +21,8 @@ interface Expense {
   amount: number | string
   currency: string
   note?: string
-  photoUrl?: string | string[] | null
+  photoUrl?: string | string[] | null // Only present when fetched on-demand
+  hasPhoto?: boolean // Flag indicating if expense has photos (from list)
   addedById: string
   horse: {
     id: string
@@ -168,8 +169,33 @@ export default function ExpensesPage() {
     }
   }
 
-  const openAttachmentViewer = (attachments: string[], startIndex = 0) => {
+  const openAttachmentViewer = async (expense: Expense, startIndex = 0) => {
+    // If photoUrl is already loaded, use it
+    let attachments = getAttachments(expense.photoUrl)
+    
+    // If hasPhoto is true but photoUrl is not loaded, fetch it
+    if (expense.hasPhoto && !attachments.length) {
+      try {
+        const response = await fetch(`/api/expenses/${expense.id}`, {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const data = await response.json()
+          attachments = getAttachments(data.photoUrl)
+          // Update the expense in state with the fetched photoUrl
+          setExpenses(prev => prev.map(e => 
+            e.id === expense.id ? { ...e, photoUrl: data.photoUrl } : e
+          ))
+        }
+      } catch (error) {
+        console.error('Failed to fetch expense photoUrl:', error)
+        toast.error('Fotoğraflar yüklenirken hata oluştu')
+        return
+      }
+    }
+    
     if (!attachments.length) return
+    
     setAttachmentViewer({
       open: true,
       attachments,
@@ -899,6 +925,7 @@ export default function ExpensesPage() {
           <>
             {filteredExpenses.map((expense) => {
               const attachments = getAttachments(expense.photoUrl)
+              const hasAttachments = expense.hasPhoto || attachments.length > 0
               const handleCardClick = () => {
                 if (expense.horse?.id) {
                   router.push(`/app/horses/${expense.horse.id}?tab=info`)
@@ -928,15 +955,15 @@ export default function ExpensesPage() {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          {attachments.length > 0 && (
+                          {hasAttachments && (
                             <button
                               type="button"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation()
-                                openAttachmentViewer(attachments)
+                                await openAttachmentViewer(expense)
                               }}
                               className="p-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-                              title={`${attachments.length} ek görüntüle`}
+                              title={attachments.length > 0 ? `${attachments.length} ek görüntüle` : 'Ek görüntüle'}
                             >
                               <Image className="h-4 w-4" />
                             </button>
@@ -1062,6 +1089,7 @@ export default function ExpensesPage() {
                     filteredExpenses.map((expense, index) => {
                       const isStriped = index % 2 === 1
                       const attachments = getAttachments(expense.photoUrl)
+                      const hasAttachments = expense.hasPhoto || attachments.length > 0
                       return (
                         <tr
                           key={expense.id}
@@ -1106,12 +1134,12 @@ export default function ExpensesPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex justify-start gap-2">
-                              {attachments.length > 0 && (
+                              {hasAttachments && (
                                 <button
                                   type="button"
-                                  onClick={() => openAttachmentViewer(attachments)}
+                                  onClick={async () => await openAttachmentViewer(expense)}
                                   className="p-2 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-800 transition-colors shadow-sm"
-                                  title={`${attachments.length} ek görüntüle`}
+                                  title={attachments.length > 0 ? `${attachments.length} ek görüntüle` : 'Ek görüntüle'}
                                 >
                                   <Image className="h-4 w-4" />
                                 </button>

@@ -90,7 +90,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fetch notes
+    // Fetch notes (without photoUrl for performance - base64 images are large)
+    // photoUrl will be fetched on-demand when user opens attachment viewer
     const notes = await prisma.horseNote.findMany({
       where,
       select: {
@@ -98,7 +99,7 @@ export async function GET(request: Request) {
         date: true,
         createdAt: true,
         note: true,
-        photoUrl: true,
+        // photoUrl removed - fetch via GET /api/horse-notes/[id] when needed
         kiloValue: true,
         addedById: true,
         horse: {
@@ -197,7 +198,24 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ notes, stablemates })
+    // Add hasPhoto flag efficiently using a single query
+    const noteIds = notes.map(n => n.id)
+    const notesWithPhotos = await prisma.horseNote.findMany({
+      where: {
+        id: { in: noteIds },
+        photoUrl: { not: null },
+      },
+      select: { id: true },
+    })
+    const hasPhotoSet = new Set(notesWithPhotos.map(n => n.id))
+
+    // Map notes to include hasPhoto flag
+    const notesWithHasPhoto = notes.map(note => ({
+      ...note,
+      hasPhoto: hasPhotoSet.has(note.id),
+    }))
+
+    return NextResponse.json({ notes: notesWithHasPhoto, stablemates })
   } catch (error) {
     console.error('Fetch notes error:', error)
     return NextResponse.json(

@@ -102,6 +102,69 @@ function parsePhotoUrls(input?: string | string[] | null) {
   return [trimmed]
 }
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authResult = await getAuthenticatedUser()
+    if ('error' in authResult) return authResult.error
+    const { decoded } = authResult
+
+    if (!['OWNER', 'TRAINER', 'ADMIN'].includes(decoded.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const expense = await prisma.expense.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        photoUrl: true,
+        horse: {
+          select: {
+            id: true,
+            stablemate: {
+              select: {
+                ownerId: true,
+              },
+            },
+            trainerId: true,
+          },
+        },
+      },
+    })
+
+    if (!expense) {
+      return NextResponse.json(
+        { error: 'Expense not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check access
+    if (decoded.role === 'OWNER') {
+      if (expense.horse?.stablemate?.ownerId !== decoded.ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    } else if (decoded.role === 'TRAINER') {
+      if (expense.horse?.trainerId !== decoded.trainerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      photoUrl: expense.photoUrl 
+    })
+  } catch (error) {
+    console.error('Get expense photoUrl error:', error)
+    return NextResponse.json(
+      { error: 'Failed to get expense photoUrl' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

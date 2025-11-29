@@ -324,7 +324,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fetch expenses
+    // Fetch expenses (without photoUrl for performance - base64 images are large)
+    // photoUrl will be fetched on-demand when user opens attachment viewer
     const expenses = await prisma.expense.findMany({
       where,
       select: {
@@ -336,7 +337,7 @@ export async function GET(request: Request) {
         amount: true,
         currency: true,
         note: true,
-        photoUrl: true,
+        // photoUrl removed - fetch via GET /api/expenses/[id] when needed
         addedById: true,
         horse: {
           select: {
@@ -426,7 +427,25 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ expenses, stablemates })
+    // Add hasPhoto flag efficiently using a single query
+    // Check which expenses have photos without fetching the full base64 data
+    const expenseIds = expenses.map(e => e.id)
+    const expensesWithPhotos = await prisma.expense.findMany({
+      where: {
+        id: { in: expenseIds },
+        photoUrl: { not: null },
+      },
+      select: { id: true },
+    })
+    const hasPhotoSet = new Set(expensesWithPhotos.map(e => e.id))
+
+    // Map expenses to include hasPhoto flag
+    const expensesWithHasPhoto = expenses.map(expense => ({
+      ...expense,
+      hasPhoto: hasPhotoSet.has(expense.id),
+    }))
+
+    return NextResponse.json({ expenses: expensesWithHasPhoto, stablemates })
   } catch (error) {
     console.error('Fetch expenses error:', error)
     return NextResponse.json(
