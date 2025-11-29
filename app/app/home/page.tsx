@@ -35,10 +35,10 @@ export default function HomePage() {
   }, [isMenuOpen])
 
   const menuItems = [
-    { id: 'races' as const, label: 'Koşular', icon: Trophy },
-    { id: 'registrations' as const, label: 'Kayıtlar', icon: Calendar },
-    { id: 'gallops' as const, label: 'İdmanlar', icon: Activity },
-    { id: 'expenses' as const, label: 'Giderler', icon: TurkishLira },
+    { id: 'races' as const, label: 'Son Koşular', icon: Trophy },
+    { id: 'registrations' as const, label: 'Son Kayıtlar', icon: Calendar },
+    { id: 'gallops' as const, label: 'Son İdmanlar', icon: Activity },
+    { id: 'expenses' as const, label: 'Son Giderler', icon: TurkishLira },
   ]
 
   const handleSectionSelect = (section: DashboardSection) => {
