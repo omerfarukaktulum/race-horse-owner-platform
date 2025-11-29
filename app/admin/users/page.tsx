@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
+import { Button } from '@/app/components/ui/button'
+import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface User {
@@ -15,6 +17,9 @@ interface User {
     subscriptionStatus: string | null
     stablemate: {
       name: string
+      dataFetchStatus?: string | null
+      dataFetchStartedAt?: string | null
+      dataFetchCompletedAt?: string | null
     } | null
   }
   trainerProfile?: {
@@ -27,6 +32,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterRole, setFilterRole] = useState('')
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -64,6 +70,42 @@ export default function AdminUsersPage() {
         return 'bg-green-100 text-green-700'
       default:
         return 'bg-gray-100 text-gray-700'
+    }
+  }
+
+  const handleDelete = async (userId: string, userEmail: string) => {
+    // Confirm deletion
+    const confirmed = window.confirm(
+      `"${userEmail}" kullanıcısını silmek istediğinize emin misiniz?\n\nBu işlem geri alınamaz ve kullanıcıya ait tüm veriler silinecektir.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingUserId(userId)
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Kullanıcı silinemedi')
+      }
+
+      toast.success('Kullanıcı başarıyla silindi')
+      
+      // Refresh users list
+      fetchUsers()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Kullanıcı silinirken bir hata oluştu'
+      toast.error(message)
+    } finally {
+      setDeletingUserId(null)
     }
   }
 
@@ -131,19 +173,30 @@ export default function AdminUsersPage() {
           <Card key={user.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg">{user.email}</CardTitle>
                   <p className="text-sm text-gray-500">
                     Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
                   </p>
                 </div>
-                <span
-                  className={`px-3 py-1 rounded text-sm font-medium ${getRoleBadgeColor(
-                    user.role
-                  )}`}
-                >
-                  {user.role}
-                </span>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`px-3 py-1 rounded text-sm font-medium ${getRoleBadgeColor(
+                      user.role
+                    )}`}
+                  >
+                    {user.role}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(user.id, user.email)}
+                    disabled={deletingUserId === user.id}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -154,10 +207,46 @@ export default function AdminUsersPage() {
                     {user.ownerProfile.officialName}
                   </p>
                   {user.ownerProfile.stablemate && (
-                    <p>
-                      <span className="font-medium">Eküri:</span>{' '}
-                      {user.ownerProfile.stablemate.name}
-                    </p>
+                    <>
+                      <p>
+                        <span className="font-medium">Eküri:</span>{' '}
+                        {user.ownerProfile.stablemate.name}
+                      </p>
+                      {user.ownerProfile.stablemate?.dataFetchStatus && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">Veri Yükleme:</span>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              user.ownerProfile.stablemate.dataFetchStatus === 'COMPLETED'
+                                ? 'bg-green-100 text-green-700'
+                                : user.ownerProfile.stablemate.dataFetchStatus === 'IN_PROGRESS'
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : user.ownerProfile.stablemate.dataFetchStatus === 'FAILED'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {user.ownerProfile.stablemate.dataFetchStatus === 'COMPLETED'
+                              ? '✓ Tamamlandı'
+                              : user.ownerProfile.stablemate.dataFetchStatus === 'IN_PROGRESS'
+                              ? '⏳ Devam Ediyor'
+                              : user.ownerProfile.stablemate.dataFetchStatus === 'FAILED'
+                              ? '✗ Başarısız'
+                              : '⏳ Beklemede'}
+                          </span>
+                          {user.ownerProfile.stablemate.dataFetchStartedAt && (
+                            <span className="text-xs text-gray-500">
+                              Başlangıç: {new Date(user.ownerProfile.stablemate.dataFetchStartedAt).toLocaleString('tr-TR')}
+                            </span>
+                          )}
+                          {user.ownerProfile.stablemate.dataFetchCompletedAt && (
+                            <span className="text-xs text-gray-500">
+                              Bitiş: {new Date(user.ownerProfile.stablemate.dataFetchCompletedAt).toLocaleString('tr-TR')}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                   {user.ownerProfile.subscriptionStatus && (
                     <p>

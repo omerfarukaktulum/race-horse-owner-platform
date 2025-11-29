@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { fetchTJKHorseDetail } from '@/lib/tjk-horse-detail-scraper'
+import { verifyAdminAndGetTargetUserId } from '@/lib/admin-helper'
 
 export async function POST(request: Request) {
   try {
@@ -19,13 +20,20 @@ export async function POST(request: Request) {
       role: string
     }
 
-    if (decoded.role !== 'OWNER') {
+    // Check if admin mode (admin creating account for target user)
+    const { isAdmin, targetUserId } = await verifyAdminAndGetTargetUserId()
+    
+    // Determine which user ID to use
+    const effectiveUserId = isAdmin && targetUserId ? targetUserId : decoded.id
+
+    // Verify role (admin can import for OWNER, or user must be OWNER)
+    if (!isAdmin && decoded.role !== 'OWNER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get stablemate
+    // Get stablemate for effective user
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
+      where: { id: effectiveUserId },
       include: {
         ownerProfile: {
           include: {

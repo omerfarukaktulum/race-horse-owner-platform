@@ -64,9 +64,9 @@ export default function RegisterAdminPage() {
 
       toast.success('Hesap oluşturuldu ve giriş yapıldı')
       
-      // Start onboarding flow - use window.location to ensure cookie is set
+      // Redirect to admin dashboard (admin onboarding is at /admin/create-owner)
       setTimeout(() => {
-        window.location.href = '/onboarding/owner-lookup'
+        window.location.href = '/admin'
       }, 500)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'İşlem başarısız'

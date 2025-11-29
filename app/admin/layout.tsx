@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
+import Link from 'next/link'
+import AdminNavbar from './components/AdminNavbar'
 
 export default async function AdminLayout({
   children,
@@ -11,7 +13,7 @@ export default async function AdminLayout({
   const token = cookieStore.get('auth-token')
 
   if (!token) {
-    redirect('/signin')
+    redirect('/admin-signin')
   }
 
   try {
@@ -23,17 +25,12 @@ export default async function AdminLayout({
       redirect('/app/home')
     }
   } catch (error) {
-    redirect('/signin')
+    redirect('/admin-signin')
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="border-b bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Admin Panel</h1>
-          <p className="text-gray-600">Sistem yönetimi ve referans verileri</p>
-        </div>
-      </div>
+      <AdminNavbar />
       {children}
     </div>
   )

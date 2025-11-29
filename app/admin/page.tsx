@@ -1,59 +1,66 @@
-import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card'
-import { Users, Activity, MapPin, Building } from 'lucide-react'
+'use client'
+
+import { useState } from 'react'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/app/components/ui/tabs'
+import { UserPlus, UserCheck, Users, MapPin, Building } from 'lucide-react'
+import AdminUsersTab from './components/AdminUsersTab'
+import AdminCreateOwnerTab from './components/AdminCreateOwnerTab'
+import AdminCreateTrainerTab from './components/AdminCreateTrainerTab'
+import AdminRacecoursesTab from './components/AdminRacecoursesTab'
+import AdminFarmsTab from './components/AdminFarmsTab'
 
 export default function AdminPage() {
-  const sections = [
-    {
-      title: 'Kullanıcı Yönetimi',
-      description: 'Kullanıcıları görüntüle ve yönet',
-      icon: Users,
-      href: '/admin/users',
-    },
-    {
-      title: 'Atlar',
-      description: 'Tüm atları görüntüle ve düzenle',
-      icon: Activity,
-      href: '/admin/horses',
-    },
-    {
-      title: 'Hipodromlar',
-      description: 'Hipodrom listesini yönet',
-      icon: MapPin,
-      href: '/admin/racecourses',
-    },
-    {
-      title: 'Çiftlikler',
-      description: 'Çiftlik listesini yönet',
-      icon: Building,
-      href: '/admin/farms',
-    },
-  ]
+  const [activeTab, setActiveTab] = useState('users')
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {sections.map((section) => {
-          const Icon = section.icon
-          return (
-            <Link key={section.href} href={section.href}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                <CardHeader>
-                  <Icon className="h-8 w-8 mb-2 text-indigo-600" />
-                  <CardTitle>{section.title}</CardTitle>
-                  <CardDescription>{section.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          )
-        })}
+      {/* Tabs */}
+      <div className="max-w-3xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Kullanıcılar</span>
+          </TabsTrigger>
+          <TabsTrigger value="create-owner" className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">At Sahibi</span>
+          </TabsTrigger>
+          <TabsTrigger value="create-trainer" className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" />
+            <span className="hidden sm:inline">Antrenör</span>
+          </TabsTrigger>
+          <TabsTrigger value="racecourses" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            <span className="hidden sm:inline">Hipodromlar</span>
+          </TabsTrigger>
+          <TabsTrigger value="farms" className="flex items-center gap-2">
+            <Building className="h-4 w-4" />
+            <span className="hidden sm:inline">Çiftlikler</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="mt-0">
+          <AdminUsersTab />
+        </TabsContent>
+
+        <TabsContent value="create-owner" className="mt-0">
+          <AdminCreateOwnerTab />
+        </TabsContent>
+
+        <TabsContent value="create-trainer" className="mt-0">
+          <AdminCreateTrainerTab />
+        </TabsContent>
+
+        <TabsContent value="racecourses" className="mt-0">
+          <AdminRacecoursesTab />
+        </TabsContent>
+
+        <TabsContent value="farms" className="mt-0">
+          <AdminFarmsTab />
+        </TabsContent>
+      </Tabs>
       </div>
     </div>
   )
 }
-
-
-
-
-
-

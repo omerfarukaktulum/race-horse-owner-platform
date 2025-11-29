@@ -47,6 +47,14 @@ export async function POST(request: Request) {
       )
     }
 
+    // Reject ADMIN users - they must use /admin/signin
+    if (user.role === 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Admin kullanıcıları /admin/signin sayfasından giriş yapmalıdır' },
+        { status: 403 }
+      )
+    }
+
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
     if (!isPasswordValid) {

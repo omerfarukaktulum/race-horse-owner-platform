@@ -20,12 +20,19 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Allow public routes
+  // Allow public routes (check these first, before any authentication checks)
+  // Explicitly check for admin signin first
+  if (pathname === '/admin-signin' || pathname.startsWith('/admin-signin/')) {
+    return NextResponse.next()
+  }
+
   if (
     pathname === '/' ||
     pathname.startsWith('/signin') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/admin/signin') ||
+    pathname.startsWith('/api/admin-signin') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
     pathname.startsWith('/screenshots') ||
@@ -34,16 +41,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Redirect to signin if not authenticated (exclude onboarding for now)
-  if (!token && !pathname.startsWith('/signin') && !pathname.startsWith('/onboarding')) {
+  // Redirect to signin if not authenticated
+  if (!token) {
+    // If trying to access admin route, redirect to admin signin
+    if (pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/admin-signin', request.url))
+    }
+    // Otherwise redirect to regular signin
     const signInUrl = new URL('/signin', request.url)
     signInUrl.searchParams.set('callbackUrl', pathname)
     return NextResponse.redirect(signInUrl)
   }
   
-  // Onboarding routes require authentication
-  if (pathname.startsWith('/onboarding') && !token) {
-    return NextResponse.redirect(new URL('/signin', request.url))
+  // Onboarding routes - BLOCKED for regular users (onboarding is done manually by admin only)
+  // Only admin can access /admin/create-owner/* onboarding pages
+  if (pathname.startsWith('/onboarding')) {
+    // Redirect all users (including authenticated) away from regular onboarding
+    // Admin onboarding is at /admin/create-owner/*
+    return NextResponse.redirect(new URL('/app/home', request.url))
   }
 
   // Admin-only routes

@@ -504,8 +504,8 @@ export function HorseExpensesTable({
                   inline: 'nearest'
                 })
                 if (observer) {
-                  observer.disconnect()
-                  observer = null
+                observer.disconnect()
+                observer = null
                 }
               }
             }

@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { getAdminPrismaClient } from '@/lib/admin-prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 
 export async function GET() {
   try {
+    // Use admin Prisma client (respects database switch preference)
+    const prisma = getAdminPrismaClient()
     const farms = await prisma.farm.findMany({
       orderBy: {
         name: 'asc',
@@ -38,6 +40,9 @@ export async function POST(request: Request) {
     if (decoded.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    // Use admin Prisma client (respects database switch preference)
+    const prisma = getAdminPrismaClient()
 
     const body = await request.json()
     const { name, city } = body

@@ -791,7 +791,8 @@ export default function StablematePage() {
                   Düzenle
                 </Button>
               )}
-              {user?.role !== 'TRAINER' && (
+              {/* HIDDEN: Add/Remove horse buttons disabled - keeping code intact */}
+              {false && user?.role !== 'TRAINER' && (
                 <>
                   <Button 
                     onClick={() => setAddHorseModalOpen(true)}

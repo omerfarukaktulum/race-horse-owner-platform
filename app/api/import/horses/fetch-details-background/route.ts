@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     // Start the fetch in the background (don't await)
     // Process horses in background without blocking the response
     ;(async () => {
+      let stablemateIds: string[] = []
       try {
         const horses = await prisma.horse.findMany({
           where: {
@@ -59,6 +60,23 @@ export async function POST(request: Request) {
         if (!ownerProfile && decoded.role !== 'ADMIN') {
           console.error('[Background Fetch] Owner profile not found')
           return
+        }
+
+        // Get unique stablemate IDs and set status to IN_PROGRESS
+        stablemateIds = [...new Set(horses.map(h => h.stablemate.id))]
+        for (const stablemateId of stablemateIds) {
+          try {
+            await prisma.stablemate.update({
+              where: { id: stablemateId },
+              data: {
+                dataFetchStatus: 'IN_PROGRESS',
+                dataFetchStartedAt: new Date(),
+              },
+            })
+          } catch (error) {
+            // Ignore if field doesn't exist yet (migration not run)
+            console.log('[Background Fetch] Could not update status (migration may not be run yet)')
+          }
         }
 
         // Process each horse
@@ -322,8 +340,41 @@ export async function POST(request: Request) {
         }
 
         console.log('[Background Fetch] Completed processing all horses')
+        
+        // Update status to COMPLETED for all stablemates
+        for (const stablemateId of stablemateIds) {
+          try {
+            await prisma.stablemate.update({
+              where: { id: stablemateId },
+              data: {
+                dataFetchStatus: 'COMPLETED',
+                dataFetchCompletedAt: new Date(),
+              },
+            })
+          } catch (error) {
+            // Ignore if field doesn't exist yet
+            console.log('[Background Fetch] Could not update status to COMPLETED')
+          }
+        }
       } catch (error: any) {
         console.error('[Background Fetch] Fatal error:', error.message)
+        
+        // Update status to FAILED for all stablemates
+        if (stablemateIds.length > 0) {
+          for (const stablemateId of stablemateIds) {
+            try {
+              await prisma.stablemate.update({
+                where: { id: stablemateId },
+                data: {
+                  dataFetchStatus: 'FAILED',
+                  dataFetchCompletedAt: new Date(),
+                },
+              })
+              } catch (updateError) {
+              // Ignore if field doesn't exist yet
+            }
+          }
+        }
       }
     })()
 

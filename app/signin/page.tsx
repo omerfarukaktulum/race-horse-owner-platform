@@ -69,7 +69,7 @@ export default function SignInPage() {
         throw new Error('Kimlik doğrulama başarısız. Lütfen tekrar deneyin.')
       }
 
-      // Use window.location for hard redirect to ensure cookie is included
+      // Redirect to home (regular users only)
       window.location.href = '/app/home'
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Giriş başarısız'

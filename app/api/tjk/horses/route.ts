@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { tjkApiRateLimiter, getClientIp } from '@/lib/rate-limit'
-import { searchTJKHorsesPlaywright, getMockHorses } from '@/lib/tjk-api'
 
 /**
- * Get horses for a specific owner using TJK's official API
+ * Get horses for a specific owner from database (USER SERVICE - NO PLAYWRIGHT)
+ * Horses are pre-fetched during admin onboarding
+ * This endpoint ONLY reads from database - no Playwright, no external service calls
+ * For admin onboarding with Playwright, use /api/admin/tjk/horses
  */
 export async function GET(request: Request) {
   try {
@@ -35,40 +38,75 @@ export async function GET(request: Request) {
       )
     }
 
-    // Use Playwright to fetch horses (bypasses anti-bot protection)
-    let horses: any[] = []
-    try {
-      console.log('[TJK Horses API] Starting Playwright horse search...')
-      horses = await searchTJKHorsesPlaywright(ownerName, ownerRef)
-      console.log('[TJK Horses API] Playwright success! Found', horses.length, 'horses')
-      
-      if (horses.length === 0) {
-        console.log('[TJK Horses API] No horses found for owner')
-      }
-    } catch (playwrightError: any) {
-      const errorMessage = playwrightError?.message || String(playwrightError)
-      console.error('[TJK Horses API] Playwright error:', errorMessage)
-      console.error('[TJK Horses API] Stack:', playwrightError?.stack || 'No stack trace')
-      
-      // Check if it's a browser not found error (Vercel/serverless issue)
-      if (errorMessage.includes('Executable doesn\'t exist') || 
-          errorMessage.includes('browserType.launch') ||
-          errorMessage.includes('chromium_headless_shell')) {
-        console.error('[TJK Horses API] Browser not available - likely Vercel serverless limitation')
-        return NextResponse.json(
-          { 
-            horses: [],
-            error: 'BROWSER_UNAVAILABLE',
-            message: 'Tarayıcı otomasyonu şu anda kullanılamıyor. Lütfen atları manuel olarak ekleyin.'
+    // USER SERVICE: Only read from database (no Playwright, no external service)
+    // Admin onboarding uses /api/admin/tjk/horses for Playwright fetching
+    // Find owner profile by officialRef (TJK owner ID)
+    const ownerProfile = await prisma.ownerProfile.findFirst({
+      where: {
+        officialRef: ownerRef,
+      },
+      include: {
+        stablemate: {
+          include: {
+            horses: {
+              where: {
+                status: {
+                  not: 'DEAD', // Exclude dead horses
+                },
+              },
+              select: {
+                id: true,
+                name: true,
+                yob: true,
+                gender: true,
+                status: true,
+                externalRef: true,
+                sireName: true,
+                damName: true,
+              },
+              orderBy: {
+                name: 'asc',
+              },
+            },
           },
-          { status: 200 } // Return 200 so frontend can handle gracefully
-        )
-      }
-      
-      // Return empty array on other errors (user can manually add horses)
-      horses = []
+        },
+      },
+    })
+
+    if (!ownerProfile) {
+      console.log('[TJK Horses API] No owner profile found for ownerRef:', ownerRef)
+      return NextResponse.json({ horses: [] })
     }
 
+    if (!ownerProfile.stablemate) {
+      console.log('[TJK Horses API] Owner found but no stablemate - onboarding not completed')
+      return NextResponse.json({ 
+        horses: [],
+        message: 'Eküri henüz oluşturulmamış. Lütfen önce eküri kurulumunu tamamlayın.'
+      })
+    }
+
+    const horses = ownerProfile.stablemate.horses.map((horse) => ({
+      name: horse.name,
+      yob: horse.yob,
+      gender: horse.gender,
+      status: horse.status,
+      externalRef: horse.externalRef,
+      sire: horse.sireName,
+      dam: horse.damName,
+    }))
+
+    console.log('[TJK Horses API] Found', horses.length, 'horses in database for owner:', ownerRef)
+    
+    // If no horses found, return empty (horses should be pre-loaded by admin)
+    if (horses.length === 0) {
+      console.log('[TJK Horses API] No horses found in database for owner:', ownerRef)
+      return NextResponse.json({ 
+        horses: [],
+        message: 'Henüz hiç at eklenmemiş. Lütfen yöneticinizle iletişime geçin.'
+      })
+    }
+    
     return NextResponse.json({ horses })
   } catch (error: any) {
     console.error('[TJK Horses API] Fatal error:', error)
