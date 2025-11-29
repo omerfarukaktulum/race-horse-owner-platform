@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { stablemateSchema } from '@/lib/validation/schemas'
 import { verifyAdminAndGetTargetUserId } from '@/lib/admin-helper'
+import { randomBytes } from 'crypto'
 
 /**
  * Admin onboarding: Create stablemate
