@@ -10,27 +10,10 @@ import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, Us
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect, useRef } from 'react'
-import { flushSync } from 'react-dom'
 
 function AppNavbar() {
   const { user, signOut, isOwner, isTrainer } = useAuth()
   const pathname = usePathname()
-  const router = useRouter()
-  const [currentPath, setCurrentPath] = useState(pathname)
-  
-  // Update current path when pathname changes
-  useEffect(() => {
-    setCurrentPath(pathname)
-  }, [pathname])
-  
-  // Handle navigation with immediate state update
-  const handleNavClick = (href: string) => {
-    // Force immediate state update for instant visual feedback
-    flushSync(() => {
-      setCurrentPath(href)
-    })
-    router.push(href)
-  }
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
@@ -285,26 +268,28 @@ function AppNavbar() {
           {/* Mobile: Settings and Logout buttons */}
           <div className="md:hidden flex items-center gap-3">
             {isOwner && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('/app/stablemate')}
-                className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${currentPath?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+              <Link
+                href="/app/stablemate"
+                scroll={true}
+                className="flex flex-col items-center gap-1 p-2 h-auto transition-all duration-200 active:scale-95"
               >
-                <Settings className="h-5 w-5" />
-                <span className="text-xs font-medium">Eküri</span>
-              </Button>
+                <Settings className={`h-5 w-5 ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-500'}`} />
+                <span className={`text-xs font-medium ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600 font-semibold' : 'text-gray-500'}`}>
+                  Eküri
+                </span>
+              </Link>
             )}
             {isTrainer && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('/app/trainer/account')}
-                className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${currentPath?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+              <Link
+                href="/app/trainer/account"
+                scroll={true}
+                className="flex flex-col items-center gap-1 p-2 h-auto transition-all duration-200 active:scale-95"
               >
-                <User className="h-5 w-5" />
-                <span className="text-xs font-medium">Hesap</span>
-              </Button>
+                <User className={`h-5 w-5 ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-500'}`} />
+                <span className={`text-xs font-medium ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600 font-semibold' : 'text-gray-500'}`}>
+                  Hesap
+                </span>
+              </Link>
             )}
             <Button
               variant="ghost"
