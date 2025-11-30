@@ -499,18 +499,52 @@ async function main() {
 
     // Distribution strategy:
     // - At most 2 horses: both active hastalik + active cikici ilac (with operations on illnesses)
+    //   These MUST be horses with races in the last 3 months
     // - 3-5 horses: only one of them (either hastalik OR cikici ilac, but not both)
     // - Rest: neither
     
-    const shuffledHorses = [...horses].sort(() => Math.random() - 0.5)
+    // First, find horses with races in the last 3 months
+    const threeMonthsAgo = new Date()
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
     
-    // Select at most 2 horses for both
-    const horsesWithBoth = shuffledHorses.slice(0, Math.min(2, horses.length))
+    const horsesWithRecentRaces: any[] = []
+    for (const horse of horses) {
+      const recentRace = await prisma.horseRaceHistory.findFirst({
+        where: {
+          horseId: horse.id,
+          raceDate: {
+            gte: threeMonthsAgo,
+          },
+        },
+        orderBy: {
+          raceDate: 'desc',
+        },
+      })
+      
+      if (recentRace) {
+        horsesWithRecentRaces.push(horse)
+      }
+    }
+    
+    // Select at most 2 horses from those with recent races for both
+    const shuffledRecentRaceHorses = [...horsesWithRecentRaces].sort(() => Math.random() - 0.5)
+    const horsesWithBoth = shuffledRecentRaceHorses.slice(0, Math.min(2, shuffledRecentRaceHorses.length))
     const horsesWithBothIds = horsesWithBoth.map(h => h.id)
     
+    if (horsesWithBoth.length > 0) {
+      console.log(`  ✅ Selected ${horsesWithBoth.length} horse(s) with races in last 3 months for BOTH active hastalik + active cikici ilac`)
+      horsesWithBoth.forEach(h => console.log(`    - ${h.name}`))
+    } else {
+      console.log(`  ⚠ No horses with races in last 3 months found, skipping horses with both`)
+    }
+    
+    // Remove horses with both from the pool for "only one" selection
+    const remainingHorses = horses.filter(h => !horsesWithBothIds.includes(h.id))
+    const shuffledHorses = [...remainingHorses].sort(() => Math.random() - 0.5)
+    
     // Select 3-5 horses for only one (either illness OR banned medicine)
-    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 3, shuffledHorses.length - horsesWithBoth.length)
-    const horsesWithOne = shuffledHorses.slice(horsesWithBoth.length, horsesWithBoth.length + numHorsesWithOne)
+    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 3, shuffledHorses.length)
+    const horsesWithOne = shuffledHorses.slice(0, numHorsesWithOne)
     
     // Split horses with one into two groups: illness only and banned medicine only
     const illnessOnlyHorses = horsesWithOne.slice(0, Math.floor(horsesWithOne.length / 2))
