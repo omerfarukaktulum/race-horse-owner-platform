@@ -1029,7 +1029,19 @@ export default function ExpensesPage() {
               </div>
 
       {/* Desktop: Table Layout */}
-      {!hasExpenses ? (
+      {isLoading ? (
+        <div className="hidden md:block mt-4">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardContent className="py-16 text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+              </div>
+              <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+              <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : !hasExpenses ? (
         <div className="hidden md:block mt-4">
           <EmptyState
             icon={Wallet}
@@ -1039,16 +1051,7 @@ export default function ExpensesPage() {
         </div>
       ) : (
       <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-          <CardContent className={isLoading ? 'py-16 text-center' : 'p-0'}>
-          {isLoading ? (
-            <div className="py-16 text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
-              </div>
-              <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
-              <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
-            </div>
-          ) : (
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -1082,19 +1085,7 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center">
-                        <div className="flex flex-col items-center justify-center">
-                          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
-                          </div>
-                          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
-                          <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredExpenses.length === 0 ? (
+                  {filteredExpenses.length === 0 ? (
                     <tr>
                       <td colSpan={user?.role === 'TRAINER' ? 8 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
                         {hasExpenses 
@@ -1196,8 +1187,7 @@ export default function ExpensesPage() {
                   )}
                 </tbody>
               </table>
-                          </div>
-          )}
+            </div>
         </CardContent>
       </Card>
       )}

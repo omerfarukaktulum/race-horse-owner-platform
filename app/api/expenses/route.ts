@@ -317,22 +317,25 @@ export async function GET(request: Request) {
       }
     } else if (decoded.role === 'TRAINER') {
       // Get trainerId - check by userId if not in token
+      // Optimize: Get trainer profile and stablemate links in parallel
       let trainerId = decoded.trainerId
+      let stablemateIds: string[] = []
       
       if (!trainerId) {
         const trainerProfile = await prisma.trainerProfile.findUnique({
           where: { userId: decoded.id },
+          select: { id: true },
         })
         trainerId = trainerProfile?.id
       }
       
       if (trainerId) {
-          // Get stablemates this trainer works with
+          // Get stablemates this trainer works with (optimized query)
           const stablemateLinks = await prisma.stablemateTrainer.findMany({
             where: { trainerProfileId: trainerId },
             select: { stablemateId: true },
           })
-          const stablemateIds = stablemateLinks.map(link => link.stablemateId)
+          stablemateIds = stablemateLinks.map(link => link.stablemateId)
           
         // Trainers should see expenses for:
         // 1. Horses assigned to them (horse.trainerId = trainerId)
