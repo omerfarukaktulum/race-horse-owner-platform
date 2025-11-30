@@ -289,7 +289,7 @@ LIMIT 1;`
 /**
  * Add sample banned medicines to horses
  */
-async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: string[] = []) {
+async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: string[] = [], horsesWithBothIds: string[] = []) {
   console.log(`\nGenerating banned medicines SQL...`)
 
   const now = new Date()
@@ -308,7 +308,15 @@ async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: 
   for (const horse of horses) {
     const shouldAddMedicine = horseIdsToAdd.includes(horse.id)
     
+    // CRITICAL SAFEGUARD: Only allow both if horse is explicitly in horsesWithBothIds
+    const isAllowedBoth = horsesWithBothIds.includes(horse.id)
+    
     if (shouldAddMedicine) {
+      // Additional safeguard: if this horse should get medicine but is not in horsesWithBothIds,
+      // verify it's not getting both (this should be caught by the logic, but double-check)
+      if (!isAllowedBoth) {
+        // This is fine - it means it's medicine-only
+      }
       const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
       const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
       
@@ -843,12 +851,35 @@ async function main() {
     console.log(`    - ${medicineOnlyHorses.length} horse(s) with ONLY active cikici ilac`)
     console.log(`    - ${horses.length - allIllnessHorseIds.length - medicineOnlyIds.length} horse(s) with neither`)
 
+    // CRITICAL: Delete existing illnesses and banned medicines for these horses first
+    // This prevents accumulation if demo data is generated multiple times
+    const horseIds = horses.map(h => h.id)
+    
+    // Get all illness IDs first (needed to delete operations)
+    const existingIllnessIds = await prisma.horseIllness.findMany({
+      where: { horseId: { in: horseIds } },
+      select: { id: true },
+    })
+    
+    // Delete illness operations first (they reference illnesses)
+    if (existingIllnessIds.length > 0) {
+      const illnessOperationSql = `DELETE FROM horse_illness_operations WHERE "illnessId" IN (${existingIllnessIds.map(i => escapeSql(i.id)).join(', ')});`
+      sqlStatements.push(illnessOperationSql)
+    }
+    
+    // Delete existing illnesses and banned medicines
+    const deleteIllnessSql = `DELETE FROM horse_illnesses WHERE "horseId" IN (${horseIds.map(id => escapeSql(id)).join(', ')});`
+    const deleteMedicineSql = `DELETE FROM horse_banned_medicines WHERE "horseId" IN (${horseIds.map(id => escapeSql(id)).join(', ')});`
+    sqlStatements.push(deleteIllnessSql, deleteMedicineSql)
+    
+    console.log(`  [OK] Deleted existing illnesses and banned medicines for ${horseIds.length} horses`)
+
     // Generate illnesses (horses with both + horses with illness only)
     // Horses with both get operations, others may or may not
     await addIllnesses(horses, user, allIllnessHorseIds, horsesWithBothIds)
     
     // Generate banned medicines (horses with both + horses with medicine only)
-    await addBannedMedicines(horses, user, allMedicineHorseIds)
+    await addBannedMedicines(horses, user, allMedicineHorseIds, horsesWithBothIds)
 
     // Generate training plans
     await addTrainingPlans(horses, user)

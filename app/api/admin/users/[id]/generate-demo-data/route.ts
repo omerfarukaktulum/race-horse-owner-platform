@@ -359,6 +359,35 @@ export async function POST(
     )
     console.log(`[Admin Generate Demo Data] Horses with NOTHING: ${horsesWithNothing.length} (${horsesWithNothing.map(h => h.name).join(', ')})`)
 
+    // CRITICAL: Delete existing illnesses and banned medicines for these horses first
+    // This prevents accumulation if demo data is generated multiple times
+    const horseIds = horses.map(h => h.id)
+    
+    // Get all illness IDs first (needed to delete operations)
+    const existingIllnessIds = await prisma.horseIllness.findMany({
+      where: { horseId: { in: horseIds } },
+      select: { id: true },
+    })
+    
+    // Delete illness operations first (they reference illnesses)
+    if (existingIllnessIds.length > 0) {
+      await prisma.horseIllnessOperation.deleteMany({
+        where: { illnessId: { in: existingIllnessIds.map(i => i.id) } },
+      })
+    }
+    
+    // Delete existing illnesses and banned medicines
+    await Promise.all([
+      prisma.horseIllness.deleteMany({
+        where: { horseId: { in: horseIds } },
+      }),
+      prisma.horseBannedMedicine.deleteMany({
+        where: { horseId: { in: horseIds } },
+      }),
+    ])
+    
+    console.log(`[Admin Generate Demo Data] Deleted existing illnesses and banned medicines for ${horseIds.length} horses`)
+
     // Generate illnesses (0-1 per horse) - ALL ACTIVE (no endDate)
     const illnessDetails = [
       'Hafif öksürük, antibiyotik tedavisi başlatıldı',
@@ -373,18 +402,28 @@ export async function POST(
       const shouldAddMedicine = allMedicineHorseIds.includes(horse.id)
       const needsOperations = horsesWithBothIds.includes(horse.id)
       
+      // CRITICAL SAFEGUARD: Only allow both if horse is explicitly in horsesWithBothIds
+      // This prevents any logic errors from adding both to wrong horses
+      const isAllowedBoth = horsesWithBothIds.includes(horse.id)
+      const finalShouldAddIllness = shouldAddIllness && (isAllowedBoth || !shouldAddMedicine)
+      const finalShouldAddMedicine = shouldAddMedicine && (isAllowedBoth || !shouldAddIllness)
+      
       // VERIFICATION: Log what we're adding to each horse
-      if (shouldAddIllness && shouldAddMedicine) {
-        console.log(`[Admin Generate Demo Data] Adding BOTH to horse: ${horse.name} (should be in horsesWithBothIds: ${horsesWithBothIds.includes(horse.id)})`)
-      } else if (shouldAddIllness) {
+      if (finalShouldAddIllness && finalShouldAddMedicine) {
+        if (!isAllowedBoth) {
+          console.error(`[Admin Generate Demo Data] [ERROR] Attempted to add BOTH to horse "${horse.name}" but it's not in horsesWithBothIds! Skipping.`)
+          continue
+        }
+        console.log(`[Admin Generate Demo Data] Adding BOTH to horse: ${horse.name} (verified in horsesWithBothIds)`)
+      } else if (finalShouldAddIllness) {
         console.log(`[Admin Generate Demo Data] Adding ILLNESS ONLY to horse: ${horse.name}`)
-      } else if (shouldAddMedicine) {
+      } else if (finalShouldAddMedicine) {
         console.log(`[Admin Generate Demo Data] Adding MEDICINE ONLY to horse: ${horse.name}`)
       } else {
         console.log(`[Admin Generate Demo Data] Adding NOTHING to horse: ${horse.name}`)
       }
       
-      if (shouldAddIllness) {
+      if (finalShouldAddIllness) {
         const daysAgo = Math.floor(Math.random() * 60) + 1
         const startDate = new Date(now)
         startDate.setDate(startDate.getDate() - daysAgo)
@@ -428,9 +467,15 @@ export async function POST(
 
     // Generate banned medicines (0-1 per horse) - ALL ACTIVE (remainingDays > 0)
     for (const horse of horses) {
+      const shouldAddIllness = allIllnessHorseIds.includes(horse.id)
       const shouldAddMedicine = allMedicineHorseIds.includes(horse.id)
       
-      if (shouldAddMedicine) {
+      // CRITICAL SAFEGUARD: Only allow both if horse is explicitly in horsesWithBothIds
+      const isAllowedBoth = horsesWithBothIds.includes(horse.id)
+      const finalShouldAddIllness = shouldAddIllness && (isAllowedBoth || !shouldAddMedicine)
+      const finalShouldAddMedicine = shouldAddMedicine && (isAllowedBoth || !shouldAddIllness)
+      
+      if (finalShouldAddMedicine) {
         const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
         const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
         
