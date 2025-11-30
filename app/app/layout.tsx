@@ -542,8 +542,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     const scrollToTop = () => {
       if (typeof window === 'undefined' || typeof document === 'undefined') return
       
-      // Force scroll to absolute top (0) - this ensures we see the navbar and top content
-      // Use multiple methods to ensure it works across all browsers and scenarios
+      // First, ensure we scroll the window to absolute top
       window.scrollTo(0, 0)
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       
@@ -555,11 +554,25 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       document.body.scrollTop = 0
       document.body.scrollLeft = 0
       
-      // Also scroll main element if it's scrollable (but don't rely on it)
+      // Try to scroll the main element into view to ensure top content is visible
       const main = document.querySelector('main')
-      if (main && main instanceof HTMLElement) {
-        main.scrollTop = 0
-        main.scrollLeft = 0
+      if (main) {
+        // Scroll main element to top if it's scrollable
+        if (main instanceof HTMLElement) {
+          main.scrollTop = 0
+          main.scrollLeft = 0
+        }
+        
+        // Use scrollIntoView to ensure the top of main (where filters are) is visible
+        // This will scroll the window to show the main element at the top
+        main.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' })
+        
+        // Then scroll window back to 0 to ensure absolute top
+        setTimeout(() => {
+          window.scrollTo(0, 0)
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
+        }, 0)
       }
       
       // Also scroll any scrollable containers to top
