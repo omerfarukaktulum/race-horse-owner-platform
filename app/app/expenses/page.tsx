@@ -498,6 +498,7 @@ export default function ExpensesPage() {
   return (
     <div className="w-full min-w-0 space-y-4">
       {/* Mobile: Sticky Buttons */}
+      {!isLoading && (
       <div className="md:hidden mt-4 pb-0 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="relative filter-dropdown-container">
@@ -685,6 +686,7 @@ export default function ExpensesPage() {
           )}
         </div>
         </div>
+      )}
 
       {/* Floating Action Button (FAB) for Add Expense */}
           <Button
