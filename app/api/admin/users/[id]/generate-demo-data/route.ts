@@ -584,6 +584,117 @@ export async function POST(
       }
     }
 
+    // Set horse locations based on race history
+    // Horses with races in last 3 months -> "Saha" (racecourse)
+    // Other horses -> "Ciftlik" (farm)
+    const locationThreeMonthsAgo = new Date()
+    locationThreeMonthsAgo.setMonth(locationThreeMonthsAgo.getMonth() - 3)
+
+    const locationRacecourse = await prisma.racecourse.findFirst({
+      where: { name: { contains: 'İstanbul', mode: 'insensitive' } },
+    })
+
+    const locationFarm = await prisma.farm.findFirst()
+
+    let sahaCount = 0
+    let ciftlikCount = 0
+
+    for (const horse of horses) {
+      // Check if horse has a race in the last 3 months
+      const recentRace = await prisma.horseRaceHistory.findFirst({
+        where: {
+          horseId: horse.id,
+          raceDate: {
+            gte: locationThreeMonthsAgo,
+          },
+        },
+        orderBy: {
+          raceDate: 'desc',
+        },
+      })
+
+      const hasRecentRace = !!recentRace
+
+      if (hasRecentRace) {
+        // Set to "Saha" (racecourse)
+        if (locationRacecourse) {
+          await prisma.horseLocationHistory.create({
+            data: {
+              horseId: horse.id,
+              locationType: 'racecourse',
+              city: locationRacecourse.name,
+              racecourseId: locationRacecourse.id,
+              farmId: null,
+              startDate: new Date(),
+              endDate: null,
+            },
+          })
+
+          await prisma.horse.update({
+            where: { id: horse.id },
+            data: {
+              racecourseId: locationRacecourse.id,
+              farmId: null,
+            },
+          })
+        } else {
+          // Still set locationType even if no racecourse found
+          await prisma.horseLocationHistory.create({
+            data: {
+              horseId: horse.id,
+              locationType: 'racecourse',
+              city: 'İstanbul',
+              racecourseId: null,
+              farmId: null,
+              startDate: new Date(),
+              endDate: null,
+            },
+          })
+        }
+        sahaCount++
+      } else {
+        // Set to "Ciftlik" (farm)
+        if (locationFarm) {
+          await prisma.horseLocationHistory.create({
+            data: {
+              horseId: horse.id,
+              locationType: 'farm',
+              city: locationFarm.city || '',
+              racecourseId: null,
+              farmId: locationFarm.id,
+              startDate: new Date(),
+              endDate: null,
+            },
+          })
+
+          await prisma.horse.update({
+            where: { id: horse.id },
+            data: {
+              farmId: locationFarm.id,
+              racecourseId: null,
+            },
+          })
+        } else {
+          // Still set locationType even if no farm found
+          await prisma.horseLocationHistory.create({
+            data: {
+              horseId: horse.id,
+              locationType: 'farm',
+              city: 'Ankara',
+              racecourseId: null,
+              farmId: null,
+              startDate: new Date(),
+              endDate: null,
+            },
+          })
+        }
+        ciftlikCount++
+      }
+    }
+
+    console.log(`[Admin Generate Demo Data] Set ${sahaCount} horses to "Saha" (racecourse)`)
+    console.log(`[Admin Generate Demo Data] Set ${ciftlikCount} horses to "Ciftlik" (farm)`)
+
     const totalCreated =
       results.expenses +
       results.notes +
