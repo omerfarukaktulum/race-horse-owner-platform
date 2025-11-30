@@ -950,9 +950,9 @@ export default function ExpensesPage() {
                               {formatDateShort(expense.date)}
                             </span>
                             {expense.horse?.name ? (
-                              <span className="text-sm font-medium text-indigo-600">
+                            <span className="text-sm font-medium text-indigo-600">
                                 {expense.horse.name}
-                              </span>
+                            </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2.5 py-0.5 text-xs font-semibold">
                                 Genel
@@ -1038,17 +1038,17 @@ export default function ExpensesPage() {
           />
         </div>
       ) : (
-        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
           <CardContent className={isLoading ? 'py-16 text-center' : 'p-0'}>
-            {isLoading ? (
-              <div className="py-16 text-center">
-                <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
-                </div>
-                <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
-                <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+          {isLoading ? (
+            <div className="py-16 text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
               </div>
-            ) : (
+              <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+              <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -1120,9 +1120,9 @@ export default function ExpensesPage() {
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {expense.horse?.name ? (
-                              <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-gray-900">
                                 {expense.horse.name}
-                              </span>
+                            </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2.5 py-0.5 text-xs font-semibold">
                                 Genel
@@ -1196,10 +1196,10 @@ export default function ExpensesPage() {
                   )}
                 </tbody>
               </table>
-            </div>
-            )}
-          </CardContent>
-        </Card>
+                          </div>
+          )}
+        </CardContent>
+      </Card>
       )}
 
       {/* Add Expense Modal */}

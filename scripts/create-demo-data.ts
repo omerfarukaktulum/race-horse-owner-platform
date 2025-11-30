@@ -250,17 +250,13 @@ async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseI
       const startDate = new Date(now)
       startDate.setDate(startDate.getDate() - daysAgo)
 
-      // If mustBeActive is true and this is the selected horse, ensure it's an active illness (no endDate)
-      // Otherwise, some illnesses are ongoing (no endDate), some are resolved
-      const isOngoing = (mustBeActive && isSelectedHorse) ? true : Math.random() > 0.6
-      const endDate = isOngoing ? null : (() => {
-        const end = new Date(startDate)
-        end.setDate(end.getDate() + Math.floor(Math.random() * 14) + 3)
-        return end
-      })()
+      // ALL illnesses should be active (no endDate) - user requested only active ones
+      const isOngoing = true
+      const endDate = null
 
       const detail = illnessDetails[Math.floor(Math.random() * illnessDetails.length)]
-      const hasOperations = !isOngoing && Math.random() > 0.5
+      // Active illnesses can still have operations (ongoing treatments)
+      const hasOperations = Math.random() > 0.5
       const numOperations = hasOperations ? Math.floor(Math.random() * 2) + 1 : 0
 
       // Insert illness first
@@ -328,11 +324,9 @@ async function addBannedMedicines(horses: any[], ownerUser: any, mustHaveMedicin
       const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
       const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
       
-      // For selected horse, ensure medicine is given recently enough that it's still active
-      // For others, random 1-30 days ago (may or may not be active)
-      const daysAgo = isSelectedHorse 
-        ? Math.floor(Math.random() * (waitDays - 1)) + 1  // Ensure remainingDays > 0
-        : Math.floor(Math.random() * 30) + 1
+      // ALL banned medicines should be active (remainingDays > 0) - user requested only active ones
+      // Give medicine recently enough that it's still active (daysAgo < waitDays)
+      const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1  // Ensure remainingDays > 0
       const givenDate = new Date(now)
       givenDate.setDate(givenDate.getDate() - daysAgo)
 

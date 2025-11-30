@@ -134,7 +134,7 @@ export async function DELETE(
     
     // Delete horse-specific expenses
     const horseExpensesResult = await prisma.expense.deleteMany({
-      where: { horseId: { in: horseIds } },
+        where: { horseId: { in: horseIds } },
     })
     
     // Delete stablemate-level expenses (where horseId is NULL and addedBy belongs to this stablemate)

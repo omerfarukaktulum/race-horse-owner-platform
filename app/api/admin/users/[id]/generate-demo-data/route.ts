@@ -225,7 +225,36 @@ export async function POST(
       }
     }
 
-    // Generate illnesses (0-1 per horse, 50% chance)
+    // Find a horse with a race in the last 3 months (for active illness + banned medicine)
+    const threeMonthsAgo = new Date()
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+    
+    let horseWithBothId: string | undefined = undefined
+    for (const horse of horses) {
+      const recentRace = await prisma.horseRaceHistory.findFirst({
+        where: {
+          horseId: horse.id,
+          raceDate: {
+            gte: threeMonthsAgo,
+          },
+        },
+        orderBy: {
+          raceDate: 'desc',
+        },
+      })
+      
+      if (recentRace) {
+        horseWithBothId = horse.id
+        break
+      }
+    }
+    
+    // If no horse with recent race found, pick a random one
+    if (!horseWithBothId && horses.length > 0) {
+      horseWithBothId = horses[Math.floor(Math.random() * horses.length)].id
+    }
+
+    // Generate illnesses (0-1 per horse, 50% chance) - ALL ACTIVE (no endDate)
     const illnessDetails = [
       'Hafif öksürük, antibiyotik tedavisi başlatıldı',
       'Eklem ağrısı, anti-inflamatuar ilaç verildi',
@@ -235,20 +264,16 @@ export async function POST(
     ]
 
     for (const horse of horses) {
-      if (Math.random() > 0.5) {
+      const isSelectedHorse = horse.id === horseWithBothId
+      const shouldAddIllness = isSelectedHorse ? true : Math.random() > 0.5
+      
+      if (shouldAddIllness) {
         const daysAgo = Math.floor(Math.random() * 60) + 1
         const startDate = new Date(now)
         startDate.setDate(startDate.getDate() - daysAgo)
 
-        const isOngoing = Math.random() > 0.6
-        const endDate = isOngoing
-          ? null
-          : (() => {
-              const end = new Date(startDate)
-              end.setDate(end.getDate() + Math.floor(Math.random() * 14) + 3)
-              return end
-            })()
-
+        // ALL illnesses should be active (no endDate) - user requested only active ones
+        const endDate = null
         const detail = illnessDetails[Math.floor(Math.random() * illnessDetails.length)]
 
         const illness = await prisma.horseIllness.create({
@@ -262,8 +287,8 @@ export async function POST(
         })
         results.illnesses++
 
-        // Add operations for resolved illnesses (50% chance)
-        if (!isOngoing && Math.random() > 0.5) {
+        // Active illnesses can still have operations (ongoing treatments)
+        if (Math.random() > 0.5) {
           const numOperations = Math.floor(Math.random() * 2) + 1
           for (let i = 0; i < numOperations; i++) {
             const operationDate = new Date(startDate)
@@ -283,7 +308,7 @@ export async function POST(
       }
     }
 
-    // Generate banned medicines (0-1 per horse, 40% chance)
+    // Generate banned medicines (0-1 per horse, 40% chance) - ALL ACTIVE (remainingDays > 0)
     const waitDaysMap: { [key: string]: number } = {
       'Phenylbutazone (Bute)': 7,
       'Flunixin Meglumine (Banamine)': 5,
@@ -294,13 +319,18 @@ export async function POST(
     }
 
     for (const horse of horses) {
-      if (Math.random() > 0.6) {
-        const daysAgo = Math.floor(Math.random() * 30) + 1
-        const givenDate = new Date(now)
-        givenDate.setDate(givenDate.getDate() - daysAgo)
-
+      const isSelectedHorse = horse.id === horseWithBothId
+      const shouldAddMedicine = isSelectedHorse ? true : Math.random() > 0.6
+      
+      if (shouldAddMedicine) {
         const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
         const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
+        
+        // ALL banned medicines should be active (remainingDays > 0) - user requested only active ones
+        // Give medicine recently enough that it's still active (daysAgo < waitDays)
+        const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1  // Ensure remainingDays > 0
+        const givenDate = new Date(now)
+        givenDate.setDate(givenDate.getDate() - daysAgo)
 
         await prisma.horseBannedMedicine.create({
           data: {
