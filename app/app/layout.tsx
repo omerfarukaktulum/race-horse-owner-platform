@@ -229,7 +229,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex items-center gap-1 ${
+                  className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
                     pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -243,7 +243,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex items-center gap-1 ${
+                  className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
                     pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -268,7 +268,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <Settings className="h-5 w-5" />
                   <span className="text-xs font-medium">Eküri</span>
@@ -280,7 +280,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <User className="h-5 w-5" />
                   <span className="text-xs font-medium">Hesap</span>
