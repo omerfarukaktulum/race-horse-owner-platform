@@ -10,6 +10,7 @@ import { Home, LayoutGrid, TurkishLira, BarChart3, Settings, LogOut, Menu, X, Us
 import { Button } from '@/app/components/ui/button'
 import { TR } from '@/lib/constants/tr'
 import { useState, useEffect, useRef } from 'react'
+import { flushSync } from 'react-dom'
 
 function AppNavbar() {
   const { user, signOut, isOwner, isTrainer } = useAuth()
@@ -24,7 +25,10 @@ function AppNavbar() {
   
   // Handle navigation with immediate state update
   const handleNavClick = (href: string) => {
-    setCurrentPath(href)
+    // Force immediate state update for instant visual feedback
+    flushSync(() => {
+      setCurrentPath(href)
+    })
     router.push(href)
   }
   const [stablemateName, setStablemateName] = useState<string | null>(null)
@@ -238,30 +242,36 @@ function AppNavbar() {
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {isOwner && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('/app/stablemate')}
-                className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
-                  currentPath?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <Settings className="h-4 w-4" />
-                {TR.nav.stablemate}
-              </Button>
+              <Link href="/app/stablemate">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center gap-2 ${
+                    pathname?.startsWith('/app/stablemate')
+                      ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  } transition-all`}
+                >
+                  <Settings className="h-4 w-4" />
+                  {TR.nav.stablemate}
+                </Button>
+              </Link>
             )}
             {isTrainer && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleNavClick('/app/trainer/account')}
-                className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
-                  currentPath?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <User className="h-4 w-4" />
-                Hesap
-              </Button>
+              <Link href="/app/trainer/account">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`flex items-center gap-2 ${
+                    pathname?.startsWith('/app/trainer/account')
+                      ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  } transition-all`}
+                >
+                  <User className="h-4 w-4" />
+                  Hesap
+                </Button>
+              </Link>
             )}
             <Button
               onClick={signOut}
