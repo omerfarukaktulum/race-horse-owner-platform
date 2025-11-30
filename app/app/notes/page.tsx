@@ -871,7 +871,7 @@ export default function NotesPage() {
                             }
                           : undefined
                       }
-                      className={`bg-indigo-50/30 border-0 p-4 mb-3 cursor-pointer ${
+                      className={`bg-indigo-50/30 border-0 p-4 mb-3 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
                         isHighlighted
                           ? 'rounded-2xl border-2 border-indigo-400'
                           : 'rounded-lg'

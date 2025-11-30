@@ -61,7 +61,21 @@ async function getUserAndHorses() {
         include: {
           stablemate: {
             include: {
-              horses: true,
+              horses: {
+                include: {
+                  raceHistory: {
+                    where: {
+                      raceDate: {
+                        gte: new Date(new Date().setMonth(new Date().getMonth() - 6)),
+                      },
+                    },
+                    orderBy: {
+                      raceDate: 'desc',
+                    },
+                    take: 1,
+                  },
+                },
+              },
             },
           },
         },
@@ -212,7 +226,7 @@ async function addNotes(horses: any[], ownerUser: any) {
 /**
  * Add sample illnesses to horses
  */
-async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseId?: string) {
+async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseId?: string, mustBeActive: boolean = false) {
   console.log(`\n🏥 Generating illnesses SQL...`)
 
   const now = new Date()
@@ -229,14 +243,16 @@ async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseI
   for (const horse of horses) {
     // Ensure the specified horse gets an illness, or random 50% chance for others
     const shouldAddIllness = horse.id === mustHaveIllnessHorseId || Math.random() > 0.5
+    const isSelectedHorse = horse.id === mustHaveIllnessHorseId
     
     if (shouldAddIllness) {
       const daysAgo = Math.floor(Math.random() * 60) + 1
       const startDate = new Date(now)
       startDate.setDate(startDate.getDate() - daysAgo)
 
-      // Some illnesses are ongoing (no endDate), some are resolved
-      const isOngoing = Math.random() > 0.6
+      // If mustBeActive is true and this is the selected horse, ensure it's an active illness (no endDate)
+      // Otherwise, some illnesses are ongoing (no endDate), some are resolved
+      const isOngoing = (mustBeActive && isSelectedHorse) ? true : Math.random() > 0.6
       const endDate = isOngoing ? null : (() => {
         const end = new Date(startDate)
         end.setDate(end.getDate() + Math.floor(Math.random() * 14) + 3)
@@ -364,6 +380,69 @@ async function addTrainingPlans(horses: any[], ownerUser: any) {
   return plans
 }
 
+/**
+ * Set horse locations based on race history
+ * Horses with races in last 6 months -> "Saha" (racecourse)
+ * Other horses -> "Ciftlik" (farm)
+ */
+async function setHorseLocations(horses: any[]) {
+  console.log(`\n📍 Setting horse locations SQL...`)
+
+  const now = new Date()
+  const sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+  // Get a racecourse for "Saha" horses
+  const racecourse = await prisma.racecourse.findFirst({
+    where: { name: { contains: 'İstanbul', mode: 'insensitive' } },
+  })
+
+  // Get a farm for "Ciftlik" horses
+  const farm = await prisma.farm.findFirst()
+
+  if (!racecourse) {
+    console.log('  ⚠ No racecourse found, skipping location setup for "Saha" horses')
+  }
+  if (!farm) {
+    console.log('  ⚠ No farm found, skipping location setup for "Ciftlik" horses')
+  }
+
+  let sahaCount = 0
+  let ciftlikCount = 0
+
+  for (const horse of horses) {
+    // Check if horse has a race in the last 6 months
+    const hasRecentRace = horse.raceHistory && horse.raceHistory.length > 0 && 
+                         horse.raceHistory[0].raceDate >= sixMonthsAgo
+
+    if (hasRecentRace && racecourse) {
+      // Set to "Saha" (racecourse)
+      const locationSql = `INSERT INTO horse_location_history (id, "horseId", "locationType", city, "racecourseId", "farmId", "startDate", "endDate", "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, 'racecourse', ${escapeSql(racecourse.name)}, ${escapeSql(racecourse.id)}, NULL, NOW(), NULL, NOW(), NOW());`
+      sqlStatements.push(locationSql)
+      
+      // Update horse's racecourseId
+      const updateHorseSql = `UPDATE horses SET "racecourseId" = ${escapeSql(racecourse.id)}, "farmId" = NULL WHERE id = ${escapeSql(horse.id)};`
+      sqlStatements.push(updateHorseSql)
+      
+      sahaCount++
+    } else if (farm) {
+      // Set to "Ciftlik" (farm)
+      const locationSql = `INSERT INTO horse_location_history (id, "horseId", "locationType", city, "racecourseId", "farmId", "startDate", "endDate", "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, 'farm', ${escapeSql(farm.city || '')}, NULL, ${escapeSql(farm.id)}, NOW(), NULL, NOW(), NOW());`
+      sqlStatements.push(locationSql)
+      
+      // Update horse's farmId
+      const updateHorseSql = `UPDATE horses SET "farmId" = ${escapeSql(farm.id)}, "racecourseId" = NULL WHERE id = ${escapeSql(horse.id)};`
+      sqlStatements.push(updateHorseSql)
+      
+      ciftlikCount++
+    }
+  }
+
+  console.log(`  ✅ Set ${sahaCount} horses to "Saha" (racecourse)`)
+  console.log(`  ✅ Set ${ciftlikCount} horses to "Ciftlik" (farm)`)
+  console.log(`  ✅ Total: ${sahaCount + ciftlikCount} location SQL statements`)
+}
+
 async function main() {
   console.log('🚀 Starting demo data SQL generation...\n')
 
@@ -398,19 +477,39 @@ async function main() {
     // Generate notes
     await addNotes(horses, user)
 
-    // Pick a random horse to ensure it has both illness and banned medicine
-    const horseWithBothId = horses.length > 0 
-      ? horses[Math.floor(Math.random() * horses.length)].id 
-      : undefined
+    // Find a horse with a race in the last 6 months (for active illness + banned medicine)
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+    
+    let horseWithBothId: string | undefined = undefined
+    for (const horse of horses) {
+      if (horse.raceHistory && horse.raceHistory.length > 0) {
+        const latestRace = horse.raceHistory[0]
+        if (latestRace.raceDate >= sixMonthsAgo) {
+          horseWithBothId = horse.id
+          console.log(`  ✅ Selected horse "${horse.name}" (has race in last 6 months) for active illness + banned medicine`)
+          break
+        }
+      }
+    }
+    
+    // If no horse with recent race found, pick a random one
+    if (!horseWithBothId && horses.length > 0) {
+      horseWithBothId = horses[Math.floor(Math.random() * horses.length)].id
+      console.log(`  ⚠ No horse with race in last 6 months found, selected random horse for active illness + banned medicine`)
+    }
 
-    // Generate illnesses (ensure at least one horse has an illness)
-    await addIllnesses(horses, user, horseWithBothId)
+    // Generate illnesses (ensure the selected horse gets an ACTIVE illness - no endDate)
+    await addIllnesses(horses, user, horseWithBothId, true)
 
     // Generate banned medicines (ensure the same horse also has a banned medicine)
     await addBannedMedicines(horses, user, horseWithBothId)
 
     // Generate training plans
     await addTrainingPlans(horses, user)
+
+    // Set horse locations based on race history
+    await setHorseLocations(horses)
 
     // Add SQL footer
     sqlStatements.push('')

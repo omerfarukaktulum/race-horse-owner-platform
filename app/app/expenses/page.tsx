@@ -939,7 +939,7 @@ export default function ExpensesPage() {
               return (
                 <div
                   key={expense.id}
-                  className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg cursor-pointer"
+                  className="bg-indigo-50/30 border-0 p-4 mb-3 rounded-lg cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                   style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 -10px 15px -3px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)' }}
                   onClick={handleCardClick}
                 >

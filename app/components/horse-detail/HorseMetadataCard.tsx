@@ -108,7 +108,7 @@ export function HorseMetadataCard({ horse }: Props) {
                 >
                   <CircleAlert className="h-8 w-6 flex-shrink-0" />
                   <div className="flex flex-col">
-                    <span className="font-medium">Verilen Yasaklı İlaç ({horse.activeBannedMedicine?.name || ''})</span>
+                    <span className="font-medium">Verilen Çıkıcı İlaç ({horse.activeBannedMedicine?.name || ''})</span>
                     <span className="font-semibold">
                       Sonraki yarışa katılmak için kalan süre: {horse.remainingWaitDays} gün
                     </span>
