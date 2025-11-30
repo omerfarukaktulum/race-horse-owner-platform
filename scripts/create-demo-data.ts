@@ -52,7 +52,7 @@ const STABLEMATE_CATEGORIES = EXPENSE_CATEGORIES.filter(
  * Get user and their horses
  */
 async function getUserAndHorses() {
-  console.log(`\n🔍 Finding user: ${USER_EMAIL}`)
+  console.log(`\nFinding user: ${USER_EMAIL}`)
   
   const user = await prisma.user.findUnique({
     where: { email: USER_EMAIL },
@@ -97,9 +97,9 @@ async function getUserAndHorses() {
 
   const horses = user.ownerProfile.stablemate.horses
 
-  console.log(`  ✅ Found user: ${user.email}`)
-  console.log(`  ✅ Found stablemate: ${user.ownerProfile.stablemate.name}`)
-  console.log(`  ✅ Found ${horses.length} horses`)
+  console.log(`  [OK] Found user: ${user.email}`)
+  console.log(`  [OK] Found stablemate: ${user.ownerProfile.stablemate.name}`)
+  console.log(`  [OK] Found ${horses.length} horses`)
 
   return { user, horses }
 }
@@ -128,7 +128,7 @@ function getExpenseDescription(category: string): string {
  * Add sample expenses to horses
  */
 async function addExpenses(horses: any[], ownerUser: any, stablemateId: string) {
-  console.log(`\n💰 Generating expenses SQL...`)
+  console.log(`\nGenerating expenses SQL...`)
 
   const now = new Date()
   const expenses = []
@@ -178,9 +178,9 @@ async function addExpenses(horses: any[], ownerUser: any, stablemateId: string) 
     }
   }
 
-  console.log(`  ✅ Generated ${horseExpenseCount} horse-specific expenses`)
-  console.log(`  ✅ Generated ${stablemateExpenseCount} stablemate-level expenses`)
-  console.log(`  ✅ Total: ${expenses.length} expense SQL statements`)
+  console.log(`  [OK] Generated ${horseExpenseCount} horse-specific expenses`)
+  console.log(`  [OK] Generated ${stablemateExpenseCount} stablemate-level expenses`)
+  console.log(`  [OK] Total: ${expenses.length} expense SQL statements`)
   return expenses
 }
 
@@ -188,7 +188,7 @@ async function addExpenses(horses: any[], ownerUser: any, stablemateId: string) 
  * Add sample notes to horses
  */
 async function addNotes(horses: any[], ownerUser: any) {
-  console.log(`\n📝 Generating notes SQL...`)
+  console.log(`\nGenerating notes SQL...`)
 
   const now = new Date()
   const notes = []
@@ -219,7 +219,7 @@ async function addNotes(horses: any[], ownerUser: any) {
     }
   }
 
-  console.log(`  ✅ Generated ${notes.length} note SQL statements`)
+  console.log(`  [OK] Generated ${notes.length} note SQL statements`)
   return notes
 }
 
@@ -227,7 +227,7 @@ async function addNotes(horses: any[], ownerUser: any) {
  * Add sample illnesses to horses
  */
 async function addIllnesses(horses: any[], ownerUser: any, horseIdsToAdd: string[] = [], horsesWithOperationsIds: string[] = []) {
-  console.log(`\n🏥 Generating illnesses SQL...`)
+  console.log(`\nGenerating illnesses SQL...`)
 
   const now = new Date()
   const illnesses = []
@@ -282,7 +282,7 @@ LIMIT 1;`
     }
   }
 
-  console.log(`  ✅ Generated ${illnesses.length} illness SQL statements`)
+  console.log(`  [OK] Generated ${illnesses.length} illness SQL statements`)
   return illnesses
 }
 
@@ -290,7 +290,7 @@ LIMIT 1;`
  * Add sample banned medicines to horses
  */
 async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: string[] = []) {
-  console.log(`\n💊 Generating banned medicines SQL...`)
+  console.log(`\nGenerating banned medicines SQL...`)
 
   const now = new Date()
   const medicines = []
@@ -325,7 +325,7 @@ async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: 
     }
   }
 
-  console.log(`  ✅ Generated ${medicines.length} banned medicine SQL statements`)
+  console.log(`  [OK] Generated ${medicines.length} banned medicine SQL statements`)
   return medicines
 }
 
@@ -333,7 +333,7 @@ async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: 
  * Add sample training plans to horses
  */
 async function addTrainingPlans(horses: any[], ownerUser: any) {
-  console.log(`\n📅 Generating training plans SQL...`)
+  console.log(`\nGenerating training plans SQL...`)
 
   const now = new Date()
   const plans = []
@@ -371,7 +371,7 @@ async function addTrainingPlans(horses: any[], ownerUser: any) {
     }
   }
 
-  console.log(`  ✅ Generated ${plans.length} training plan SQL statements`)
+  console.log(`  [OK] Generated ${plans.length} training plan SQL statements`)
   return plans
 }
 
@@ -381,7 +381,7 @@ async function addTrainingPlans(horses: any[], ownerUser: any) {
  * Other horses -> "Ciftlik" (farm)
  */
 async function setHorseLocations(horses: any[]) {
-  console.log(`\n📍 Setting horse locations SQL...`)
+  console.log(`\nSetting horse locations SQL...`)
 
   const now = new Date()
   const threeMonthsAgo = new Date()
@@ -396,10 +396,10 @@ async function setHorseLocations(horses: any[]) {
   const farm = await prisma.farm.findFirst()
 
   if (!racecourse) {
-    console.log('  ⚠ No racecourse found, skipping location setup for "Saha" horses')
+    console.log('  [WARN] No racecourse found, skipping location setup for "Saha" horses')
   }
   if (!farm) {
-    console.log('  ⚠ No farm found, skipping location setup for "Ciftlik" horses')
+    console.log('  [WARN] No farm found, skipping location setup for "Ciftlik" horses')
   }
 
   let sahaCount = 0
@@ -436,7 +436,7 @@ async function setHorseLocations(horses: any[]) {
         sqlStatements.push(locationSql)
       }
       
-      console.log(`    ✓ Set "${horse.name}" to Saha (has race in last 3 months)`)
+      console.log(`    [OK] Set "${horse.name}" to Saha (has race in last 3 months)`)
       sahaCount++
     } else {
       // Set to "Ciftlik" (farm)
@@ -453,21 +453,21 @@ async function setHorseLocations(horses: any[]) {
         sqlStatements.push(locationSql)
       }
       
-      console.log(`    ✓ Set "${horse.name}" to Ciftlik (no race in last 3 months)`)
+      console.log(`    [OK] Set "${horse.name}" to Ciftlik (no race in last 3 months)`)
       ciftlikCount++
     }
   }
 
-  console.log(`  ✅ Set ${sahaCount} horses to "Saha" (racecourse)`)
-  console.log(`  ✅ Set ${ciftlikCount} horses to "Ciftlik" (farm)`)
-  console.log(`  ✅ Total: ${sahaCount + ciftlikCount} location SQL statements`)
+  console.log(`  [OK] Set ${sahaCount} horses to "Saha" (racecourse)`)
+  console.log(`  [OK] Set ${ciftlikCount} horses to "Ciftlik" (farm)`)
+  console.log(`  [OK] Total: ${sahaCount + ciftlikCount} location SQL statements`)
 }
 
 /**
  * Add trainer-created data (expenses, notes, illnesses, banned medicines, training plans)
  */
 async function addTrainerData(horses: any[], stablemateId: string) {
-  console.log(`\n👨‍🏫 Generating trainer-created data SQL...`)
+  console.log(`\nGenerating trainer-created data SQL...`)
 
   // Find trainers linked to this stablemate
   const stablemateTrainers = await prisma.stablemateTrainer.findMany({
@@ -486,11 +486,11 @@ async function addTrainerData(horses: any[], stablemateId: string) {
   })
 
   if (stablemateTrainers.length === 0) {
-    console.log(`  ⚠ No active trainers found for this stablemate, skipping trainer data`)
+    console.log(`  [WARN] No active trainers found for this stablemate, skipping trainer data`)
     return
   }
 
-  console.log(`  ✅ Found ${stablemateTrainers.length} trainer(s) linked to stablemate`)
+  console.log(`  [OK] Found ${stablemateTrainers.length} trainer(s) linked to stablemate`)
 
   // For each trainer, find horses they can access
   for (const stablemateTrainer of stablemateTrainers) {
@@ -511,7 +511,7 @@ async function addTrainerData(horses: any[], stablemateId: string) {
       : horses.slice(0, Math.max(1, Math.floor(horses.length * 0.6))) // Use up to 60% of horses
 
     if (trainerHorses.length === 0) {
-      console.log(`    ⚠ No horses available for trainer "${trainer.fullName}", skipping`)
+      console.log(`    [WARN] No horses available for trainer "${trainer.fullName}", skipping`)
       continue
     }
 
@@ -636,10 +636,10 @@ async function addTrainerData(horses: any[], stablemateId: string) {
       }
     }
 
-    console.log(`      ✅ Expenses: ${trainerExpenseCount}, Notes: ${trainerNoteCount}, Illnesses: ${trainerIllnessCount}, Medicines: ${trainerMedicineCount}, Training Plans: ${trainerPlanCount}`)
+    console.log(`      [OK] Expenses: ${trainerExpenseCount}, Notes: ${trainerNoteCount}, Illnesses: ${trainerIllnessCount}, Medicines: ${trainerMedicineCount}, Training Plans: ${trainerPlanCount}`)
   }
 
-  console.log(`  ✅ Generated trainer-created data SQL statements`)
+  console.log(`  [OK] Generated trainer-created data SQL statements`)
 }
 
 async function main() {
@@ -650,7 +650,7 @@ async function main() {
     const { user, horses } = await getUserAndHorses()
 
     if (horses.length === 0) {
-      console.log('  ⚠ No horses found for user. Exiting.')
+      console.log('  [WARN] No horses found for user. Exiting.')
       return
     }
 
@@ -687,7 +687,7 @@ async function main() {
     const threeMonthsAgo = new Date()
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
     
-    console.log(`  🔍 Checking for horses with at least one race in last 3 months (since ${threeMonthsAgo.toISOString()})`)
+    console.log(`  Checking for horses with at least one race in last 3 months (since ${threeMonthsAgo.toISOString()})`)
     
     const horsesWithRecentRaces: any[] = []
     for (const horse of horses) {
@@ -706,11 +706,11 @@ async function main() {
       
       if (recentRace) {
         horsesWithRecentRaces.push(horse)
-        console.log(`    ✓ Horse "${horse.name}" has race on ${recentRace.raceDate.toISOString()}`)
+        console.log(`    [OK] Horse "${horse.name}" has race on ${recentRace.raceDate.toISOString()}`)
       }
     }
     
-    console.log(`  📊 Found ${horsesWithRecentRaces.length} horse(s) with at least one race in last 3 months`)
+    console.log(`  Found ${horsesWithRecentRaces.length} horse(s) with at least one race in last 3 months`)
     
     // IMPORTANT: Select at most 2 horses ONLY from those with recent races for "both" condition
     // If no horses have recent races, skip the "both" condition entirely
@@ -723,7 +723,7 @@ async function main() {
       horsesWithBoth = shuffledRecentRaceHorses.slice(0, Math.min(2, shuffledRecentRaceHorses.length))
       horsesWithBothIds = horsesWithBoth.map(h => h.id)
       
-      console.log(`  🎯 Selected ${horsesWithBoth.length} horse(s) from ${horsesWithRecentRaces.length} horses with recent races for BOTH condition`)
+      console.log(`  Selected ${horsesWithBoth.length} horse(s) from ${horsesWithRecentRaces.length} horses with recent races for BOTH condition`)
       
       // VERIFICATION: Double-check that selected horses actually have recent races
       for (const horse of horsesWithBoth) {
@@ -740,23 +740,23 @@ async function main() {
         })
         
         if (!verifyRace) {
-          console.error(`  ❌ [ERROR] Horse "${horse.name}" (${horse.id}) was selected for "both" but verification shows no race in last 3 months! Removing from selection.`)
+          console.error(`  [ERROR] Horse "${horse.name}" (${horse.id}) was selected for "both" but verification shows no race in last 3 months! Removing from selection.`)
           // Remove from selection if verification fails
           horsesWithBoth = horsesWithBoth.filter(h => h.id !== horse.id)
           horsesWithBothIds = horsesWithBothIds.filter(id => id !== horse.id)
         } else {
-          console.log(`  ✓ Verified: Horse "${horse.name}" has race on ${verifyRace.raceDate.toISOString()}`)
+          console.log(`  [OK] Verified: Horse "${horse.name}" has race on ${verifyRace.raceDate.toISOString()}`)
         }
       }
       
       if (horsesWithBoth.length > 0) {
-        console.log(`  ✅ Final selection: ${horsesWithBoth.length} horse(s) with verified races in last 3 months for BOTH active hastalik + active cikici ilac`)
+        console.log(`  [OK] Final selection: ${horsesWithBoth.length} horse(s) with verified races in last 3 months for BOTH active hastalik + active cikici ilac`)
         horsesWithBoth.forEach(h => console.log(`    - ${h.name}`))
       } else {
-        console.log(`  ⚠ After verification, no valid horses remain for "both" condition`)
+        console.log(`  [WARN] After verification, no valid horses remain for "both" condition`)
       }
     } else {
-      console.log(`  ⚠ No horses with races in last 3 months found, skipping "both" condition entirely`)
+      console.log(`  [WARN] No horses with races in last 3 months found, skipping "both" condition entirely`)
     }
     
     // Remove horses with both from the pool for "only one" selection
@@ -813,7 +813,7 @@ async function main() {
 
     // Print summary
     console.log('\n' + '='.repeat(60))
-    console.log('✅ SQL script generation completed!')
+    console.log('[OK] SQL script generation completed!')
     console.log('='.repeat(60))
     console.log(`\n📋 Summary for ${USER_EMAIL}:`)
     console.log(`  Horses: ${horses.length}`)
@@ -824,7 +824,7 @@ async function main() {
     console.log(`   psql $DATABASE_URL -f ${SQL_OUTPUT_FILE}`)
     console.log('\n' + '='.repeat(60))
   } catch (error) {
-    console.error('\n❌ Error generating SQL:', error)
+    console.error('\n[ERROR] Error generating SQL:', error)
     throw error
   }
 }

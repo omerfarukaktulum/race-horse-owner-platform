@@ -270,7 +270,7 @@ export async function POST(
       
       if (recentRace) {
         horsesWithRecentRaces.push(horse)
-        console.log(`[Admin Generate Demo Data] ✓ Horse "${horse.name}" has race on ${recentRace.raceDate.toISOString()}`)
+        console.log(`[Admin Generate Demo Data] [OK] Horse "${horse.name}" has race on ${recentRace.raceDate.toISOString()}`)
       }
     }
     
@@ -304,23 +304,23 @@ export async function POST(
         })
         
         if (!verifyRace) {
-          console.error(`[Admin Generate Demo Data] ❌ ERROR: Horse "${horse.name}" (${horse.id}) was selected for "both" but verification shows no race in last 3 months! Removing from selection.`)
+          console.error(`[Admin Generate Demo Data] [ERROR] Horse "${horse.name}" (${horse.id}) was selected for "both" but verification shows no race in last 3 months! Removing from selection.`)
           // Remove from selection if verification fails
           horsesWithBoth = horsesWithBoth.filter(h => h.id !== horse.id)
           horsesWithBothIds = horsesWithBothIds.filter(id => id !== horse.id)
         } else {
-          console.log(`[Admin Generate Demo Data] ✓ Verified: Horse "${horse.name}" has race on ${verifyRace.raceDate.toISOString()}`)
+          console.log(`[Admin Generate Demo Data] [OK] Verified: Horse "${horse.name}" has race on ${verifyRace.raceDate.toISOString()}`)
         }
       }
       
       if (horsesWithBoth.length > 0) {
-        console.log(`[Admin Generate Demo Data] ✅ Final selection: ${horsesWithBoth.length} horse(s) with verified races in last 3 months for BOTH condition`)
+        console.log(`[Admin Generate Demo Data] [OK] Final selection: ${horsesWithBoth.length} horse(s) with verified races in last 3 months for BOTH condition`)
         horsesWithBoth.forEach(h => console.log(`[Admin Generate Demo Data]   - ${h.name}`))
       } else {
-        console.log(`[Admin Generate Demo Data] ⚠ After verification, no valid horses remain for "both" condition`)
+        console.log(`[Admin Generate Demo Data] [WARN] After verification, no valid horses remain for "both" condition`)
       }
     } else {
-      console.log(`[Admin Generate Demo Data] ⚠ No horses with races in last 3 months found, skipping "both" condition entirely`)
+      console.log(`[Admin Generate Demo Data] [WARN] No horses with races in last 3 months found, skipping "both" condition entirely`)
     }
     
     // Remove horses with both from the pool for "only one" selection
