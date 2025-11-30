@@ -372,6 +372,13 @@ async function main() {
       return
     }
 
+    // Validate ownerProfile and stablemate (TypeScript guard)
+    if (!user.ownerProfile || !user.ownerProfile.stablemate) {
+      throw new Error(`User does not have a valid owner profile or stablemate: ${USER_EMAIL}`)
+    }
+
+    const stablemateId = user.ownerProfile.stablemate.id
+
     // Add SQL header
     sqlStatements.unshift('-- Demo data SQL script')
     sqlStatements.unshift(`-- Generated for user: ${USER_EMAIL}`)
@@ -382,7 +389,7 @@ async function main() {
     sqlStatements.unshift('')
 
     // Generate expenses
-    await addExpenses(horses, user, user.ownerProfile.stablemate.id)
+    await addExpenses(horses, user, stablemateId)
 
     // Generate notes
     await addNotes(horses, user)
