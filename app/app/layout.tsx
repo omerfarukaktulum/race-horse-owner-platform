@@ -492,10 +492,7 @@ function BottomTabBar() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => {
-                // Scroll to top when switching menu items
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
+              scroll={true}
               className="bottom-tab-item flex flex-col items-center justify-center flex-1 h-full min-w-0 max-w-[20%] transition-all duration-200 active:scale-95"
               style={{ 
                 flexDirection: 'column',
@@ -527,6 +524,13 @@ function BottomTabBar() {
 }
 
 function AppLayoutContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  
+  // Scroll to top when pathname changes (new page loads)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-50 flex flex-col">
       <AppNavbar />

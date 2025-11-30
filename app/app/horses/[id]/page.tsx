@@ -28,6 +28,7 @@ interface LocationHistory {
   id: string
   startDate: string
   endDate: string | null
+  locationType: string
   racecourse: { id: string; name: string } | null
   farm: { id: string; name: string } | null
 }
@@ -390,8 +391,30 @@ useEffect(() => {
   }
 
   // Prepare data for components
-  const currentLocation = horse.racecourse?.name || horse.farm?.name
-  const locationType = horse.racecourse ? 'racecourse' : horse.farm ? 'farm' : undefined
+  // Get current location from locationHistory first, then fallback to racecourse/farm
+  const currentLocationHistory = horse.locationHistory && horse.locationHistory.length > 0 
+    ? horse.locationHistory.find(loc => !loc.endDate) || horse.locationHistory[0]
+    : null
+  
+  const currentLocation = currentLocationHistory 
+    ? (currentLocationHistory.racecourse?.name || currentLocationHistory.farm?.name)
+    : (horse.racecourse?.name || horse.farm?.name)
+  
+  // Determine locationType - check locationHistory first, then fallback
+  let locationType: 'racecourse' | 'farm' | undefined = undefined
+  if (currentLocationHistory) {
+    if (currentLocationHistory.locationType === 'racecourse' || currentLocationHistory.racecourse) {
+      locationType = 'racecourse'
+    } else if (currentLocationHistory.locationType === 'farm' || currentLocationHistory.farm) {
+      locationType = 'farm'
+    }
+  } else {
+    if (horse.racecourse) {
+      locationType = 'racecourse'
+    } else if (horse.farm) {
+      locationType = 'farm'
+    }
+  }
   
   // Find last race date and last prize date
   const lastRaceDate = horse.raceHistory && horse.raceHistory.length > 0
