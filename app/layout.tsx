@@ -14,9 +14,14 @@ export const metadata: Metadata = {
   keywords: 'tjk, yarış atı, at yönetimi, eküri, hipodrom, antrenör',
   authors: [{ name: 'EKÜRİM' }],
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
-    shortcut: '/logo.png',
+    icon: [
+      { url: `${appUrl}/logo.png`, sizes: 'any' },
+      { url: `${appUrl}/logo.png`, type: 'image/png' },
+    ],
+    apple: [
+      { url: `${appUrl}/logo.png`, sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: `${appUrl}/logo.png`,
   },
   openGraph: {
     title: 'EKÜRİM',
@@ -24,6 +29,14 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'tr_TR',
     url: appUrl,
+    images: [
+      {
+        url: '/logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'EKÜRİM Logo',
+      },
+    ],
   },
 }
 
