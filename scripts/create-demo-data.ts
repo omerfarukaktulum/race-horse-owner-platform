@@ -561,29 +561,14 @@ async function addTrainerData(horses: any[], stablemateId: string) {
       }
     }
 
-    // Generate trainer illnesses (0-1 per horse, all active)
-    // Target: Similar distribution to owner (but trainers don't add operations)
+    // Generate trainer illnesses and banned medicines
+    // IMPORTANT: Trainers should NOT add both to the same horse
+    // Only add one or the other, or neither, to avoid conflicts with owner data
     const trainerIllnessDetails = [
       'Hafif öksürük gözlemlendi, takip ediliyor',
       'Eklem hassasiyeti, hafif egzersiz yapıldı',
       'Deri tahrişi, topikal tedavi uygulandı',
     ]
-    let trainerIllnessCount = 0
-    for (const horse of trainerHorses) {
-      if (Math.random() > 0.5) { // 50% chance (increased from 30%)
-        const daysAgo = Math.floor(Math.random() * 30) + 1
-        const startDate = new Date()
-        startDate.setDate(startDate.getDate() - daysAgo)
-        const detail = trainerIllnessDetails[Math.floor(Math.random() * trainerIllnessDetails.length)]
-
-        const sql = `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(startDate)}', NULL, ${escapeSql(detail)}, NOW(), NOW());`
-        sqlStatements.push(sql)
-        trainerIllnessCount++
-      }
-    }
-
-    // Generate trainer banned medicines (0-1 per horse, all active)
-    // Target: Similar distribution to owner
     const waitDaysMap: { [key: string]: number } = {
       'Phenylbutazone (Bute)': 7,
       'Flunixin Meglumine (Banamine)': 5,
@@ -592,19 +577,76 @@ async function addTrainerData(horses: any[], stablemateId: string) {
       'Antibiotics (Penicillin)': 7,
       'Diuretics (Furosemide)': 3,
     }
+    
+    let trainerIllnessCount = 0
     let trainerMedicineCount = 0
+    
     for (const horse of trainerHorses) {
-      if (Math.random() > 0.5) { // 50% chance (increased from 30%)
-        const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
-        const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
-        const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1 // Ensure remainingDays > 0
-        const givenDate = new Date()
-        givenDate.setDate(givenDate.getDate() - daysAgo)
-
-        const sql = `INSERT INTO horse_banned_medicines (id, "horseId", "addedById", "medicineName", "givenDate", "waitDays", note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, ${escapeSql(medicineName)}, '${formatDate(givenDate)}', ${waitDays}, ${escapeSql(`${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`)}, NOW(), NOW());`
-        sqlStatements.push(sql)
-        trainerMedicineCount++
+      // Check if owner already added illness or medicine to this horse
+      const ownerAddedIllness = allIllnessHorseIds.includes(horse.id)
+      const ownerAddedMedicine = allMedicineHorseIds.includes(horse.id)
+      
+      // If owner already added both, skip trainer additions for this horse
+      if (ownerAddedIllness && ownerAddedMedicine) {
+        continue
       }
+      
+      // If owner added only illness, trainer can add medicine (but not illness)
+      // If owner added only medicine, trainer can add illness (but not medicine)
+      // If owner added nothing, trainer can add either (but not both)
+      
+      const random = Math.random()
+      if (ownerAddedIllness && !ownerAddedMedicine) {
+        // Owner has illness, trainer can add medicine
+        if (random > 0.5) {
+          const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
+          const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
+          const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1
+          const givenDate = new Date()
+          givenDate.setDate(givenDate.getDate() - daysAgo)
+
+          const sql = `INSERT INTO horse_banned_medicines (id, "horseId", "addedById", "medicineName", "givenDate", "waitDays", note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, ${escapeSql(medicineName)}, '${formatDate(givenDate)}', ${waitDays}, ${escapeSql(`${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`)}, NOW(), NOW());`
+          sqlStatements.push(sql)
+          trainerMedicineCount++
+        }
+      } else if (ownerAddedMedicine && !ownerAddedIllness) {
+        // Owner has medicine, trainer can add illness
+        if (random > 0.5) {
+          const daysAgo = Math.floor(Math.random() * 30) + 1
+          const startDate = new Date()
+          startDate.setDate(startDate.getDate() - daysAgo)
+          const detail = trainerIllnessDetails[Math.floor(Math.random() * trainerIllnessDetails.length)]
+
+          const sql = `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(startDate)}', NULL, ${escapeSql(detail)}, NOW(), NOW());`
+          sqlStatements.push(sql)
+          trainerIllnessCount++
+        }
+      } else if (!ownerAddedIllness && !ownerAddedMedicine) {
+        // Owner added nothing, trainer can add either (but not both)
+        if (random > 0.5) {
+          // Add illness
+          const daysAgo = Math.floor(Math.random() * 30) + 1
+          const startDate = new Date()
+          startDate.setDate(startDate.getDate() - daysAgo)
+          const detail = trainerIllnessDetails[Math.floor(Math.random() * trainerIllnessDetails.length)]
+
+          const sql = `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(startDate)}', NULL, ${escapeSql(detail)}, NOW(), NOW());`
+          sqlStatements.push(sql)
+          trainerIllnessCount++
+        } else {
+          // Add medicine
+          const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
+          const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
+          const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1
+          const givenDate = new Date()
+          givenDate.setDate(givenDate.getDate() - daysAgo)
+
+          const sql = `INSERT INTO horse_banned_medicines (id, "horseId", "addedById", "medicineName", "givenDate", "waitDays", note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, ${escapeSql(medicineName)}, '${formatDate(givenDate)}', ${waitDays}, ${escapeSql(`${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`)}, NOW(), NOW());`
+          sqlStatements.push(sql)
+          trainerMedicineCount++
+        }
+      }
+      // If owner added both, we already skipped above
     }
 
     // Generate trainer training plans (2-4 per horse, future dates)
