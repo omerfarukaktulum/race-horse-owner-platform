@@ -29,6 +29,7 @@ interface LocationHistory {
   startDate: string
   endDate: string | null
   locationType: string
+  city?: string
   racecourse: { id: string; name: string } | null
   farm: { id: string; name: string } | null
 }
@@ -397,7 +398,7 @@ useEffect(() => {
     : null
   
   const currentLocation = currentLocationHistory 
-    ? (currentLocationHistory.racecourse?.name || currentLocationHistory.farm?.name)
+    ? (currentLocationHistory.racecourse?.name || currentLocationHistory.farm?.name || currentLocationHistory.city)
     : (horse.racecourse?.name || horse.farm?.name)
   
   // Determine locationType - check locationHistory first, then fallback
