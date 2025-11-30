@@ -532,25 +532,30 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   
   // Scroll to top when pathname changes (new page loads)
   useEffect(() => {
-    // Function to scroll to top - scroll to absolute beginning of page
+    // Function to scroll to absolute top - ensures filters and top content are visible
     const scrollToTop = () => {
-      // Scroll window to absolute top (0)
+      if (typeof window === 'undefined' || typeof document === 'undefined') return
+      
+      // Force scroll to absolute top (0) - this ensures we see the navbar and top content
+      // Use multiple methods to ensure it works across browsers and devices
+      window.scrollTo(0, 0)
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      
       // Also set documentElement scroll (for some browsers)
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0
-        document.documentElement.scrollLeft = 0
-      }
-      if (document.body) {
-        document.body.scrollTop = 0
-        document.body.scrollLeft = 0
-      }
+      document.documentElement.scrollTop = 0
+      document.documentElement.scrollLeft = 0
+      
+      // Also set body scroll
+      document.body.scrollTop = 0
+      document.body.scrollLeft = 0
+      
       // Also scroll main element if it's scrollable
       const main = document.querySelector('main')
       if (main && main instanceof HTMLElement) {
         main.scrollTop = 0
         main.scrollLeft = 0
       }
+      
       // Also scroll any scrollable containers to top
       document.querySelectorAll('[data-scroll-container]').forEach((container) => {
         if (container instanceof HTMLElement) {
@@ -563,15 +568,23 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     // Scroll immediately
     scrollToTop()
     
-    // Also scroll after a short delay to ensure it happens after page render
-    const timeoutId1 = setTimeout(scrollToTop, 0)
-    const timeoutId2 = setTimeout(scrollToTop, 100)
-    const timeoutId3 = setTimeout(scrollToTop, 300)
+    // Wait for next frame and scroll again
+    requestAnimationFrame(() => {
+      scrollToTop()
+    })
+    
+    // Also scroll after delays to catch any late-rendering content
+    // These delays ensure we scroll after the page has fully rendered
+    const timeoutIds = [
+      setTimeout(scrollToTop, 0),
+      setTimeout(scrollToTop, 50),
+      setTimeout(scrollToTop, 100),
+      setTimeout(scrollToTop, 200),
+      setTimeout(scrollToTop, 400),
+    ]
     
     return () => {
-      clearTimeout(timeoutId1)
-      clearTimeout(timeoutId2)
-      clearTimeout(timeoutId3)
+      timeoutIds.forEach(id => clearTimeout(id))
     }
   }, [pathname])
   
