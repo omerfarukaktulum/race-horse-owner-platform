@@ -161,13 +161,13 @@ function AppNavbar() {
         <div className="flex items-center justify-between h-16">
           <Link href="/app/home" className="flex items-center space-x-2">
             {isOwner && !isLoadingData && ownerOfficialRef ? (
-              <div className="h-12 w-12 flex-shrink-0 relative flex items-center justify-center -mt-2">
+              <div className="h-12 w-12 flex-shrink-0 relative flex items-center justify-center -mt-2 overflow-hidden">
                 <Image
                   src={`https://medya-cdn.tjk.org/formaftp/${ownerOfficialRef}.jpg`}
                   alt="Eküri Forması"
                   width={48}
                   height={48}
-                  className="object-contain"
+                  className="object-contain w-full h-full max-w-full max-h-full"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
                     const container = e.currentTarget.parentElement
