@@ -538,66 +538,31 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       window.history.scrollRestoration = 'manual'
     }
     
-    // Function to scroll to absolute top - ensures filters and top content are visible
+    // Function to scroll to absolute top (position 0)
     const scrollToTop = () => {
       if (typeof window === 'undefined' || typeof document === 'undefined') return
       
-      // Get the navbar to calculate its height
-      const navbar = document.querySelector('header')
-      const navbarHeight = navbar ? navbar.offsetHeight : 64 // Default to 64px (h-16)
+      // Scroll window to position 0
+      window.scrollTo(0, 0)
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       
-      // Find the first content element inside main (filters section)
-      // This is what should be visible, not the cards
+      // Use a negative value to force scroll to absolute top
+      // Setting a negative value forces the browser to recalculate and clamp to 0,
+      // which ensures we actually reach the true top of the page
+      // This works around browser behavior where setting scrollTop = 0 might not
+      // show the absolute top (navbar and filters) in some cases
+      document.documentElement.scrollTop = -1
+      document.documentElement.scrollLeft = 0
+      
+      // Also set body scroll
+      document.body.scrollTop = 0
+      document.body.scrollLeft = 0
+      
+      // Also scroll main element if it's scrollable
       const main = document.querySelector('main')
-      if (main) {
-        const firstContentElement = main.firstElementChild as HTMLElement | null
-        
-        if (firstContentElement) {
-          // Get the position of the first content element relative to the viewport
-          const rect = firstContentElement.getBoundingClientRect()
-          const currentScrollY = window.scrollY || document.documentElement.scrollTop
-          
-          // Calculate scroll position to show the bottom of navbar
-          // The navbar is fixed at top, so we want to scroll so the first content
-          // element appears just below the navbar
-          // Account for mt-4 margin (16px) from navbar bottom to first element
-          const marginTop = 16 // mt-4 = 1rem = 16px
-          
-          // Calculate target scroll: position of first element - navbar height - margin
-          const targetScroll = rect.top + currentScrollY - navbarHeight - marginTop
-          
-          // Scroll to show navbar at top and filters just below it
-          const finalScroll = Math.max(0, targetScroll)
-          
-          window.scrollTo(0, finalScroll)
-          window.scrollTo({ top: finalScroll, left: 0, behavior: 'instant' })
-          
-          // Also set documentElement scroll
-          document.documentElement.scrollTop = finalScroll
-          document.documentElement.scrollLeft = 0
-          
-          // Also set body scroll
-          document.body.scrollTop = finalScroll
-          document.body.scrollLeft = 0
-        } else {
-          // Fallback: scroll to absolute top
-          window.scrollTo(0, 0)
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-          document.documentElement.scrollTop = 0
-          document.body.scrollTop = 0
-        }
-        
-        // Also scroll main element if it's scrollable
-        if (main instanceof HTMLElement) {
-          main.scrollTop = 0
-          main.scrollLeft = 0
-        }
-      } else {
-        // Fallback: scroll to absolute top
-        window.scrollTo(0, 0)
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-        document.documentElement.scrollTop = 0
-        document.body.scrollTop = 0
+      if (main && main instanceof HTMLElement) {
+        main.scrollTop = 0
+        main.scrollLeft = 0
       }
       
       // Also scroll any scrollable containers to top
@@ -616,19 +581,23 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     // Scroll immediately first
     scrollToTop()
     
+    // Use multiple requestAnimationFrames to ensure DOM is ready
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        scrollToTop()
-        // Also scroll after delays to ensure content is loaded and override any position restoration
-        // Multiple attempts to catch any late-rendering or position restoration
-        timeoutIds = [
-          setTimeout(scrollToTop, 0),
-          setTimeout(scrollToTop, 50),
-          setTimeout(scrollToTop, 100),
-          setTimeout(scrollToTop, 200),
-          setTimeout(scrollToTop, 400),
-          setTimeout(scrollToTop, 600),
-        ]
+        requestAnimationFrame(() => {
+          scrollToTop()
+          // Also scroll after delays to ensure content is loaded and override any position restoration
+          // Multiple attempts to catch any late-rendering or position restoration
+          timeoutIds = [
+            setTimeout(scrollToTop, 0),
+            setTimeout(scrollToTop, 50),
+            setTimeout(scrollToTop, 100),
+            setTimeout(scrollToTop, 200),
+            setTimeout(scrollToTop, 400),
+            setTimeout(scrollToTop, 600),
+            setTimeout(scrollToTop, 800),
+          ]
+        })
       })
     })
     

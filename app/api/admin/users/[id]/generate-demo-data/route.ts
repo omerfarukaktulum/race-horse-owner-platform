@@ -270,10 +270,17 @@ export async function POST(
       }
     }
     
-    // Select at most 2 horses from those with recent races for both
-    const shuffledRecentRaceHorses = [...horsesWithRecentRaces].sort(() => Math.random() - 0.5)
-    const horsesWithBoth = shuffledRecentRaceHorses.slice(0, Math.min(2, shuffledRecentRaceHorses.length))
-    const horsesWithBothIds = horsesWithBoth.map(h => h.id)
+    // IMPORTANT: Select at most 2 horses ONLY from those with recent races for "both" condition
+    // If no horses have recent races, skip the "both" condition entirely
+    let horsesWithBoth: any[] = []
+    let horsesWithBothIds: string[] = []
+    
+    if (horsesWithRecentRaces.length > 0) {
+      // Only select from horses with races in the last 3 months
+      const shuffledRecentRaceHorses = [...horsesWithRecentRaces].sort(() => Math.random() - 0.5)
+      horsesWithBoth = shuffledRecentRaceHorses.slice(0, Math.min(2, shuffledRecentRaceHorses.length))
+      horsesWithBothIds = horsesWithBoth.map(h => h.id)
+    }
     
     // Remove horses with both from the pool for "only one" selection
     const remainingHorses = horses.filter(h => !horsesWithBothIds.includes(h.id))

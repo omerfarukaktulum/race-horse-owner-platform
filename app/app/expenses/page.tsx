@@ -1187,7 +1187,7 @@ export default function ExpensesPage() {
                   )}
                 </tbody>
               </table>
-            </div>
+                          </div>
         </CardContent>
       </Card>
       )}
