@@ -697,8 +697,8 @@ export default function AdminUsersTab() {
                   <div>
                     <strong>Konum Ayarları:</strong>
                     <ul className="ml-4 mt-1 space-y-1 text-gray-600">
-                      <li>- Son 3 ay içinde yarış yapmış atlar: "Saha" (Hipodrom)</li>
-                      <li>- Diğer atlar: "Çiftlik"</li>
+                      <li>- Son 3 ay içinde yarış yapmış atlar: &quot;Saha&quot; (Hipodrom)</li>
+                      <li>- Diğer atlar: &quot;Çiftlik&quot;</li>
                     </ul>
                   </div>
                 </div>
