@@ -2,24 +2,39 @@
 
 ## Overview
 
-Database migrations are automatically executed during Vercel deployments via the `prebuild` script. We use Supabase's **transaction pooler** (pooled connection) which supports DDL operations, so no direct connection is needed.
+Database migrations are executed via **GitHub Actions workflow** or **manually via Supabase SQL Editor**. 
+
+**Why not in Vercel builds?**
+- Vercel build environment has connection/timeout issues with Supabase
+- Migrations can hang or timeout during build
+- Better to run migrations separately before deployment
 
 ## How It Works
 
-1. **During Vercel Build**: The `prebuild` script runs before `next build`
-2. **Migration Execution**: `npx prisma migrate deploy` applies pending migrations using pooled connection
-3. **Automatic**: No manual intervention needed - migrations run with every deployment
-4. **Build Safety**: If migrations fail, the build fails - this prevents deploying with broken migrations
+### Recommended: GitHub Actions Workflow
+
+1. **Create Migration**: Create migration locally with `npm run db:migrate`
+2. **Push to GitHub**: Commit and push migration files
+3. **Run GitHub Actions**: Manually trigger "Run Production Migration" workflow
+4. **Verify**: Check workflow logs to confirm migrations succeeded
+5. **Deploy**: Deploy your application (migrations are already applied)
+
+### Alternative: Manual via Supabase SQL Editor
+
+1. Copy migration SQL from `prisma/migrations/[migration-name]/migration.sql`
+2. Run in Supabase SQL Editor
+3. Verify migration was applied
+4. Deploy your application
 
 ## Prerequisites
 
-### Vercel Environment Variables
+### GitHub Secrets
 
-Make sure this is set in your Vercel project settings:
+Make sure these are set in your GitHub repository secrets (Settings → Secrets and variables → Actions):
 
-- `DATABASE_URL` - Pooled connection string (transaction mode)
+- `PROD_DATABASE_URL` - Pooled connection string (transaction mode)
 
-**Important**: We use Supabase's **transaction pooler** (port 6543) which supports DDL operations like migrations. No direct connection needed!
+**Note**: Use Supabase's **transaction pooler** connection string (port 6543) from Settings → Database → Connection string → Transaction mode.
 
 ### Supabase Connection Strings
 
@@ -32,15 +47,14 @@ postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/p
 
 ## Migration Process
 
-### Automatic (Recommended)
+### Via GitHub Actions (Recommended)
 
-Migrations run automatically during Vercel deployments:
-
-1. Push code to GitHub (including migration files)
-2. Vercel triggers build
-3. `prebuild` script runs: `npx prisma generate && npx prisma migrate deploy`
-4. Migrations are applied to production database using pooled connection
-5. Build continues
+1. Create migration locally: `npm run db:migrate`
+2. Commit and push migration files to GitHub
+3. Go to GitHub Actions → "Run Production Migration"
+4. Click "Run workflow" → "Run workflow"
+5. Wait for workflow to complete (check logs)
+6. Deploy your application
 
 ### Manual (If Needed)
 
@@ -65,15 +79,13 @@ npx prisma migrate deploy
 
 ## Troubleshooting
 
-### Migration Fails During Build
+### Migration Fails in GitHub Actions
 
-**Symptoms**: Build fails with migration errors
-
-**This is expected behavior** - the build intentionally fails if migrations fail to prevent deploying with broken database state.
+**Symptoms**: GitHub Actions workflow fails or hangs
 
 **Solutions**:
-1. Check Vercel build logs for specific error message
-2. Verify `DATABASE_URL` is set in Vercel environment variables
+1. Check GitHub Actions logs for specific error message
+2. Verify `PROD_DATABASE_URL` is set in GitHub secrets
 3. Ensure you're using **Transaction** mode connection string (not Session mode)
 4. Test migration locally with production connection:
    ```bash
@@ -81,7 +93,7 @@ npx prisma migrate deploy
    npx prisma migrate deploy
    ```
 5. If migration has issues, apply manually via Supabase SQL Editor first
-6. Once fixed, push again and build will succeed
+6. If connection times out, try running migration SQL directly in Supabase SQL Editor
 
 ### Migrations Not Running
 

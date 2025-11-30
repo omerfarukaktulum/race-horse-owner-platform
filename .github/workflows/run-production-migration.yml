@@ -1,7 +1,7 @@
-name: Run Production Migration (Backup)
+name: Run Production Migration
 
-# NOTE: Migrations now run automatically during Vercel deployments via prebuild script.
-# This workflow is kept as a backup option for manual migrations if needed.
+# Migrations are run via this GitHub Actions workflow before deployments.
+# This avoids connection/timeout issues in Vercel build environment.
 
 on:
   workflow_dispatch: # Manual trigger only
