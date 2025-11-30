@@ -532,7 +532,21 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   
   // Scroll to top when pathname changes (new page loads)
   useEffect(() => {
+    // Scroll immediately
     window.scrollTo({ top: 0, behavior: 'instant' })
+    
+    // Also scroll after a short delay to ensure it happens after page render
+    const timeoutId = setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      // Also scroll any scrollable containers to top
+      document.querySelectorAll('[data-scroll-container]').forEach((container) => {
+        if (container instanceof HTMLElement) {
+          container.scrollTop = 0
+        }
+      })
+    }, 0)
+    
+    return () => clearTimeout(timeoutId)
   }, [pathname])
   
   return (
