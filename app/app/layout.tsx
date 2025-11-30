@@ -205,7 +205,7 @@ function AppNavbar() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex md:flex-1 md:items-center md:justify-center md:space-x-2">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} scroll={false}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -225,7 +225,7 @@ function AppNavbar() {
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {isOwner && (
-              <Link href="/app/stablemate">
+              <Link href="/app/stablemate" scroll={false}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -241,7 +241,7 @@ function AppNavbar() {
               </Link>
             )}
             {isTrainer && (
-              <Link href="/app/trainer/account">
+              <Link href="/app/trainer/account" scroll={false}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -270,7 +270,7 @@ function AppNavbar() {
             {isOwner && (
               <Link
                 href="/app/stablemate"
-                scroll={true}
+                scroll={false}
                 className="flex flex-col items-center gap-1 p-2 h-auto transition-all duration-200 active:scale-95"
               >
                 <Settings className={`h-5 w-5 ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-500'}`} />
@@ -282,7 +282,7 @@ function AppNavbar() {
             {isTrainer && (
               <Link
                 href="/app/trainer/account"
-                scroll={true}
+                scroll={false}
                 className="flex flex-col items-center gap-1 p-2 h-auto transition-all duration-200 active:scale-95"
               >
                 <User className={`h-5 w-5 ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-500'}`} />
@@ -496,7 +496,7 @@ function BottomTabBar() {
             <Link
               key={item.href}
               href={item.href}
-              scroll={true}
+              scroll={false}
               className="bottom-tab-item flex flex-col items-center justify-center flex-1 h-full min-w-0 max-w-[20%] transition-all duration-200 active:scale-95"
               style={{ 
                 flexDirection: 'column',
