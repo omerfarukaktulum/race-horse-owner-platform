@@ -17,6 +17,8 @@ const nextConfig = {
       bodySizeLimit: '5mb',
     },
   },
+  // Disable automatic scroll restoration to allow manual control
+  scrollRestoration: false,
   // Remove console.log in production builds (keep console.error and console.warn)
   webpack: (config, { isServer, dev }) => {
     if (!dev && !isServer) {

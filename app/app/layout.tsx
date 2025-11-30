@@ -533,6 +533,11 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
   // Scroll to top when pathname changes (new page loads)
   // This only runs after navigation completes, not on the current page
   useEffect(() => {
+    // Disable browser scroll restoration
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+    
     // Function to scroll to absolute top - ensures filters and top content are visible
     const scrollToTop = () => {
       if (typeof window === 'undefined' || typeof document === 'undefined') return
@@ -549,13 +554,6 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       // Also set body scroll
       document.body.scrollTop = 0
       document.body.scrollLeft = 0
-      
-      // Force scroll on window again after setting documentElement/body
-      // This ensures the viewport actually moves to top
-      setTimeout(() => {
-        window.scrollTo(0, 0)
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-      }, 0)
       
       // Also scroll main element if it's scrollable (but don't rely on it)
       const main = document.querySelector('main')
@@ -576,6 +574,9 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     // Wait for the page to be fully rendered before scrolling
     // Use requestAnimationFrame to wait for the next paint
     let timeoutIds: ReturnType<typeof setTimeout>[] = []
+    
+    // Scroll immediately first
+    scrollToTop()
     
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
