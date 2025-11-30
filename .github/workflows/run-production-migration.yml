@@ -32,13 +32,52 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
+      - name: Prepare direct connection URL
+        id: prepare-direct-url
+        run: |
+          # Check if PROD_DIRECT_DATABASE_URL secret exists and is not empty
+          if [ "${{ secrets.PROD_DIRECT_DATABASE_URL }}" != "" ]; then
+            echo "Using provided PROD_DIRECT_DATABASE_URL"
+            echo "direct_url=${{ secrets.PROD_DIRECT_DATABASE_URL }}" >> $GITHUB_OUTPUT
+          else
+            echo "Converting pooler URL to direct connection URL"
+            POOLER_URL="${{ secrets.PROD_DATABASE_URL }}"
+            # Convert pooler URL format to direct URL format
+            # From: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
+            # To:   postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+            if [[ "$POOLER_URL" == *"pooler.supabase.com"* ]]; then
+              # Use Node.js for more reliable URL parsing
+              DIRECT_URL=$(node -e "
+                const url = '$POOLER_URL';
+                const match = url.match(/postgresql:\/\/postgres\.([^:]+):([^@]+)@[^\/]+\/postgres/);
+                if (match) {
+                  const [, ref, password] = match;
+                  console.log(\`postgresql://postgres:\${password}@db.\${ref}.supabase.co:5432/postgres\`);
+                } else {
+                  console.error('Failed to parse pooler URL');
+                  process.exit(1);
+                }
+              ")
+              if [ $? -eq 0 ]; then
+                echo "direct_url=$DIRECT_URL" >> $GITHUB_OUTPUT
+                echo "Converted URL successfully"
+              else
+                echo "Error: Failed to convert pooler URL. Please set PROD_DIRECT_DATABASE_URL secret."
+                exit 1
+              fi
+            else
+              echo "Error: PROD_DATABASE_URL does not appear to be a Supabase pooler URL."
+              echo "Please set PROD_DIRECT_DATABASE_URL secret with the direct connection string."
+              exit 1
+            fi
+          fi
+
       - name: Run production migration
         run: |
-          echo "Running migration with direct connection (DIRECT_URL)"
-          echo "Using DATABASE_URL for client, DIRECT_URL for migrations"
+          echo "Running migration with direct connection"
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.PROD_DIRECT_DATABASE_URL }}
+          DIRECT_URL: ${{ steps.prepare-direct-url.outputs.direct_url }}
           NODE_ENV: production
 
