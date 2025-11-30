@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search, TurkishLira } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search, TurkishLira, Wallet } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatCurrency, formatDateShort } from '@/lib/utils/format'
@@ -11,6 +11,7 @@ import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from '@/app/components/horse-detail/EmptyState'
 
 interface Expense {
   id: string
@@ -914,8 +915,12 @@ export default function ExpensesPage() {
             <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
           </div>
         ) : !hasExpenses ? (
-          <div className="py-16 text-center text-sm text-gray-500">
-            {TR.expenses.noExpenses}
+          <div className="mt-4">
+            <EmptyState
+              icon={Wallet}
+              title="Gider kaydı bulunmuyor"
+              description="Ekürünüz için henüz gider kaydı eklenmemiş."
+            />
           </div>
         ) : filteredExpenses.length === 0 ? (
           <div className="py-6 text-center text-sm text-gray-500">
@@ -944,9 +949,15 @@ export default function ExpensesPage() {
                             <span className="text-sm font-semibold text-gray-900">
                               {formatDateShort(expense.date)}
                             </span>
-                            <span className="text-sm font-medium text-indigo-600">
-                              {expense.horse?.name || '-'}
-                            </span>
+                            {expense.horse?.name ? (
+                              <span className="text-sm font-medium text-indigo-600">
+                                {expense.horse.name}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2.5 py-0.5 text-xs font-semibold">
+                                Genel
+                              </span>
+                            )}
             </div>
                           {user?.role === 'TRAINER' && expense.horse?.stablemate?.name && (
                             <span className="text-xs text-gray-500">
@@ -1018,19 +1029,26 @@ export default function ExpensesPage() {
               </div>
 
       {/* Desktop: Table Layout */}
-      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
-        <CardContent className={hasExpenses ? 'p-0' : isLoading ? 'py-16 text-center' : 'py-16 text-center'}>
-          {isLoading ? (
-            <div className="py-16 text-center">
-              <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+      {!hasExpenses ? (
+        <div className="hidden md:block mt-4">
+          <EmptyState
+            icon={Wallet}
+            title="Gider kaydı bulunmuyor"
+            description="Ekürünüz için henüz gider kaydı eklenmemiş."
+          />
+        </div>
+      ) : (
+        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden">
+          <CardContent className={isLoading ? 'py-16 text-center' : 'p-0'}>
+            {isLoading ? (
+              <div className="py-16 text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                </div>
+                <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+                <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
               </div>
-              <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
-              <p className="text-sm text-gray-600 mt-2">Giderler yükleniyor...</p>
-            </div>
-          ) : !hasExpenses ? (
-            <p className="text-gray-500">{TR.expenses.noExpenses}</p>
-          ) : (
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
@@ -1101,9 +1119,15 @@ export default function ExpensesPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <span className="text-sm font-medium text-gray-900">
-                              {expense.horse?.name || '-'}
-                            </span>
+                            {expense.horse?.name ? (
+                              <span className="text-sm font-medium text-gray-900">
+                                {expense.horse.name}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-700 px-2.5 py-0.5 text-xs font-semibold">
+                                Genel
+                              </span>
+                            )}
                           </td>
                           {user?.role === 'TRAINER' && (
                             <td className="px-4 py-3 whitespace-nowrap">
@@ -1172,10 +1196,11 @@ export default function ExpensesPage() {
                   )}
                 </tbody>
               </table>
-                          </div>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add Expense Modal */}
       <AddExpenseModal

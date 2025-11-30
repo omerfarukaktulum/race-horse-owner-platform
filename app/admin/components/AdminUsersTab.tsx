@@ -174,7 +174,7 @@ export default function AdminUsersTab() {
 
   const handleDeleteResources = async (userId: string, userEmail: string, ownerName: string) => {
     const confirmed = window.confirm(
-      `"${ownerName}" (${userEmail}) için tüm kaynakları silmek istediğinize emin misiniz?\n\nBu işlem şunları silecektir:\n- Tüm idmanlar (gallops)\n- Tüm yarış geçmişi\n- Tüm giderler (expenses)\n- Tüm notlar\n- Tüm hastalık kayıtları\n- Tüm yasaklı ilaçlar\n- Tüm antrenman planları\n- Tüm kayıtlar (registrations)\n- Tüm konum geçmişi\n- Tüm diğer ilgili veriler\n\nKorunacaklar:\n- Kullanıcı hesabı\n- Sahip profili\n- Eküri bilgisi\n- Atlar (horses)\n\nBu işlem geri alınamaz!`
+      `"${ownerName}" (${userEmail}) için tüm kaynakları silmek istediğinize emin misiniz?\n\nBu işlem şunları silecektir:\n- Tüm giderler (at bazlı ve eküri genel giderler)\n- Tüm notlar\n- Tüm hastalık kayıtları\n- Tüm yasaklı ilaçlar\n- Tüm antrenman planları\n- Tüm kayıtlar (registrations)\n- Tüm konum geçmişi\n- Tüm diğer ilgili veriler\n\nKorunacaklar:\n- Kullanıcı hesabı\n- Sahip profili\n- Eküri bilgisi\n- Atlar (horses)\n- İdmanlar (gallops)\n- Yarış geçmişi (race history)\n\nBu işlem geri alınamaz!`
     )
 
     if (!confirmed) {

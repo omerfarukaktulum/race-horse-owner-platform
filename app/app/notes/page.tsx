@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatDateShort } from '@/lib/utils/format'
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/componen
 import { AddNoteModal } from '@/app/components/modals/add-note-modal'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
+import { EmptyState } from '@/app/components/horse-detail/EmptyState'
 
 interface Note {
   id: string
@@ -838,8 +839,12 @@ export default function NotesPage() {
                 <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
               </div>
             ) : !hasNotes ? (
-              <div className="py-16 text-center text-sm text-gray-500">
-                Henüz not eklenmemiş
+              <div className="mt-4">
+                <EmptyState
+                  icon={FileText}
+                  title="Not bulunmuyor"
+                  description="Ekürünüz için henüz not eklenmemiş."
+                />
               </div>
             ) : filteredNotes.length === 0 ? (
               <div className="py-6 text-center text-sm text-gray-500">
@@ -951,54 +956,57 @@ export default function NotesPage() {
       </div>
 
       {/* Desktop: Table Layout */}
-      <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
-        <CardContent className="p-0 w-full min-w-0">
-          <div className="overflow-x-auto w-full min-w-0">
-            <table className="w-full min-w-full">
-                <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Tarih
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      At
-                    </th>
-                    {user?.role === 'TRAINER' && (
+      {!hasNotes ? (
+        <div className="hidden md:block mt-4">
+          <EmptyState
+            icon={FileText}
+            title="Not bulunmuyor"
+            description="Ekürünüz için henüz not eklenmemiş."
+          />
+        </div>
+      ) : (
+        <Card className="hidden md:block bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg overflow-hidden w-full min-w-0">
+          <CardContent className="p-0 w-full min-w-0">
+            <div className="overflow-x-auto w-full min-w-0">
+              <table className="w-full min-w-full">
+                  <thead className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-200 sticky top-0">
+                    <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Eküri
+                        Tarih
                       </th>
-                    )}
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Not
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Ekleyen
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      İşlem
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-6 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                          <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        At
+                      </th>
+                      {user?.role === 'TRAINER' && (
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                          Eküri
+                        </th>
+                      )}
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Not
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        Ekleyen
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                        İşlem
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-6 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+                          </div>
+                          <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
+                          <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
                         </div>
-                        <p className="text-gray-900 font-bold text-lg">{TR.common.loading}</p>
-                        <p className="text-sm text-gray-600 mt-2">Notlar yükleniyor...</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : !hasNotes ? (
-                  <tr>
-                    <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-16 text-center text-sm text-gray-500">
-                      Henüz not eklenmemiş
-                    </td>
-                  </tr>
-                ) : filteredNotes.length === 0 ? (
+                      </td>
+                    </tr>
+                  ) : filteredNotes.length === 0 ? (
                     <tr>
                     <td colSpan={user?.role === 'TRAINER' ? 6 : 5} className="px-4 py-6 text-center text-sm text-gray-500">
                         Seçilen filtrelerde not bulunamadı
@@ -1101,8 +1109,9 @@ export default function NotesPage() {
                 </tbody>
               </table>
             </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Add Note Modal */}
       {isAddModalOpen && availableHorsesForAdd.length > 0 && (

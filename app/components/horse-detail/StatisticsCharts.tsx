@@ -1092,24 +1092,32 @@ export function StatisticsCharts({
     (enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0) ||
     (isGlobalStats && categoryHorseDistributions.length > 0)
   
-  // Return empty state early if no race data and on genel category
-  if (!hasRaceData && selectedCategory === 'genel') {
+  // Check if there's any statistics data available (races or expenses)
+  // We check the basic data arrays first, then check computed distributions
+  const hasAnyStatisticsData = hasRaceData || hasExpenseData
+  
+  // Return empty state early only if there's truly no statistics data at all
+  // If there's expense data but no race data, still show the page (user can navigate to gelir-gider)
+  if (!hasAnyStatisticsData) {
     return (
       <div className="mt-4">
         <EmptyState
           icon={BarChart3}
           title="İstatistik bulunmuyor"
-          description="Bu atın henüz koşu kaydı bulunmamaktadır."
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz istatistik bulunmamaktadır."
+            : "Bu at için henüz istatistik bulunmamaktadır."}
         />
       </div>
     )
   }
   
+  
   return (
-    <div className="w-full min-w-0">
+    <div className="w-full mt-4 min-w-0">
       {/* Mobile: Filter Button and Tabs */}
-      {!hideButtons && hasRaceData && (
-        <div className="md:hidden mt-4 pb-0 flex items-center gap-3">
+      {!hideButtons && hasAnyStatisticsData && (
+        <div className="md:hidden mt-4 pb-0 flex items-center gap-3 mb-0">
           {/* Filter button */}
           <div className="relative filter-dropdown-container flex-shrink-0" ref={filterDropdownRef}>
             <Button
@@ -1250,134 +1258,228 @@ export function StatisticsCharts({
         </div>
       )}
 
-      {/* Desktop: Filter dropdown container - always rendered for dropdown positioning */}
-      <div 
-        className="hidden md:block relative filter-dropdown-container"
-        ref={filterDropdownRef}
-        style={{ visibility: hideButtons || !hasRaceData ? 'hidden' : 'visible', position: hideButtons ? 'absolute' : 'relative' }}
-      >
-        {!hideButtons && hasRaceData && (
-          <Button
-            variant="outline"
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-              hasActiveFilters
-                ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
-                : 'border-gray-300 text-gray-700 hover:border-gray-400'
-            }`}
-          >
-            <Filter className="h-4 w-4" />
-            {hasActiveFilters && (
-              <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-        )}
+      {/* Desktop: Filter and buttons (normal layout) - matching horses page */}
+      {!hideButtons && hasAnyStatisticsData && (
+        <div className="hidden md:flex items-center justify-between gap-4 mb-6 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="relative filter-dropdown-container" ref={filterDropdownRef}>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                className={`border-2 font-medium px-3 h-10 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  hasActiveFilters
+                    ? 'border-[#6366f1] bg-indigo-50 text-[#6366f1]'
+                    : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+                {hasActiveFilters && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#6366f1] text-white text-xs font-semibold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
 
-        {showFilterDropdown && (() => {
-          const dropdownContent = (
-            <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">Filtreler</h3>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFilterDropdown(false)
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Date Range Filter */}
-              <div className="mb-4">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
-                <div className="flex flex-wrap gap-2">
-                  {RANGE_OPTIONS.map((option) => {
-                    const isActive = selectedRange === option.value
-                    return (
-                      <button
-                        type="button"
-                        key={option.value}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          const nextValue = isActive ? null : option.value
-                          setSelectedRange(nextValue)
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          isActive
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Stablemate Filter (for trainers) */}
-              {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
-                <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
-                  <div className="flex flex-wrap gap-2">
-                    {getUniqueStablemates.map((stablemate) => (
-                      <button
-                        type="button"
-                        key={stablemate}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleStablemateFilter(stablemate)
-                        }}
-                        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                          stablemateFilters.includes(stablemate)
-                            ? 'bg-[#6366f1] text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {stablemate}
-                      </button>
-                    ))}
+              {showFilterDropdown && (
+                <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowFilterDropdown(false)
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                </div>
-              )}
 
-              {/* Clear Filters */}
-              {hasActiveFilters && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    clearFilters()
-                    setShowFilterDropdown(false)
-                  }}
-                  className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Filtreleri Temizle
-                </button>
+                  {/* Date Range Filter */}
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                    <div className="flex flex-wrap gap-2">
+                      {RANGE_OPTIONS.map((option) => {
+                        const isActive = selectedRange === option.value
+                        return (
+                          <button
+                            type="button"
+                            key={option.value}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const nextValue = isActive ? null : option.value
+                              setSelectedRange(nextValue)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Stablemate Filter (for trainers) */}
+                  {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                      <div className="flex flex-wrap gap-2">
+                        {getUniqueStablemates.map((stablemate) => (
+                          <button
+                            type="button"
+                            key={stablemate}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleStablemateFilter(stablemate)
+                            }}
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                              stablemateFilters.includes(stablemate)
+                                ? 'bg-[#6366f1] text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {stablemate}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clear Filters */}
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        clearFilters()
+                        setShowFilterDropdown(false)
+                      }}
+                      className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Filtreleri Temizle
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-          )
+          </div>
+        </div>
+      )}
 
-          // Render dropdown in portal if hideButtons is true, otherwise inline
-          if (hideButtons && filterDropdownContainerRef?.current) {
-            return createPortal(dropdownContent, filterDropdownContainerRef.current)
-          }
-          
-          return dropdownContent
-        })()}
-      </div>
+      {/* Desktop: Filter dropdown container for hideButtons mode - always rendered for dropdown positioning */}
+      {hideButtons && (
+        <div 
+          className="hidden md:block relative filter-dropdown-container"
+          ref={filterDropdownRef}
+          style={{ visibility: !hasAnyStatisticsData ? 'hidden' : 'visible' }}
+        >
+          {showFilterDropdown && (() => {
+            const dropdownContent = (
+              <div ref={dropdownContentRef} className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">Filtreler</h3>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
 
-      {/* Mobile: Spacer for fixed header */}
-      <>
+                {/* Date Range Filter */}
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Tarih Aralığı</label>
+                  <div className="flex flex-wrap gap-2">
+                    {RANGE_OPTIONS.map((option) => {
+                      const isActive = selectedRange === option.value
+                      return (
+                        <button
+                          type="button"
+                          key={option.value}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const nextValue = isActive ? null : option.value
+                            setSelectedRange(nextValue)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Stablemate Filter (for trainers) */}
+                {user?.role === 'TRAINER' && getUniqueStablemates.length > 0 && (
+                  <div className="mb-4">
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Eküri</label>
+                    <div className="flex flex-wrap gap-2">
+                      {getUniqueStablemates.map((stablemate) => (
+                        <button
+                          type="button"
+                          key={stablemate}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleStablemateFilter(stablemate)
+                          }}
+                          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                            stablemateFilters.includes(stablemate)
+                              ? 'bg-[#6366f1] text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {stablemate}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      clearFilters()
+                      setShowFilterDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                )}
+              </div>
+            )
+
+            // Render dropdown in portal if hideButtons is true
+            if (filterDropdownContainerRef?.current) {
+              return createPortal(dropdownContent, filterDropdownContainerRef.current)
+            }
+            
+            return dropdownContent
+          })()}
+        </div>
+      )}
+
       {/* Statistics Navigation Sidebar and Content */}
-      <div className={`flex flex-col md:flex-row gap-6 ${hideButtons ? 'mt-6' : 'md:mt-6'}`}>
+      <div className={`flex flex-col md:flex-row gap-6 ${hideButtons ? 'mt-6' : 'mt-6'}`}>
         {/* Left Sidebar Navigation - Desktop Only */}
-        {hasRaceData && (
+        {hasAnyStatisticsData && (
         <div className="hidden md:block flex-shrink-0">
           <div className="bg-white/90 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-lg p-4 sticky top-4 min-w-fit">
             <nav className="space-y-1">
@@ -1414,11 +1516,11 @@ export function StatisticsCharts({
         {/* Main Content Area */}
         <div className="flex-1 min-w-0 w-full">
           {/* Desktop Content */}
-          <div className="hidden md:block space-y-6">
+          <div className="hidden md:block space-y-6 pt-1">
             {/* Genel Category: First Row Charts */}
             {selectedCategory === 'genel' && (
               <>
-      {/* First Row: 4 Pie Charts */}
+      {/* Race-related charts - only show if has race data */}
       {hasRaceData && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* City Distribution */}
@@ -1602,13 +1704,364 @@ export function StatisticsCharts({
           )}
         </div>
       )}
+
+      {/* Earnings and Expenses Charts - show even without race data */}
+      {hasExpenseData && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                {getEarningsChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getEarningsChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getEarningsChartData.data}>
+                    <defs>
+                      <linearGradient id="colorEarningsGenel" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-emerald-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="earnings"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fill="url(#colorEarningsGenel)"
+                      dot={{ fill: '#10b981', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                {getExpensesChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getExpensesChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getExpensesChartData.data}>
+                    <defs>
+                      <linearGradient id="colorExpensesGenel" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-red-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      fill="url(#colorExpensesGenel)"
+                      dot={{ fill: '#ef4444', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Earning/Spending Horses - show even without race data (for global stats) */}
+      {isGlobalStats && (topEarningPieData.length > 0 || topSpendingPieData.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+          {topEarningPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                  En Fazla Kazanan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topEarningPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#10b981"
+                      dataKey="value"
+                    >
+                      {topEarningPieData.map((entry, index) => (
+                        <Cell key={`top-earning-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topEarningPieData}
+                  total={topEarningTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {topSpendingPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
+                  En Fazla Gideri Olan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topSpendingPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#ef4444"
+                      dataKey="value"
+                    >
+                      {topSpendingPieData.map((entry, index) => (
+                        <Cell key={`top-spending-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{data.name}</p>
+                              <p className="text-sm text-rose-600 font-semibold">
+                                {formatCurrencyNumber(data.value)}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topSpendingPieData}
+                  total={topSpendingTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Expense Category Distribution - show even without race data */}
+      {shouldShowCategoryGrid && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-6">
+          {enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0 && (() => {
+            const totalExpenses = expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)
+            const expenseCategoryPieData = addPercentages(
+              expenseCategoryDistribution.map((item, idx) => ({
+                ...item,
+                name: getCategoryDisplayName(item.name),
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    Gider Kategorileri Dağılımı
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={expenseCategoryPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expenseCategoryPieData.map((entry, index) => (
+                          <Cell key={`category-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={expenseCategoryPieData}
+                    total={totalExpenses}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {isGlobalStats && categoryHorseDistributions.map((categoryData) => {
+            const total = categoryData.horses.reduce((sum, h) => sum + h.value, 0)
+            const pieData = addPercentages(
+              categoryData.horses.slice(0, 5).map((horse, idx) => ({
+                name: horse.name,
+                value: horse.value,
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card key={categoryData.category} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    {categoryData.category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`${categoryData.category}-${entry.name}-${idx}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={pieData.map((item) => ({
+                      name: item.name,
+                      value: item.value,
+                      color: item.color,
+                      percent: total > 0 ? (item.value / total) * 100 : 0,
+                    }))}
+                    total={total}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Show empty state only if there's truly no data at all */}
+      {!hasRaceData && !hasExpenseData && (
+        <EmptyState
+          icon={BarChart3}
+          title="İstatistik bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz istatistik bulunmamaktadır."
+            : "Bu at için henüz istatistik bulunmamaktadır."}
+          variant="inline"
+        />
+      )}
               </>
             )}
 
             {/* Pist Category: Surface Performance Charts */}
             {selectedCategory === 'pist' && (
               <>
-                {hasRaceData && surfacePerformanceData.length > 0 && (
+                {hasRaceData && surfacePerformanceData.length > 0 ? (
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {surfacePerformanceData.map((surfaceData) => {
@@ -1668,6 +2121,15 @@ export function StatisticsCharts({
           })}
         </div>
         </div>
+      ) : (
+        <EmptyState
+          icon={Layers}
+          title="Pist istatistiği bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz pist istatistiği bulunmamaktadır."
+            : "Bu at için henüz pist istatistiği bulunmamaktadır."}
+          variant="inline"
+        />
       )}
               </>
             )}
@@ -1675,7 +2137,7 @@ export function StatisticsCharts({
             {/* Mesafe Category: Distance Performance Charts */}
             {selectedCategory === 'mesafe' && (
               <>
-                {hasRaceData && distancePerformanceData.length > 0 && (
+                {hasRaceData && distancePerformanceData.length > 0 ? (
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {distancePerformanceData.map((distanceData) => {
@@ -1735,6 +2197,15 @@ export function StatisticsCharts({
             })}
           </div>
         </div>
+      ) : (
+        <EmptyState
+          icon={Ruler}
+          title="Mesafe istatistiği bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz mesafe istatistiği bulunmamaktadır."
+            : "Bu at için henüz mesafe istatistiği bulunmamaktadır."}
+          variant="inline"
+        />
       )}
               </>
             )}
@@ -1742,7 +2213,7 @@ export function StatisticsCharts({
             {/* Şehir Category: City Performance Charts */}
             {selectedCategory === 'sehir' && (
               <>
-                {hasRaceData && cityPerformanceData.length > 0 && (
+                {hasRaceData && cityPerformanceData.length > 0 ? (
         <div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {cityPerformanceData.map((cityData) => {
@@ -1795,6 +2266,15 @@ export function StatisticsCharts({
               })}
           </div>
         </div>
+      ) : (
+        <EmptyState
+          icon={MapPin}
+          title="Şehir istatistiği bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz şehir istatistiği bulunmamaktadır."
+            : "Bu at için henüz şehir istatistiği bulunmamaktadır."}
+          variant="inline"
+        />
       )}
               </>
             )}
@@ -1802,7 +2282,7 @@ export function StatisticsCharts({
             {/* Jokey Category: Jockey Performance Charts */}
             {selectedCategory === 'jokey' && (
               <>
-                {hasRaceData && jockeyPerformanceData.length > 0 && (
+                {hasRaceData && jockeyPerformanceData.length > 0 ? (
                   <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {jockeyPerformanceData.map((jockeyData) => {
@@ -1855,6 +2335,15 @@ export function StatisticsCharts({
                       })}
                     </div>
                   </div>
+                ) : (
+                  <EmptyState
+                    icon={Users}
+                    title="Jokey istatistiği bulunmuyor"
+                    description={isGlobalStats 
+                      ? "Ekürünüzde henüz jokey istatistiği bulunmamaktadır."
+                      : "Bu at için henüz jokey istatistiği bulunmamaktadır."}
+                    variant="inline"
+                  />
                 )}
               </>
             )}
@@ -2307,6 +2796,7 @@ export function StatisticsCharts({
                 {/* Genel Category */}
                 {selectedCategory === 'genel' && (
                   <>
+      {/* Race-related charts - only show if has race data */}
       {hasRaceData && (
         <div className="grid grid-cols-1 gap-4">
           {cityData.length > 0 && (
@@ -2481,10 +2971,363 @@ export function StatisticsCharts({
           )}
         </div>
       )}
+
+      {/* Earnings and Expenses Charts - show even without race data */}
+      {hasExpenseData && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                {getEarningsChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getEarningsChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getEarningsChartData.data}>
+                    <defs>
+                      <linearGradient id="colorEarningsMobileGenel" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-emerald-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="earnings"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fill="url(#colorEarningsMobileGenel)"
+                      dot={{ fill: '#10b981', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                {getExpensesChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getExpensesChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getExpensesChartData.data}>
+                    <defs>
+                      <linearGradient id="colorExpensesMobileGenel" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-red-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      fill="url(#colorExpensesMobileGenel)"
+                      dot={{ fill: '#ef4444', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Earning/Spending Horses - show even without race data (for global stats) */}
+      {isGlobalStats && (topEarningPieData.length > 0 || topSpendingPieData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          {topEarningPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                  En Fazla Kazanan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topEarningPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#10b981"
+                      dataKey="value"
+                    >
+                      {topEarningPieData.map((entry, index) => (
+                        <Cell key={`top-earning-mobile-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topEarningPieData}
+                  total={topEarningTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {topSpendingPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
+                  En Fazla Gideri Olan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topSpendingPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#ef4444"
+                      dataKey="value"
+                    >
+                      {topSpendingPieData.map((entry, index) => (
+                        <Cell key={`top-spending-mobile-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{data.name}</p>
+                              <p className="text-sm text-rose-600 font-semibold">
+                                {formatCurrencyNumber(data.value)}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topSpendingPieData}
+                  total={topSpendingTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Expense Category Distribution - show even without race data */}
+      {shouldShowCategoryGrid && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          {enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0 && (() => {
+            const totalExpenses = expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)
+            const expenseCategoryPieData = addPercentages(
+              expenseCategoryDistribution.map((item, idx) => ({
+                ...item,
+                name: getCategoryDisplayName(item.name),
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    Gider Kategorileri Dağılımı
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={expenseCategoryPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expenseCategoryPieData.map((entry, index) => (
+                          <Cell key={`category-mobile-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={expenseCategoryPieData}
+                    total={totalExpenses}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {isGlobalStats && categoryHorseDistributions.map((categoryData) => {
+            const total = categoryData.horses.reduce((sum, h) => sum + h.value, 0)
+            const pieData = addPercentages(
+              categoryData.horses.slice(0, 5).map((horse, idx) => ({
+                name: horse.name,
+                value: horse.value,
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card key={categoryData.category} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    {categoryData.category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`${categoryData.category}-mobile-${entry.name}-${idx}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={pieData.map((item) => ({
+                      name: item.name,
+                      value: item.value,
+                      color: item.color,
+                      percent: total > 0 ? (item.value / total) * 100 : 0,
+                    }))}
+                    total={total}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Show empty state only if there's truly no data at all */}
+      {!hasRaceData && !hasExpenseData && (
+        <EmptyState
+          icon={BarChart3}
+          title="İstatistik bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz istatistik bulunmamaktadır."
+            : "Bu at için henüz istatistik bulunmamaktadır."}
+          variant="inline"
+        />
+      )}
                   </>
                 )}
                 {/* Other categories - Pist */}
-                {selectedCategory === 'pist' && hasRaceData && surfacePerformanceData.length > 0 && (
+                {selectedCategory === 'pist' && (
+                  <>
+                {hasRaceData && surfacePerformanceData.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4">
                     {surfacePerformanceData.map((surfaceData) => {
                       const total = surfaceData['İlk 3 sıra'] + surfaceData['Tabela sonu'] + surfaceData['Tabela dışı']
@@ -2539,7 +3382,18 @@ export function StatisticsCharts({
                         </Card>
                       )
                     })}
-      </div>
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Layers}
+                    title="Pist istatistiği bulunmuyor"
+                    description={isGlobalStats 
+                      ? "Ekürünüzde henüz pist istatistiği bulunmamaktadır."
+                      : "Bu at için henüz pist istatistiği bulunmamaktadır."}
+                    variant="inline"
+                  />
+                )}
+                  </>
                 )}
                 {/* Mesafe Category */}
                 {selectedCategory === 'mesafe' && hasRaceData && distancePerformanceData.length > 0 && (
@@ -2951,6 +3805,357 @@ export function StatisticsCharts({
             </Card>
           )}
         </div>
+      )}
+
+      {/* Earnings and Expenses Charts - show even without race data */}
+      {hasExpenseData && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                {getEarningsChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getEarningsChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getEarningsChartData.data}>
+                    <defs>
+                      <linearGradient id="colorEarningsMobileGenel2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-emerald-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="earnings"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fill="url(#colorEarningsMobileGenel2)"
+                      dot={{ fill: '#10b981', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        
+          <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                <TurkishLira className="h-4 w-4 mr-2 text-indigo-600" />
+                {getExpensesChartData.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getExpensesChartData.data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={getExpensesChartData.data}>
+                    <defs>
+                      <linearGradient id="colorExpensesMobileGenel2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#6b7280"
+                      style={{ fontSize: '11px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      tickFormatter={(value) => `₺${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{payload[0].payload.period}</p>
+                              <p className="text-sm text-red-600 font-semibold">
+                                ₺{payload[0].value?.toLocaleString('tr-TR')}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      fill="url(#colorExpensesMobileGenel2)"
+                      dot={{ fill: '#ef4444', r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[250px]">
+                  <p className="text-gray-500 text-sm">Veri bulunamadı</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Top Earning/Spending Horses - show even without race data (for global stats) */}
+      {isGlobalStats && (topEarningPieData.length > 0 || topSpendingPieData.length > 0) && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          {topEarningPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-emerald-600" />
+                  En Fazla Kazanan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topEarningPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#10b981"
+                      dataKey="value"
+                    >
+                      {topEarningPieData.map((entry, index) => (
+                        <Cell key={`top-earning-mobile-2-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topEarningPieData}
+                  total={topEarningTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {topSpendingPieData.length > 0 && (
+            <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-gray-700 flex items-center">
+                  <TurkishLira className="h-4 w-4 mr-2 text-rose-600" />
+                  En Fazla Gideri Olan Atlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={topSpendingPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={90}
+                      fill="#ef4444"
+                      dataKey="value"
+                    >
+                      {topSpendingPieData.map((entry, index) => (
+                        <Cell key={`top-spending-mobile-2-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload
+                          return (
+                            <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg p-3">
+                              <p className="font-semibold text-gray-900">{data.name}</p>
+                              <p className="text-sm text-rose-600 font-semibold">
+                                {formatCurrencyNumber(data.value)}
+                              </p>
+                            </div>
+                          )
+                        }
+                        return null
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <CustomLegend
+                  data={topSpendingPieData}
+                  total={topSpendingTotal}
+                  valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                  iconPosition="before"
+                  valueFormatter={formatCurrencyNumber}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Expense Category Distribution - show even without race data */}
+      {shouldShowCategoryGrid && (
+        <div className="grid grid-cols-1 gap-4 mt-6">
+          {enableExpenseCategoryDistribution && expenseCategoryDistribution.length > 0 && (() => {
+            const totalExpenses = expenseCategoryDistribution.reduce((sum, entry) => sum + entry.value, 0)
+            const expenseCategoryPieData = addPercentages(
+              expenseCategoryDistribution.map((item, idx) => ({
+                ...item,
+                name: getCategoryDisplayName(item.name),
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    Gider Kategorileri Dağılımı
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={expenseCategoryPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expenseCategoryPieData.map((entry, index) => (
+                          <Cell key={`category-mobile-2-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={expenseCategoryPieData}
+                    total={totalExpenses}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {isGlobalStats && categoryHorseDistributions.map((categoryData) => {
+            const total = categoryData.horses.reduce((sum, h) => sum + h.value, 0)
+            const pieData = addPercentages(
+              categoryData.horses.slice(0, 5).map((horse, idx) => ({
+                name: horse.name,
+                value: horse.value,
+                color: COLORS[idx % COLORS.length],
+              })),
+            )
+
+            return (
+              <Card key={categoryData.category} className="bg-white/90 backdrop-blur-sm border border-gray-200/50 shadow-lg">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <PieChartIcon className="h-4 w-4 text-indigo-600" />
+                    {categoryData.category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, idx) => (
+                          <Cell key={`${categoryData.category}-mobile-2-${entry.name}-${idx}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <CustomLegend
+                    data={pieData.map((item) => ({
+                      name: item.name,
+                      value: item.value,
+                      color: item.color,
+                      percent: total > 0 ? (item.value / total) * 100 : 0,
+                    }))}
+                    total={total}
+                    valueIcon={<TurkishLira className="h-3 w-3 text-gray-500" />}
+                    iconPosition="before"
+                    valueFormatter={formatCurrencyNumber}
+                  />
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Show empty state only if there's truly no data at all */}
+      {!hasRaceData && !hasExpenseData && (
+        <EmptyState
+          icon={BarChart3}
+          title="İstatistik bulunmuyor"
+          description={isGlobalStats 
+            ? "Ekürünüzde henüz istatistik bulunmamaktadır."
+            : "Bu at için henüz istatistik bulunmamaktadır."}
+          variant="inline"
+        />
       )}
                   </>
                 )}
@@ -3379,7 +4584,6 @@ export function StatisticsCharts({
           )}
         </div>
       </div>
-      </>
     </div>
   )
 }

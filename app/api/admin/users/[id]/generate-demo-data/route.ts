@@ -13,7 +13,19 @@ const EXPENSE_CATEGORIES = [
   'YARIS_KAYIT_DECLARE',
   'NAKLIYE',
   'SEZONLUK_AHIR',
+  'SIGORTA',
+  'MONT',
+  'NAL_NALBANT',
+  'SARAC',
 ] as const
+
+// Categories that require horse assignment
+const HORSE_REQUIRED_CATEGORIES = ['ILAC', 'MONT', 'NAKLIYE'] as const
+
+// Categories that are stablemate-level (no horse assignment)
+const STABLEMATE_CATEGORIES = EXPENSE_CATEGORIES.filter(
+  (cat) => !HORSE_REQUIRED_CATEGORIES.includes(cat as any)
+)
 
 /**
  * Get Turkish description for expense category
@@ -27,6 +39,10 @@ function getExpenseDescription(category: string): string {
     'YARIS_KAYIT_DECLARE': 'Yarış kayıt ve deklare ücreti',
     'NAKLIYE': 'Nakliye ve taşıma giderleri',
     'SEZONLUK_AHIR': 'Sezonluk ahır kirası',
+    'SIGORTA': 'Sigorta giderleri',
+    'MONT': 'Mont giderleri',
+    'NAL_NALBANT': 'Nal ve nalbant giderleri',
+    'SARAC': 'Saraç giderleri',
   }
   return descriptions[category] || 'Genel gider'
 }
@@ -124,21 +140,49 @@ export async function POST(
       trainingPlans: 0,
     }
 
-    // Generate expenses (5-10 per horse)
+    // 1. Generate 3-5 expenses per horse (only from horse-required categories)
     for (const horse of horses) {
-      const numExpenses = Math.floor(Math.random() * 6) + 5
+      const numExpenses = Math.floor(Math.random() * 3) + 3 // 3-5 expenses
       for (let i = 0; i < numExpenses; i++) {
         const daysAgo = Math.floor(Math.random() * 30) + 1
         const expenseDate = new Date(now)
         expenseDate.setDate(expenseDate.getDate() - daysAgo)
 
-        const category = EXPENSE_CATEGORIES[Math.floor(Math.random() * EXPENSE_CATEGORIES.length)]
+        // Only use horse-required categories
+        const category = HORSE_REQUIRED_CATEGORIES[Math.floor(Math.random() * HORSE_REQUIRED_CATEGORIES.length)]
         const amount = Math.floor(Math.random() * 5000) + 500 // 500-5500 TRY
         const description = getExpenseDescription(category)
 
         await prisma.expense.create({
           data: {
             horseId: horse.id,
+            addedById: user.id,
+            date: expenseDate,
+            category: category as any,
+            amount: amount,
+            currency: 'TRY',
+            note: description,
+          },
+        })
+        results.expenses++
+      }
+    }
+
+    // 2. Generate 2-3 expenses for each stablemate-level category
+    for (const category of STABLEMATE_CATEGORIES) {
+      const numExpenses = Math.floor(Math.random() * 2) + 2 // 2-3 expenses per category
+      for (let i = 0; i < numExpenses; i++) {
+        const daysAgo = Math.floor(Math.random() * 30) + 1
+        const expenseDate = new Date(now)
+        expenseDate.setDate(expenseDate.getDate() - daysAgo)
+
+        const amount = Math.floor(Math.random() * 5000) + 500 // 500-5500 TRY
+        const description = getExpenseDescription(category)
+
+        // horseId is NULL for stablemate-level expenses
+        await prisma.expense.create({
+          data: {
+            horseId: null,
             addedById: user.id,
             date: expenseDate,
             category: category as any,

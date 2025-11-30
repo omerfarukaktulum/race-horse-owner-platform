@@ -260,6 +260,7 @@ export async function GET(request: Request) {
     // Build filter
     const where: any = {}
 
+    // If horseId is provided, only show expenses for that specific horse (exclude stablemate-level)
     if (horseId) {
       where.horseId = horseId
     }
@@ -276,51 +277,119 @@ export async function GET(request: Request) {
       where.date = { ...where.date, lte: new Date(endDate) }
     }
 
-    // Filter by role
-    if (decoded.role === 'OWNER') {
-      // Get ownerId - check by userId if not in token
-      let ownerId = decoded.ownerId
-      
-      if (!ownerId) {
-        const ownerProfile = await prisma.ownerProfile.findUnique({
-          where: { userId: decoded.id },
-        })
-        ownerId = ownerProfile?.id
-      }
-      
-      if (ownerId) {
-        where.horse = {
-          stablemate: {
-            ownerId: ownerId,
-          },
+    // Filter by role (only if horseId is NOT provided - if horseId is provided, we only want that horse's expenses)
+    if (!horseId) {
+      if (decoded.role === 'OWNER') {
+        // Get ownerId - check by userId if not in token
+        let ownerId = decoded.ownerId
+        
+        if (!ownerId) {
+          const ownerProfile = await prisma.ownerProfile.findUnique({
+            where: { userId: decoded.id },
+            include: { stablemate: true },
+          })
+          ownerId = ownerProfile?.id
+        }
+        
+        if (ownerId) {
+          // Owners should see:
+          // 1. Horse-specific expenses: horse.stablemate.ownerId = ownerId
+          // 2. Stablemate-level expenses: horseId IS NULL AND addedBy belongs to same stablemate
+          where.OR = [
+            {
+              horse: {
+                stablemate: {
+                  ownerId: ownerId,
+                },
+              },
+            },
+            {
+              horseId: null,
+              addedBy: {
+                ownerProfile: {
+                  stablemate: {
+                    ownerId: ownerId,
+                  },
+                },
+              },
+            },
+          ]
+        }
+      } else if (decoded.role === 'TRAINER') {
+        // Get trainerId - check by userId if not in token
+        let trainerId = decoded.trainerId
+        
+        if (!trainerId) {
+          const trainerProfile = await prisma.trainerProfile.findUnique({
+            where: { userId: decoded.id },
+          })
+          trainerId = trainerProfile?.id
+        }
+        
+        if (trainerId) {
+          // Get stablemates this trainer works with
+          const stablemateLinks = await prisma.stablemateTrainer.findMany({
+            where: { trainerProfileId: trainerId },
+            select: { stablemateId: true },
+          })
+          const stablemateIds = stablemateLinks.map(link => link.stablemateId)
+          
+          // Trainers should see expenses for:
+          // 1. Horses assigned to them (horse.trainerId = trainerId)
+          // 2. Expenses they added themselves (addedById = userId)
+          // 3. Stablemate-level expenses from stablemates they work with (horseId IS NULL AND addedBy.ownerProfile.stablemateId IN stablemateIds)
+          where.OR = [
+            {
+              horse: {
+                trainerId: trainerId,
+              },
+            },
+            {
+              addedById: decoded.id,
+            },
+            ...(stablemateIds.length > 0 ? [{
+              horseId: null,
+              addedBy: {
+                ownerProfile: {
+                  stablemateId: { in: stablemateIds },
+                },
+              },
+            }] : []),
+          ]
         }
       }
-    } else if (decoded.role === 'TRAINER') {
-      // Get trainerId - check by userId if not in token
-      let trainerId = decoded.trainerId
-      
-      if (!trainerId) {
-        const trainerProfile = await prisma.trainerProfile.findUnique({
-          where: { userId: decoded.id },
-        })
-        trainerId = trainerProfile?.id
-      }
-      
-      if (trainerId) {
-        // Trainers should see expenses for:
-        // 1. Horses assigned to them (horse.trainerId = trainerId)
-        // 2. Expenses they added themselves (addedById = userId)
-        // Prisma will AND the OR condition with other top-level filters
-        where.OR = [
-          {
-            horse: {
-              trainerId: trainerId,
+    } else {
+      // If horseId is provided, we still need to verify access
+      if (decoded.role === 'OWNER') {
+        let ownerId = decoded.ownerId
+        if (!ownerId) {
+          const ownerProfile = await prisma.ownerProfile.findUnique({
+            where: { userId: decoded.id },
+          })
+          ownerId = ownerProfile?.id
+        }
+        if (ownerId) {
+          where.horse = {
+            id: horseId,
+            stablemate: {
+              ownerId: ownerId,
             },
-          },
-          {
-            addedById: decoded.id,
-          },
-        ]
+          }
+        }
+      } else if (decoded.role === 'TRAINER') {
+        let trainerId = decoded.trainerId
+        if (!trainerId) {
+          const trainerProfile = await prisma.trainerProfile.findUnique({
+            where: { userId: decoded.id },
+          })
+          trainerId = trainerProfile?.id
+        }
+        if (trainerId) {
+          where.horse = {
+            id: horseId,
+            trainerId: trainerId,
+          }
+        }
       }
     }
 

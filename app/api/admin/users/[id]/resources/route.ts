@@ -86,43 +86,72 @@ export async function DELETE(
     const horseIds = stablemate.horses.map((h) => h.id)
 
     if (horseIds.length === 0) {
+      // Even if no horses, we might have stablemate-level expenses
+      const stablemateExpensesResult = await prisma.expense.deleteMany({
+        where: {
+          horseId: null,
+          addedBy: {
+            ownerProfile: {
+              stablemateId: stablemate.id,
+            },
+          },
+        },
+      })
+      
       return NextResponse.json({
-        message: 'No horses found. No resources to delete.',
+        message: 'No horses found. Deleted stablemate-level expenses only.',
         deleted: {
-          gallops: 0,
-          races: 0,
-          expenses: 0,
+          horseExpenses: 0,
+          stablemateExpenses: stablemateExpensesResult.count,
+          expenses: stablemateExpensesResult.count,
           notes: 0,
           illnesses: 0,
           bannedMedicines: 0,
           trainingPlans: 0,
           registrations: 0,
           locationHistory: 0,
+          total: stablemateExpensesResult.count,
         },
       })
     }
 
-    // Delete all related resources but keep horses:
-    // - expenses (Expense[])
+    // Delete all related resources but keep horses, gallops, and race history:
+    // - expenses (Expense[]) - both horse-specific and stablemate-level
     // - locationHistory (HorseLocationHistory[])
-    // - raceHistory (HorseRaceHistory[])
     // - registrations (HorseRegistration[])
-    // - gallops (HorseGallop[])
     // - notes (HorseNote[])
     // - illnesses (HorseIllness[])
     // - bannedMedicines (HorseBannedMedicine[])
     // - trainingPlans (HorseTrainingPlan[])
+    // 
+    // Keep:
+    // - gallops (HorseGallop[]) - NOT deleted
+    // - raceHistory (HorseRaceHistory[]) - NOT deleted
     
-    const [gallopsResult, racesResult, expensesResult, notesResult, illnessesResult, bannedMedicinesResult, trainingPlansResult, registrationsResult, locationHistoryResult] = await Promise.all([
-      prisma.horseGallop.deleteMany({
-        where: { horseId: { in: horseIds } },
-      }),
-      prisma.horseRaceHistory.deleteMany({
-        where: { horseId: { in: horseIds } },
-      }),
-      prisma.expense.deleteMany({
-        where: { horseId: { in: horseIds } },
-      }),
+    const stablemateId = stablemate.id
+    
+    // Delete horse-specific expenses
+    const horseExpensesResult = await prisma.expense.deleteMany({
+      where: { horseId: { in: horseIds } },
+    })
+    
+    // Delete stablemate-level expenses (where horseId is NULL and addedBy belongs to this stablemate)
+    const stablemateExpensesResult = await prisma.expense.deleteMany({
+      where: {
+        horseId: null,
+        addedBy: {
+          ownerProfile: {
+            stablemateId: stablemateId,
+          },
+        },
+      },
+    })
+    
+    const expensesResult = {
+      count: horseExpensesResult.count + stablemateExpensesResult.count,
+    }
+    
+    const [notesResult, illnessesResult, bannedMedicinesResult, trainingPlansResult, registrationsResult, locationHistoryResult] = await Promise.all([
       prisma.horseNote.deleteMany({
         where: { horseId: { in: horseIds } },
       }),
@@ -157,8 +186,6 @@ export async function DELETE(
     })
 
     const totalDeleted =
-      gallopsResult.count +
-      racesResult.count +
       expensesResult.count +
       notesResult.count +
       illnessesResult.count +
@@ -171,9 +198,9 @@ export async function DELETE(
     console.log(
       `[Admin Delete Resources] Deleted resources for ${horseIds.length} horses for user ${userId}:`,
       {
-        gallops: gallopsResult.count,
-        races: racesResult.count,
-        expenses: expensesResult.count,
+        horseExpenses: horseExpensesResult.count,
+        stablemateExpenses: stablemateExpensesResult.count,
+        totalExpenses: expensesResult.count,
         notes: notesResult.count,
         illnesses: illnessesResult.count,
         bannedMedicines: bannedMedicinesResult.count,
@@ -187,8 +214,8 @@ export async function DELETE(
     return NextResponse.json({
       message: `Successfully deleted all resources for ${user.email}`,
       deleted: {
-        gallops: gallopsResult.count,
-        races: racesResult.count,
+        horseExpenses: horseExpensesResult.count,
+        stablemateExpenses: stablemateExpensesResult.count,
         expenses: expensesResult.count,
         notes: notesResult.count,
         illnesses: illnessesResult.count,
@@ -204,6 +231,8 @@ export async function DELETE(
         ownerProfile: true,
         stablemate: true,
         horses: horseIds.length,
+        gallops: true,
+        raceHistory: true,
       },
     })
   } catch (error: any) {

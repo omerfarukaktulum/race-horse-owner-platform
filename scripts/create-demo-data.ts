@@ -34,7 +34,19 @@ const EXPENSE_CATEGORIES = [
   'YARIS_KAYIT_DECLARE',
   'NAKLIYE',
   'SEZONLUK_AHIR',
+  'SIGORTA',
+  'MONT',
+  'NAL_NALBANT',
+  'SARAC',
 ] as const
+
+// Categories that require horse assignment
+const HORSE_REQUIRED_CATEGORIES = ['ILAC', 'MONT', 'NAKLIYE'] as const
+
+// Categories that are stablemate-level (no horse assignment)
+const STABLEMATE_CATEGORIES = EXPENSE_CATEGORIES.filter(
+  (cat) => !HORSE_REQUIRED_CATEGORIES.includes(cat as any)
+)
 
 /**
  * Get user and their horses
@@ -90,6 +102,10 @@ function getExpenseDescription(category: string): string {
     'YARIS_KAYIT_DECLARE': 'Yarış kayıt ve deklare ücreti',
     'NAKLIYE': 'Nakliye ve taşıma giderleri',
     'SEZONLUK_AHIR': 'Sezonluk ahır kirası',
+    'SIGORTA': 'Sigorta giderleri',
+    'MONT': 'Mont giderleri',
+    'NAL_NALBANT': 'Nal ve nalbant giderleri',
+    'SARAC': 'Saraç giderleri',
   }
   return descriptions[category] || 'Genel gider'
 }
@@ -97,22 +113,25 @@ function getExpenseDescription(category: string): string {
 /**
  * Add sample expenses to horses
  */
-async function addExpenses(horses: any[], ownerUser: any) {
+async function addExpenses(horses: any[], ownerUser: any, stablemateId: string) {
   console.log(`\n💰 Generating expenses SQL...`)
 
   const now = new Date()
   const expenses = []
+  let horseExpenseCount = 0
+  let stablemateExpenseCount = 0
 
+  // 1. Create 3-5 expenses per horse (only from horse-required categories)
   for (const horse of horses) {
-    // Add 5-10 expenses per horse
-    const numExpenses = Math.floor(Math.random() * 6) + 5
+    const numExpenses = Math.floor(Math.random() * 3) + 3 // 3-5 expenses
 
     for (let i = 0; i < numExpenses; i++) {
       const daysAgo = Math.floor(Math.random() * 30) + 1
       const expenseDate = new Date(now)
       expenseDate.setDate(expenseDate.getDate() - daysAgo)
 
-      const category = EXPENSE_CATEGORIES[Math.floor(Math.random() * EXPENSE_CATEGORIES.length)]
+      // Only use horse-required categories
+      const category = HORSE_REQUIRED_CATEGORIES[Math.floor(Math.random() * HORSE_REQUIRED_CATEGORIES.length)]
       const amount = Math.floor(Math.random() * 5000) + 500 // 500-5500 TRY
       const description = getExpenseDescription(category)
 
@@ -120,10 +139,34 @@ async function addExpenses(horses: any[], ownerUser: any) {
       
       sqlStatements.push(sql)
       expenses.push({ id: 'generated', horseId: horse.id })
+      horseExpenseCount++
     }
   }
 
-  console.log(`  ✅ Generated ${expenses.length} expense SQL statements`)
+  // 2. Create 2-3 expenses for each stablemate-level category
+  for (const category of STABLEMATE_CATEGORIES) {
+    const numExpenses = Math.floor(Math.random() * 2) + 2 // 2-3 expenses per category
+
+    for (let i = 0; i < numExpenses; i++) {
+      const daysAgo = Math.floor(Math.random() * 30) + 1
+      const expenseDate = new Date(now)
+      expenseDate.setDate(expenseDate.getDate() - daysAgo)
+
+      const amount = Math.floor(Math.random() * 5000) + 500 // 500-5500 TRY
+      const description = getExpenseDescription(category)
+
+      // horseId is NULL for stablemate-level expenses
+      const sql = `INSERT INTO expenses (id, "horseId", "addedById", date, category, amount, currency, note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), NULL, ${escapeSql(ownerUser.id)}, '${formatDate(expenseDate)}', '${category}', '${amount}', 'TRY', ${escapeSql(description)}, NOW(), NOW());`
+      
+      sqlStatements.push(sql)
+      expenses.push({ id: 'generated', horseId: null })
+      stablemateExpenseCount++
+    }
+  }
+
+  console.log(`  ✅ Generated ${horseExpenseCount} horse-specific expenses`)
+  console.log(`  ✅ Generated ${stablemateExpenseCount} stablemate-level expenses`)
+  console.log(`  ✅ Total: ${expenses.length} expense SQL statements`)
   return expenses
 }
 
@@ -339,7 +382,7 @@ async function main() {
     sqlStatements.unshift('')
 
     // Generate expenses
-    await addExpenses(horses, user)
+    await addExpenses(horses, user, user.ownerProfile.stablemate.id)
 
     // Generate notes
     await addNotes(horses, user)

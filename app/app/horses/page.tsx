@@ -1455,7 +1455,7 @@ export default function HorsesPage() {
               <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <LayoutGrid className="h-8 w-8 text-white" />
               </div>
-              <p className="text-gray-700 font-semibold">Atınız bulunmuyor</p>
+              <p className="text-gray-700 font-semibold">Ekürünüzde at bulunmuyor</p>
               <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
             </CardContent>
           </Card>
@@ -1476,7 +1476,7 @@ export default function HorsesPage() {
                 <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <LayoutGrid className="h-8 w-8 text-white" />
                 </div>
-              <p className="text-gray-700 font-semibold">Atınız bulunmuyor</p>
+              <p className="text-gray-700 font-semibold">Ekürünüzde at bulunmuyor</p>
                 <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
               </CardContent>
             </Card>
