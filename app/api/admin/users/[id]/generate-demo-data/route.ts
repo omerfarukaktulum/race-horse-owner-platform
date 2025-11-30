@@ -225,36 +225,34 @@ export async function POST(
       }
     }
 
-    // Find a horse with a race in the last 3 months (for active illness + banned medicine)
-    const threeMonthsAgo = new Date()
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+    // Distribution strategy:
+    // - At most 2 horses: both active hastalik + active cikici ilac (with operations on illnesses)
+    // - 3-5 horses: only one of them (either hastalik OR cikici ilac, but not both)
+    // - Rest: neither
     
-    let horseWithBothId: string | undefined = undefined
-    for (const horse of horses) {
-      const recentRace = await prisma.horseRaceHistory.findFirst({
-        where: {
-          horseId: horse.id,
-          raceDate: {
-            gte: threeMonthsAgo,
-          },
-        },
-        orderBy: {
-          raceDate: 'desc',
-        },
-      })
-      
-      if (recentRace) {
-        horseWithBothId = horse.id
-        break
-      }
-    }
+    const shuffledHorses = [...horses].sort(() => Math.random() - 0.5)
     
-    // If no horse with recent race found, pick a random one
-    if (!horseWithBothId && horses.length > 0) {
-      horseWithBothId = horses[Math.floor(Math.random() * horses.length)].id
-    }
+    // Select at most 2 horses for both
+    const horsesWithBoth = shuffledHorses.slice(0, Math.min(2, horses.length))
+    const horsesWithBothIds = horsesWithBoth.map(h => h.id)
+    
+    // Select 3-5 horses for only one (either illness OR banned medicine)
+    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 3, shuffledHorses.length - horsesWithBoth.length)
+    const horsesWithOne = shuffledHorses.slice(horsesWithBoth.length, horsesWithBoth.length + numHorsesWithOne)
+    
+    // Split horses with one into two groups: illness only and banned medicine only
+    const illnessOnlyHorses = horsesWithOne.slice(0, Math.floor(horsesWithOne.length / 2))
+    const medicineOnlyHorses = horsesWithOne.slice(Math.floor(horsesWithOne.length / 2))
+    
+    const illnessOnlyIds = illnessOnlyHorses.map(h => h.id)
+    const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
+    
+    // All horses that should get illness (both + illness only)
+    const allIllnessHorseIds = [...horsesWithBothIds, ...illnessOnlyIds]
+    // All horses that should get banned medicine (both + medicine only)
+    const allMedicineHorseIds = [...horsesWithBothIds, ...medicineOnlyIds]
 
-    // Generate illnesses (0-1 per horse, 50% chance) - ALL ACTIVE (no endDate)
+    // Generate illnesses (0-1 per horse) - ALL ACTIVE (no endDate)
     const illnessDetails = [
       'Hafif öksürük, antibiyotik tedavisi başlatıldı',
       'Eklem ağrısı, anti-inflamatuar ilaç verildi',
@@ -264,8 +262,8 @@ export async function POST(
     ]
 
     for (const horse of horses) {
-      const isSelectedHorse = horse.id === horseWithBothId
-      const shouldAddIllness = isSelectedHorse ? true : Math.random() > 0.5
+      const shouldAddIllness = allIllnessHorseIds.includes(horse.id)
+      const needsOperations = horsesWithBothIds.includes(horse.id)
       
       if (shouldAddIllness) {
         const daysAgo = Math.floor(Math.random() * 60) + 1
@@ -287,8 +285,9 @@ export async function POST(
         })
         results.illnesses++
 
-        // Active illnesses can still have operations (ongoing treatments)
-        if (Math.random() > 0.5) {
+        // Horses with both always get operations; others may or may not
+        const hasOperations = needsOperations || Math.random() > 0.5
+        if (hasOperations) {
           const numOperations = Math.floor(Math.random() * 2) + 1
           for (let i = 0; i < numOperations; i++) {
             const operationDate = new Date(startDate)
@@ -308,7 +307,7 @@ export async function POST(
       }
     }
 
-    // Generate banned medicines (0-1 per horse, 40% chance) - ALL ACTIVE (remainingDays > 0)
+    // Generate banned medicines (0-1 per horse) - ALL ACTIVE (remainingDays > 0)
     const waitDaysMap: { [key: string]: number } = {
       'Phenylbutazone (Bute)': 7,
       'Flunixin Meglumine (Banamine)': 5,
@@ -319,8 +318,7 @@ export async function POST(
     }
 
     for (const horse of horses) {
-      const isSelectedHorse = horse.id === horseWithBothId
-      const shouldAddMedicine = isSelectedHorse ? true : Math.random() > 0.6
+      const shouldAddMedicine = allMedicineHorseIds.includes(horse.id)
       
       if (shouldAddMedicine) {
         const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]

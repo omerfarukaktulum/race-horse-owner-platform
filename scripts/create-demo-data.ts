@@ -226,7 +226,7 @@ async function addNotes(horses: any[], ownerUser: any) {
 /**
  * Add sample illnesses to horses
  */
-async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseId?: string, mustBeActive: boolean = false) {
+async function addIllnesses(horses: any[], ownerUser: any, horseIdsToAdd: string[] = [], horsesWithOperationsIds: string[] = []) {
   console.log(`\n🏥 Generating illnesses SQL...`)
 
   const now = new Date()
@@ -241,9 +241,7 @@ async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseI
   ]
 
   for (const horse of horses) {
-    // Ensure the specified horse ALWAYS gets an illness, or random 50% chance for others
-    const isSelectedHorse = horse.id === mustHaveIllnessHorseId
-    const shouldAddIllness = isSelectedHorse ? true : Math.random() > 0.5
+    const shouldAddIllness = horseIdsToAdd.includes(horse.id)
     
     if (shouldAddIllness) {
       const daysAgo = Math.floor(Math.random() * 60) + 1
@@ -251,12 +249,12 @@ async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseI
       startDate.setDate(startDate.getDate() - daysAgo)
 
       // ALL illnesses should be active (no endDate) - user requested only active ones
-      const isOngoing = true
       const endDate = null
 
       const detail = illnessDetails[Math.floor(Math.random() * illnessDetails.length)]
-      // Active illnesses can still have operations (ongoing treatments)
-      const hasOperations = Math.random() > 0.5
+      // If horse is in horsesWithOperationsIds, always add operations; otherwise random
+      const needsOperations = horsesWithOperationsIds.includes(horse.id)
+      const hasOperations = needsOperations || Math.random() > 0.5
       const numOperations = hasOperations ? Math.floor(Math.random() * 2) + 1 : 0
 
       // Insert illness first
@@ -281,15 +279,7 @@ LIMIT 1;`
       }
 
       illnesses.push({ id: 'generated', horseId: horse.id })
-      
-      if (isSelectedHorse) {
-        console.log(`    ✓ Added ${isOngoing ? 'ACTIVE' : 'resolved'} illness to selected horse "${horses.find(h => h.id === horse.id)?.name}"`)
-      }
     }
-  }
-
-  if (mustHaveIllnessHorseId && !illnesses.find(i => i.horseId === mustHaveIllnessHorseId)) {
-    console.log(`  ⚠ WARNING: Selected horse did not get an illness!`)
   }
 
   console.log(`  ✅ Generated ${illnesses.length} illness SQL statements`)
@@ -299,7 +289,7 @@ LIMIT 1;`
 /**
  * Add sample banned medicines to horses
  */
-async function addBannedMedicines(horses: any[], ownerUser: any, mustHaveMedicineHorseId?: string) {
+async function addBannedMedicines(horses: any[], ownerUser: any, horseIdsToAdd: string[] = []) {
   console.log(`\n💊 Generating banned medicines SQL...`)
 
   const now = new Date()
@@ -316,9 +306,7 @@ async function addBannedMedicines(horses: any[], ownerUser: any, mustHaveMedicin
   }
 
   for (const horse of horses) {
-    // Ensure the specified horse ALWAYS gets a banned medicine, or random 40% chance for others
-    const isSelectedHorse = horse.id === mustHaveMedicineHorseId
-    const shouldAddMedicine = isSelectedHorse ? true : Math.random() > 0.6
+    const shouldAddMedicine = horseIdsToAdd.includes(horse.id)
     
     if (shouldAddMedicine) {
       const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
@@ -334,15 +322,7 @@ async function addBannedMedicines(horses: any[], ownerUser: any, mustHaveMedicin
       
       sqlStatements.push(sql)
       medicines.push({ id: 'generated', horseId: horse.id })
-      
-      if (isSelectedHorse) {
-        console.log(`    ✓ Added banned medicine to selected horse "${horses.find(h => h.id === horse.id)?.name}"`)
-      }
     }
-  }
-
-  if (mustHaveMedicineHorseId && !medicines.find(m => m.horseId === mustHaveMedicineHorseId)) {
-    console.log(`  ⚠ WARNING: Selected horse did not get a banned medicine!`)
   }
 
   console.log(`  ✅ Generated ${medicines.length} banned medicine SQL statements`)
@@ -517,48 +497,45 @@ async function main() {
     // Generate notes
     await addNotes(horses, user)
 
-    // Find a horse with a race in the last 3 months (for active illness + banned medicine)
-    const threeMonthsAgo = new Date()
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+    // Distribution strategy:
+    // - At most 2 horses: both active hastalik + active cikici ilac (with operations on illnesses)
+    // - 3-5 horses: only one of them (either hastalik OR cikici ilac, but not both)
+    // - Rest: neither
     
-    // First, fetch race history for all horses to check for races in last 3 months
-    let horseWithBothId: string | undefined = undefined
-    for (const horse of horses) {
-      // Check if this horse has any race in the last 3 months
-      const recentRaces = await prisma.horseRaceHistory.findFirst({
-        where: {
-          horseId: horse.id,
-          raceDate: {
-            gte: threeMonthsAgo,
-          },
-        },
-        orderBy: {
-          raceDate: 'desc',
-        },
-      })
-      
-      if (recentRaces) {
-        horseWithBothId = horse.id
-        console.log(`  ✅ Selected horse "${horse.name}" (has race in last 3 months) for active illness + banned medicine`)
-        break
-      }
-    }
+    const shuffledHorses = [...horses].sort(() => Math.random() - 0.5)
     
-    // If no horse with recent race found, pick a random one
-    if (!horseWithBothId && horses.length > 0) {
-      horseWithBothId = horses[Math.floor(Math.random() * horses.length)].id
-      console.log(`  ⚠ No horse with race in last 3 months found, selected random horse "${horses.find(h => h.id === horseWithBothId)?.name}" for active illness + banned medicine`)
-    }
+    // Select at most 2 horses for both
+    const horsesWithBoth = shuffledHorses.slice(0, Math.min(2, horses.length))
+    const horsesWithBothIds = horsesWithBoth.map(h => h.id)
+    
+    // Select 3-5 horses for only one (either illness OR banned medicine)
+    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 3, shuffledHorses.length - horsesWithBoth.length)
+    const horsesWithOne = shuffledHorses.slice(horsesWithBoth.length, horsesWithBoth.length + numHorsesWithOne)
+    
+    // Split horses with one into two groups: illness only and banned medicine only
+    const illnessOnlyHorses = horsesWithOne.slice(0, Math.floor(horsesWithOne.length / 2))
+    const medicineOnlyHorses = horsesWithOne.slice(Math.floor(horsesWithOne.length / 2))
+    
+    const illnessOnlyIds = illnessOnlyHorses.map(h => h.id)
+    const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
+    
+    // All horses that should get illness (both + illness only)
+    const allIllnessHorseIds = [...horsesWithBothIds, ...illnessOnlyIds]
+    // All horses that should get banned medicine (both + medicine only)
+    const allMedicineHorseIds = [...horsesWithBothIds, ...medicineOnlyIds]
+    
+    console.log(`  📋 Distribution:`)
+    console.log(`    - ${horsesWithBoth.length} horse(s) with BOTH active hastalik + active cikici ilac (with operations)`)
+    console.log(`    - ${illnessOnlyHorses.length} horse(s) with ONLY active hastalik`)
+    console.log(`    - ${medicineOnlyHorses.length} horse(s) with ONLY active cikici ilac`)
+    console.log(`    - ${horses.length - allIllnessHorseIds.length - medicineOnlyIds.length} horse(s) with neither`)
 
-    if (horseWithBothId) {
-      console.log(`  📋 Ensuring horse "${horses.find(h => h.id === horseWithBothId)?.name}" gets both active illness and banned medicine`)
-    }
-
-    // Generate illnesses (ensure the selected horse gets an ACTIVE illness - no endDate)
-    await addIllnesses(horses, user, horseWithBothId, true)
-
-    // Generate banned medicines (ensure the same horse also has a banned medicine)
-    await addBannedMedicines(horses, user, horseWithBothId)
+    // Generate illnesses (horses with both + horses with illness only)
+    // Horses with both get operations, others may or may not
+    await addIllnesses(horses, user, allIllnessHorseIds, horsesWithBothIds)
+    
+    // Generate banned medicines (horses with both + horses with medicine only)
+    await addBannedMedicines(horses, user, allMedicineHorseIds)
 
     // Generate training plans
     await addTrainingPlans(horses, user)
