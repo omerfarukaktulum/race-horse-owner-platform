@@ -542,37 +542,57 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     const scrollToTop = () => {
       if (typeof window === 'undefined' || typeof document === 'undefined') return
       
-      // First, ensure we scroll the window to absolute top
-      window.scrollTo(0, 0)
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      // Get the navbar to calculate its height
+      const navbar = document.querySelector('header')
+      const navbarHeight = navbar ? navbar.offsetHeight : 64 // Default to 64px (h-16)
       
-      // Also set documentElement scroll (for some browsers)
-      document.documentElement.scrollTop = 0
-      document.documentElement.scrollLeft = 0
-      
-      // Also set body scroll
-      document.body.scrollTop = 0
-      document.body.scrollLeft = 0
-      
-      // Try to scroll the main element into view to ensure top content is visible
+      // Find the first content element inside main (filters, buttons, etc.)
+      // This is what should be visible at the top, not the cards
       const main = document.querySelector('main')
       if (main) {
-        // Scroll main element to top if it's scrollable
+        // Find the first child element of main that has content
+        // This should be the filters/buttons section
+        const firstContentElement = main.firstElementChild as HTMLElement | null
+        
+        if (firstContentElement) {
+          // Get the position of the first content element relative to the document
+          const rect = firstContentElement.getBoundingClientRect()
+          const currentScrollY = window.scrollY || document.documentElement.scrollTop
+          
+          // Calculate the scroll position to show the navbar and first content
+          // We want the first content element to be just below the navbar
+          const targetScroll = rect.top + currentScrollY - navbarHeight
+          
+          // Scroll to show the navbar and first content element
+          window.scrollTo(0, Math.max(0, targetScroll))
+          window.scrollTo({ top: Math.max(0, targetScroll), left: 0, behavior: 'instant' })
+          
+          // Also set documentElement scroll
+          document.documentElement.scrollTop = Math.max(0, targetScroll)
+          document.documentElement.scrollLeft = 0
+          
+          // Also set body scroll
+          document.body.scrollTop = Math.max(0, targetScroll)
+          document.body.scrollLeft = 0
+        } else {
+          // Fallback: scroll to absolute top
+          window.scrollTo(0, 0)
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+          document.documentElement.scrollTop = 0
+          document.body.scrollTop = 0
+        }
+        
+        // Also scroll main element if it's scrollable
         if (main instanceof HTMLElement) {
           main.scrollTop = 0
           main.scrollLeft = 0
         }
-        
-        // Use scrollIntoView to ensure the top of main (where filters are) is visible
-        // This will scroll the window to show the main element at the top
-        main.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'nearest' })
-        
-        // Then scroll window back to 0 to ensure absolute top
-        setTimeout(() => {
-          window.scrollTo(0, 0)
-          document.documentElement.scrollTop = 0
-          document.body.scrollTop = 0
-        }, 0)
+      } else {
+        // Fallback: scroll to absolute top
+        window.scrollTo(0, 0)
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+        document.documentElement.scrollTop = 0
+        document.body.scrollTop = 0
       }
       
       // Also scroll any scrollable containers to top
