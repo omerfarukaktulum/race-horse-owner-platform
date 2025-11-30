@@ -14,6 +14,12 @@ import { useState, useEffect, useRef } from 'react'
 function AppNavbar() {
   const { user, signOut, isOwner, isTrainer } = useAuth()
   const pathname = usePathname()
+  const [currentPath, setCurrentPath] = useState(pathname)
+  
+  // Update current path when pathname changes
+  useEffect(() => {
+    setCurrentPath(pathname)
+  }, [pathname])
   const [stablemateName, setStablemateName] = useState<string | null>(null)
   const [ownerOfficialRef, setOwnerOfficialRef] = useState<string | null>(null)
   const [trainerName, setTrainerName] = useState<string | null>(null)
@@ -225,12 +231,15 @@ function AppNavbar() {
           {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             {isOwner && (
-              <Link href="/app/stablemate">
+              <Link 
+                href="/app/stablemate"
+                onClick={() => setCurrentPath('/app/stablemate')}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
                   className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
-                    pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
+                    currentPath?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <Settings className="h-4 w-4" />
@@ -239,12 +248,15 @@ function AppNavbar() {
               </Link>
             )}
             {isTrainer && (
-              <Link href="/app/trainer/account">
+              <Link 
+                href="/app/trainer/account"
+                onClick={() => setCurrentPath('/app/trainer/account')}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
                   className={`flex items-center gap-1 bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${
-                    pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
+                    currentPath?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <User className="h-4 w-4" />
@@ -264,11 +276,14 @@ function AppNavbar() {
           {/* Mobile: Settings and Logout buttons */}
           <div className="md:hidden flex items-center gap-3">
             {isOwner && (
-              <Link href="/app/stablemate">
+              <Link 
+                href="/app/stablemate"
+                onClick={() => setCurrentPath('/app/stablemate')}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${currentPath?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <Settings className="h-5 w-5" />
                   <span className="text-xs font-medium">Eküri</span>
@@ -276,11 +291,14 @@ function AppNavbar() {
               </Link>
             )}
             {isTrainer && (
-              <Link href="/app/trainer/account">
+              <Link 
+                href="/app/trainer/account"
+                onClick={() => setCurrentPath('/app/trainer/account')}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto bg-transparent hover:bg-transparent active:bg-transparent focus:bg-transparent ${currentPath?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <User className="h-5 w-5" />
                   <span className="text-xs font-medium">Hesap</span>
