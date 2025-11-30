@@ -95,22 +95,6 @@ export function HorseMetadataCard({ horse }: Props) {
               </p>
             )}
 
-            {/* Location Information */}
-            {horse.currentLocation && horse.locationType && (
-              <div className="mb-3">
-                {horse.locationType === 'racecourse' ? (
-                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200 inline-flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    🏇 {horse.currentLocation}
-                  </span>
-                ) : horse.locationType === 'farm' ? (
-                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-green-50 text-green-700 border-green-200 inline-flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    🏡 {horse.currentLocation}
-                  </span>
-                ) : null}
-              </div>
-            )}
 
             {/* Banned Medicine Label */}
             {horse.remainingWaitDays !== null && horse.remainingWaitDays !== undefined && horse.remainingWaitDays > 0 && horse.activeBannedMedicine && (
@@ -196,6 +180,13 @@ export function HorseMetadataCard({ horse }: Props) {
                 </span>
               )}
 
+              {horse.locationType && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border bg-sky-100 text-sky-700 border-sky-200">
+                  <MapPin className="h-3 w-3" />
+                  {horse.locationType === 'racecourse' ? 'Saha' : horse.locationType === 'farm' ? 'Çiftlik' : ''}
+                </span>
+              )}
+
               {horse.trainerName && (
                 <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-indigo-50 text-indigo-700 border-indigo-200">
                   👤 <span className="hidden sm:inline">Antrenör: </span>
@@ -229,24 +220,6 @@ export function HorseMetadataCard({ horse }: Props) {
 
 
           </div>
-          
-          {/* Current Location */}
-          {horse.currentLocation && (
-            <div className="bg-gray-50/50 rounded-lg p-3 border border-gray-200/50">
-              <p className="text-sm text-gray-500 mb-1">
-                <MapPin className="inline h-4 w-4 mr-1" />
-                Mevcut Konum
-              </p>
-              <p className="text-base font-semibold text-gray-800">
-                {horse.currentLocation}
-                {horse.locationType && (
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({horse.locationType === 'racecourse' ? 'Hipodrom' : 'Çiftlik'})
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
         </div>
         
         {/* Right Column: Statistics */}
