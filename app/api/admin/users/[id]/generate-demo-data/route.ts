@@ -138,6 +138,21 @@ export async function POST(
       illnessOperations: 0,
       bannedMedicines: 0,
       trainingPlans: 0,
+      trainerExpenses: 0,
+      trainerNotes: 0,
+      trainerIllnesses: 0,
+      trainerBannedMedicines: 0,
+      trainerTrainingPlans: 0,
+    }
+
+    // Common wait days for different medicine types (used for both owner and trainer)
+    const waitDaysMap: { [key: string]: number } = {
+      'Phenylbutazone (Bute)': 7,
+      'Flunixin Meglumine (Banamine)': 5,
+      'Ketoprofen': 3,
+      'Corticosteroids (Dexamethasone)': 14,
+      'Antibiotics (Penicillin)': 7,
+      'Diuretics (Furosemide)': 3,
     }
 
     // 1. Generate 3-5 expenses per horse (only from horse-required categories)
@@ -335,15 +350,6 @@ export async function POST(
     }
 
     // Generate banned medicines (0-1 per horse) - ALL ACTIVE (remainingDays > 0)
-    const waitDaysMap: { [key: string]: number } = {
-      'Phenylbutazone (Bute)': 7,
-      'Flunixin Meglumine (Banamine)': 5,
-      'Ketoprofen': 3,
-      'Corticosteroids (Dexamethasone)': 14,
-      'Antibiotics (Penicillin)': 7,
-      'Diuretics (Furosemide)': 3,
-    }
-
     for (const horse of horses) {
       const shouldAddMedicine = allMedicineHorseIds.includes(horse.id)
       
@@ -409,13 +415,187 @@ export async function POST(
       }
     }
 
+    // Generate trainer-created data
+    const stablemateTrainers = await prisma.stablemateTrainer.findMany({
+      where: {
+        stablemateId: stablemate.id,
+        trainerProfileId: { not: null },
+        isActive: true,
+      },
+      include: {
+        trainerProfile: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    })
+
+    if (stablemateTrainers.length > 0) {
+      console.log(`[Admin Generate Demo Data] Found ${stablemateTrainers.length} trainer(s) linked to stablemate`)
+
+      for (const stablemateTrainer of stablemateTrainers) {
+        if (!stablemateTrainer.trainerProfile || !stablemateTrainer.trainerProfile.user) {
+          continue
+        }
+
+        const trainer = stablemateTrainer.trainerProfile
+        const trainerUser = trainer.user
+        const trainerId = trainer.id
+
+        // Get horses assigned to this trainer
+        const assignedHorses = horses.filter(h => h.trainerId === trainerId)
+        
+        // If no horses directly assigned, use a subset of stablemate horses
+        const trainerHorses = assignedHorses.length > 0 
+          ? assignedHorses 
+          : horses.slice(0, Math.max(1, Math.floor(horses.length * 0.6)))
+
+        if (trainerHorses.length === 0) {
+          continue
+        }
+
+        // Generate trainer expenses (1-2 per horse, only horse-required categories)
+        const trainerExpenseCategories = ['ILAC', 'MONT', 'NAKLIYE']
+        for (const horse of trainerHorses) {
+          const numExpenses = Math.floor(Math.random() * 2) + 1
+          for (let i = 0; i < numExpenses; i++) {
+            const daysAgo = Math.floor(Math.random() * 30) + 1
+            const expenseDate = new Date(now)
+            expenseDate.setDate(expenseDate.getDate() - daysAgo)
+            const category = trainerExpenseCategories[Math.floor(Math.random() * trainerExpenseCategories.length)]
+            const amount = Math.floor(Math.random() * 5000) + 500
+
+            await prisma.expense.create({
+              data: {
+                horseId: horse.id,
+                addedById: trainerUser.id,
+                date: expenseDate,
+                category: category as any,
+                amount: amount,
+                currency: 'TRY',
+                note: getExpenseDescription(category),
+              },
+            })
+            results.trainerExpenses++
+          }
+        }
+
+        // Generate trainer notes (1-2 per horse)
+        const trainerNoteTemplates = [
+          'Antrenman sonrası kontrol edildi, performans iyi.',
+          'Günlük idman yapıldı, at sağlıklı.',
+          'Rutin bakım ve kontrol tamamlandı.',
+          'Yem ve su tüketimi normal seviyede.',
+          'Antrenman programına uygun şekilde çalışıldı.',
+        ]
+        for (const horse of trainerHorses) {
+          const numNotes = Math.floor(Math.random() * 2) + 1
+          for (let i = 0; i < numNotes; i++) {
+            const daysAgo = Math.floor(Math.random() * 14) + 1
+            const noteDate = new Date(now)
+            noteDate.setDate(noteDate.getDate() - daysAgo)
+            const noteText = trainerNoteTemplates[Math.floor(Math.random() * trainerNoteTemplates.length)]
+
+            await prisma.horseNote.create({
+              data: {
+                horseId: horse.id,
+                addedById: trainerUser.id,
+                date: noteDate,
+                note: noteText,
+              },
+            })
+            results.trainerNotes++
+          }
+        }
+
+        // Generate trainer illnesses (0-1 per horse, all active)
+        const trainerIllnessDetails = [
+          'Hafif öksürük gözlemlendi, takip ediliyor',
+          'Eklem hassasiyeti, hafif egzersiz yapıldı',
+          'Deri tahrişi, topikal tedavi uygulandı',
+        ]
+        for (const horse of trainerHorses) {
+          if (Math.random() > 0.7) { // 30% chance
+            const daysAgo = Math.floor(Math.random() * 30) + 1
+            const startDate = new Date(now)
+            startDate.setDate(startDate.getDate() - daysAgo)
+            const detail = trainerIllnessDetails[Math.floor(Math.random() * trainerIllnessDetails.length)]
+
+            await prisma.horseIllness.create({
+              data: {
+                horseId: horse.id,
+                addedById: trainerUser.id,
+                startDate: startDate,
+                endDate: null,
+                detail: detail,
+              },
+            })
+            results.trainerIllnesses++
+          }
+        }
+
+        // Generate trainer banned medicines (0-1 per horse, all active)
+        for (const horse of trainerHorses) {
+          if (Math.random() > 0.7) { // 30% chance
+            const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
+            const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
+            const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1
+            const givenDate = new Date(now)
+            givenDate.setDate(givenDate.getDate() - daysAgo)
+
+            await prisma.horseBannedMedicine.create({
+              data: {
+                horseId: horse.id,
+                addedById: trainerUser.id,
+                medicineName: medicineName,
+                givenDate: givenDate,
+                waitDays: waitDays,
+                note: `${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`,
+              },
+            })
+            results.trainerBannedMedicines++
+          }
+        }
+
+        // Generate trainer training plans (2-4 per horse, future dates)
+        for (const horse of trainerHorses) {
+          const numPlans = Math.floor(Math.random() * 3) + 2
+          for (let i = 0; i < numPlans; i++) {
+            const daysAhead = Math.floor(Math.random() * 14) + 1
+            const planDate = new Date(now)
+            planDate.setDate(planDate.getDate() + daysAhead)
+            const distance = distances[Math.floor(Math.random() * distances.length)]
+            const note = trainingNotes[Math.floor(Math.random() * trainingNotes.length)]
+
+            await prisma.horseTrainingPlan.create({
+              data: {
+                horseId: horse.id,
+                addedById: trainerUser.id,
+                planDate: planDate,
+                distance: distance,
+                note: note,
+                racecourseId: racecourse?.id,
+              },
+            })
+            results.trainerTrainingPlans++
+          }
+        }
+      }
+    }
+
     const totalCreated =
       results.expenses +
       results.notes +
       results.illnesses +
       results.illnessOperations +
       results.bannedMedicines +
-      results.trainingPlans
+      results.trainingPlans +
+      results.trainerExpenses +
+      results.trainerNotes +
+      results.trainerIllnesses +
+      results.trainerBannedMedicines +
+      results.trainerTrainingPlans
 
     console.log(
       `[Admin Generate Demo Data] Generated demo data for user ${userId}, stablemate ${stablemate.name}:`,

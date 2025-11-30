@@ -463,6 +463,181 @@ async function setHorseLocations(horses: any[]) {
   console.log(`  ✅ Total: ${sahaCount + ciftlikCount} location SQL statements`)
 }
 
+/**
+ * Add trainer-created data (expenses, notes, illnesses, banned medicines, training plans)
+ */
+async function addTrainerData(horses: any[], stablemateId: string) {
+  console.log(`\n👨‍🏫 Generating trainer-created data SQL...`)
+
+  // Find trainers linked to this stablemate
+  const stablemateTrainers = await prisma.stablemateTrainer.findMany({
+    where: {
+      stablemateId: stablemateId,
+      trainerProfileId: { not: null },
+      isActive: true,
+    },
+    include: {
+      trainerProfile: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  })
+
+  if (stablemateTrainers.length === 0) {
+    console.log(`  ⚠ No active trainers found for this stablemate, skipping trainer data`)
+    return
+  }
+
+  console.log(`  ✅ Found ${stablemateTrainers.length} trainer(s) linked to stablemate`)
+
+  // For each trainer, find horses they can access
+  for (const stablemateTrainer of stablemateTrainers) {
+    if (!stablemateTrainer.trainerProfile || !stablemateTrainer.trainerProfile.user) {
+      continue
+    }
+
+    const trainer = stablemateTrainer.trainerProfile
+    const trainerUser = trainer.user
+    const trainerId = trainer.id
+
+    // Get horses assigned to this trainer
+    const assignedHorses = horses.filter(h => h.trainerId === trainerId)
+    
+    // If no horses directly assigned, use a subset of stablemate horses (trainers can work with any horse in their stablemate)
+    const trainerHorses = assignedHorses.length > 0 
+      ? assignedHorses 
+      : horses.slice(0, Math.max(1, Math.floor(horses.length * 0.6))) // Use up to 60% of horses
+
+    if (trainerHorses.length === 0) {
+      console.log(`    ⚠ No horses available for trainer "${trainer.fullName}", skipping`)
+      continue
+    }
+
+    console.log(`    📋 Trainer: ${trainer.fullName} (${trainerHorses.length} horse(s))`)
+
+    // Generate trainer expenses (1-2 per horse, only horse-required categories)
+    const trainerExpenseCategories = ['ILAC', 'MONT', 'NAKLIYE']
+    let trainerExpenseCount = 0
+    for (const horse of trainerHorses) {
+      const numExpenses = Math.floor(Math.random() * 2) + 1 // 1-2 expenses
+      for (let i = 0; i < numExpenses; i++) {
+        const daysAgo = Math.floor(Math.random() * 30) + 1
+        const expenseDate = new Date()
+        expenseDate.setDate(expenseDate.getDate() - daysAgo)
+        const category = trainerExpenseCategories[Math.floor(Math.random() * trainerExpenseCategories.length)]
+        const amount = Math.floor(Math.random() * 5000) + 500
+        const description = getExpenseDescription(category)
+
+        const sql = `INSERT INTO expenses (id, "horseId", "addedById", date, category, amount, currency, note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(expenseDate)}', '${category}', '${amount}', 'TRY', ${escapeSql(description)}, NOW(), NOW());`
+        sqlStatements.push(sql)
+        trainerExpenseCount++
+      }
+    }
+
+    // Generate trainer notes (1-2 per horse)
+    const trainerNoteTemplates = [
+      'Antrenman sonrası kontrol edildi, performans iyi.',
+      'Günlük idman yapıldı, at sağlıklı.',
+      'Rutin bakım ve kontrol tamamlandı.',
+      'Yem ve su tüketimi normal seviyede.',
+      'Antrenman programına uygun şekilde çalışıldı.',
+    ]
+    let trainerNoteCount = 0
+    for (const horse of trainerHorses) {
+      const numNotes = Math.floor(Math.random() * 2) + 1 // 1-2 notes
+      for (let i = 0; i < numNotes; i++) {
+        const daysAgo = Math.floor(Math.random() * 14) + 1
+        const noteDate = new Date()
+        noteDate.setDate(noteDate.getDate() - daysAgo)
+        const noteText = trainerNoteTemplates[Math.floor(Math.random() * trainerNoteTemplates.length)]
+
+        const sql = `INSERT INTO horse_notes (id, "horseId", "addedById", date, note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(noteDate)}', ${escapeSql(noteText)}, NOW(), NOW());`
+        sqlStatements.push(sql)
+        trainerNoteCount++
+      }
+    }
+
+    // Generate trainer illnesses (0-1 per horse, all active)
+    const trainerIllnessDetails = [
+      'Hafif öksürük gözlemlendi, takip ediliyor',
+      'Eklem hassasiyeti, hafif egzersiz yapıldı',
+      'Deri tahrişi, topikal tedavi uygulandı',
+    ]
+    let trainerIllnessCount = 0
+    for (const horse of trainerHorses) {
+      if (Math.random() > 0.7) { // 30% chance
+        const daysAgo = Math.floor(Math.random() * 30) + 1
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - daysAgo)
+        const detail = trainerIllnessDetails[Math.floor(Math.random() * trainerIllnessDetails.length)]
+
+        const sql = `INSERT INTO horse_illnesses (id, "horseId", "addedById", "startDate", "endDate", detail, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(startDate)}', NULL, ${escapeSql(detail)}, NOW(), NOW());`
+        sqlStatements.push(sql)
+        trainerIllnessCount++
+      }
+    }
+
+    // Generate trainer banned medicines (0-1 per horse, all active)
+    const waitDaysMap: { [key: string]: number } = {
+      'Phenylbutazone (Bute)': 7,
+      'Flunixin Meglumine (Banamine)': 5,
+      'Ketoprofen': 3,
+      'Corticosteroids (Dexamethasone)': 14,
+      'Antibiotics (Penicillin)': 7,
+      'Diuretics (Furosemide)': 3,
+    }
+    let trainerMedicineCount = 0
+    for (const horse of trainerHorses) {
+      if (Math.random() > 0.7) { // 30% chance
+        const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
+        const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
+        const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1 // Ensure remainingDays > 0
+        const givenDate = new Date()
+        givenDate.setDate(givenDate.getDate() - daysAgo)
+
+        const sql = `INSERT INTO horse_banned_medicines (id, "horseId", "addedById", "medicineName", "givenDate", "waitDays", note, "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, ${escapeSql(medicineName)}, '${formatDate(givenDate)}', ${waitDays}, ${escapeSql(`${medicineName} uygulandı. Yarışa katılmadan önce ${waitDays} gün beklenmesi gerekiyor.`)}, NOW(), NOW());`
+        sqlStatements.push(sql)
+        trainerMedicineCount++
+      }
+    }
+
+    // Generate trainer training plans (2-4 per horse, future dates)
+    const distances = ['Kenter', 'Tırıs', '200', '400', '600', '800', '1000', '1200', '1400', '1600']
+    const trainingNotes = [
+      'Hafif tempo ile başla',
+      'Orta tempo idman',
+      'Hızlı tempo idman',
+      'Dayanıklılık çalışması',
+      'Hız çalışması',
+    ]
+    const racecourse = await prisma.racecourse.findFirst({
+      where: { name: 'İstanbul' },
+    })
+    let trainerPlanCount = 0
+
+    for (const horse of trainerHorses) {
+      const numPlans = Math.floor(Math.random() * 3) + 2 // 2-4 plans
+      for (let i = 0; i < numPlans; i++) {
+        const daysAhead = Math.floor(Math.random() * 14) + 1
+        const planDate = new Date()
+        planDate.setDate(planDate.getDate() + daysAhead)
+        const distance = distances[Math.floor(Math.random() * distances.length)]
+        const note = trainingNotes[Math.floor(Math.random() * trainingNotes.length)]
+
+        const sql = `INSERT INTO horse_training_plans (id, "horseId", "addedById", "planDate", distance, note, "racecourseId", "createdAt", "updatedAt") VALUES (gen_random_uuid(), ${escapeSql(horse.id)}, ${escapeSql(trainerUser.id)}, '${formatDate(planDate)}', ${escapeSql(distance)}, ${escapeSql(note)}, ${racecourse ? escapeSql(racecourse.id) : 'NULL'}, NOW(), NOW());`
+        sqlStatements.push(sql)
+        trainerPlanCount++
+      }
+    }
+
+    console.log(`      ✅ Expenses: ${trainerExpenseCount}, Notes: ${trainerNoteCount}, Illnesses: ${trainerIllnessCount}, Medicines: ${trainerMedicineCount}, Training Plans: ${trainerPlanCount}`)
+  }
+
+  console.log(`  ✅ Generated trainer-created data SQL statements`)
+}
+
 async function main() {
   console.log('🚀 Starting demo data SQL generation...\n')
 
@@ -576,6 +751,9 @@ async function main() {
 
     // Set horse locations based on race history
     await setHorseLocations(horses)
+
+    // Generate trainer-created data
+    await addTrainerData(horses, stablemateId)
 
     // Add SQL footer
     sqlStatements.push('')
