@@ -165,7 +165,10 @@ export async function GET(request: Request) {
     const horsesWithLocation = horses.map((horse) => {
       const currentLocation = horse.locationHistory[0]
       // Fallback: if no location history, use racecourseId or farmId from horse table
-      let locationType: 'racecourse' | 'farm' | undefined = currentLocation?.locationType
+      let locationType: 'racecourse' | 'farm' | undefined = 
+        currentLocation?.locationType === 'racecourse' || currentLocation?.locationType === 'farm'
+          ? (currentLocation.locationType as 'racecourse' | 'farm')
+          : undefined
       if (!locationType) {
         if (horse.racecourseId) {
           locationType = 'racecourse'
