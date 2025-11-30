@@ -92,7 +92,9 @@ export async function DELETE(
           horseId: null,
           addedBy: {
             ownerProfile: {
-              stablemateId: stablemate.id,
+              stablemate: {
+                id: stablemate.id,
+              },
             },
           },
         },
@@ -141,7 +143,9 @@ export async function DELETE(
         horseId: null,
         addedBy: {
           ownerProfile: {
-            stablemateId: stablemateId,
+            stablemate: {
+              id: stablemateId,
+            },
           },
         },
       },
