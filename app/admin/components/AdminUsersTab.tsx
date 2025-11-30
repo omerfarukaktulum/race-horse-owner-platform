@@ -664,22 +664,11 @@ export default function AdminUsersTab() {
                 <div className="flex items-start gap-2">
                   <span className="text-indigo-600 font-medium">•</span>
                   <div>
-                    <strong>Hastalıklar (Illnesses):</strong>
+                    <strong>Hastalıklar &amp; Çıkıcı İlaçlar:</strong>
                     <ul className="ml-4 mt-1 space-y-1 text-gray-600">
                       <li>- En fazla 2 at: Hem aktif hastalık + aktif çıkıcı ilaç (son 3 ay içinde yarış yapmış atlar, işlemlerle birlikte)</li>
-                      <li>- 2-3 at: Sadece aktif hastalık</li>
+                      <li>- En fazla 5 at: Sadece aktif hastalık VEYA sadece aktif çıkıcı ilaç (yukarıdaki 2 at hariç)</li>
                       <li>- Tüm hastalıklar aktif (endDate yok)</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <span className="text-indigo-600 font-medium">•</span>
-                  <div>
-                    <strong>Çıkıcı İlaçlar (Banned Medicines):</strong>
-                    <ul className="ml-4 mt-1 space-y-1 text-gray-600">
-                      <li>- En fazla 2 at: Hem aktif hastalık + aktif çıkıcı ilaç (yukarıdaki aynı atlar)</li>
-                      <li>- 2-3 at: Sadece aktif çıkıcı ilaç</li>
                       <li>- Tüm ilaçlar aktif (remainingDays &gt; 0)</li>
                     </ul>
                   </div>

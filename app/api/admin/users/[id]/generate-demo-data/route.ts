@@ -327,18 +327,21 @@ export async function POST(
     const remainingHorses = horses.filter(h => !horsesWithBothIds.includes(h.id))
     const shuffledHorses = [...remainingHorses].sort(() => Math.random() - 0.5)
     
-    // Select 4-6 horses total for "only one" (2-3 illness only, 2-3 banned medicine only)
-    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 4, shuffledHorses.length)
+    // Select at most 5 horses for "only one" condition (illness OR medicine, not both)
+    const numHorsesWithOne = Math.min(5, shuffledHorses.length)
     const horsesWithOne = shuffledHorses.slice(0, numHorsesWithOne)
     
     // Split horses with one into two groups: illness only and banned medicine only
-    // Each group gets 2-3 horses
-    const illnessOnlyCount = Math.floor(Math.random() * 2) + 2 // 2-3
-    const illnessOnlyHorses = horsesWithOne.slice(0, Math.min(illnessOnlyCount, horsesWithOne.length))
-    const medicineOnlyHorses = horsesWithOne.slice(illnessOnlyCount)
+    // Distribute evenly or randomly between the two groups
+    const shuffledForSplit = [...horsesWithOne].sort(() => Math.random() - 0.5)
+    const splitPoint = Math.floor(shuffledForSplit.length / 2)
+    const illnessOnlyHorses = shuffledForSplit.slice(0, splitPoint)
+    const medicineOnlyHorses = shuffledForSplit.slice(splitPoint)
     
     const illnessOnlyIds = illnessOnlyHorses.map(h => h.id)
     const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
+    
+    console.log(`[Admin Generate Demo Data] Selected ${numHorsesWithOne} horse(s) for "only one" condition: ${illnessOnlyIds.length} illness-only, ${medicineOnlyIds.length} medicine-only`)
     
     // All horses that should get illness (both + illness only)
     const allIllnessHorseIds = [...horsesWithBothIds, ...illnessOnlyIds]
