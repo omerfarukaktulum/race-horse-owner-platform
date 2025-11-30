@@ -243,7 +243,8 @@ export async function POST(
     // Distribution strategy:
     // - At most 2 horses: both active hastalik + active cikici ilac (with operations on illnesses)
     //   These MUST be horses with races in the last 3 months
-    // - 3-5 horses: only one of them (either hastalik OR cikici ilac, but not both)
+    // - 2-3 horses: ONLY active hastalik (no banned medicine)
+    // - 2-3 horses: ONLY active cikici ilac (no illness)
     // - Rest: neither
     
     // First, find horses with races in the last 3 months
@@ -278,13 +279,15 @@ export async function POST(
     const remainingHorses = horses.filter(h => !horsesWithBothIds.includes(h.id))
     const shuffledHorses = [...remainingHorses].sort(() => Math.random() - 0.5)
     
-    // Select 3-5 horses for only one (either illness OR banned medicine)
-    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 3, shuffledHorses.length)
+    // Select 4-6 horses total for "only one" (2-3 illness only, 2-3 banned medicine only)
+    const numHorsesWithOne = Math.min(Math.floor(Math.random() * 3) + 4, shuffledHorses.length)
     const horsesWithOne = shuffledHorses.slice(0, numHorsesWithOne)
     
     // Split horses with one into two groups: illness only and banned medicine only
-    const illnessOnlyHorses = horsesWithOne.slice(0, Math.floor(horsesWithOne.length / 2))
-    const medicineOnlyHorses = horsesWithOne.slice(Math.floor(horsesWithOne.length / 2))
+    // Each group gets 2-3 horses
+    const illnessOnlyCount = Math.floor(Math.random() * 2) + 2 // 2-3
+    const illnessOnlyHorses = horsesWithOne.slice(0, Math.min(illnessOnlyCount, horsesWithOne.length))
+    const medicineOnlyHorses = horsesWithOne.slice(illnessOnlyCount)
     
     const illnessOnlyIds = illnessOnlyHorses.map(h => h.id)
     const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
@@ -455,10 +458,11 @@ export async function POST(
           continue
         }
 
-        // Generate trainer expenses (1-2 per horse, only horse-required categories)
+        // Generate trainer expenses (2-3 per horse, only horse-required categories)
+        // Target: ~40% of owner expenses (owner: 3-5, trainer: 2-3)
         const trainerExpenseCategories = ['ILAC', 'MONT', 'NAKLIYE']
         for (const horse of trainerHorses) {
-          const numExpenses = Math.floor(Math.random() * 2) + 1
+          const numExpenses = Math.floor(Math.random() * 2) + 2
           for (let i = 0; i < numExpenses; i++) {
             const daysAgo = Math.floor(Math.random() * 30) + 1
             const expenseDate = new Date(now)
@@ -481,7 +485,8 @@ export async function POST(
           }
         }
 
-        // Generate trainer notes (1-2 per horse)
+        // Generate trainer notes (3-4 per horse)
+        // Target: ~40% of owner notes (owner: 5-7, trainer: 3-4)
         const trainerNoteTemplates = [
           'Antrenman sonrası kontrol edildi, performans iyi.',
           'Günlük idman yapıldı, at sağlıklı.',
@@ -490,7 +495,7 @@ export async function POST(
           'Antrenman programına uygun şekilde çalışıldı.',
         ]
         for (const horse of trainerHorses) {
-          const numNotes = Math.floor(Math.random() * 2) + 1
+          const numNotes = Math.floor(Math.random() * 2) + 3
           for (let i = 0; i < numNotes; i++) {
             const daysAgo = Math.floor(Math.random() * 14) + 1
             const noteDate = new Date(now)
@@ -510,13 +515,14 @@ export async function POST(
         }
 
         // Generate trainer illnesses (0-1 per horse, all active)
+        // Target: Similar distribution to owner (but trainers don't add operations)
         const trainerIllnessDetails = [
           'Hafif öksürük gözlemlendi, takip ediliyor',
           'Eklem hassasiyeti, hafif egzersiz yapıldı',
           'Deri tahrişi, topikal tedavi uygulandı',
         ]
         for (const horse of trainerHorses) {
-          if (Math.random() > 0.7) { // 30% chance
+          if (Math.random() > 0.5) { // 50% chance (increased from 30%)
             const daysAgo = Math.floor(Math.random() * 30) + 1
             const startDate = new Date(now)
             startDate.setDate(startDate.getDate() - daysAgo)
@@ -536,8 +542,9 @@ export async function POST(
         }
 
         // Generate trainer banned medicines (0-1 per horse, all active)
+        // Target: Similar distribution to owner
         for (const horse of trainerHorses) {
-          if (Math.random() > 0.7) { // 30% chance
+          if (Math.random() > 0.5) { // 50% chance (increased from 30%)
             const medicineName = BANNED_MEDICINES[Math.floor(Math.random() * BANNED_MEDICINES.length)]
             const waitDays = waitDaysMap[medicineName] || Math.floor(Math.random() * 10) + 3
             const daysAgo = Math.floor(Math.random() * (waitDays - 1)) + 1
