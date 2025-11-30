@@ -719,14 +719,7 @@ export default function AdminUsersTab() {
                 <div className="flex items-start gap-2">
                   <span className="text-purple-600 font-medium">•</span>
                   <div>
-                    <strong>Hastalıklar:</strong> Her erişilebilir at için %50 şans (aktif)
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <span className="text-purple-600 font-medium">•</span>
-                  <div>
-                    <strong>Çıkıcı İlaçlar:</strong> Her erişilebilir at için %50 şans (aktif)
+                    <strong>Hastalıklar &amp; Çıkıcı İlaçlar:</strong> Antrenörler tarafından oluşturulmaz (sadece sahip tarafından oluşturulur)
                   </div>
                 </div>
 
