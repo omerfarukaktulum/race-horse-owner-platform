@@ -95,6 +95,23 @@ export function HorseMetadataCard({ horse }: Props) {
               </p>
             )}
 
+            {/* Location Information */}
+            {horse.currentLocation && horse.locationType && (
+              <div className="mb-3">
+                {horse.locationType === 'racecourse' ? (
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-blue-50 text-blue-700 border-blue-200 inline-flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    🏇 {horse.currentLocation}
+                  </span>
+                ) : horse.locationType === 'farm' ? (
+                  <span className="px-2.5 py-1 rounded-md text-xs font-medium border bg-green-50 text-green-700 border-green-200 inline-flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    🏡 {horse.currentLocation}
+                  </span>
+                ) : null}
+              </div>
+            )}
+
             {/* Banned Medicine Label */}
             {horse.remainingWaitDays !== null && horse.remainingWaitDays !== undefined && horse.remainingWaitDays > 0 && horse.activeBannedMedicine && (
               <div className="mb-3">

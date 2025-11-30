@@ -229,8 +229,8 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`text-gray-600 hover:text-gray-900 flex items-center gap-1 ${
-                    pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : ''
+                  className={`flex items-center gap-1 ${
+                    pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <Settings className="h-4 w-4" />
@@ -243,8 +243,8 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`text-gray-600 hover:text-gray-900 flex items-center gap-1 ${
-                    pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : ''
+                  className={`flex items-center gap-1 ${
+                    pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   <User className="h-4 w-4" />
@@ -268,7 +268,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/stablemate') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/stablemate') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <Settings className="h-5 w-5" />
                   <span className="text-xs font-medium">Eküri</span>
@@ -280,7 +280,7 @@ function AppNavbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/trainer/account') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex flex-col items-center gap-1 p-2 h-auto ${pathname?.startsWith('/app/trainer/account') ? 'text-indigo-600' : 'text-gray-600 hover:text-gray-900'}`}
                 >
                   <User className="h-5 w-5" />
                   <span className="text-xs font-medium">Hesap</span>
@@ -492,6 +492,10 @@ function BottomTabBar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => {
+                // Scroll to top when switching menu items
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
               className="bottom-tab-item flex flex-col items-center justify-center flex-1 h-full min-w-0 max-w-[20%] transition-all duration-200 active:scale-95"
               style={{ 
                 flexDirection: 'column',
