@@ -39,21 +39,22 @@ jobs:
           
           # Check if PROD_DIRECT_DATABASE_URL is provided
           if [ "${{ secrets.PROD_DIRECT_DATABASE_URL }}" != "" ]; then
-            echo "Using provided PROD_DIRECT_DATABASE_URL for direct connection"
+            echo "Using provided PROD_DIRECT_DATABASE_URL for migrations"
             echo "direct_url=${{ secrets.PROD_DIRECT_DATABASE_URL }}" >> $GITHUB_OUTPUT
           else
-            echo "Using transaction pooler for both connections (supports DDL operations)"
-            echo "Note: Supabase transaction pooler (port 6543) supports migrations"
-            # Use pooler URL for directUrl as well, with connection timeout parameters
-            # Add connection_timeout and statement_timeout to help with long migrations
-            if [[ "$POOLER_URL" == *"?"* ]]; then
-              # URL already has query parameters, append to them
-              DIRECT_URL="${POOLER_URL}&connect_timeout=30&statement_timeout=300000"
-            else
-              # URL has no query parameters, add them
-              DIRECT_URL="${POOLER_URL}?connect_timeout=30&statement_timeout=300000"
-            fi
-            echo "direct_url=$DIRECT_URL" >> $GITHUB_OUTPUT
+            echo "⚠️  WARNING: PROD_DIRECT_DATABASE_URL not set"
+            echo ""
+            echo "Problem: Transaction pooler (port 6543) doesn't support prepared statements"
+            echo "Prisma migrations require prepared statements, so they will fail with transaction pooler"
+            echo ""
+            echo "Solution: Set PROD_DIRECT_DATABASE_URL secret with one of:"
+            echo "  1. Session mode pooler (recommended): Get from Supabase Dashboard → Database → Connection string → Session mode"
+            echo "  2. Direct connection (port 5432): Requires IP allowlisting in Supabase"
+            echo ""
+            echo "Attempting to use transaction pooler anyway (may fail)..."
+            
+            # Try to use transaction pooler as fallback (will likely fail but worth trying)
+            echo "direct_url=$POOLER_URL" >> $GITHUB_OUTPUT
           fi
 
       - name: Run production migration
