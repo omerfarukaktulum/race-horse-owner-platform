@@ -9,7 +9,7 @@ on:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: Production
     
     steps:
@@ -32,52 +32,37 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
-      - name: Prepare direct connection URL
-        id: prepare-direct-url
+      - name: Prepare connection URLs
+        id: prepare-urls
         run: |
-          # Check if PROD_DIRECT_DATABASE_URL secret exists and is not empty
+          POOLER_URL="${{ secrets.PROD_DATABASE_URL }}"
+          
+          # Check if PROD_DIRECT_DATABASE_URL is provided
           if [ "${{ secrets.PROD_DIRECT_DATABASE_URL }}" != "" ]; then
-            echo "Using provided PROD_DIRECT_DATABASE_URL"
+            echo "Using provided PROD_DIRECT_DATABASE_URL for direct connection"
             echo "direct_url=${{ secrets.PROD_DIRECT_DATABASE_URL }}" >> $GITHUB_OUTPUT
           else
-            echo "Converting pooler URL to direct connection URL"
-            POOLER_URL="${{ secrets.PROD_DATABASE_URL }}"
-            # Convert pooler URL format to direct URL format
-            # From: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true
-            # To:   postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
-            if [[ "$POOLER_URL" == *"pooler.supabase.com"* ]]; then
-              # Use Node.js for more reliable URL parsing
-              DIRECT_URL=$(node -e "
-                const url = '$POOLER_URL';
-                const match = url.match(/postgresql:\/\/postgres\.([^:]+):([^@]+)@[^\/]+\/postgres/);
-                if (match) {
-                  const [, ref, password] = match;
-                  console.log(\`postgresql://postgres:\${password}@db.\${ref}.supabase.co:5432/postgres\`);
-                } else {
-                  console.error('Failed to parse pooler URL');
-                  process.exit(1);
-                }
-              ")
-              if [ $? -eq 0 ]; then
-                echo "direct_url=$DIRECT_URL" >> $GITHUB_OUTPUT
-                echo "Converted URL successfully"
-              else
-                echo "Error: Failed to convert pooler URL. Please set PROD_DIRECT_DATABASE_URL secret."
-                exit 1
-              fi
+            echo "Using transaction pooler for both connections (supports DDL operations)"
+            echo "Note: Supabase transaction pooler (port 6543) supports migrations"
+            # Use pooler URL for directUrl as well, with connection timeout parameters
+            # Add connection_timeout and statement_timeout to help with long migrations
+            if [[ "$POOLER_URL" == *"?"* ]]; then
+              # URL already has query parameters, append to them
+              DIRECT_URL="${POOLER_URL}&connect_timeout=30&statement_timeout=300000"
             else
-              echo "Error: PROD_DATABASE_URL does not appear to be a Supabase pooler URL."
-              echo "Please set PROD_DIRECT_DATABASE_URL secret with the direct connection string."
-              exit 1
+              # URL has no query parameters, add them
+              DIRECT_URL="${POOLER_URL}?connect_timeout=30&statement_timeout=300000"
             fi
+            echo "direct_url=$DIRECT_URL" >> $GITHUB_OUTPUT
           fi
 
       - name: Run production migration
         run: |
-          echo "Running migration with direct connection"
+          echo "Running migration with connection pooler"
+          echo "This may take a few minutes for large migrations..."
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DIRECT_URL: ${{ steps.prepare-direct-url.outputs.direct_url }}
+          DIRECT_URL: ${{ steps.prepare-urls.outputs.direct_url }}
           NODE_ENV: production
 
