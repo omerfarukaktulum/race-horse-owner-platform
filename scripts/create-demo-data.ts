@@ -683,12 +683,15 @@ async function main() {
     // - 2-3 horses: ONLY active cikici ilac (no illness)
     // - Rest: neither
     
-    // First, find horses with races in the last 3 months
+    // First, find horses that have run at least ONE race in the last 3 months
     const threeMonthsAgo = new Date()
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
     
+    console.log(`  🔍 Checking for horses with at least one race in last 3 months (since ${threeMonthsAgo.toISOString()})`)
+    
     const horsesWithRecentRaces: any[] = []
     for (const horse of horses) {
+      // Query to find at least one race in the last 3 months
       const recentRace = await prisma.horseRaceHistory.findFirst({
         where: {
           horseId: horse.id,
@@ -703,8 +706,11 @@ async function main() {
       
       if (recentRace) {
         horsesWithRecentRaces.push(horse)
+        console.log(`    ✓ Horse "${horse.name}" has race on ${recentRace.raceDate.toISOString()}`)
       }
     }
+    
+    console.log(`  📊 Found ${horsesWithRecentRaces.length} horse(s) with at least one race in last 3 months`)
     
     // IMPORTANT: Select at most 2 horses ONLY from those with recent races for "both" condition
     // If no horses have recent races, skip the "both" condition entirely
@@ -712,15 +718,45 @@ async function main() {
     let horsesWithBothIds: string[] = []
     
     if (horsesWithRecentRaces.length > 0) {
-      // Only select from horses with races in the last 3 months
+      // CRITICAL: Only select from horsesWithRecentRaces array (horses with at least one race in last 3 months)
       const shuffledRecentRaceHorses = [...horsesWithRecentRaces].sort(() => Math.random() - 0.5)
       horsesWithBoth = shuffledRecentRaceHorses.slice(0, Math.min(2, shuffledRecentRaceHorses.length))
       horsesWithBothIds = horsesWithBoth.map(h => h.id)
       
-      console.log(`  ✅ Selected ${horsesWithBoth.length} horse(s) with races in last 3 months for BOTH active hastalik + active cikici ilac`)
-      horsesWithBoth.forEach(h => console.log(`    - ${h.name}`))
+      console.log(`  🎯 Selected ${horsesWithBoth.length} horse(s) from ${horsesWithRecentRaces.length} horses with recent races for BOTH condition`)
+      
+      // VERIFICATION: Double-check that selected horses actually have recent races
+      for (const horse of horsesWithBoth) {
+        const verifyRace = await prisma.horseRaceHistory.findFirst({
+          where: {
+            horseId: horse.id,
+            raceDate: {
+              gte: threeMonthsAgo,
+            },
+          },
+          orderBy: {
+            raceDate: 'desc',
+          },
+        })
+        
+        if (!verifyRace) {
+          console.error(`  ❌ [ERROR] Horse "${horse.name}" (${horse.id}) was selected for "both" but verification shows no race in last 3 months! Removing from selection.`)
+          // Remove from selection if verification fails
+          horsesWithBoth = horsesWithBoth.filter(h => h.id !== horse.id)
+          horsesWithBothIds = horsesWithBothIds.filter(id => id !== horse.id)
+        } else {
+          console.log(`  ✓ Verified: Horse "${horse.name}" has race on ${verifyRace.raceDate.toISOString()}`)
+        }
+      }
+      
+      if (horsesWithBoth.length > 0) {
+        console.log(`  ✅ Final selection: ${horsesWithBoth.length} horse(s) with verified races in last 3 months for BOTH active hastalik + active cikici ilac`)
+        horsesWithBoth.forEach(h => console.log(`    - ${h.name}`))
+      } else {
+        console.log(`  ⚠ After verification, no valid horses remain for "both" condition`)
+      }
     } else {
-      console.log(`  ⚠ No horses with races in last 3 months found, skipping horses with both condition`)
+      console.log(`  ⚠ No horses with races in last 3 months found, skipping "both" condition entirely`)
     }
     
     // Remove horses with both from the pool for "only one" selection
