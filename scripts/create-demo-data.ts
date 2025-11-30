@@ -778,11 +778,22 @@ async function main() {
     const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
     
     console.log(`  Selected ${numHorsesWithOne} horse(s) for "only one" condition: ${illnessOnlyIds.length} illness-only, ${medicineOnlyIds.length} medicine-only`)
+    console.log(`  Horses with BOTH: ${horsesWithBothIds.length} (${horsesWithBoth.map(h => h.name).join(', ')})`)
+    console.log(`  Horses with ILLNESS ONLY: ${illnessOnlyIds.length} (${illnessOnlyHorses.map(h => h.name).join(', ')})`)
+    console.log(`  Horses with MEDICINE ONLY: ${medicineOnlyIds.length} (${medicineOnlyHorses.map(h => h.name).join(', ')})`)
     
     // All horses that should get illness (both + illness only)
     const allIllnessHorseIds = [...horsesWithBothIds, ...illnessOnlyIds]
     // All horses that should get banned medicine (both + medicine only)
     const allMedicineHorseIds = [...horsesWithBothIds, ...medicineOnlyIds]
+    
+    // CRITICAL: Track which horses should NOT get anything (for verification)
+    const horsesWithNothing = horses.filter(h => 
+      !horsesWithBothIds.includes(h.id) && 
+      !illnessOnlyIds.includes(h.id) && 
+      !medicineOnlyIds.includes(h.id)
+    )
+    console.log(`  Horses with NOTHING: ${horsesWithNothing.length} (${horsesWithNothing.map(h => h.name).join(', ')})`)
     
     console.log(`  📋 Distribution:`)
     console.log(`    - ${horsesWithBoth.length} horse(s) with BOTH active hastalik + active cikici ilac (with operations)`)

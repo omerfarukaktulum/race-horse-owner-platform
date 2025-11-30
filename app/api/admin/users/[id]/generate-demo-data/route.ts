@@ -342,11 +342,22 @@ export async function POST(
     const medicineOnlyIds = medicineOnlyHorses.map(h => h.id)
     
     console.log(`[Admin Generate Demo Data] Selected ${numHorsesWithOne} horse(s) for "only one" condition: ${illnessOnlyIds.length} illness-only, ${medicineOnlyIds.length} medicine-only`)
+    console.log(`[Admin Generate Demo Data] Horses with BOTH: ${horsesWithBothIds.length} (${horsesWithBoth.map(h => h.name).join(', ')})`)
+    console.log(`[Admin Generate Demo Data] Horses with ILLNESS ONLY: ${illnessOnlyIds.length} (${illnessOnlyHorses.map(h => h.name).join(', ')})`)
+    console.log(`[Admin Generate Demo Data] Horses with MEDICINE ONLY: ${medicineOnlyIds.length} (${medicineOnlyHorses.map(h => h.name).join(', ')})`)
     
     // All horses that should get illness (both + illness only)
     const allIllnessHorseIds = [...horsesWithBothIds, ...illnessOnlyIds]
     // All horses that should get banned medicine (both + medicine only)
     const allMedicineHorseIds = [...horsesWithBothIds, ...medicineOnlyIds]
+    
+    // CRITICAL: Track which horses should NOT get anything (for verification)
+    const horsesWithNothing = horses.filter(h => 
+      !horsesWithBothIds.includes(h.id) && 
+      !illnessOnlyIds.includes(h.id) && 
+      !medicineOnlyIds.includes(h.id)
+    )
+    console.log(`[Admin Generate Demo Data] Horses with NOTHING: ${horsesWithNothing.length} (${horsesWithNothing.map(h => h.name).join(', ')})`)
 
     // Generate illnesses (0-1 per horse) - ALL ACTIVE (no endDate)
     const illnessDetails = [
@@ -359,7 +370,19 @@ export async function POST(
 
     for (const horse of horses) {
       const shouldAddIllness = allIllnessHorseIds.includes(horse.id)
+      const shouldAddMedicine = allMedicineHorseIds.includes(horse.id)
       const needsOperations = horsesWithBothIds.includes(horse.id)
+      
+      // VERIFICATION: Log what we're adding to each horse
+      if (shouldAddIllness && shouldAddMedicine) {
+        console.log(`[Admin Generate Demo Data] Adding BOTH to horse: ${horse.name} (should be in horsesWithBothIds: ${horsesWithBothIds.includes(horse.id)})`)
+      } else if (shouldAddIllness) {
+        console.log(`[Admin Generate Demo Data] Adding ILLNESS ONLY to horse: ${horse.name}`)
+      } else if (shouldAddMedicine) {
+        console.log(`[Admin Generate Demo Data] Adding MEDICINE ONLY to horse: ${horse.name}`)
+      } else {
+        console.log(`[Admin Generate Demo Data] Adding NOTHING to horse: ${horse.name}`)
+      }
       
       if (shouldAddIllness) {
         const daysAgo = Math.floor(Math.random() * 60) + 1
