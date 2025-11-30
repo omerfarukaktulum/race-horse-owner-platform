@@ -284,7 +284,7 @@ export default function HomePage() {
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full flex items-center justify-center mb-3">
                 <Activity className="h-6 w-6 text-white" />
               </div>
-              <CardTitle className="text-purple-600">Aktif Dashboard</CardTitle>
+              <CardTitle className="text-purple-600">Aktif Ana Sayfa</CardTitle>
               <CardDescription>
                 Son koşular, idmanlar, kayıtlar ve giderler tek bakışta
               </CardDescription>
