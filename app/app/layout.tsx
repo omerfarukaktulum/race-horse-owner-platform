@@ -538,6 +538,7 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       if (typeof window === 'undefined' || typeof document === 'undefined') return
       
       // Force scroll to absolute top (0) - this ensures we see the navbar and top content
+      // Use multiple methods to ensure it works across all browsers and scenarios
       window.scrollTo(0, 0)
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       
@@ -549,7 +550,14 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       document.body.scrollTop = 0
       document.body.scrollLeft = 0
       
-      // Also scroll main element if it's scrollable
+      // Force scroll on window again after setting documentElement/body
+      // This ensures the viewport actually moves to top
+      setTimeout(() => {
+        window.scrollTo(0, 0)
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      }, 0)
+      
+      // Also scroll main element if it's scrollable (but don't rely on it)
       const main = document.querySelector('main')
       if (main && main instanceof HTMLElement) {
         main.scrollTop = 0
@@ -567,14 +575,27 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
     
     // Wait for the page to be fully rendered before scrolling
     // Use requestAnimationFrame to wait for the next paint
+    let timeoutIds: ReturnType<typeof setTimeout>[] = []
+    
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         scrollToTop()
-        // Also scroll after a short delay to ensure content is loaded
-        setTimeout(scrollToTop, 100)
-        setTimeout(scrollToTop, 300)
+        // Also scroll after delays to ensure content is loaded and override any position restoration
+        // Multiple attempts to catch any late-rendering or position restoration
+        timeoutIds = [
+          setTimeout(scrollToTop, 0),
+          setTimeout(scrollToTop, 50),
+          setTimeout(scrollToTop, 100),
+          setTimeout(scrollToTop, 200),
+          setTimeout(scrollToTop, 400),
+          setTimeout(scrollToTop, 600),
+        ]
       })
     })
+    
+    return () => {
+      timeoutIds.forEach(id => clearTimeout(id))
+    }
   }, [pathname])
   
   return (
