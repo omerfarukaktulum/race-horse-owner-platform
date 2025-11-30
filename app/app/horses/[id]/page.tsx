@@ -403,15 +403,35 @@ useEffect(() => {
   // Determine locationType - check locationHistory first, then fallback
   let locationType: 'racecourse' | 'farm' | undefined = undefined
   if (currentLocationHistory) {
-    if (currentLocationHistory.locationType === 'racecourse' || currentLocationHistory.racecourse) {
+    // Check if racecourse exists first (most reliable)
+    if (currentLocationHistory.racecourse) {
       locationType = 'racecourse'
-    } else if (currentLocationHistory.locationType === 'farm' || currentLocationHistory.farm) {
+    } else if (currentLocationHistory.farm) {
       locationType = 'farm'
+    } else if (currentLocationHistory.locationType) {
+      // Fallback to locationType field if it exists
+      const locType = currentLocationHistory.locationType.toLowerCase()
+      if (locType === 'racecourse' || locType.includes('racecourse')) {
+        locationType = 'racecourse'
+      } else if (locType === 'farm' || locType.includes('farm')) {
+        locationType = 'farm'
+      }
     }
   } else {
+    // Fallback to direct racecourse/farm from horse
     if (horse.racecourse) {
       locationType = 'racecourse'
     } else if (horse.farm) {
+      locationType = 'farm'
+    }
+  }
+  
+  // Ensure locationType is set if we have a currentLocation but no locationType
+  // This handles cases where location comes from racecourse/farm directly
+  if (currentLocation && !locationType) {
+    if (horse.racecourse?.name === currentLocation) {
+      locationType = 'racecourse'
+    } else if (horse.farm?.name === currentLocation) {
       locationType = 'farm'
     }
   }
