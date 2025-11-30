@@ -32,38 +32,34 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
-      - name: Prepare connection URLs
-        id: prepare-urls
+      - name: Validate migration connection
         run: |
-          POOLER_URL="${{ secrets.PROD_DATABASE_URL }}"
-          
-          # Check if PROD_DIRECT_DATABASE_URL is provided
-          if [ "${{ secrets.PROD_DIRECT_DATABASE_URL }}" != "" ]; then
-            echo "Using provided PROD_DIRECT_DATABASE_URL for migrations"
-            echo "direct_url=${{ secrets.PROD_DIRECT_DATABASE_URL }}" >> $GITHUB_OUTPUT
-          else
-            echo "⚠️  WARNING: PROD_DIRECT_DATABASE_URL not set"
+          if [ -z "${{ secrets.PROD_DIRECT_DATABASE_URL }}" ]; then
+            echo "❌ ERROR: PROD_DIRECT_DATABASE_URL secret is not set!"
             echo ""
             echo "Problem: Transaction pooler (port 6543) doesn't support prepared statements"
-            echo "Prisma migrations require prepared statements, so they will fail with transaction pooler"
+            echo "Prisma migrations require prepared statements, so they will hang/fail with transaction pooler"
             echo ""
-            echo "Solution: Set PROD_DIRECT_DATABASE_URL secret with one of:"
-            echo "  1. Session mode pooler (recommended): Get from Supabase Dashboard → Database → Connection string → Session mode"
-            echo "  2. Direct connection (port 5432): Requires IP allowlisting in Supabase"
+            echo "Solution: Set PROD_DIRECT_DATABASE_URL secret in GitHub:"
+            echo "  1. Go to: Settings → Secrets and variables → Actions"
+            echo "  2. Click 'New repository secret'"
+            echo "  3. Name: PROD_DIRECT_DATABASE_URL"
+            echo "  4. Value: Get from Supabase Dashboard → Database → Connection string → Session mode"
+            echo "     Format: postgresql://postgres.[ref]:[password]@aws-1-eu-west-1.pooler.supabase.com:5432/postgres"
             echo ""
-            echo "Attempting to use transaction pooler anyway (may fail)..."
-            
-            # Try to use transaction pooler as fallback (will likely fail but worth trying)
-            echo "direct_url=$POOLER_URL" >> $GITHUB_OUTPUT
+            echo "This will prevent the migration from hanging."
+            exit 1
+          else
+            echo "✅ PROD_DIRECT_DATABASE_URL is set - migrations will use Session mode pooler"
           fi
 
       - name: Run production migration
         run: |
-          echo "Running migration with connection pooler"
+          echo "Running migration with Session mode pooler (supports prepared statements)"
           echo "This may take a few minutes for large migrations..."
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DIRECT_URL: ${{ steps.prepare-urls.outputs.direct_url }}
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_DATABASE_URL }}
           NODE_ENV: production
 
