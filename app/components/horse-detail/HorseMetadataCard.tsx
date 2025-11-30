@@ -81,7 +81,7 @@ export function HorseMetadataCard({ horse }: Props) {
           {/* Horse Name */}
           <div>
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">
                 {horse.name}
               </h1>
             </div>

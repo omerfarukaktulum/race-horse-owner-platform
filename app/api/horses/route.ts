@@ -115,16 +115,21 @@ export async function GET(request: Request) {
           take: 1,
           orderBy: { startDate: 'desc' },
         },
-        // Only fetch basic illness/banned medicine counts for list view (not full details)
+        // Fetch all illnesses to check for active ones (no endDate)
         illnesses: {
           select: {
             id: true,
             detail: true,
             startDate: true,
             endDate: true,
+            operations: {
+              select: {
+                id: true,
+              },
+            },
           },
-          take: 1, // Just need to know if horse has illnesses
         },
+        // Fetch all banned medicines to check for active ones (remaining wait days > 0)
         bannedMedicines: {
           select: {
             id: true,
@@ -132,7 +137,6 @@ export async function GET(request: Request) {
             givenDate: true,
             waitDays: true,
           },
-          take: 1, // Just need to know if horse has banned medicines
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -160,9 +164,18 @@ export async function GET(request: Request) {
     // Map horses to include current location info
     const horsesWithLocation = horses.map((horse) => {
       const currentLocation = horse.locationHistory[0]
+      // Fallback: if no location history, use racecourseId or farmId from horse table
+      let locationType: 'racecourse' | 'farm' | undefined = currentLocation?.locationType
+      if (!locationType) {
+        if (horse.racecourseId) {
+          locationType = 'racecourse'
+        } else if (horse.farmId) {
+          locationType = 'farm'
+        }
+      }
       return {
         ...horse,
-        currentLocationType: currentLocation?.locationType,
+        currentLocationType: locationType,
         currentCity: currentLocation?.city,
       }
     })

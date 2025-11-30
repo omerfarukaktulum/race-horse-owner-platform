@@ -219,7 +219,7 @@ export default function AdminUsersTab() {
 
   const handleGenerateDemoData = async (userId: string, userEmail: string, ownerName: string) => {
     const confirmed = window.confirm(
-      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 3-5 at bazlı gider (ILAC, MONT, NAKLIYE kategorileri)\n- Eküri genelinde 16-24 gider (diğer kategoriler)\n- Her at için 5-7 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses) - en az 1 at kesinlikle hastalık kaydına sahip olacak\n- Bazı atlar için yasaklı ilaç kayıtları (banned medicines) - en az 1 at kesinlikle yasaklı ilaç kaydına sahip olacak\n- En az 1 at hem hastalık hem de yasaklı ilaç kaydına sahip olacak\n- Her at için 1-3 antrenman planı (training plans)\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
+      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 3-5 at bazlı gider (ILAC, MONT, NAKLIYE kategorileri)\n- Eküri genelinde 16-24 gider (diğer kategoriler)\n- Her at için 5-7 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses) - en az 1 at kesinlikle aktif hastalık kaydına sahip olacak\n- Bazı atlar için çıkıcı ilaç kayıtları (banned medicines) - en az 1 at kesinlikle çıkıcı ilaç kaydına sahip olacak\n- Son 3 ay içinde yarış yapmış bir at hem aktif hastalık hem de çıkıcı ilaç kaydına sahip olacak\n- Her at için 1-3 antrenman planı (training plans)\n- Konum ayarları: Son 3 ay içinde yarış yapmış atlar "Saha" (hipodrom), diğerleri "Çiftlik" olarak ayarlanacak\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
     )
 
     if (!confirmed) {
