@@ -474,7 +474,7 @@ async function setHorseLocations(horses: any[]) {
 /**
  * Add trainer-created data (expenses, notes, illnesses, banned medicines, training plans)
  */
-async function addTrainerData(horses: any[], stablemateId: string) {
+async function addTrainerData(horses: any[], stablemateId: string, allIllnessHorseIds: string[] = [], allMedicineHorseIds: string[] = []) {
   console.log(`\nGenerating trainer-created data SQL...`)
 
   // Find trainers linked to this stablemate
@@ -888,7 +888,7 @@ async function main() {
     await setHorseLocations(horses)
 
     // Generate trainer-created data
-    await addTrainerData(horses, stablemateId)
+    await addTrainerData(horses, stablemateId, allIllnessHorseIds, allMedicineHorseIds)
 
     // Add SQL footer
     sqlStatements.push('')
