@@ -429,11 +429,42 @@ useEffect(() => {
   // Ensure locationType is set if we have a currentLocation but no locationType
   // This handles cases where location comes from racecourse/farm directly
   if (currentLocation && !locationType) {
-    if (horse.racecourse?.name === currentLocation) {
+    // Check if currentLocation matches horse's racecourse or farm
+    if (horse.racecourse && (horse.racecourse.name === currentLocation || currentLocation.includes(horse.racecourse.name))) {
       locationType = 'racecourse'
-    } else if (horse.farm?.name === currentLocation) {
+    } else if (horse.farm && (horse.farm.name === currentLocation || currentLocation.includes(horse.farm.name))) {
       locationType = 'farm'
     }
+  }
+  
+  // Final fallback: if we have a location but no type, infer from horse data
+  if (currentLocation && !locationType) {
+    if (horse.racecourse) {
+      locationType = 'racecourse'
+    } else if (horse.farm) {
+      locationType = 'farm'
+    }
+  }
+  
+  // Debug logging (remove after testing)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Horse Detail] Location Debug:', {
+      hasLocationHistory: !!horse.locationHistory?.length,
+      locationHistoryLength: horse.locationHistory?.length || 0,
+      currentLocationHistory: currentLocationHistory ? {
+        hasRacecourse: !!currentLocationHistory.racecourse,
+        hasFarm: !!currentLocationHistory.farm,
+        locationType: currentLocationHistory.locationType,
+        racecourseName: currentLocationHistory.racecourse?.name,
+        farmName: currentLocationHistory.farm?.name,
+        endDate: currentLocationHistory.endDate,
+      } : null,
+      horseRacecourse: horse.racecourse?.name,
+      horseFarm: horse.farm?.name,
+      currentLocation,
+      locationType,
+      finalCheck: currentLocation && locationType ? 'SHOULD DISPLAY' : 'WILL NOT DISPLAY',
+    })
   }
   
   // Find last race date and last prize date
