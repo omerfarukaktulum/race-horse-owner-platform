@@ -546,24 +546,26 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       const navbar = document.querySelector('header')
       const navbarHeight = navbar ? navbar.offsetHeight : 64 // Default to 64px (h-16)
       
-      // Account for mt-4 margin (1rem = 16px) from navbar to first content element
+      // Account for mt-4 margin (1rem = 16px) from navbar bottom to first content element
       const marginTop = 16 // mt-4 = 1rem = 16px
       
-      // Calculate scroll position to show the bottom of the navbar
-      // The navbar is fixed, so we want to scroll to position 0 (top of document)
-      // which will show the navbar at the top of viewport, and content below it
-      const targetScroll = 0
+      // Since navbar is fixed, scrolling to 0 should show navbar at top
+      // But we want to ensure the content below (filters) is visible
+      // The main element has pt-20 (80px) padding to account for fixed navbar
+      // So content starts at: navbarHeight (64px) + main padding (80px) = 144px from document top
+      // But we want to show from the bottom of navbar, so scroll to show that area
       
-      // Scroll to show the navbar at the top (position 0)
-      window.scrollTo(0, targetScroll)
-      window.scrollTo({ top: targetScroll, left: 0, behavior: 'instant' })
+      // Scroll to absolute top (0) - this shows navbar at top of viewport
+      // The fixed navbar will be visible, and content below it (with pt-20 padding) will show
+      window.scrollTo(0, 0)
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
       
       // Also set documentElement scroll
-      document.documentElement.scrollTop = targetScroll
+      document.documentElement.scrollTop = 0
       document.documentElement.scrollLeft = 0
       
       // Also set body scroll
-      document.body.scrollTop = targetScroll
+      document.body.scrollTop = 0
       document.body.scrollLeft = 0
       
       // Also scroll main element if it's scrollable
