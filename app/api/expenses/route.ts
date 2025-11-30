@@ -351,7 +351,9 @@ export async function GET(request: Request) {
               horseId: null,
               addedBy: {
                 ownerProfile: {
-                  stablemateId: { in: stablemateIds },
+                  stablemate: {
+                    id: { in: stablemateIds },
+                  },
                 },
               },
             }] : []),
