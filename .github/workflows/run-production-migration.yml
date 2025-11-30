@@ -27,16 +27,18 @@ jobs:
 
       - name: Generate Prisma Client
         run: |
-          echo "Using PROD_DATABASE_URL for migration"
+          echo "Generating Prisma Client"
           npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
 
       - name: Run production migration
         run: |
-          echo "Running migration with PROD_DATABASE_URL"
+          echo "Running migration with direct connection (DIRECT_URL)"
+          echo "Using DATABASE_URL for client, DIRECT_URL for migrations"
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.PROD_DIRECT_DATABASE_URL }}
           NODE_ENV: production
 
