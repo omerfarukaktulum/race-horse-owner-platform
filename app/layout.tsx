@@ -5,8 +5,10 @@ import { Toaster } from 'sonner'
 
 const inter = Inter({ subsets: ['latin'] })
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ekurim.com.tr'
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: new URL(appUrl),
   title: 'EKÜRİM - Yarış Atı Yönetim Platformu',
   description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
   keywords: 'tjk, yarış atı, at yönetimi, eküri, hipodrom, antrenör',
@@ -14,12 +16,14 @@ export const metadata: Metadata = {
   icons: {
     icon: '/logo.png',
     apple: '/logo.png',
+    shortcut: '/logo.png',
   },
   openGraph: {
     title: 'EKÜRİM',
     description: 'Yarış atlarınızı ve giderlerinizi kolayca yönetin',
     type: 'website',
     locale: 'tr_TR',
+    url: appUrl,
   },
 }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminPrismaClient } from '@/lib/admin-prisma'
 import { cookies } from 'next/headers'
 import { verify } from 'jsonwebtoken'
 import { horseSchema } from '@/lib/validation/schemas'
@@ -313,8 +314,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    // Use admin Prisma client for admins (respects database switch preference)
+    // Use regular Prisma client for owners
+    const dbClient = decoded.role === 'ADMIN' ? getAdminPrismaClient() : prisma
+
     // Check ownership
-    const horse = await prisma.horse.findUnique({
+    const horse = await dbClient.horse.findUnique({
       where: { id: params.id },
       include: {
         stablemate: true,
@@ -341,7 +346,7 @@ export async function DELETE(
       }
     }
 
-    await prisma.horse.delete({
+    await dbClient.horse.delete({
       where: { id: params.id },
     })
 

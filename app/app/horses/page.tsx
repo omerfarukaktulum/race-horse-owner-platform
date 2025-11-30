@@ -1456,7 +1456,7 @@ export default function HorsesPage() {
                 <LayoutGrid className="h-8 w-8 text-white" />
               </div>
               <p className="text-gray-700 font-semibold">Ekürünüzde at bulunmuyor</p>
-              <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
+              <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için destek birimi ile iletişime geçin</p>
             </CardContent>
           </Card>
         ) : (
@@ -1477,7 +1477,7 @@ export default function HorsesPage() {
                   <LayoutGrid className="h-8 w-8 text-white" />
                 </div>
               <p className="text-gray-700 font-semibold">Ekürünüzde at bulunmuyor</p>
-                <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için yukarıdaki butonu kullanın</p>
+                <p className="text-sm text-gray-500 mt-2">Yeni at eklemek için destek birimi ile iletişime geçin</p>
               </CardContent>
             </Card>
           ) : (

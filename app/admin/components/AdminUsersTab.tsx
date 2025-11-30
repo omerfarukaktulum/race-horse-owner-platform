@@ -10,6 +10,7 @@ import { Label } from '@/app/components/ui/label'
 import { Trash2, FolderX, Sparkles, UserPlus, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import ImportHorsesModal from './ImportHorsesModal'
+import DeleteHorseModal from './DeleteHorseModal'
 
 interface User {
   id: string
@@ -21,6 +22,7 @@ interface User {
     officialRef: string | null
     subscriptionStatus: string | null
     stablemate: {
+      id: string
       name: string
       dataFetchStatus?: string | null
       dataFetchStartedAt?: string | null
@@ -45,6 +47,12 @@ export default function AdminUsersTab() {
     userId: string
     ownerName: string
     ownerRef: string
+  } | null>(null)
+  const [deleteHorseModalOpen, setDeleteHorseModalOpen] = useState(false)
+  const [selectedUserForDeleteHorse, setSelectedUserForDeleteHorse] = useState<{
+    userId: string
+    stablemateId: string
+    ownerName: string
   } | null>(null)
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [editEmail, setEditEmail] = useState('')
@@ -211,7 +219,7 @@ export default function AdminUsersTab() {
 
   const handleGenerateDemoData = async (userId: string, userEmail: string, ownerName: string) => {
     const confirmed = window.confirm(
-      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 5-10 gider (expenses)\n- Her at için 5-10 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses)\n- Bazı atlar için yasaklı ilaç kayıtları (banned medicines)\n- Her at için 1-3 antrenman planı (training plans)\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
+      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 3-5 at bazlı gider (ILAC, MONT, NAKLIYE kategorileri)\n- Eküri genelinde 16-24 gider (diğer kategoriler)\n- Her at için 5-7 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses) - en az 1 at kesinlikle hastalık kaydına sahip olacak\n- Bazı atlar için yasaklı ilaç kayıtları (banned medicines) - en az 1 at kesinlikle yasaklı ilaç kaydına sahip olacak\n- En az 1 at hem hastalık hem de yasaklı ilaç kaydına sahip olacak\n- Her at için 1-3 antrenman planı (training plans)\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
     )
 
     if (!confirmed) {
@@ -376,6 +384,26 @@ export default function AdminUsersTab() {
                           >
                             <UserPlus className="h-3 w-3 mr-1" />
                             At Ekle
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (user.ownerProfile?.stablemate?.id) {
+                                setSelectedUserForDeleteHorse({
+                                  userId: user.id,
+                                  stablemateId: user.ownerProfile.stablemate.id,
+                                  ownerName: user.ownerProfile.officialName,
+                                })
+                                setDeleteHorseModalOpen(true)
+                              } else {
+                                toast.error('Eküri bulunamadı.')
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-6 px-2 text-xs"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            At Sil
                           </Button>
                           <Button
                             variant="outline"
@@ -549,6 +577,20 @@ export default function AdminUsersTab() {
           userId={selectedOwnerForImport.userId}
           ownerName={selectedOwnerForImport.ownerName}
           ownerRef={selectedOwnerForImport.ownerRef}
+          onSuccess={() => {
+            fetchUsers()
+          }}
+        />
+      )}
+
+      {/* Delete Horse Modal */}
+      {selectedUserForDeleteHorse && (
+        <DeleteHorseModal
+          open={deleteHorseModalOpen}
+          onOpenChange={setDeleteHorseModalOpen}
+          userId={selectedUserForDeleteHorse.userId}
+          stablemateId={selectedUserForDeleteHorse.stablemateId}
+          ownerName={selectedUserForDeleteHorse.ownerName}
           onSuccess={() => {
             fetchUsers()
           }}

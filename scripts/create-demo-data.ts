@@ -188,8 +188,8 @@ async function addNotes(horses: any[], ownerUser: any) {
   ]
 
   for (const horse of horses) {
-    // Add 5-10 notes per horse
-    const numNotes = Math.floor(Math.random() * 6) + 5
+    // Add 5-7 notes per horse
+    const numNotes = Math.floor(Math.random() * 3) + 5
 
     for (let i = 0; i < numNotes; i++) {
       const daysAgo = Math.floor(Math.random() * 14) + 1
@@ -212,7 +212,7 @@ async function addNotes(horses: any[], ownerUser: any) {
 /**
  * Add sample illnesses to horses
  */
-async function addIllnesses(horses: any[], ownerUser: any) {
+async function addIllnesses(horses: any[], ownerUser: any, mustHaveIllnessHorseId?: string) {
   console.log(`\n🏥 Generating illnesses SQL...`)
 
   const now = new Date()
@@ -227,8 +227,10 @@ async function addIllnesses(horses: any[], ownerUser: any) {
   ]
 
   for (const horse of horses) {
-    // Add 0-1 illness per horse (some horses may not have illnesses)
-    if (Math.random() > 0.5) {
+    // Ensure the specified horse gets an illness, or random 50% chance for others
+    const shouldAddIllness = horse.id === mustHaveIllnessHorseId || Math.random() > 0.5
+    
+    if (shouldAddIllness) {
       const daysAgo = Math.floor(Math.random() * 60) + 1
       const startDate = new Date(now)
       startDate.setDate(startDate.getDate() - daysAgo)
@@ -277,7 +279,7 @@ LIMIT 1;`
 /**
  * Add sample banned medicines to horses
  */
-async function addBannedMedicines(horses: any[], ownerUser: any) {
+async function addBannedMedicines(horses: any[], ownerUser: any, mustHaveMedicineHorseId?: string) {
   console.log(`\n💊 Generating banned medicines SQL...`)
 
   const now = new Date()
@@ -294,8 +296,10 @@ async function addBannedMedicines(horses: any[], ownerUser: any) {
   }
 
   for (const horse of horses) {
-    // Add 0-1 banned medicine per horse
-    if (Math.random() > 0.6) {
+    // Ensure the specified horse gets a banned medicine, or random 40% chance for others
+    const shouldAddMedicine = horse.id === mustHaveMedicineHorseId || Math.random() > 0.6
+    
+    if (shouldAddMedicine) {
       const daysAgo = Math.floor(Math.random() * 30) + 1
       const givenDate = new Date(now)
       givenDate.setDate(givenDate.getDate() - daysAgo)
@@ -394,11 +398,16 @@ async function main() {
     // Generate notes
     await addNotes(horses, user)
 
-    // Generate illnesses
-    await addIllnesses(horses, user)
+    // Pick a random horse to ensure it has both illness and banned medicine
+    const horseWithBothId = horses.length > 0 
+      ? horses[Math.floor(Math.random() * horses.length)].id 
+      : undefined
 
-    // Generate banned medicines
-    await addBannedMedicines(horses, user)
+    // Generate illnesses (ensure at least one horse has an illness)
+    await addIllnesses(horses, user, horseWithBothId)
+
+    // Generate banned medicines (ensure the same horse also has a banned medicine)
+    await addBannedMedicines(horses, user, horseWithBothId)
 
     // Generate training plans
     await addTrainingPlans(horses, user)
