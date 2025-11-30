@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 import { Badge } from '@/app/components/ui/badge'
 import { Button } from '@/app/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/app/components/ui/dialog'
 import { Input } from '@/app/components/ui/input'
 import { Label } from '@/app/components/ui/label'
-import { Trash2, FolderX, Sparkles, UserPlus, Edit2 } from 'lucide-react'
+import { Trash2, FolderX, Sparkles, UserPlus, Edit2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import ImportHorsesModal from './ImportHorsesModal'
 import DeleteHorseModal from './DeleteHorseModal'
@@ -42,6 +42,12 @@ export default function AdminUsersTab() {
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [deletingResourcesUserId, setDeletingResourcesUserId] = useState<string | null>(null)
   const [generatingDemoDataUserId, setGeneratingDemoDataUserId] = useState<string | null>(null)
+  const [demoDataDialogOpen, setDemoDataDialogOpen] = useState(false)
+  const [selectedUserForDemoData, setSelectedUserForDemoData] = useState<{
+    userId: string
+    userEmail: string
+    ownerName: string
+  } | null>(null)
   const [importHorsesModalOpen, setImportHorsesModalOpen] = useState(false)
   const [selectedOwnerForImport, setSelectedOwnerForImport] = useState<{
     userId: string
@@ -217,15 +223,18 @@ export default function AdminUsersTab() {
     }
   }
 
-  const handleGenerateDemoData = async (userId: string, userEmail: string, ownerName: string) => {
-    const confirmed = window.confirm(
-      `"${ownerName}" (${userEmail}) için demo veri oluşturmak istediğinize emin misiniz?\n\nBu işlem şunları oluşturacaktır:\n- Her at için 3-5 at bazlı gider (ILAC, MONT, NAKLIYE kategorileri)\n- Eküri genelinde 16-24 gider (diğer kategoriler)\n- Her at için 5-7 not (notes)\n- Bazı atlar için hastalık kayıtları (illnesses) - en az 1 at kesinlikle aktif hastalık kaydına sahip olacak\n- Bazı atlar için çıkıcı ilaç kayıtları (banned medicines) - en az 1 at kesinlikle çıkıcı ilaç kaydına sahip olacak\n- Son 3 ay içinde yarış yapmış bir at hem aktif hastalık hem de çıkıcı ilaç kaydına sahip olacak\n- Her at için 1-3 antrenman planı (training plans)\n- Konum ayarları: Son 3 ay içinde yarış yapmış atlar "Saha" (hipodrom), diğerleri "Çiftlik" olarak ayarlanacak\n\nMevcut veriler korunacak, yeni veriler eklenecektir.`
-    )
+  const handleOpenDemoDataDialog = (userId: string, userEmail: string, ownerName: string) => {
+    setSelectedUserForDemoData({ userId, userEmail, ownerName })
+    setDemoDataDialogOpen(true)
+  }
 
-    if (!confirmed) {
+  const handleGenerateDemoData = async () => {
+    if (!selectedUserForDemoData) {
       return
     }
 
+    const { userId } = selectedUserForDemoData
+    setDemoDataDialogOpen(false)
     setGeneratingDemoDataUserId(userId)
 
     try {
@@ -409,7 +418,7 @@ export default function AdminUsersTab() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleGenerateDemoData(
+                              handleOpenDemoDataDialog(
                                 user.id,
                                 user.email,
                                 user.ownerProfile!.officialName
@@ -596,6 +605,180 @@ export default function AdminUsersTab() {
           }}
         />
       )}
+
+      {/* Demo Data Generation Dialog */}
+      <Dialog open={demoDataDialogOpen} onOpenChange={setDemoDataDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Sparkles className="h-5 w-5 text-indigo-600" />
+              Demo Veri Oluşturma
+            </DialogTitle>
+            <DialogDescription className="text-base pt-2">
+              <span className="font-semibold text-gray-900">
+                {selectedUserForDemoData?.ownerName}
+              </span>
+              {' '}
+              <span className="text-gray-600">
+                ({selectedUserForDemoData?.userEmail})
+              </span>
+              {' '}için demo veri oluşturmak istediğinize emin misiniz?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-blue-800">
+                  <strong>Önemli:</strong> Mevcut veriler korunacak, yeni veriler eklenecektir.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                Sahip (Owner) Tarafından Oluşturulacak Veriler
+              </h3>
+
+              <div className="pl-6 space-y-2 text-sm text-gray-700">
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Giderler (Expenses):</strong>
+                    <ul className="ml-4 mt-1 space-y-1 text-gray-600">
+                      <li>- Her at için 3-5 at bazlı gider (ILAC, MONT, NAKLIYE kategorileri)</li>
+                      <li>- Eküri genelinde 16-24 gider (diğer 8 kategori, her biri için 2-3 gider)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Notlar (Notes):</strong> Her at için 5-7 not
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Hastalıklar (Illnesses):</strong>
+                    <ul className="ml-4 mt-1 space-y-1 text-gray-600">
+                      <li>- En fazla 2 at: Hem aktif hastalık + aktif çıkıcı ilaç (son 3 ay içinde yarış yapmış atlar, işlemlerle birlikte)</li>
+                      <li>- 2-3 at: Sadece aktif hastalık</li>
+                      <li>- Tüm hastalıklar aktif (endDate yok)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Çıkıcı İlaçlar (Banned Medicines):</strong>
+                    <ul className="ml-4 mt-1 space-y-1 text-gray-600">
+                      <li>- En fazla 2 at: Hem aktif hastalık + aktif çıkıcı ilaç (yukarıdaki aynı atlar)</li>
+                      <li>- 2-3 at: Sadece aktif çıkıcı ilaç</li>
+                      <li>- Tüm ilaçlar aktif (remainingDays &gt; 0)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Antrenman Planları (Training Plans):</strong> Her at için 1-3 plan (gelecek tarihler)
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-indigo-600 font-medium">•</span>
+                  <div>
+                    <strong>Konum Ayarları:</strong>
+                    <ul className="ml-4 mt-1 space-y-1 text-gray-600">
+                      <li>- Son 3 ay içinde yarış yapmış atlar: "Saha" (Hipodrom)</li>
+                      <li>- Diğer atlar: "Çiftlik"</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-3">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-purple-600" />
+                Antrenör (Trainer) Tarafından Oluşturulacak Veriler
+                <span className="text-xs font-normal text-gray-500">(Aktif antrenörler varsa)</span>
+              </h3>
+
+              <div className="pl-6 space-y-2 text-sm text-gray-700">
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-600 font-medium">•</span>
+                  <div>
+                    <strong>Giderler:</strong> Her erişilebilir at için 2-3 gider (ILAC, MONT, NAKLIYE)
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-600 font-medium">•</span>
+                  <div>
+                    <strong>Notlar:</strong> Her erişilebilir at için 3-4 not
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-600 font-medium">•</span>
+                  <div>
+                    <strong>Hastalıklar:</strong> Her erişilebilir at için %50 şans (aktif)
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-600 font-medium">•</span>
+                  <div>
+                    <strong>Çıkıcı İlaçlar:</strong> Her erişilebilir at için %50 şans (aktif)
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <span className="text-purple-600 font-medium">•</span>
+                  <div>
+                    <strong>Antrenman Planları:</strong> Her erişilebilir at için 2-4 plan (gelecek tarihler)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDemoDataDialogOpen(false)}
+              disabled={generatingDemoDataUserId !== null}
+            >
+              İptal
+            </Button>
+            <Button
+              onClick={handleGenerateDemoData}
+              disabled={generatingDemoDataUserId !== null}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {generatingDemoDataUserId ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  Oluşturuluyor...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Demo Veri Oluştur
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

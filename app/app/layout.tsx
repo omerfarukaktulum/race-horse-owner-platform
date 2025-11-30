@@ -546,53 +546,31 @@ function AppLayoutContent({ children }: { children: React.ReactNode }) {
       const navbar = document.querySelector('header')
       const navbarHeight = navbar ? navbar.offsetHeight : 64 // Default to 64px (h-16)
       
-      // Find the first content element inside main (filters, buttons, etc.)
-      // This is what should be visible at the top, not the cards
+      // Account for mt-4 margin (1rem = 16px) from navbar to first content element
+      const marginTop = 16 // mt-4 = 1rem = 16px
+      
+      // Calculate scroll position to show the bottom of the navbar
+      // The navbar is fixed, so we want to scroll to position 0 (top of document)
+      // which will show the navbar at the top of viewport, and content below it
+      const targetScroll = 0
+      
+      // Scroll to show the navbar at the top (position 0)
+      window.scrollTo(0, targetScroll)
+      window.scrollTo({ top: targetScroll, left: 0, behavior: 'instant' })
+      
+      // Also set documentElement scroll
+      document.documentElement.scrollTop = targetScroll
+      document.documentElement.scrollLeft = 0
+      
+      // Also set body scroll
+      document.body.scrollTop = targetScroll
+      document.body.scrollLeft = 0
+      
+      // Also scroll main element if it's scrollable
       const main = document.querySelector('main')
-      if (main) {
-        // Find the first child element of main that has content
-        // This should be the filters/buttons section
-        const firstContentElement = main.firstElementChild as HTMLElement | null
-        
-        if (firstContentElement) {
-          // Get the position of the first content element relative to the document
-          const rect = firstContentElement.getBoundingClientRect()
-          const currentScrollY = window.scrollY || document.documentElement.scrollTop
-          
-          // Calculate the scroll position to show the navbar and first content
-          // We want the first content element to be just below the navbar
-          const targetScroll = rect.top + currentScrollY - navbarHeight
-          
-          // Scroll to show the navbar and first content element
-          window.scrollTo(0, Math.max(0, targetScroll))
-          window.scrollTo({ top: Math.max(0, targetScroll), left: 0, behavior: 'instant' })
-          
-          // Also set documentElement scroll
-          document.documentElement.scrollTop = Math.max(0, targetScroll)
-          document.documentElement.scrollLeft = 0
-          
-          // Also set body scroll
-          document.body.scrollTop = Math.max(0, targetScroll)
-          document.body.scrollLeft = 0
-        } else {
-          // Fallback: scroll to absolute top
-          window.scrollTo(0, 0)
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-          document.documentElement.scrollTop = 0
-          document.body.scrollTop = 0
-        }
-        
-        // Also scroll main element if it's scrollable
-        if (main instanceof HTMLElement) {
-          main.scrollTop = 0
-          main.scrollLeft = 0
-        }
-      } else {
-        // Fallback: scroll to absolute top
-        window.scrollTo(0, 0)
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-        document.documentElement.scrollTop = 0
-        document.body.scrollTop = 0
+      if (main && main instanceof HTMLElement) {
+        main.scrollTop = 0
+        main.scrollLeft = 0
       }
       
       // Also scroll any scrollable containers to top
