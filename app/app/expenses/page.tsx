@@ -688,24 +688,26 @@ export default function ExpensesPage() {
           )}
         </div>
         
-        {/* Toplam Gider - aligned with filter/search buttons */}
-        {hasExpenses && (
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
-            <p className="text-lg font-semibold text-indigo-600">
-              {formatCurrency(totalAmount, defaultCurrency)}
-            </p>
-          </div>
-        )}
-        
-        {/* Export Button - Mobile */}
-        <Button
-          variant="outline"
-          onClick={() => setIsExportModalOpen(true)}
-          className="h-10 border-2 border-gray-300 text-gray-700 hover:border-gray-400 font-medium px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
+        {/* Toplam Gider and Export Button - aligned together */}
+        <div className="flex items-center gap-3 justify-end">
+          {hasExpenses && (
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
+              <p className="text-lg font-semibold text-indigo-600">
+                {formatCurrency(totalAmount, defaultCurrency)}
+              </p>
+            </div>
+          )}
+          
+          {/* Export Button - Mobile */}
+          <Button
+            variant="outline"
+            onClick={() => setIsExportModalOpen(true)}
+            className="h-10 border-2 border-gray-300 text-gray-700 hover:border-gray-400 font-medium px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
         </div>
       )}
 
