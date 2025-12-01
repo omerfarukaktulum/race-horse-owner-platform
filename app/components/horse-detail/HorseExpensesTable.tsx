@@ -1235,14 +1235,14 @@ export function HorseExpensesTable({
               </button>
             </div>
           )}
-          
-          {/* Toplam Gider - aligned with filter/search buttons */}
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
-            <p className="text-lg font-semibold text-indigo-600">
-              {formatCurrency(totalAmount, defaultCurrency)}
-            </p>
-          </div>
+        </div>
+        
+        {/* Toplam Gider - aligned with filter/search buttons */}
+        <div className="text-right">
+          <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
+          <p className="text-lg font-semibold text-indigo-600">
+            {formatCurrency(totalAmount, defaultCurrency)}
+          </p>
         </div>
       </div>
       )}
