@@ -688,6 +688,18 @@ export default function ExpensesPage() {
         </div>
       )}
 
+      {/* Mobile: Toplam Gider */}
+      {!isLoading && hasExpenses && (
+        <div className="md:hidden mt-4 mb-4 flex justify-end">
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Toplam Gider</p>
+            <p className="text-lg font-semibold text-indigo-600">
+              {formatCurrency(totalAmount, defaultCurrency)}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Button (FAB) for Add Expense */}
           <Button
             onClick={() => setIsAddModalOpen(true)}
