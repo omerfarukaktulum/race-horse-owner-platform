@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search, TurkishLira, Wallet } from 'lucide-react'
+import { Filter, Pencil, Plus, Trash2, X, Image, ChevronLeft, ChevronRight, Search, TurkishLira, Wallet, Download } from 'lucide-react'
 import { Card, CardContent } from '@/app/components/ui/card'
 import { Button } from '@/app/components/ui/button'
 import { formatCurrency, formatDateShort } from '@/lib/utils/format'
 import { TR } from '@/lib/constants/tr'
 import { AddExpenseModal } from '@/app/components/modals/add-expense-modal'
+import { ExportExpensesModal } from '@/app/components/modals/export-expenses-modal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/context/auth-context'
@@ -91,6 +92,7 @@ export default function ExpensesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [attachmentViewer, setAttachmentViewer] = useState<{
     open: boolean
     attachments: string[]
@@ -695,6 +697,15 @@ export default function ExpensesPage() {
             </p>
           </div>
         )}
+        
+        {/* Export Button - Mobile */}
+        <Button
+          variant="outline"
+          onClick={() => setIsExportModalOpen(true)}
+          className="h-10 border-2 border-gray-300 text-gray-700 hover:border-gray-400 font-medium px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
         </div>
       )}
 
@@ -897,12 +908,21 @@ export default function ExpensesPage() {
             )}
           </div>
 
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
-          >
-            Ekle
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              className="h-10 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white font-medium shadow-md hover:shadow-lg transition-all"
+            >
+              Ekle
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsExportModalOpen(true)}
+              className="h-10 border-2 border-gray-300 text-gray-700 hover:border-gray-400 font-medium px-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Second line: Toplam Gider below Ekle button, right-aligned */}
@@ -1212,6 +1232,12 @@ export default function ExpensesPage() {
           setIsAddModalOpen(false)
           fetchExpenses()
         }}
+      />
+
+      {/* Export Expenses Modal */}
+      <ExportExpensesModal
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
       />
 
       {/* Edit Expense Modal */}
