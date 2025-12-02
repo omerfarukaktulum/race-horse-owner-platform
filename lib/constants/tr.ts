@@ -102,6 +102,7 @@ export const TR = {
   
   expenseCategories: {
     AYLIK_HIPODROM_GIDERLERI: 'Aylık Hipodrom Giderleri',
+    AYLIK_CIFTLIK_GIDERLERI: 'Aylık Çiftlik Giderleri',
     YARIS_KAYIT_DECLARE: 'Yarış Kayıt/Deklare Giderleri',
     YEM_SAMAN_OT_TALAS: 'Saman/Ot/Yem/Talaş Giderleri',
     ILAC: 'İlaç Giderleri',

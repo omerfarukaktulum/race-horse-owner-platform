@@ -1,5 +1,6 @@
 export const EXPENSE_CATEGORIES = [
   { value: 'AYLIK_HIPODROM_GIDERLERI', label: 'Aylık Hipodrom Giderleri' },
+  { value: 'AYLIK_CIFTLIK_GIDERLERI', label: 'Aylık Çiftlik Giderleri' },
   { value: 'YARIS_KAYIT_DECLARE', label: 'Yarış Kayıt/Deklare Giderleri' },
   { value: 'YEM_SAMAN_OT_TALAS', label: 'Saman/Ot/Yem/Talaş Giderleri' },
   { value: 'ILAC', label: 'İlaç Giderleri' },

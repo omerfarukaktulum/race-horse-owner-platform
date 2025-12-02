@@ -49,21 +49,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify horse ownership/assignment if horses are provided
-    if (horseIds.length > 0) {
-    const horses = await prisma.horse.findMany({
-      where: { id: { in: horseIds } },
-      include: { stablemate: true },
-    })
-
-    if (horses.length !== horseIds.length) {
-      return NextResponse.json(
-        { error: 'Some horses not found' },
-        { status: 404 }
-      )
-    }
-
-    // Check access rights
+    // Verify user has proper role and profile
     if (decoded.role === 'OWNER') {
       // Get ownerId - check by userId if not in token
       let ownerId = decoded.ownerId
@@ -77,11 +63,6 @@ export async function POST(request: Request) {
       
       if (!ownerId) {
         return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
-      }
-      
-        const hasAccess = horses.every((h) => h.stablemate?.ownerId === ownerId)
-      if (!hasAccess) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (decoded.role === 'TRAINER') {
       // Get trainerId - check by userId if not in token
@@ -97,13 +78,63 @@ export async function POST(request: Request) {
       if (!trainerId) {
         return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
       }
-      
-      const hasAccess = horses.every((h) => h.trainerId === trainerId)
-      if (!hasAccess) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
     } else if (decoded.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Verify horse ownership/assignment if horses are provided
+    if (horseIds.length > 0) {
+      const horses = await prisma.horse.findMany({
+        where: { id: { in: horseIds } },
+        include: { stablemate: true },
+      })
+
+      if (horses.length !== horseIds.length) {
+        return NextResponse.json(
+          { error: 'Some horses not found' },
+          { status: 404 }
+        )
+      }
+
+      // Check access rights for horses
+      if (decoded.role === 'OWNER') {
+        // Get ownerId - check by userId if not in token
+        let ownerId = decoded.ownerId
+        
+        if (!ownerId) {
+          const ownerProfile = await prisma.ownerProfile.findUnique({
+            where: { userId: decoded.id },
+          })
+          ownerId = ownerProfile?.id
+        }
+        
+        if (!ownerId) {
+          return NextResponse.json({ error: 'Owner profile not found' }, { status: 403 })
+        }
+        
+        const hasAccess = horses.every((h) => h.stablemate?.ownerId === ownerId)
+        if (!hasAccess) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      } else if (decoded.role === 'TRAINER') {
+        // Get trainerId - check by userId if not in token
+        let trainerId = decoded.trainerId
+        
+        if (!trainerId) {
+          const trainerProfile = await prisma.trainerProfile.findUnique({
+            where: { userId: decoded.id },
+          })
+          trainerId = trainerProfile?.id
+        }
+        
+        if (!trainerId) {
+          return NextResponse.json({ error: 'Trainer profile not found' }, { status: 403 })
+        }
+        
+        const hasAccess = horses.every((h) => h.trainerId === trainerId)
+        if (!hasAccess) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
       }
     }
 

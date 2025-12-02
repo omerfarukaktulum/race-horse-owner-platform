@@ -10,6 +10,8 @@ import {
   ModalPhotoUpload,
 } from '@/app/components/ui/modal-field'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/app/components/ui/dialog'
+import { Checkbox } from '@/app/components/ui/checkbox'
+import { Label } from '@/app/components/ui/label'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
 import { EXPENSE_CATEGORIES, HORSE_REQUIRED_CATEGORIES } from '@/lib/constants/expense-categories'
@@ -385,6 +387,70 @@ export function AddExpenseModal({
               </ModalSelect>
             )}
 
+            {/* Aylık Hipodrom Giderleri Checkbox */}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200/80 bg-white shadow-sm">
+              <Checkbox
+                id="monthly-racecourse-expense"
+                checked={category === 'AYLIK_HIPODROM_GIDERLERI'}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setCategory('AYLIK_HIPODROM_GIDERLERI')
+                    // Reset horse selection when category changes
+                    if (!isSingleHorseMode) {
+                      setSelectedHorseId('')
+                    }
+                  } else {
+                    setCategory('')
+                    if (!isSingleHorseMode) {
+                      setSelectedHorseId('')
+                    }
+                  }
+                }}
+                disabled={isSubmitting || category === 'AYLIK_CIFTLIK_GIDERLERI'}
+                onMouseDown={guardPointerEvent}
+                onTouchStart={guardPointerEvent}
+                onFocus={guardFocusEvent}
+              />
+              <Label
+                htmlFor="monthly-racecourse-expense"
+                className="flex-1 cursor-pointer text-sm font-medium text-gray-900"
+              >
+                Aylık Hipodrom Giderleri
+              </Label>
+            </div>
+
+            {/* Aylık Çiftlik Giderleri Checkbox */}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200/80 bg-white shadow-sm">
+              <Checkbox
+                id="monthly-farm-expense"
+                checked={category === 'AYLIK_CIFTLIK_GIDERLERI'}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setCategory('AYLIK_CIFTLIK_GIDERLERI')
+                    // Reset horse selection when category changes
+                    if (!isSingleHorseMode) {
+                      setSelectedHorseId('')
+                    }
+                  } else {
+                    setCategory('')
+                    if (!isSingleHorseMode) {
+                      setSelectedHorseId('')
+                    }
+                  }
+                }}
+                disabled={isSubmitting || category === 'AYLIK_HIPODROM_GIDERLERI'}
+                onMouseDown={guardPointerEvent}
+                onTouchStart={guardPointerEvent}
+                onFocus={guardFocusEvent}
+              />
+              <Label
+                htmlFor="monthly-farm-expense"
+                className="flex-1 cursor-pointer text-sm font-medium text-gray-900"
+              >
+                Aylık Çiftlik Giderleri
+              </Label>
+            </div>
+
             <ModalSelect
               label={TR.expenses.category}
               required
@@ -396,7 +462,7 @@ export function AddExpenseModal({
                   setSelectedHorseId('')
                 }
               }}
-              disabled={isSubmitting}
+              disabled={isSubmitting || category === 'AYLIK_HIPODROM_GIDERLERI' || category === 'AYLIK_CIFTLIK_GIDERLERI'}
               onMouseDown={guardPointerEvent}
               onTouchStart={guardPointerEvent}
               onFocus={guardFocusEvent}
@@ -405,7 +471,7 @@ export function AddExpenseModal({
               <option value="">Kategori seçin</option>
               {(isSingleHorseMode
                 ? EXPENSE_CATEGORIES.filter((cat) => HORSE_REQUIRED_CATEGORIES.includes(cat.value as any))
-                : EXPENSE_CATEGORIES
+                : EXPENSE_CATEGORIES.filter((cat) => cat.value !== 'AYLIK_HIPODROM_GIDERLERI' && cat.value !== 'AYLIK_CIFTLIK_GIDERLERI')
               ).map((cat) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}

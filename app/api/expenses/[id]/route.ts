@@ -73,6 +73,13 @@ async function getExpenseWithRelations(expenseId: string) {
 
 function canModifyExpense(decoded: DecodedToken, expense: any) {
   if (decoded.role === 'ADMIN') return true
+  
+  // For expenses without horses (e.g., Aylık Hipodrom Giderleri, Aylık Çiftlik Giderleri)
+  // Allow the user who created the expense to modify it
+  if (!expense.horse) {
+    return expense.addedById === decoded.id
+  }
+  
   // Allow OWNER and TRAINER to modify any expense for their horses
   if (decoded.role === 'OWNER') {
     return expense.horse?.stablemate?.ownerId === decoded.ownerId
@@ -121,6 +128,7 @@ export async function GET(
       select: {
         id: true,
         photoUrl: true,
+        addedById: true,
         horse: {
           select: {
             id: true,
@@ -143,13 +151,20 @@ export async function GET(
     }
 
     // Check access
-    if (decoded.role === 'OWNER') {
-      if (expense.horse?.stablemate?.ownerId !== decoded.ownerId) {
+    // For expenses without horses, check if user created the expense
+    if (!expense.horse) {
+      if (expense.addedById !== decoded.id && decoded.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
-    } else if (decoded.role === 'TRAINER') {
-      if (expense.horse?.trainerId !== decoded.trainerId) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    } else {
+      if (decoded.role === 'OWNER') {
+        if (expense.horse?.stablemate?.ownerId !== decoded.ownerId) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      } else if (decoded.role === 'TRAINER') {
+        if (expense.horse?.trainerId !== decoded.trainerId) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
       }
     }
 
