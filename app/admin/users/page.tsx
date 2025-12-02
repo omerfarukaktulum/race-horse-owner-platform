@@ -12,6 +12,7 @@ interface User {
   email: string
   role: string
   createdAt: string
+  lastLoginAt?: string | null
   ownerProfile?: {
     officialName: string
     subscriptionStatus: string | null
@@ -175,9 +176,20 @@ export default function AdminUsersPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-lg">{user.email}</CardTitle>
-                  <p className="text-sm text-gray-500">
-                    Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
-                  </p>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-sm text-gray-500">
+                      Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                    </p>
+                    {user.lastLoginAt ? (
+                      <p className="text-sm text-gray-500">
+                        Son Giriş: {new Date(user.lastLoginAt).toLocaleString('tr-TR')}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic">
+                        Henüz giriş yapılmadı
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span
