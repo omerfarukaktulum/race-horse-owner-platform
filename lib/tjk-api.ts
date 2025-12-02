@@ -111,6 +111,10 @@ export async function searchTJKHorsesPlaywright(
     // Listen to console messages from the browser and forward to terminal
     page.on('console', (msg) => {
       const text = msg.text()
+      // Skip logs that start with "[Browser]" if DISABLE_BROWSER_LOGS is set
+      if (process.env.DISABLE_BROWSER_LOGS && text.startsWith('[Browser]')) {
+        return
+      }
       // Forward ALL browser console logs to terminal with clear prefix
       console.log('[Browser Console]', msg.type().toUpperCase(), ':', text)
     })

@@ -42,6 +42,7 @@ jobs:
         env:
           PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
           NODE_ENV: production
+          DISABLE_BROWSER_LOGS: 'true' # Disable browser logs starting with "[Browser]"
         continue-on-error: true # Don't fail the workflow if some horses fail
 
       - name: Upload logs on failure

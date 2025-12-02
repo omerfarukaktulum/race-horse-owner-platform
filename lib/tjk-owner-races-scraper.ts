@@ -48,9 +48,14 @@ export async function fetchTJKOwnerRaces(
     page = await context.newPage()
 
     // Forward browser console logs to terminal
+    // Skip logs starting with "[Browser]" when DISABLE_BROWSER_LOGS is set
     page.on('console', (msg) => {
       const text = msg.text()
       const type = msg.type()
+      // Skip logs that start with "[Browser]" if DISABLE_BROWSER_LOGS is set
+      if (process.env.DISABLE_BROWSER_LOGS && text.startsWith('[Browser]')) {
+        return
+      }
       if (type === 'error') {
         console.error('[Browser]', text)
       } else if (type === 'warning') {
