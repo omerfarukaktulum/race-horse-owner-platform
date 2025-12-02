@@ -23,6 +23,7 @@ enum HorseStatus {
 }
 
 enum ExpenseCategory {
+  AYLIK_HIPODROM_GIDERLERI
   YARIS_KAYIT_DECLARE
   YEM_SAMAN_OT_TALAS
   ILAC

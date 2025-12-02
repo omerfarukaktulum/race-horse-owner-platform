@@ -1,0 +1,3 @@
+-- AlterEnum
+ALTER TYPE "ExpenseCategory" ADD VALUE 'AYLIK_HIPODROM_GIDERLERI';
+
