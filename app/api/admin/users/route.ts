@@ -52,43 +52,77 @@ export async function GET(request: Request) {
       })
     } catch (error: any) {
       // If migration not run yet, fetch without the new fields
-      if (error?.code === 'P2022' && error?.meta?.column?.includes('dataFetchStatus')) {
-        console.log('Migration not run yet, fetching without dataFetchStatus fields')
-        users = await prisma.user.findMany({
-          where,
-          include: {
-            ownerProfile: {
-              include: {
-                stablemate: {
-                  select: {
-                    id: true,
-                    name: true,
-                    foundationYear: true,
-                    location: true,
-                    website: true,
-                    createdAt: true,
-                    updatedAt: true,
-                    ownerId: true,
-                    coOwners: true,
-                    notifyHorseRegistered: true,
-                    notifyHorseDeclared: true,
-                    notifyNewTraining: true,
-                    notifyNewExpense: true,
-                    notifyNewNote: true,
-                    notifyNewRace: true,
+      if (error?.code === 'P2022') {
+        if (error?.meta?.column?.includes('dataFetchStatus')) {
+          console.log('Migration not run yet, fetching without dataFetchStatus fields')
+          users = await prisma.user.findMany({
+            where,
+            include: {
+              ownerProfile: {
+                include: {
+                  stablemate: {
+                    select: {
+                      id: true,
+                      name: true,
+                      foundationYear: true,
+                      location: true,
+                      website: true,
+                      createdAt: true,
+                      updatedAt: true,
+                      ownerId: true,
+                      coOwners: true,
+                      notifyHorseRegistered: true,
+                      notifyHorseDeclared: true,
+                      notifyNewTraining: true,
+                      notifyNewExpense: true,
+                      notifyNewNote: true,
+                      notifyNewRace: true,
+                    },
                   },
                 },
               },
+              trainerProfile: true,
             },
-            trainerProfile: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
+            orderBy: {
+              createdAt: 'desc',
+            },
+          })
+        } else if (error?.meta?.column?.includes('lastLoginAt')) {
+          // If lastLoginAt column doesn't exist, fetch without it
+          console.log('lastLoginAt column not found, fetching without it')
+          users = await prisma.user.findMany({
+            where,
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              createdAt: true,
+              updatedAt: true,
+              ownerProfile: {
+                include: {
+                  stablemate: true,
+                },
+              },
+              trainerProfile: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          })
+          // Add lastLoginAt as null for all users
+          users = users.map((user: any) => ({ ...user, lastLoginAt: null }))
+        } else {
+          throw error
+        }
       } else {
         throw error
       }
+    }
+
+    // Debug: Log lastLoginAt for the specific user
+    const testUser = users.find((u: any) => u.email === 'omerfaruk.aktulum@gmail.com')
+    if (testUser) {
+      console.log('[Admin Users API] Test user lastLoginAt:', testUser.lastLoginAt)
     }
 
     return NextResponse.json({ users })

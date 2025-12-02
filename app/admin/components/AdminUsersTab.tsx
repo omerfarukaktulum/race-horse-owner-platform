@@ -17,6 +17,7 @@ interface User {
   email: string
   role: string
   createdAt: string
+  lastLoginAt?: string | null
   ownerProfile?: {
     officialName: string
     officialRef: string | null
@@ -328,9 +329,20 @@ export default function AdminUsersTab() {
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-base truncate">{user.email}</CardTitle>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
-                    </p>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      <p className="text-xs text-gray-500">
+                        Kayıt: {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                      </p>
+                      {user.lastLoginAt ? (
+                        <p className="text-xs text-gray-500">
+                          Son Giriş: {new Date(user.lastLoginAt).toLocaleString('tr-TR')}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400 italic">
+                          Henüz giriş yapılmadı
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 ml-3">
                     <span
