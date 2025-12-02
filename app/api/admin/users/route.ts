@@ -41,7 +41,15 @@ export async function GET(request: Request) {
         include: {
           ownerProfile: {
             include: {
-              stablemate: true,
+              stablemate: {
+                include: {
+                  _count: {
+                    select: {
+                      horses: true,
+                    },
+                  },
+                },
+              },
             },
           },
           trainerProfile: true,
@@ -77,6 +85,11 @@ export async function GET(request: Request) {
                       notifyNewExpense: true,
                       notifyNewNote: true,
                       notifyNewRace: true,
+                      _count: {
+                        select: {
+                          horses: true,
+                        },
+                      },
                     },
                   },
                 },
@@ -100,7 +113,15 @@ export async function GET(request: Request) {
               updatedAt: true,
               ownerProfile: {
                 include: {
-                  stablemate: true,
+                  stablemate: {
+                    include: {
+                      _count: {
+                        select: {
+                          horses: true,
+                        },
+                      },
+                    },
+                  },
                 },
               },
               trainerProfile: true,

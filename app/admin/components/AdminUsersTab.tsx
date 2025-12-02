@@ -10,6 +10,7 @@ import { Label } from '@/app/components/ui/label'
 import { Trash2, FolderX, Sparkles, UserPlus, Edit2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import ImportHorsesModal from './ImportHorsesModal'
+import ImportHorsesFromOtherOwnerModal from './ImportHorsesFromOtherOwnerModal'
 import DeleteHorseModal from './DeleteHorseModal'
 
 interface User {
@@ -28,6 +29,9 @@ interface User {
       dataFetchStatus?: string | null
       dataFetchStartedAt?: string | null
       dataFetchCompletedAt?: string | null
+      _count?: {
+        horses: number
+      }
     } | null
   }
   trainerProfile?: {
@@ -54,6 +58,11 @@ export default function AdminUsersTab() {
     userId: string
     ownerName: string
     ownerRef: string
+  } | null>(null)
+  const [importFromOtherOwnerModalOpen, setImportFromOtherOwnerModalOpen] = useState(false)
+  const [selectedUserForOtherOwnerImport, setSelectedUserForOtherOwnerImport] = useState<{
+    userId: string
+    ownerName: string
   } | null>(null)
   const [deleteHorseModalOpen, setDeleteHorseModalOpen] = useState(false)
   const [selectedUserForDeleteHorse, setSelectedUserForDeleteHorse] = useState<{
@@ -384,6 +393,11 @@ export default function AdminUsersTab() {
                         <p className="truncate">
                           <span className="font-medium text-xs">Eküri:</span>{' '}
                           <span className="text-gray-700">{user.ownerProfile.stablemate.name}</span>
+                          {user.ownerProfile.stablemate._count && (
+                            <span className="text-gray-500 ml-2">
+                              ({user.ownerProfile.stablemate._count.horses} at)
+                            </span>
+                          )}
                         </p>
                         <div className="pt-1 flex items-center gap-2 flex-wrap">
                           <Button
@@ -405,6 +419,26 @@ export default function AdminUsersTab() {
                           >
                             <UserPlus className="h-3 w-3 mr-1" />
                             At Ekle
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (user.ownerProfile?.stablemate?.id) {
+                                setSelectedUserForOtherOwnerImport({
+                                  userId: user.id,
+                                  ownerName: user.ownerProfile.officialName,
+                                })
+                                setImportFromOtherOwnerModalOpen(true)
+                              } else {
+                                toast.error('Eküri bulunamadı. Lütfen önce eküri oluşturun.')
+                              }
+                            }}
+                            className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200 h-6 px-2 text-xs"
+                            title="Başka sahipten at içe aktar"
+                          >
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            Başka Sahipten
                           </Button>
                           <Button
                             variant="outline"
@@ -612,6 +646,19 @@ export default function AdminUsersTab() {
           userId={selectedUserForDeleteHorse.userId}
           stablemateId={selectedUserForDeleteHorse.stablemateId}
           ownerName={selectedUserForDeleteHorse.ownerName}
+          onSuccess={() => {
+            fetchUsers()
+          }}
+        />
+      )}
+
+      {/* Import Horses From Other Owner Modal */}
+      {selectedUserForOtherOwnerImport && (
+        <ImportHorsesFromOtherOwnerModal
+          open={importFromOtherOwnerModalOpen}
+          onOpenChange={setImportFromOtherOwnerModalOpen}
+          userId={selectedUserForOtherOwnerImport.userId}
+          currentOwnerName={selectedUserForOtherOwnerImport.ownerName}
           onSuccess={() => {
             fetchUsers()
           }}
