@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Checkbox } from '@/app/components/ui/checkbox'
 import { toast } from 'sonner'
 import { TR } from '@/lib/constants/tr'
-import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing, Plus, Minus } from 'lucide-react'
+import { Building2, Calendar, MapPin, Globe, Users, TrendingUp, Clock, Settings, Bell, UserPlus, UserCircle, Trash2, Search, Check, UserSearch, ShieldCheck, ChevronDown, ChessKing, Plus, ChessKnight } from 'lucide-react'
 import { ModalInput, ModalSelect } from '@/app/components/ui/modal-field'
 import { formatDate } from '@/lib/utils/format'
 import { AddHorseModal } from '@/app/components/modals/add-horse-modal'
@@ -198,6 +198,9 @@ export default function StablematePage() {
   const [newlyAddedTrainerEntryId, setNewlyAddedTrainerEntryId] = useState<string | null>(null)
   const [isAssigningToAll, setIsAssigningToAll] = useState(false)
   const [addHorseModalOpen, setAddHorseModalOpen] = useState(false)
+  const [isRemoveHorseModalOpen, setIsRemoveHorseModalOpen] = useState(false)
+  const [selectedHorsesForRemoval, setSelectedHorsesForRemoval] = useState<Set<string>>(new Set())
+  const [isSubmittingRemoval, setIsSubmittingRemoval] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
 
@@ -635,6 +638,67 @@ export default function StablematePage() {
     }
   }
 
+  const handleToggleHorseForRemoval = (horseId: string) => {
+    setSelectedHorsesForRemoval((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(horseId)) {
+        newSet.delete(horseId)
+      } else {
+        newSet.add(horseId)
+      }
+      return newSet
+    })
+  }
+
+  const handleSelectAllHorses = () => {
+    if (selectedHorsesForRemoval.size === horsesList.length) {
+      setSelectedHorsesForRemoval(new Set())
+    } else {
+      setSelectedHorsesForRemoval(new Set(horsesList.map((h) => h.id)))
+    }
+  }
+
+  const handleSubmitHorseRemoval = async () => {
+    if (selectedHorsesForRemoval.size === 0) {
+      toast.error('Lütfen en az bir at seçin')
+      return
+    }
+
+    setIsSubmittingRemoval(true)
+    try {
+      const selectedHorseNames = horsesList
+        .filter((h) => selectedHorsesForRemoval.has(h.id))
+        .map((h) => h.name)
+
+      const response = await fetch('/api/stablemate/remove-horses-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          horseIds: Array.from(selectedHorsesForRemoval),
+          horseNames: selectedHorseNames,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Başvuru gönderilemedi')
+      }
+
+      toast.success('Başvurunuz alındı. En kısa sürede işleme alınacaktır.')
+      setIsRemoveHorseModalOpen(false)
+      setSelectedHorsesForRemoval(new Set())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Bir hata oluştu'
+      toast.error(message)
+    } finally {
+      setIsSubmittingRemoval(false)
+    }
+  }
+
   const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setPasswordError(null)
@@ -917,16 +981,25 @@ export default function StablematePage() {
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">Antrenör Yönetimi</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-gray-900">At ve Antrenör Yönetimi</CardTitle>
                   <CardDescription className="text-gray-600 mt-1">
-                    Ekürinize bağlı antrenörleri yönetin
+                    Ekürinizdeki atları ve antrenörleri yönetin
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-start gap-4">
+                <div className="flex flex-col items-start gap-2">
+                  <Button
+                    variant="secondary"
+                    className="rounded-md bg-red-600/10 text-red-700 hover:bg-red-600/20 flex items-center gap-2"
+                    onClick={() => setIsRemoveHorseModalOpen(true)}
+                    disabled={!horsesList.length}
+                  >
+                    <ChessKnight className="h-4 w-4" />
+                    At Çıkar
+                  </Button>
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="secondary"
@@ -1532,6 +1605,105 @@ export default function StablematePage() {
           fetchStablemate()
         }}
       />
+
+      {/* Remove Horses Modal */}
+      <Dialog open={isRemoveHorseModalOpen} onOpenChange={setIsRemoveHorseModalOpen}>
+        <DialogContent className="w-full max-w-full sm:max-w-md max-h-[90vh] p-0 bg-indigo-50/95 backdrop-blur-sm border border-gray-200/50 shadow-xl overflow-hidden flex flex-col flex-nowrap">
+          <Card className="border-0 shadow-none flex flex-col flex-nowrap h-full max-h-[90vh]">
+            <CardHeader className="space-y-4 flex-shrink-0 flex-nowrap">
+              <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl flex items-center justify-center shadow-lg mx-auto">
+                <ChessKnight className="h-8 w-8 text-white" />
+              </div>
+              <div className="text-center">
+                <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-600 to-red-700">
+                  At Çıkar
+                </CardTitle>
+                <CardDescription className="text-gray-600 mt-2">
+                  Ekürinizden çıkarmak istediğiniz atları seçin. Başvurunuz admin tarafından incelenecektir.
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-col flex-nowrap gap-4 px-4 pb-6 sm:px-6 sm:pb-6 flex-1 min-h-0 w-full overflow-hidden">
+              {horsesList.length === 0 ? (
+                <div className="text-center py-12 flex-shrink-0">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ChessKnight className="h-10 w-10 text-gray-400" />
+                  </div>
+                  <p className="text-gray-700 font-medium mb-2">Ekürinizde at bulunmuyor.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between flex-shrink-0 w-full">
+                    <Label className="text-gray-700 font-medium">Atlar</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSelectAllHorses}
+                      className="text-xs text-indigo-600 hover:text-indigo-700"
+                    >
+                      {selectedHorsesForRemoval.size === horsesList.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
+                    </Button>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-hidden flex flex-col flex-nowrap w-full">
+                    <div className="overflow-y-auto overflow-x-hidden space-y-2 pr-1 w-full">
+                      {horsesList.map((horse) => (
+                        <div
+                          key={horse.id}
+                          className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all duration-200 w-full cursor-pointer ${
+                            selectedHorsesForRemoval.has(horse.id)
+                              ? 'border-red-300 bg-red-50/50'
+                              : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-md'
+                          }`}
+                          onClick={() => handleToggleHorseForRemoval(horse.id)}
+                        >
+                          <Checkbox
+                            checked={selectedHorsesForRemoval.has(horse.id)}
+                            onCheckedChange={() => handleToggleHorseForRemoval(horse.id)}
+                            className="flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm text-gray-900 truncate">{horse.name}</p>
+                            {horse.yob && (
+                              <p className="text-xs text-gray-500 mt-0.5">Doğum: {horse.yob}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-auto flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsRemoveHorseModalOpen(false)
+                        setSelectedHorsesForRemoval(new Set())
+                      }}
+                      disabled={isSubmittingRemoval}
+                      className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                    >
+                      {TR.common.cancel}
+                    </Button>
+                    <Button
+                      onClick={handleSubmitHorseRemoval}
+                      disabled={selectedHorsesForRemoval.size === 0 || isSubmittingRemoval}
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingRemoval ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                          Gönderiliyor...
+                        </>
+                      ) : (
+                        `Atları Çıkar (${selectedHorsesForRemoval.size})`
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

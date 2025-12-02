@@ -259,3 +259,33 @@ export function registrationNotificationTemplate(data: {
   return baseTemplate('Yeni Kayıt Başvurusu', content)
 }
 
+/**
+ * Horse removal request email template (for admin)
+ */
+export function horseRemovalRequestTemplate(data: {
+  ownerEmail: string
+  stablemateName: string
+  horseNames: string[]
+  requestedAt: Date
+}): string {
+  const content = `
+    <p>Bir kullanıcı atlarını ekürilerinden çıkarmak için başvuru yaptı:</p>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Eküri:</strong> ${data.stablemateName}</p>
+      <p style="margin: 5px 0;"><strong>Kullanıcı E-posta:</strong> ${data.ownerEmail}</p>
+      <p style="margin: 5px 0;"><strong>Başvuru Tarihi:</strong> ${formatDate(data.requestedAt)}</p>
+      <p style="margin: 10px 0 5px 0;"><strong>Çıkarılacak Atlar:</strong></p>
+      <ul style="margin: 5px 0; padding-left: 20px;">
+        ${data.horseNames.map(name => `<li>${name}</li>`).join('')}
+      </ul>
+    </div>
+    
+    <p style="margin-top: 20px; color: #666; font-size: 14px;">
+      Lütfen admin panelinden bu atları ekürilerinden çıkarın.
+    </p>
+  `
+
+  return baseTemplate('At Çıkarma Başvurusu', content)
+}
+
